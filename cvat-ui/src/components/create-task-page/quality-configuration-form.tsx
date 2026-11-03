@@ -94,6 +94,10 @@ export default class QualityConfigurationForm extends React.PureComponent<Props>
     }
 
     public resetFields(): void {
+        this.formRef.current?.resetFields();
+    }
+
+    public resetParameters(): void {
         const supportsFrameSelection = this.hasSection(QualityConfigurationSection.FRAME_SELECTION);
         const supportsValidationQuantity = this.hasSection(QualityConfigurationSection.VALIDATION_QUANTITY);
         const fields = [

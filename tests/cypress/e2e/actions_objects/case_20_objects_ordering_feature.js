@@ -103,6 +103,7 @@ context('Objects ordering feature', () => {
     }
 
     function layerVisibilityButton(zOrder) {
+        cy.hideTooltips();
         return cy.get(`.cvat-objects-sidebar-z-layer[data-z-order="${zOrder}"]`)
             .find('.cvat-objects-sidebar-z-layer-visibility-indicator');
     }
@@ -164,14 +165,19 @@ context('Objects ordering feature', () => {
             cy.get('#cvat_canvas_shape_1').should('not.exist');
 
             cy.createRectangle(createRectangle('Apple', 300, 150));
-            cy.get('.cvat-objects-sidebar-z-layer[data-z-order="1"]')
-                .find('#cvat-objects-sidebar-state-item-5').should('exist');
+            cy.get('#cvat_canvas_shape_5').click();
+            cy.get('#cvat-objects-sidebar-state-item-5')
+                .closest('.cvat-objects-sidebar-z-layer-object-row')
+                .should('have.attr', 'data-z-order', '1');
             cy.get('#cvat_canvas_shape_1').should('exist');
             cy.get('#cvat_canvas_shape_5').should('exist');
             layerVisibilityButton(1).find('svg').should('have.attr', 'data-icon', 'eye');
         });
 
         it('Show and hide layers using layer visibility controls.', () => {
+            // With all layers collapsed, every layer header fits in the virtual list viewport.
+            cy.get('.cvat-objects-sidebar-z-layers-collapse-all-button').click();
+            cy.hideTooltips();
             cy.get('#cvat_canvas_shape_1').should('exist');
             cy.get('#cvat_canvas_shape_2').should('exist');
             cy.get('#cvat_canvas_shape_3').should('exist');
@@ -203,6 +209,7 @@ context('Objects ordering feature', () => {
             cy.get('#cvat_canvas_shape_2').should('exist');
             cy.get('#cvat_canvas_shape_3').should('exist');
             cy.get('#cvat_canvas_shape_4').should('exist');
+            cy.hideTooltips();
         });
 
         it('Sort object by "ID - descent".', () => {

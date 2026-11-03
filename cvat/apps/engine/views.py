@@ -9,7 +9,6 @@ import os.path as osp
 import re
 import shutil
 import textwrap
-import traceback
 import zlib
 from abc import ABCMeta, abstractmethod
 from contextlib import suppress
@@ -42,6 +41,7 @@ from rest_framework.permissions import SAFE_METHODS
 from rest_framework.response import Response
 from rest_framework.settings import api_settings
 from rq.job import Job as RQJob
+from rq.job import JobStatus as RQJobStatus
 
 import cvat.apps.dataset_manager as dm
 from cvat.apps.dataset_manager.serializers import DatasetFormatsSerializer
@@ -79,7 +79,6 @@ from cvat.apps.engine.models import (
     FrameQuality,
     Issue,
     Job,
-    JobType,
     Label,
     Location,
     Project,
@@ -103,7 +102,12 @@ from cvat.apps.engine.permissions import (
     UserPermission,
     get_iam_context,
 )
-from cvat.apps.engine.rq import ImportRequestId, ImportRQMeta, RQMetaWithFailureInfo
+from cvat.apps.engine.rq import (
+    ImportRequestId,
+    ImportRQMeta,
+    RQMetaWithFailureInfo,
+    save_job_failure_metadata,
+)
 from cvat.apps.engine.serializers import (
     AboutSerializer,
     AnnotationFileSerializer,
@@ -122,6 +126,7 @@ from cvat.apps.engine.serializers import (
     DataSerializer,
     DatasetFileSerializer,
     FileInfoSerializer,
+    GroundTruthJobCreateSerializer,
     IssueReadSerializer,
     IssueWriteSerializer,
     JobDataMetaWriteSerializer,
@@ -135,6 +140,7 @@ from cvat.apps.engine.serializers import (
     ProjectFileSerializer,
     ProjectReadSerializer,
     ProjectWriteSerializer,
+    ReplicaJobCreateSerializer,
     RqStatusSerializer,
     TaskFileSerializer,
     TaskReadSerializer,
@@ -1156,7 +1162,7 @@ class TaskViewSet(
         "dimension",
         "validation_mode",
     )
-    filter_fields = (*simple_filters, "id", "updated_date")
+    filter_fields = (*simple_filters, "id", "updated_date", "created_date")
     filter_description = textwrap.dedent("""
 
         There are few examples for complex filtering tasks:\n
@@ -2130,13 +2136,23 @@ class TaskViewSet(
         return Response(response_serializer.data, status=status.HTTP_200_OK)
 
 
+_JOB_CREATE_SERIALIZERS = {
+    models.JobType.GROUND_TRUTH.value: GroundTruthJobCreateSerializer,
+    models.JobType.REPLICA.value: ReplicaJobCreateSerializer,
+}
+
+
 @extend_schema(tags=["jobs"])
 @extend_schema_view(
     create=extend_schema(
         summary="Create a job",
-        request=JobWriteSerializer,
+        request=PolymorphicProxySerializer(
+            component_name="JobWrite",
+            serializers=_JOB_CREATE_SERIALIZERS,
+            resource_type_field_name="type",
+        ),
         responses={
-            "201": JobReadSerializer,  # check JobWriteSerializer.to_representation
+            "201": JobReadSerializer,
         },
         examples=[
             OpenApiExample(
@@ -2188,6 +2204,14 @@ class TaskViewSet(
                     "frames": [1, 5, 10, 18],
                 },
             ),
+            OpenApiExample(
+                "create a replica job",
+                {
+                    "type": models.JobType.REPLICA,
+                    "task_id": 17,
+                    "parent_job_id": 42,
+                },
+            ),
         ],
     ),
     retrieve=extend_schema(
@@ -2215,7 +2239,7 @@ class TaskViewSet(
             Related annotations will be deleted as well.
 
             Please note, that not every job can be removed. Currently,
-            it is only available for Ground Truth jobs.
+            it is only available for Ground Truth and replica jobs.
             """),
         responses={
             "204": OpenApiResponse(description="The job has been deleted"),
@@ -2290,9 +2314,35 @@ class JobViewSet(
 
         return queryset
 
+    def filter_queryset(self, queryset):
+        # NOTE @sosov consensus_replica -> replica backward compatibility: old clients and saved
+        # filters send the legacy job type in the "type" and "filter" parameters
+        params = self.request.query_params
+        if params.get("type") == "consensus_replica" or '"consensus_replica"' in params.get(
+            "filter", ""
+        ):
+            params = params.copy()
+            if params.get("type") == "consensus_replica":
+                params["type"] = "replica"
+            if "filter" in params:
+                params["filter"] = params["filter"].replace('"consensus_replica"', '"replica"')
+            # NOTE @sosov: SimpleFilter and JsonLogicFilter read the parameters from request.query_params
+            self.request._request.GET = params
+
+        return super().filter_queryset(queryset)
+
     def get_serializer_class(self):
         if self.request.method in SAFE_METHODS:
             return JobReadSerializer
+        elif self.action == "create":
+            job_type = self.request.data.get("type")
+            if job_type is None:
+                raise ValidationError({"type": ["This field is required."]})
+
+            try:
+                return _JOB_CREATE_SERIALIZERS[job_type]
+            except (KeyError, TypeError) as ex:  # TypeError - an unhashable value, e.g. a list
+                raise ValidationError({"type": [f'"{job_type}" is not a valid choice.']}) from ex
         else:
             return JobWriteSerializer
 
@@ -2302,26 +2352,6 @@ class JobViewSet(
 
         # Required for the extra summary information added in the queryset
         serializer.instance = self.get_queryset().get(pk=serializer.instance.pk)
-
-    @transaction.atomic
-    def perform_destroy(self, instance):
-        if instance.type != JobType.GROUND_TRUTH:
-            raise ValidationError("Only ground truth jobs can be removed")
-
-        validation_layout: models.ValidationLayout | None = getattr(
-            instance.segment.task.data, "validation_layout", None
-        )
-        if validation_layout and validation_layout.mode == models.ValidationMode.GT_POOL:
-            raise ValidationError(
-                'GT jobs cannot be removed when task validation mode is "{}"'.format(
-                    models.ValidationMode.GT_POOL
-                )
-            )
-
-        super().perform_destroy(instance)
-
-        if validation_layout:
-            validation_layout.delete()
 
     # UploadMixin method
     def get_upload_dir(self):
@@ -3268,6 +3298,7 @@ class LabelViewSet(
     ),
     retrieve=extend_schema(
         summary="Get user details",
+        parameters=ORGANIZATION_OPEN_API_PARAMETERS,
         responses={
             "200": PolymorphicProxySerializer(
                 component_name="MetaUser",
@@ -3905,11 +3936,16 @@ class AnnotationGuidesViewSet(
 
 
 def rq_exception_handler(rq_job: RQJob, exc_type: type[Exception], exc_value: Exception, tb):
-    rq_job_meta = RQMetaWithFailureInfo.for_job(rq_job)
-    rq_job_meta.formatted_exception = "".join(traceback.format_exception_only(exc_type, exc_value))
-    if rq_job.origin == settings.CVAT_QUEUES.CHUNKS.value:
-        rq_job_meta.exc_type = exc_type
-        rq_job_meta.exc_args = exc_value.args
-    rq_job_meta.save()
+    # NOTE @sosov: The worker has already re-queued/re-scheduled the job for another attempt
+    # that is why we can`t use redis_handler.utils.rq_job_will_be_retried there
+    if rq_job.get_status(refresh=False) in (RQJobStatus.QUEUED, RQJobStatus.SCHEDULED):
+        return True
+
+    # The global exception handlers, like this function, are called by RQ AFTER the job status is
+    # set to FAILED. In some queues (e.g. chunk and request), jobs already save failure metadata in
+    # on_failure(), which is called before RQ publishes status, so API readers can reconstruct the
+    # exception. Avoid writing it again here, only do this for jobs that have no such callback.
+    if RQMetaWithFailureInfo.for_job(rq_job).formatted_exception is None:
+        save_job_failure_metadata(rq_job, exc_type, exc_value)
 
     return True

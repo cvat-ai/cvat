@@ -23,7 +23,8 @@ export interface KeyMap {
 }
 
 export interface Handlers {
-    [index: string]: (event: KeyboardEvent, shortcut: string) => void;
+    // Return true to preserve native behavior and propagation; otherwise consume the shortcut.
+    [index: string]: (event: KeyboardEvent, shortcut: string) => boolean | void;
 }
 
 interface Props {
@@ -37,22 +38,29 @@ const applicationKeyMap: KeyMap = {};
 export default function GlobalHotKeys(props: Props): JSX.Element {
     const { children, keyMap, handlers } = props;
     useEffect(() => {
+        const boundKeyMap: KeyMap = {};
         for (const key of Object.keys(keyMap)) {
             const { sequences } = keyMap[key];
             const handler = handlers[key];
+
+            if (!handler) {
+                continue;
+            }
+
             Mousetrap.bind(sequences, (event, combo) => {
-                event.preventDefault();
-                event.stopPropagation();
-                if (handler) {
-                    handler(event, combo);
+                if (handler(event, combo) !== true) {
+                    event.preventDefault();
+                    event.stopPropagation();
                 }
             }, 'keydown');
+
+            boundKeyMap[key] = keyMap[key];
             applicationKeyMap[key] = keyMap[key];
         }
 
         return () => {
-            for (const key of Object.keys(keyMap)) {
-                const { sequences } = keyMap[key];
+            for (const key of Object.keys(boundKeyMap)) {
+                const { sequences } = boundKeyMap[key];
                 Mousetrap.unbind(sequences, 'keydown');
                 delete applicationKeyMap[key];
             }
@@ -62,15 +70,10 @@ export default function GlobalHotKeys(props: Props): JSX.Element {
 }
 
 Mousetrap.prototype.stopCallback = function (e: KeyboardEvent, element: Element, combo: string): boolean {
-    if (element.tagName === 'INPUT' || element.tagName === 'SELECT' || element.tagName === 'TEXTAREA') {
-        // do not trigger any shortcuts if input field is one of [input, select, textarea]
+    if (element.tagName === 'INPUT' || element.tagName === 'SELECT' || element.tagName === 'TEXTAREA' ||
+        (element as HTMLElement).isContentEditable) {
+        // Leave native keyboard behavior available in editable elements.
         return true;
-    }
-
-    const activeSequences = Object.values(applicationKeyMap).map((keyMap) => [...keyMap.sequences]).flat();
-    if (activeSequences.some((sequence) => sequence.startsWith(combo))) {
-        // prevent default behaviour of the event if potentially one of active shortcuts will be triggered
-        e?.preventDefault();
     }
 
     // stop when modals are opened

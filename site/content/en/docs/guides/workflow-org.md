@@ -51,6 +51,8 @@ assign {{< ilink "/docs/account_management/user-roles" "User roles" >}} to invit
 11. Assign jobs to annotators by adding the annotator name to **Assignee** and
     changing the {{< ilink "/docs/account_management/user-roles#job-stage" "**Job stage**" >}}
     to **Annotation**.
+    To assign many jobs to a group of annotators at once, use
+    {{< ilink "/docs/workspace/jobs-page#distribute-jobs-among-users" "**Distribute among users**" >}}.
 12. Annotator will see assigned jobs and annotate them.
 13. (Optional) In case you've created
     a {{< ilink "/docs/qa-analytics/auto-qa" "**Ground truth job**" >}}

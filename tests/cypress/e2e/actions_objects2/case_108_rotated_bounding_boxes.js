@@ -87,7 +87,7 @@ context('Rotated bounding boxes.', () => {
                 }
             });
 
-            cy.shapeRotate('#cvat_canvas_shape_2', '32.2');
+            cy.shapeRotate('#cvat_canvas_shape_2', '32.3');
 
             // Comparison of the values of the shape attribute of the current frame with the previous frame
             testCompareRotate('cvat_canvas_shape_2', 0);

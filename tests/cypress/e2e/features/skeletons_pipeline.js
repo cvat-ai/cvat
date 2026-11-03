@@ -144,6 +144,44 @@ context('Manipulations with skeletons', { scrollBehavior: false }, () => {
                 cy.get('.cvat_canvas_skeleton_wrapping_rect').should('exist').and('not.be.visible');
             });
 
+            // Reuse this fixture to exercise variable-height Parts through a real virtual-row remount.
+            cy.saveJob();
+            cy.window().then(async (win) => {
+                const jobId = Number(win.location.pathname.split('/').pop());
+                const [job] = await win.cvat.jobs.get({ jobID: jobId });
+                await job.annotations.get(0);
+                const { shapes } = await job.annotations.export();
+                const copies = new win.Array();
+                for (let index = 0; index < 20; index++) {
+                    copies.push(win.JSON.parse(win.JSON.stringify(shapes[0]), (key, value) => (
+                        key === 'id' ? undefined : value
+                    )));
+                }
+                await job.annotations.import({ shapes: copies });
+                await job.annotations.save();
+            });
+            cy.reload();
+            cy.get('.cvat-canvas-container').should('be.visible');
+            const viewport = '.cvat-objects-sidebar-virtual-list [data-virtual-list-viewport]';
+            const parts = '#cvat-objects-sidebar-state-item-1 .cvat-objects-sidebar-state-item-elements-collapse';
+            cy.getObjectSidebarItem(1);
+            cy.get(`${parts} .ant-collapse-header`).click();
+            cy.get('#cvat-objects-sidebar-state-item-element-2').should('be.visible');
+            cy.get(viewport).scrollTo('bottom', { duration: 0 });
+            cy.get('#cvat-objects-sidebar-state-item-1').should('not.exist');
+            cy.getObjectSidebarItem(1);
+            cy.get('#cvat-objects-sidebar-state-item-element-2').should('be.visible');
+            cy.get(`${parts} .ant-collapse-header`).click();
+            cy.get('#cvat-objects-sidebar-state-item-element-2').should('not.be.visible');
+            cy.get(viewport).scrollTo('bottom', { duration: 0 });
+            cy.get('#cvat_canvas_shape_2').trigger('mousemove', { force: true });
+            cy.get('#cvat_canvas_shape_2').dblclick({ force: true });
+            cy.get('#cvat-objects-sidebar-state-item-element-2').should(($item) => {
+                const holder = $item[0].closest('[data-virtual-list-viewport]');
+                expect($item[0].getBoundingClientRect().top, 'jump aligns the expanded skeleton part')
+                    .to.be.closeTo(holder.getBoundingClientRect().top + holder.clientTop, 1);
+            });
+
             cy.removeAnnotations();
         });
 

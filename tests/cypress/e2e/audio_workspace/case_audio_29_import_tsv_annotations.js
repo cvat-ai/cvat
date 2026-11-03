@@ -4,16 +4,16 @@
 
 /// <reference types="cypress" />
 
-import { taskName, firstLabelName } from '../../support/const_audio';
+import { audioFile, taskName, firstLabelName } from '../../support/const_audio';
 
 context('Audio annotation. Import transcriptions from a TSV file.', () => {
     const caseId = 'audio_29';
 
     const tsvFile = 'audio_transcriptions.tsv';
     const tsvContent = [
-        ['start', 'stop', 'label', 'transcription'].join('\t'),
-        ['00:00:00.000000', '00:00:01.000000', firstLabelName, 'hello world'].join('\t'),
-        ['00:00:01.000000', '00:00:02.000000', firstLabelName, 'second line'].join('\t'),
+        ['filename', 'start', 'stop', 'label', 'transcription'].join('\t'),
+        [audioFile, '00:00:00.000000', '00:00:01.000000', firstLabelName, 'hello world'].join('\t'),
+        [audioFile, '00:00:01.000000', '00:00:02.000000', firstLabelName, 'second line'].join('\t'),
         '',
     ].join('\n');
 
@@ -51,7 +51,11 @@ context('Audio annotation. Import transcriptions from a TSV file.', () => {
             cy.confirmUpdate('.cvat-modal-content-load-job-annotation');
             cy.get('.cvat-notification-notice-import-annotation-start').should('be.visible');
             cy.closeNotification('.cvat-notification-notice-import-annotation-start');
-            cy.wait('@uploadAnnotationsGet').its('response.statusCode').should('equal', 200);
+            // Sometimes import doesn't complete within standard 15sec timeout window.
+            // In this case the cleanup happens before the import is finished so
+            // once it's finished it persists stale intervals in the DB causing
+            // subsequent tests to fail (and possibly hang).
+            cy.wait('@uploadAnnotationsGet', { timeout: 60000 }).its('response.statusCode').should('equal', 200);
             cy.contains('Annotations have been loaded').should('be.visible');
             cy.closeNotification('.ant-notification-notice-info');
 

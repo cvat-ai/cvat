@@ -21,6 +21,7 @@ import FiltersModalComponent from 'components/annotation-page/top-bar/filters-mo
 import { JobNotFoundComponent } from 'components/common/not-found';
 import StatisticsModalComponent from 'components/annotation-page/top-bar/statistics-modal';
 import AnnotationTopBarContainer from 'containers/annotation-page/top-bar/top-bar';
+import PolySimplifyController from 'containers/annotation-page/standard-workspace/poly-simplify-controller';
 import AudioAnnotationPage from 'audio/components/annotation-page/audio-annotation-page';
 import { Workspace } from 'reducers';
 import { usePrevious } from 'utils/hooks';
@@ -165,6 +166,9 @@ export default function AnnotationPageComponent(props: Props): JSX.Element {
                 {workspace === Workspace.TAGS && <TagAnnotationWorkspace />}
                 {workspace === Workspace.REVIEW && <ReviewAnnotationsWorkspace />}
             </Layout.Content>
+            {job.dimension === DimensionType.DIMENSION_2D &&
+                [Workspace.STANDARD, Workspace.REVIEW].includes(workspace) &&
+                <PolySimplifyController key={workspace} />}
             <FiltersModalComponent />
             <StatisticsModalComponent />
             <SearchFramesModal />

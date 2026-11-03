@@ -9,8 +9,9 @@ import mimetypes
 import os
 import re
 import shutil
+import stat
 from abc import ABCMeta, abstractmethod
-from collections import defaultdict, deque
+from collections import deque
 from collections.abc import Collection, Iterable
 from contextlib import closing
 from copy import deepcopy
@@ -42,9 +43,6 @@ from cvat.apps.dataset_manager.util import (
 from cvat.apps.dataset_manager.views import (
     EXPORT_CACHE_LOCK_ACQUISITION_TIMEOUT,
     EXPORT_CACHE_LOCK_TTL,
-    EXPORT_LOCKED_RETRY_INTERVAL,
-    LockNotAvailableError,
-    retry_current_rq_job,
 )
 from cvat.apps.engine import models
 from cvat.apps.engine.cache import MediaCache
@@ -55,7 +53,7 @@ from cvat.apps.engine.serializers import (
     AssetWriteSerializer,
     AttributeSerializer,
     DataSerializer,
-    JobWriteSerializer,
+    GroundTruthJobCreateSerializer,
     LabeledDataSerializer,
     LabeledShapeSerializer,
     LabelSerializer,
@@ -65,7 +63,7 @@ from cvat.apps.engine.serializers import (
     TaskReadSerializer,
     ValidationParamsSerializer,
 )
-from cvat.apps.engine.task import JobFileMapping, initialize_task
+from cvat.apps.engine.task import JobFileMapping, create_replica_jobs, initialize_task
 from cvat.apps.engine.utils import av_scan_paths
 from cvat.utils import django_database as db_utils
 from cvat.utils.paths import join_untrusted_path, problem_with_untrusted_path
@@ -124,7 +122,7 @@ def _read_annotation_guide(zip_object, guide_filename, assets_dirname):
         assets = [(x, zip_object.read(x)) for x in assets]
 
         if len(assets) > settings.ASSET_MAX_COUNT_PER_GUIDE:
-            raise ValidationError(f"Maximum number of assets per guide reached")
+            raise ValidationError("Maximum number of assets per guide reached")
         for asset in assets:
             if len(asset[1]) / (1024 * 1024) > settings.ASSET_MAX_SIZE_MB:
                 raise ValidationError(f"Maximum size of asset is {settings.ASSET_MAX_SIZE_MB} MB")
@@ -229,6 +227,7 @@ class _TaskBackupBase(_BackupBase):
             "status",
             "subset",
             "labels",
+            "initial_replicas",
         }
 
         return self._prepare_meta(allowed_fields, task)
@@ -389,13 +388,25 @@ class _ExporterBase(metaclass=ABCMeta):
     @staticmethod
     def _write_files(source_dir, zip_object, files, target_dir):
         for filename in files:
-            arcname = os.path.normpath(
-                os.path.join(
-                    target_dir,
-                    os.path.relpath(filename, source_dir),
+            # Normally, there should not be any any irregular files in CVAT's data directory,
+            # but it's possible that some were uploaded to the instance before we started filtering
+            # them out in ArchiveReader. Attempting to write such files to the backup can cause
+            # adverse effects, for example:
+            #
+            # * If the file is a symlink, ZipFile.write will dereference it, which can lead to files
+            #   outside of the task to be included in the backup.
+            # * If it's a named pipe, ZipFile.write will block indefinitely.
+            #
+            # To avoid such problems, skip over irregular files.
+
+            if stat.S_ISREG(os.lstat(filename).st_mode):
+                arcname = os.path.normpath(
+                    os.path.join(
+                        target_dir,
+                        os.path.relpath(filename, source_dir),
+                    )
                 )
-            )
-            zip_object.write(filename=filename, arcname=arcname)
+                zip_object.write(filename=filename, arcname=arcname)
 
     def _write_directory(
         self, source_dir, zip_object, target_dir, recursive=True, exclude_files=None
@@ -1120,7 +1131,10 @@ class TaskImporter(_ImporterBase, _TaskBackupBase):
             # DataSerializer checks for this, but we don't need it for tasks with a GT pool
             data["job_file_mapping"] = job_file_mapping
 
-        self._manifest["consensus_replicas"] = self._determine_replica_counts(jobs)
+        if "initial_replicas" not in self._manifest:
+            # NOTE @sosov consensus_replica -> replica backward compatibility: backups created
+            # before initial_replicas was stored, derive it from the job list
+            self._manifest["initial_replicas"] = min(self._collect_replica_counts(jobs))
 
         self._db_task = models.Task.objects.create(**self._manifest, organization_id=self._org_id)
 
@@ -1172,13 +1186,26 @@ class TaskImporter(_ImporterBase, _TaskBackupBase):
                     raise ValidationError(f"Unsafe file path in manifest: {problem}")
         else:
             if data_serializer.initial_data["storage"] != StorageChoice.LOCAL:
-                raise ValidationError(f"Unexpected storage type in the backup files")
+                raise ValidationError("Unexpected storage type in the backup files")
 
             db_data.storage = StorageChoice.LOCAL
 
         db_data.save(update_fields=["storage"])
 
+        # NOTE @sosov: replicas can be added and removed after the task creation, so their count can
+        # differ between the annotation jobs of a backed up task. initialize_task() creates the
+        # same number of replicas for each annotation job, so it must not create any,
+        # the replicas are created from the backup job list instead
+        initial_replicas = self._db_task.initial_replicas
+        self._db_task.initial_replicas = 0
+        self._db_task.save(update_fields=["initial_replicas"])
+
         initialize_task(db_task=self._db_task.pk, data=data.copy(), is_backup_restore=True)
+        self._import_replica_jobs(jobs)
+
+        self._db_task.initial_replicas = initial_replicas
+        self._db_task.save(update_fields=["initial_replicas"])
+
         self._db_task.refresh_from_db()
         db_data.refresh_from_db()
 
@@ -1199,43 +1226,52 @@ class TaskImporter(_ImporterBase, _TaskBackupBase):
         try:
             # The type field will be missing in backups created before the GT jobs were introduced
             raw_job_type = job.get("type", models.JobType.ANNOTATION.value)
+            # NOTE @sosov consensus_replica -> replica backward compatibility: backups created
+            # before the rename have the legacy job type
+            if raw_job_type == "consensus_replica":
+                raw_job_type = models.JobType.REPLICA.value
             job_type = models.JobType(raw_job_type)
         except ValueError:
             raise ValidationError(f"Unexpected job type {raw_job_type}")
         return job_type
 
-    def _collect_replica_counts(self, jobs: dict) -> dict[models.JobType, list[int]]:
+    def _collect_replica_counts(self, jobs: list[dict]) -> list[int]:
+        "Returns the replica count of each annotation job, in the order of the annotation jobs"
+
         replica_counts = []
+        last_primary_type: models.JobType | None = None
         for job in jobs:
             job_type = self._get_job_type(job)
 
-            if job_type != models.JobType.CONSENSUS_REPLICA:
-                replica_counts.append([job_type, 0])
+            if job_type != models.JobType.REPLICA:
+                last_primary_type = job_type
+                if job_type == models.JobType.ANNOTATION:
+                    replica_counts.append(0)
+            elif last_primary_type == models.JobType.ANNOTATION:
+                replica_counts[-1] += 1
             else:
-                if not replica_counts:
-                    raise ValidationError(
-                        f"Invalid job order, jobs of type '{job_type}' "
-                        "must follow their parent jobs."
-                    )
+                raise ValidationError(
+                    f"Invalid job order, jobs of type '{job_type}' "
+                    "must follow their parent annotation jobs."
+                )
 
-                replica_counts[-1][1] += 1
+        return replica_counts
 
-        replica_counts_map = defaultdict(list)
-        for primary_type, count in replica_counts:
-            replica_counts_map[primary_type].append(count)
-
-        return replica_counts_map
-
-    def _determine_replica_counts(self, jobs: dict) -> int:
-        replica_counts = self._collect_replica_counts(jobs)
-        return min(replica_counts.get(models.JobType.ANNOTATION, [0]))
+    def _import_replica_jobs(self, jobs: list[dict]) -> None:
+        db_annotation_jobs = [
+            db_job for db_job in self._get_db_jobs() if db_job.type == models.JobType.ANNOTATION
+        ]
+        for db_job, replica_count in zip(
+            db_annotation_jobs, self._collect_replica_counts(jobs), strict=True
+        ):
+            create_replica_jobs(parent_job=db_job, count=replica_count)
 
     def _import_gt_jobs(self, jobs):
         for job in jobs:
             job_type = self._get_job_type(job)
 
             if job_type == models.JobType.GROUND_TRUTH:
-                job_serializer = JobWriteSerializer(
+                job_serializer = GroundTruthJobCreateSerializer(
                     data={
                         "task_id": self._db_task.id,
                         "type": job_type.value,
@@ -1253,7 +1289,7 @@ class TaskImporter(_ImporterBase, _TaskBackupBase):
                 )
                 job_serializer.is_valid(raise_exception=True)
                 job_serializer.save()
-            elif job_type in [models.JobType.ANNOTATION, models.JobType.CONSENSUS_REPLICA]:
+            elif job_type in [models.JobType.ANNOTATION, models.JobType.REPLICA]:
                 continue
             else:
                 assert False
@@ -1469,16 +1505,31 @@ def create_backup(
 ):
     db_instance = Exporter.get_object(instance_id)
 
-    try:
-        instance_type = db_instance.__class__.__name__
-        instance_timestamp = timezone.localtime(db_instance.updated_date).timestamp()
+    instance_type = db_instance.__class__.__name__
+    instance_timestamp = timezone.localtime(db_instance.updated_date).timestamp()
 
-        output_path = ExportCacheManager.make_backup_file_path(
-            instance_id=db_instance.id,
-            instance_type=instance_type,
-            instance_timestamp=instance_timestamp,
-            lightweight=lightweight,
-        )
+    output_path = ExportCacheManager.make_backup_file_path(
+        instance_id=db_instance.id,
+        instance_type=instance_type,
+        instance_timestamp=instance_timestamp,
+        lightweight=lightweight,
+    )
+
+    with get_export_cache_lock(
+        output_path,
+        block=True,
+        acquire_timeout=EXPORT_CACHE_LOCK_ACQUISITION_TIMEOUT,
+        ttl=EXPORT_CACHE_LOCK_TTL,
+    ):
+        # output_path includes timestamp of the last update
+        if os.path.exists(output_path):
+            extend_export_file_lifetime(output_path)
+            return output_path
+
+    with TmpDirManager.get_tmp_directory_for_export(instance_type=instance_type) as tmp_dir:
+        temp_file = os.path.join(tmp_dir, "dump")
+        exporter = Exporter(db_instance.id, lightweight=lightweight)
+        exporter.export_to(temp_file)
 
         with get_export_cache_lock(
             output_path,
@@ -1486,37 +1537,12 @@ def create_backup(
             acquire_timeout=EXPORT_CACHE_LOCK_ACQUISITION_TIMEOUT,
             ttl=EXPORT_CACHE_LOCK_TTL,
         ):
-            # output_path includes timestamp of the last update
-            if os.path.exists(output_path):
-                extend_export_file_lifetime(output_path)
-                return output_path
+            shutil.move(temp_file, output_path)
 
-        with TmpDirManager.get_tmp_directory_for_export(instance_type=instance_type) as tmp_dir:
-            temp_file = os.path.join(tmp_dir, "dump")
-            exporter = Exporter(db_instance.id, lightweight=lightweight)
-            exporter.export_to(temp_file)
-
-            with get_export_cache_lock(
-                output_path,
-                block=True,
-                acquire_timeout=EXPORT_CACHE_LOCK_ACQUISITION_TIMEOUT,
-                ttl=EXPORT_CACHE_LOCK_TTL,
-            ):
-                shutil.move(temp_file, output_path)
-
-            logger.info(
-                f"The {db_instance.__class__.__name__.lower()} '{db_instance.id}' is backed up at {output_path!r} "
-                f"and available for downloading for the next {cache_ttl}."
-            )
-    except LockNotAvailableError:
-        # Need to retry later if the lock was not available
-        retry_current_rq_job(EXPORT_LOCKED_RETRY_INTERVAL)
         logger.info(
-            "Failed to acquire export cache lock. Retrying in {}".format(
-                EXPORT_LOCKED_RETRY_INTERVAL
-            )
+            f"The {db_instance.__class__.__name__.lower()} '{db_instance.id}' is backed up at {output_path!r} "
+            f"and available for downloading for the next {cache_ttl}."
         )
-        raise
 
     return output_path
 

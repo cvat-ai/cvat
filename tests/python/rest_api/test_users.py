@@ -76,6 +76,11 @@ class TestGetUsers:
     def test_non_members_cannot_see_list_of_members(self):
         self._test_cannot_see("user2", org="org1")
 
+    def test_non_member_cannot_see_member(self, find_users):
+        non_member = next(u for u in find_users(org=None) if not u["is_superuser"])
+        member = next(u for u in find_users(org=1))
+        self._test_cannot_see(non_member["username"], id_=member["id"], org="org1")
+
     def test_non_admin_cannot_see_others(self, users):
         non_admins = (v for v in users if not v["is_superuser"])
         user = next(non_admins)["username"]
@@ -95,6 +100,11 @@ class TestGetUsers:
 
         for member in org_members:
             self._test_can_see(member, data, org="org1")
+
+    def test_member_cannot_see_non_members(self, find_users):
+        member = next(u for u in find_users(org=1) if not u["is_superuser"])
+        non_member = next(u for u in find_users(org=None))
+        self._test_cannot_see(member["username"], id_=non_member["id"], org="org1")
 
 
 class TestUsersListFilters(CollectionSimpleFilterTestBase):

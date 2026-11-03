@@ -50,7 +50,6 @@ Use the following buttons, to save your work, undo changes, and move tasks to do
 | **Save work**<br><br>![Save icon](/images/image141.jpg)      | Saves annotations for the current job. The button indicates the saving process.                                                                                                                                                                                                                             |
 | **Undo**/**Redo**<br><br>![Undo and redo icons](/images/image061.jpg) | Use buttons to undo actions or redo them.                                                                                                                                                                                                                                                                   |
 | **Done**<br><br>![Done icon](/images/image223.jpg)           | Used to complete the creation of the object. This button appears only when the object is being created.                                                                                                                                                                                                     |
-| **Block**<br><br>![Block icon](/images/image226.jpg)          | Used to pause automatic line creation when drawing a polygon with {{< ilink "/docs/annotation/auto-annotation/ai-tools#opencv-intelligent-scissors" "OpenCV Intelligent scissors" >}}. Also used to postpone server requests when creating an object using {{< ilink "/docs/annotation/auto-annotation/ai-tools" "AI Tools" >}}. |
 
 ### Navigation controls
 
@@ -70,7 +69,7 @@ with detailed descriptions provided in the table below.
 | **Search frame by filename**<br><br>![Search frame by filename](/images/navigation_search_icon.png) | Click to open the search pop-up. Type a frame filename to search for it within the job. Select the filename and press **Enter** to navigate to the selected frame. |
 | **Copy frame name**<br><br>![Copy frame name](/images/navigation_icons_copy_filename.png) | Click to copy frame name to the clipboard. |
 | **Copy frame link**<br><br>![Delete frame](/images/navigation_icons_copy_link.png) | Click to copy link to the frame. |
-| **Delete frame**<br><br>![Delete frame](/images/navigation_icons_delete_frame.png) | Click to delete or restore current frame. |
+| **Delete frame**<br><br>![Delete frame](/images/navigation_icons_delete_frame.png) | Click to delete or restore current frame. <br>Not available in {{< ilink "/docs/workspace/jobs-page#replica-jobs" "replica jobs" >}}. |
 
 ## Job information and Annotation Mode switcher
 

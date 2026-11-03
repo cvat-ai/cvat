@@ -148,37 +148,6 @@ context('OpenCV. Intelligent scissors. Histogram Equalization. TrackerMIL.', () 
             cy.get('.cvat_canvas_shape').should('have.length', 2);
         });
 
-        it('Check "Intelligent scissors blocking feature". Cancel drawing.', () => {
-            cy.interactOpenCVControlButton();
-            cy.get('.cvat-opencv-drawing-tool').click();
-            cy.get('.cvat-annotation-header-block-tool-button').click();
-            cy.get('.cvat-annotation-header-block-tool-button').should('have.class', 'cvat-button-active');
-
-            createOpencvShapeSecondLabel.pointsMap.forEach((point) => {
-                clickCanvasImagePoint(point);
-            });
-
-            cy.get('.cvat_canvas_interact_intermediate_shape').then((intermediateShape) => {
-                expect(intermediateShape.attr('points').split(' ').length).to.be.equal(
-                    createOpencvShapeSecondLabel.pointsMap.length,
-                );
-            });
-
-            cy.get('.cvat-annotation-header-block-tool-button').click();
-            cy.get('.cvat-annotation-header-block-tool-button').should('not.have.class', 'cvat-button-active');
-            clickCanvasImagePoint({ x: 2300, y: 900 });
-
-            cy.get('.cvat_canvas_interact_intermediate_shape').then((intermediateShape) => {
-                // The last point on the crosshair
-                expect(intermediateShape.attr('points').split(' ').length).to.be.gt(
-                    createOpencvShapeSecondLabel.pointsMap.length,
-                );
-            });
-
-            // Cancel drawing
-            cy.get('body').type('{Esc}');
-        });
-
         it('Check "Histogram Equalization" feature.', () => {
             cy.checkPopoverHidden('opencv-control');
             cy.interactOpenCVControlButton();

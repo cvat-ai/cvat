@@ -7,6 +7,7 @@ import { omit } from 'lodash';
 import config from './config';
 
 import PluginRegistry from './plugins';
+import { observe } from './capabilities';
 import serverProxy from './server-proxy';
 import lambdaManager from './lambda-manager';
 import requestsManager from './requests-manager';
@@ -14,7 +15,6 @@ import {
     isBoolean,
     isInteger,
     isString,
-    isPageSize,
     checkFilter,
     checkExclusiveFields,
     checkObjectType,
@@ -59,6 +59,7 @@ function implementationMixin(func: Function, implementation: Function): void {
 }
 
 export default function implementAPI(cvat: CVATCore): CVATCore {
+    implementationMixin(cvat.capabilities.observe, observe);
     implementationMixin(cvat.plugins.list, PluginRegistry.list);
     implementationMixin(cvat.plugins.register, PluginRegistry.register.bind(cvat));
     implementationMixin(cvat.actions.list, listActions);
@@ -169,7 +170,9 @@ export default function implementAPI(cvat: CVATCore): CVATCore {
             is_active: isBoolean,
             self: isBoolean,
             search: isString,
+            filter: isString,
             limit: isInteger,
+            pageSize: isInteger,
         });
 
         let users = null;
@@ -183,7 +186,7 @@ export default function implementAPI(cvat: CVATCore): CVATCore {
                     searchParams[key] = filter[key];
                 }
             }
-            users = await serverProxy.users.get(searchParams);
+            users = await serverProxy.users.get(fieldsToSnakeCase(searchParams));
         }
 
         users = users.map((user) => new User(user));
@@ -382,7 +385,7 @@ export default function implementAPI(cvat: CVATCore): CVATCore {
             organizationSlug: organization.slug,
         };
     });
-    implementationMixin(cvat.organizations.deactivate, async () => {
+    implementationMixin(cvat.organizations.deactivate, () => {
         config.organization = {
             organizationID: null,
             organizationSlug: null,
@@ -450,7 +453,7 @@ export default function implementAPI(cvat: CVATCore): CVATCore {
     ) => {
         checkFilter(filter, {
             page: isInteger,
-            pageSize: isPageSize,
+            pageSize: isInteger,
             parentID: isInteger,
             projectID: isInteger,
             taskID: isInteger,
@@ -582,7 +585,7 @@ export default function implementAPI(cvat: CVATCore): CVATCore {
                 annotationType: isString,
                 enabled: isBoolean,
                 page: isInteger,
-                pageSize: isPageSize,
+                pageSize: isInteger,
                 filter: isString,
                 search: isString,
                 sort: isString,

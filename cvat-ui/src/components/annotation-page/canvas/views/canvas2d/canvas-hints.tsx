@@ -3,15 +3,13 @@
 // SPDX-License-Identifier: MIT
 
 import React from 'react';
-import { InfoCircleTwoTone, LoadingOutlined } from '@ant-design/icons';
 import Button from 'antd/lib/button';
-import Text from 'antd/lib/typography/Text';
-import { CanvasHint } from 'cvat-canvas-wrapper';
+import CVATMarkdown from 'components/common/cvat-markdown';
 
 const FORCE_MESSAGE_FLAG = 'force';
 
 interface State {
-    hints: CanvasHint[] | null;
+    hints: string | null;
     topic: string;
     hiddenHints: Record<string, boolean>;
 }
@@ -33,46 +31,19 @@ export default class CanvasTipsComponent extends React.PureComponent<{}, State> 
         };
     }
 
-    public update(hints: CanvasHint[] | null, topic: string): void {
-        this.setState({ hints, topic });
+    public update(hints: string | null, topic = ''): void {
+        this.setState({ hints, topic: hints === null ? '' : topic });
     }
 
     public render(): JSX.Element | null {
         const { hints, hiddenHints, topic } = this.state;
 
         if (hints && !hiddenHints[topic]) {
-            const blocks = hints.map(({
-                type, content, className, icon,
-            }, idx) => {
-                let Icon = null;
-                if (icon === 'info') {
-                    Icon = <InfoCircleTwoTone />;
-                } else if (icon === 'loading') {
-                    Icon = <LoadingOutlined />;
-                }
-                if (type === 'text') {
-                    return (
-                        <div key={idx} className={`cvat-canvas-hints-block ${className || ''}`}>
-                            { Icon }
-                            <Text>{content as string}</Text>
-                        </div>
-                    );
-                }
-
-                return (
-                    <div key={idx} className={`cvat-canvas-hints-block ${className || ''}`}>
-                        <ul>
-                            {(content as string[]).map((line, secIdx) => (
-                                <li key={secIdx}>{line}</li>
-                            ))}
-                        </ul>
-                    </div>
-                );
-            });
-
             return (
                 <div style={{ filter: 'none' }} className='cvat-canvas-hints-container'>
-                    { blocks }
+                    <div className='cvat-canvas-hints-markdown'>
+                        <CVATMarkdown>{hints}</CVATMarkdown>
+                    </div>
                     { topic !== FORCE_MESSAGE_FLAG && (
                         <Button
                             onClick={() => {

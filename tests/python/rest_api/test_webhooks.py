@@ -10,7 +10,13 @@ import pytest
 from cvat_sdk.api_client.api_client import ApiClient, Endpoint
 from deepdiff import DeepDiff
 
-from shared.utils.config import delete_method, get_method, patch_method, post_method
+from shared.utils.config import (
+    delete_method,
+    get_method,
+    get_paginated_collection,
+    patch_method,
+    post_method,
+)
 
 from .utils import CollectionSimpleFilterTestBase
 
@@ -587,11 +593,10 @@ class TestWebhooksListFilters(CollectionSimpleFilterTestBase):
 @pytest.mark.usefixtures("restore_db_per_class")
 class TestGetListWebhooks:
     def test_can_get_webhooks_list(self, webhooks):
-        response = get_method("admin2", "webhooks")
+        results = get_paginated_collection("admin2", "webhooks")
 
-        assert response.status_code == HTTPStatus.OK
-        assert all(["secret" not in webhook for webhook in response.json()["results"]])
-        assert DeepDiff(webhooks.raw, response.json()["results"], ignore_order=True) == {}
+        assert all(["secret" not in webhook for webhook in results])
+        assert DeepDiff(webhooks.raw, results, ignore_order=True) == {}
 
     def test_admin_can_get_webhooks_for_project(self, webhooks):
         pid = next(

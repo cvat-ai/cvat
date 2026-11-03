@@ -1,7 +1,7 @@
 openapi: 3.0.3
 info:
   title: CVAT REST API
-  version: 2.76.1
+  version: 2.81.1
   description: REST API for Computer Vision Annotation Tool (CVAT)
   termsOfService: https://www.google.com/policies/terms/
   contact:
@@ -2521,7 +2521,7 @@ paths:
           enum:
           - annotation
           - ground_truth
-          - consensus_replica
+          - replica
       tags:
       - jobs
       security:
@@ -2592,6 +2592,12 @@ paths:
                   - 10
                   - 18
                 summary: create gt job with manual frame selection
+              CreateAReplicaJob:
+                value:
+                  type: replica
+                  task_id: 17
+                  parent_job_id: 42
+                summary: create a replica job
         required: true
       security:
       - tokenAuth: []
@@ -2671,7 +2677,7 @@ paths:
         Related annotations will be deleted as well.
 
         Please note, that not every job can be removed. Currently,
-        it is only available for Ground Truth jobs.
+        it is only available for Ground Truth and replica jobs.
       summary: Delete a job
       parameters:
       - in: path
@@ -6031,7 +6037,7 @@ paths:
 
           Details about the syntax used can be found at the link: https://jsonlogic.com/
 
-           Available filter_fields: ['assignee', 'dimension', 'id', 'media_type', 'mode', 'name', 'owner', 'project_id', 'project_name', 'status', 'subset', 'tracker_link', 'updated_date', 'validation_mode'].
+           Available filter_fields: ['assignee', 'created_date', 'dimension', 'id', 'media_type', 'mode', 'name', 'owner', 'project_id', 'project_name', 'status', 'subset', 'tracker_link', 'updated_date', 'validation_mode'].
 
           There are few examples for complex filtering tasks:
 
@@ -6121,9 +6127,9 @@ paths:
         required: false
         in: query
         description: 'Which field to use when ordering the results. Available ordering_fields:
-          [''assignee'', ''dimension'', ''id'', ''media_type'', ''mode'', ''name'',
-          ''owner'', ''project_id'', ''project_name'', ''status'', ''subset'', ''tracker_link'',
-          ''updated_date'', ''validation_mode'']'
+          [''assignee'', ''created_date'', ''dimension'', ''id'', ''media_type'',
+          ''mode'', ''name'', ''owner'', ''project_id'', ''project_name'', ''status'',
+          ''subset'', ''tracker_link'', ''updated_date'', ''validation_mode'']'
         schema:
           type: string
       - name: status
@@ -7312,12 +7318,39 @@ paths:
       operationId: users_retrieve
       summary: Get user details
       parameters:
+      - in: header
+        name: X-Organization
+        schema:
+          type: string
+        description: |
+          Organization unique slug.
+          If omitted, results from all organizations available to the user are returned
+          (unfiltered). An empty value ("") selects the personal sandbox workspace only.
+          A non-empty value selects that organization.
       - in: path
         name: id
         schema:
           type: integer
         description: A unique integer value identifying this user.
         required: true
+      - in: query
+        name: org
+        schema:
+          type: string
+        description: |
+          Organization unique slug.
+          If omitted, results from all organizations available to the user are returned
+          (unfiltered). An empty value ("") selects the personal sandbox workspace only.
+          A non-empty value selects that organization.
+      - in: query
+        name: org_id
+        schema:
+          type: integer
+        description: |
+          Organization unique id.
+          If omitted, results from all organizations available to the user are returned
+          (unfiltered). An empty value ("") selects the personal sandbox workspace only.
+          A positive integer selects that organization.
       tags:
       - users
       security:
@@ -8660,6 +8693,18 @@ components:
         * `KEY_FILE_PATH` - KEY_FILE_PATH
         * `ANONYMOUS_ACCESS` - ANONYMOUS_ACCESS
         * `CONNECTION_STRING` - CONNECTION_STRING
+    CvatUsageReasonEnum:
+      enum:
+      - work_project
+      - academic_research
+      - teaching_or_coursework
+      - personal_project
+      type: string
+      description: |-
+        * `work_project` - work_project
+        * `academic_research` - academic_research
+        * `teaching_or_coursework` - teaching_or_coursework
+        * `personal_project` - personal_project
     DataMetaRead:
       type: object
       properties:
@@ -9154,6 +9199,11 @@ components:
         * `update:project` - UPDATE:PROJECT
         * `update:task` - UPDATE:TASK
         * `update:user` - UPDATE:USER
+    ExtrapolationEnum:
+      enum:
+      - clamp
+      type: string
+      description: '* `clamp` - clamp'
     FileInfo:
       type: object
       properties:
@@ -9308,6 +9358,70 @@ components:
       required:
       - function
       - task
+    GroundTruthJobCreateRequest:
+      type: object
+      properties:
+        assignee:
+          type: integer
+          nullable: true
+        type:
+          $ref: '#/components/schemas/GroundTruthJobCreateTypeEnum'
+        task_id:
+          type: integer
+        frame_selection_method:
+          $ref: '#/components/schemas/FrameSelectionMethod'
+        frames:
+          type: array
+          items:
+            type: integer
+            minimum: 0
+          description: |
+            The list of frame ids. Applicable only to the "manual" frame selection method
+        frame_count:
+          type: integer
+          minimum: 1
+          description: |
+            The number of frames included in the GT job.
+            Applicable only to the "random_uniform" frame selection method
+        frame_share:
+          type: number
+          format: double
+          description: |
+            The share of frames included in the GT job.
+            Applicable only to the "random_uniform" frame selection method
+        frames_per_job_count:
+          type: integer
+          minimum: 1
+          description: |
+            The number of frames included in the GT job from each annotation job.
+            Applicable only to the "random_per_job" frame selection method
+        frames_per_job_share:
+          type: number
+          format: double
+          description: |
+            The share of frames included in the GT job from each annotation job.
+            Applicable only to the "random_per_job" frame selection method
+        random_seed:
+          type: integer
+          minimum: 0
+          description: |
+            The seed value for the random number generator.
+            The same value will produce the same frame sets.
+            Applicable only to random frame selection methods.
+            By default, a random value is used.
+      required:
+      - task_id
+      - type
+    GroundTruthJobCreateTypeEnum:
+      enum:
+      - ground_truth
+      type: string
+      description: '* `ground_truth` - GROUND_TRUTH'
+    InputEnum:
+      enum:
+      - gt.shape_area
+      type: string
+      description: '* `gt.shape_area` - gt.shape_area'
     InputTypeEnum:
       enum:
       - checkbox
@@ -9573,10 +9687,6 @@ components:
           type: integer
           nullable: true
           readOnly: true
-        consensus_replicas:
-          type: integer
-          readOnly: true
-          deprecated: true
         replicas_count:
           type: integer
           readOnly: true
@@ -9607,12 +9717,12 @@ components:
       enum:
       - annotation
       - ground_truth
-      - consensus_replica
+      - replica
       type: string
       description: |-
         * `annotation` - ANNOTATION
         * `ground_truth` - GROUND_TRUTH
-        * `consensus_replica` - CONSENSUS_REPLICA
+        * `replica` - REPLICA
     JobValidationLayoutRead:
       type: object
       properties:
@@ -9634,63 +9744,14 @@ components:
           description: |
             The list of real (validation) frame ids for honeypots in the job
     JobWriteRequest:
-      type: object
-      properties:
-        assignee:
-          type: integer
-          nullable: true
-        stage:
-          $ref: '#/components/schemas/JobStage'
-        state:
-          $ref: '#/components/schemas/OperationStatus'
-        type:
-          $ref: '#/components/schemas/JobType'
-        task_id:
-          type: integer
-        frame_selection_method:
-          $ref: '#/components/schemas/FrameSelectionMethod'
-        frame_count:
-          type: integer
-          minimum: 1
-          description: |
-            The number of frames included in the GT job.
-            Applicable only to the "random_uniform" frame selection method
-        frame_share:
-          type: number
-          format: double
-          description: |
-            The share of frames included in the GT job.
-            Applicable only to the "random_uniform" frame selection method
-        frames_per_job_count:
-          type: integer
-          minimum: 1
-          description: |
-            The number of frames included in the GT job from each annotation job.
-            Applicable only to the "random_per_job" frame selection method
-        frames_per_job_share:
-          type: number
-          format: double
-          description: |
-            The share of frames included in the GT job from each annotation job.
-            Applicable only to the "random_per_job" frame selection method
-        random_seed:
-          type: integer
-          minimum: 0
-          description: |
-            The seed value for the random number generator.
-            The same value will produce the same frame sets.
-            Applicable only to random frame selection methods.
-            By default, a random value is used.
-        frames:
-          type: array
-          items:
-            type: integer
-            minimum: 0
-          description: |
-            The list of frame ids. Applicable only to the "manual" frame selection method
-      required:
-      - task_id
-      - type
+      oneOf:
+      - $ref: '#/components/schemas/GroundTruthJobCreateRequest'
+      - $ref: '#/components/schemas/ReplicaJobCreateRequest'
+      discriminator:
+        propertyName: type
+        mapping:
+          ground_truth: '#/components/schemas/GroundTruthJobCreateRequest'
+          replica: '#/components/schemas/ReplicaJobCreateRequest'
     JobsSummary:
       type: object
       properties:
@@ -11220,12 +11281,14 @@ components:
           description: The parent requirement. Child requirements inherit comparison
             settings from it.
         iou_threshold:
-          type: number
-          format: double
-          maximum: 1
-          minimum: 0
+          oneOf:
+          - type: number
+            minimum: 0
+            maximum: 1
+          - $ref: '#/components/schemas/SimilarityThresholdPolicyRequest'
           nullable: true
-          description: Used for distinction between matched / unmatched shapes
+          description: A constant threshold or an IoU policy by GT shape area (rectangle,
+            polygon, mask, ellipse). Null inherits the whole threshold from the parent.
         point_size:
           type: number
           format: double
@@ -11233,24 +11296,25 @@ components:
           minimum: 0
           nullable: true
           description: |-
-            Like IoU threshold, but for points.
-            The percent of the bbox side, used as the radius of the circle around the GT point,
-            where the checked point is expected to be. For boxes with different width and
-            height, the "side" is computed as a geometric mean of the width and height.
-            Read more: https://cocodataset.org/#keypoints-eval
+            The point "size" (the OKS sigma), as a fraction of the object size, defined by
+            the point size base. Corresponds to the standard deviation of the keypoint position.
+            Larger values give larger areas around the GT points, where the checked points
+            are accepted.
+            Read more about the point matching in the documentation.
         point_size_base:
           nullable: true
           description: |-
-            When comparing point annotations (including both separate points and point groups),
+            When comparing point groups, skeletons, and skeleton keypoints,
             the point size parameter defines matching area for each GT point based to the
             object size. The point size base parameter allows to configure how to determine
-            the object size.
+            the object size. Single points without a group are always compared
+            using the image size.
             If image_size, the image size is used. Useful if each point
             annotation represents a separate object or boxes grouped with points do not
             represent object boundaries.
             If group_bbox_size, the object size is based on
-            the point group bbox size. Useful if each point group represents an object
-            or there is a bbox grouped with points, representing the object size.
+            the point group or skeleton bbox size. Useful if each point group represents
+            an object or there is a bbox grouped with points, representing the object size.
 
 
             * `image_size` - IMAGE_SIZE
@@ -11462,6 +11526,39 @@ components:
           title: Active
           description: Designates whether this user should be treated as active. Unselect
             this instead of deleting accounts.
+        cvat_usage_reason:
+          description: |-
+            The main reason the user uses CVAT.
+
+            * `work_project` - work_project
+            * `academic_research` - academic_research
+            * `teaching_or_coursework` - teaching_or_coursework
+            * `personal_project` - personal_project
+          oneOf:
+          - $ref: '#/components/schemas/CvatUsageReasonEnum'
+          - $ref: '#/components/schemas/BlankEnum'
+        primary_role:
+          type: string
+          description: A predefined role code or custom role text.
+          maxLength: 255
+        planned_activities:
+          type: array
+          items:
+            $ref: '#/components/schemas/PlannedActivitiesEnum'
+          description: Predefined activity codes selected by the user.
+          maxItems: 6
+        data_types:
+          type: array
+          items:
+            type: string
+            minLength: 1
+            maxLength: 255
+          description: Predefined data type codes and optionally one custom value.
+          maxItems: 6
+        discovery_source:
+          type: string
+          description: A predefined discovery source code or custom text.
+          maxLength: 255
     PatchedWebhookWriteRequest:
       type: object
       properties:
@@ -11487,6 +11584,22 @@ components:
           items:
             $ref: '#/components/schemas/EventsEnum'
           writeOnly: true
+    PlannedActivitiesEnum:
+      enum:
+      - set_up_projects
+      - annotate_data
+      - review_quality
+      - manage_annotators
+      - connect_models
+      - evaluate_for_organization
+      type: string
+      description: |-
+        * `set_up_projects` - set_up_projects
+        * `annotate_data` - annotate_data
+        * `review_quality` - review_quality
+        * `manage_annotators` - manage_annotators
+        * `connect_models` - connect_models
+        * `evaluate_for_organization` - evaluate_for_organization
     Plugins:
       type: object
       properties:
@@ -12068,12 +12181,14 @@ components:
           type: object
           readOnly: true
         iou_threshold:
-          type: number
-          format: double
-          maximum: 1
-          minimum: 0
+          oneOf:
+          - type: number
+            minimum: 0
+            maximum: 1
+          - $ref: '#/components/schemas/SimilarityThresholdPolicy'
           nullable: true
-          description: Used for distinction between matched / unmatched shapes
+          description: A constant threshold or an IoU policy by GT shape area (rectangle,
+            polygon, mask, ellipse). Null inherits the whole threshold from the parent.
         point_size:
           type: number
           format: double
@@ -12081,24 +12196,25 @@ components:
           minimum: 0
           nullable: true
           description: |-
-            Like IoU threshold, but for points.
-            The percent of the bbox side, used as the radius of the circle around the GT point,
-            where the checked point is expected to be. For boxes with different width and
-            height, the "side" is computed as a geometric mean of the width and height.
-            Read more: https://cocodataset.org/#keypoints-eval
+            The point "size" (the OKS sigma), as a fraction of the object size, defined by
+            the point size base. Corresponds to the standard deviation of the keypoint position.
+            Larger values give larger areas around the GT points, where the checked points
+            are accepted.
+            Read more about the point matching in the documentation.
         point_size_base:
           nullable: true
           description: |-
-            When comparing point annotations (including both separate points and point groups),
+            When comparing point groups, skeletons, and skeleton keypoints,
             the point size parameter defines matching area for each GT point based to the
             object size. The point size base parameter allows to configure how to determine
-            the object size.
+            the object size. Single points without a group are always compared
+            using the image size.
             If image_size, the image size is used. Useful if each point
             annotation represents a separate object or boxes grouped with points do not
             represent object boundaries.
             If group_bbox_size, the object size is based on
-            the point group bbox size. Useful if each point group represents an object
-            or there is a bbox grouped with points, representing the object size.
+            the point group or skeleton bbox size. Useful if each point group represents
+            an object or there is a bbox grouped with points, representing the object size.
 
 
             * `image_size` - IMAGE_SIZE
@@ -12238,12 +12354,14 @@ components:
           description: Required for root requirements and forbidden for nested requirements.
             Must identify an existing requirement from the selected quality settings.
         iou_threshold:
-          type: number
-          format: double
-          maximum: 1
-          minimum: 0
+          oneOf:
+          - type: number
+            minimum: 0
+            maximum: 1
+          - $ref: '#/components/schemas/SimilarityThresholdPolicyRequest'
           nullable: true
-          description: Used for distinction between matched / unmatched shapes
+          description: A constant threshold or an IoU policy by GT shape area (rectangle,
+            polygon, mask, ellipse). Null inherits the whole threshold from the parent.
         point_size:
           type: number
           format: double
@@ -12251,24 +12369,25 @@ components:
           minimum: 0
           nullable: true
           description: |-
-            Like IoU threshold, but for points.
-            The percent of the bbox side, used as the radius of the circle around the GT point,
-            where the checked point is expected to be. For boxes with different width and
-            height, the "side" is computed as a geometric mean of the width and height.
-            Read more: https://cocodataset.org/#keypoints-eval
+            The point "size" (the OKS sigma), as a fraction of the object size, defined by
+            the point size base. Corresponds to the standard deviation of the keypoint position.
+            Larger values give larger areas around the GT points, where the checked points
+            are accepted.
+            Read more about the point matching in the documentation.
         point_size_base:
           nullable: true
           description: |-
-            When comparing point annotations (including both separate points and point groups),
+            When comparing point groups, skeletons, and skeleton keypoints,
             the point size parameter defines matching area for each GT point based to the
             object size. The point size base parameter allows to configure how to determine
-            the object size.
+            the object size. Single points without a group are always compared
+            using the image size.
             If image_size, the image size is used. Useful if each point
             annotation represents a separate object or boxes grouped with points do not
             represent object boundaries.
             If group_bbox_size, the object size is based on
-            the point group bbox size. Useful if each point group represents an object
-            or there is a bbox grouped with points, representing the object size.
+            the point group or skeleton bbox size. Useful if each point group represents
+            an object or there is a bbox grouped with points, representing the object size.
 
 
             * `image_size` - IMAGE_SIZE
@@ -12435,12 +12554,14 @@ components:
           description: The parent requirement. Child requirements inherit comparison
             settings from it.
         iou_threshold:
-          type: number
-          format: double
-          maximum: 1
-          minimum: 0
+          oneOf:
+          - type: number
+            minimum: 0
+            maximum: 1
+          - $ref: '#/components/schemas/SimilarityThresholdPolicy'
           nullable: true
-          description: Used for distinction between matched / unmatched shapes
+          description: A constant threshold or an IoU policy by GT shape area (rectangle,
+            polygon, mask, ellipse). Null inherits the whole threshold from the parent.
         point_size:
           type: number
           format: double
@@ -12448,24 +12569,25 @@ components:
           minimum: 0
           nullable: true
           description: |-
-            Like IoU threshold, but for points.
-            The percent of the bbox side, used as the radius of the circle around the GT point,
-            where the checked point is expected to be. For boxes with different width and
-            height, the "side" is computed as a geometric mean of the width and height.
-            Read more: https://cocodataset.org/#keypoints-eval
+            The point "size" (the OKS sigma), as a fraction of the object size, defined by
+            the point size base. Corresponds to the standard deviation of the keypoint position.
+            Larger values give larger areas around the GT points, where the checked points
+            are accepted.
+            Read more about the point matching in the documentation.
         point_size_base:
           nullable: true
           description: |-
-            When comparing point annotations (including both separate points and point groups),
+            When comparing point groups, skeletons, and skeleton keypoints,
             the point size parameter defines matching area for each GT point based to the
             object size. The point size base parameter allows to configure how to determine
-            the object size.
+            the object size. Single points without a group are always compared
+            using the image size.
             If image_size, the image size is used. Useful if each point
             annotation represents a separate object or boxes grouped with points do not
             represent object boundaries.
             If group_bbox_size, the object size is based on
-            the point group bbox size. Useful if each point group represents an object
-            or there is a bbox grouped with points, representing the object size.
+            the point group or skeleton bbox size. Useful if each point group represents
+            an object or there is a bbox grouped with points, representing the object size.
 
 
             * `image_size` - IMAGE_SIZE
@@ -12607,12 +12729,14 @@ components:
           description: The parent requirement. Child requirements inherit comparison
             settings from it.
         iou_threshold:
-          type: number
-          format: double
-          maximum: 1
-          minimum: 0
+          oneOf:
+          - type: number
+            minimum: 0
+            maximum: 1
+          - $ref: '#/components/schemas/SimilarityThresholdPolicyRequest'
           nullable: true
-          description: Used for distinction between matched / unmatched shapes
+          description: A constant threshold or an IoU policy by GT shape area (rectangle,
+            polygon, mask, ellipse). Null inherits the whole threshold from the parent.
         point_size:
           type: number
           format: double
@@ -12620,24 +12744,25 @@ components:
           minimum: 0
           nullable: true
           description: |-
-            Like IoU threshold, but for points.
-            The percent of the bbox side, used as the radius of the circle around the GT point,
-            where the checked point is expected to be. For boxes with different width and
-            height, the "side" is computed as a geometric mean of the width and height.
-            Read more: https://cocodataset.org/#keypoints-eval
+            The point "size" (the OKS sigma), as a fraction of the object size, defined by
+            the point size base. Corresponds to the standard deviation of the keypoint position.
+            Larger values give larger areas around the GT points, where the checked points
+            are accepted.
+            Read more about the point matching in the documentation.
         point_size_base:
           nullable: true
           description: |-
-            When comparing point annotations (including both separate points and point groups),
+            When comparing point groups, skeletons, and skeleton keypoints,
             the point size parameter defines matching area for each GT point based to the
             object size. The point size base parameter allows to configure how to determine
-            the object size.
+            the object size. Single points without a group are always compared
+            using the image size.
             If image_size, the image size is used. Useful if each point
             annotation represents a separate object or boxes grouped with points do not
             represent object boundaries.
             If group_bbox_size, the object size is based on
-            the point group bbox size. Useful if each point group represents an object
-            or there is a bbox grouped with points, representing the object size.
+            the point group or skeleton bbox size. Useful if each point group represents
+            an object or there is a bbox grouped with points, representing the object size.
 
 
             * `image_size` - IMAGE_SIZE
@@ -12771,12 +12896,14 @@ components:
           description: The parent requirement. Child requirements inherit comparison
             settings from it.
         iou_threshold:
-          type: number
-          format: double
-          maximum: 1
-          minimum: 0
+          oneOf:
+          - type: number
+            minimum: 0
+            maximum: 1
+          - $ref: '#/components/schemas/SimilarityThresholdPolicyRequest'
           nullable: true
-          description: Used for distinction between matched / unmatched shapes
+          description: A constant threshold or an IoU policy by GT shape area (rectangle,
+            polygon, mask, ellipse). Null inherits the whole threshold from the parent.
         point_size:
           type: number
           format: double
@@ -12784,24 +12911,25 @@ components:
           minimum: 0
           nullable: true
           description: |-
-            Like IoU threshold, but for points.
-            The percent of the bbox side, used as the radius of the circle around the GT point,
-            where the checked point is expected to be. For boxes with different width and
-            height, the "side" is computed as a geometric mean of the width and height.
-            Read more: https://cocodataset.org/#keypoints-eval
+            The point "size" (the OKS sigma), as a fraction of the object size, defined by
+            the point size base. Corresponds to the standard deviation of the keypoint position.
+            Larger values give larger areas around the GT points, where the checked points
+            are accepted.
+            Read more about the point matching in the documentation.
         point_size_base:
           nullable: true
           description: |-
-            When comparing point annotations (including both separate points and point groups),
+            When comparing point groups, skeletons, and skeleton keypoints,
             the point size parameter defines matching area for each GT point based to the
             object size. The point size base parameter allows to configure how to determine
-            the object size.
+            the object size. Single points without a group are always compared
+            using the image size.
             If image_size, the image size is used. Useful if each point
             annotation represents a separate object or boxes grouped with points do not
             represent object boundaries.
             If group_bbox_size, the object size is based on
-            the point group bbox size. Useful if each point group represents an object
-            or there is a bbox grouped with points, representing the object size.
+            the point group or skeleton bbox size. Useful if each point group represents
+            an object or there is a bbox grouped with points, representing the object size.
 
 
             * `image_size` - IMAGE_SIZE
@@ -13048,6 +13176,27 @@ components:
       - password1
       - password2
       - username
+    ReplicaJobCreateRequest:
+      type: object
+      properties:
+        assignee:
+          type: integer
+          nullable: true
+        type:
+          $ref: '#/components/schemas/ReplicaJobCreateTypeEnum'
+        task_id:
+          type: integer
+        parent_job_id:
+          type: integer
+      required:
+      - parent_job_id
+      - task_id
+      - type
+    ReplicaJobCreateTypeEnum:
+      enum:
+      - replica
+      type: string
+      description: '* `replica` - REPLICA'
     Request:
       type: object
       properties:
@@ -13215,6 +13364,139 @@ components:
         * `cuboid` - CUBOID
         * `mask` - MASK
         * `skeleton` - SKELETON
+    SimilarityThresholdPolicy:
+      type: object
+      description: |-
+        An IoU threshold policy for rectangle, polygon, mask, and ellipse requirements.
+
+        The `iou_threshold` field also accepts a finite number between 0 and 1, such as `0.7`.
+        Existing numeric thresholds are returned as numbers.
+
+        A constant policy uses one threshold for all shapes:
+
+        ```json
+        {"type": "iou", "mode": "constant", "value": 0.7}
+        ```
+
+        A linear policy chooses a threshold from the GT shape area in px²:
+
+        ```json
+        {
+          "type": "iou",
+          "mode": "linear",
+          "input": "gt.shape_area",
+          "extrapolation": "clamp",
+          "points": [{"x": 100, "y": 0.4}, {"x": 1000, "y": 0.9}]
+        }
+        ```
+
+        Linear policies require 2-200 points with unique positive areas sorted in ascending order
+        and thresholds between 0 and 1. Outside the curve, the nearest endpoint applies.
+        Policies without `type` are accepted as IoU for compatibility; responses include it.
+        Other threshold types are not supported.
+
+        Setting a child's threshold to `null` restores inheritance of the whole threshold.
+        Root requirements cannot inherit their threshold.
+      properties:
+        type:
+          allOf:
+          - $ref: '#/components/schemas/SimilarityThresholdPolicyTypeEnum'
+          description: |-
+            Threshold type. Omitted type is accepted as IoU for compatibility; responses always include it.
+
+            * `iou` - iou
+        mode:
+          $ref: '#/components/schemas/SimilarityThresholdPolicyModeEnum'
+        value:
+          type: number
+          format: double
+          maximum: 1
+          minimum: 0
+        input:
+          $ref: '#/components/schemas/InputEnum'
+        extrapolation:
+          $ref: '#/components/schemas/ExtrapolationEnum'
+        points:
+          type: array
+          items:
+            $ref: '#/components/schemas/ThresholdPolicyPoint'
+          description: 'Required in linear mode: 2-200 points sorted by unique positive
+            GT area.'
+      required:
+      - mode
+    SimilarityThresholdPolicyModeEnum:
+      enum:
+      - constant
+      - linear
+      type: string
+      description: |-
+        * `constant` - constant
+        * `linear` - linear
+    SimilarityThresholdPolicyRequest:
+      type: object
+      description: |-
+        An IoU threshold policy for rectangle, polygon, mask, and ellipse requirements.
+
+        The `iou_threshold` field also accepts a finite number between 0 and 1, such as `0.7`.
+        Existing numeric thresholds are returned as numbers.
+
+        A constant policy uses one threshold for all shapes:
+
+        ```json
+        {"type": "iou", "mode": "constant", "value": 0.7}
+        ```
+
+        A linear policy chooses a threshold from the GT shape area in px²:
+
+        ```json
+        {
+          "type": "iou",
+          "mode": "linear",
+          "input": "gt.shape_area",
+          "extrapolation": "clamp",
+          "points": [{"x": 100, "y": 0.4}, {"x": 1000, "y": 0.9}]
+        }
+        ```
+
+        Linear policies require 2-200 points with unique positive areas sorted in ascending order
+        and thresholds between 0 and 1. Outside the curve, the nearest endpoint applies.
+        Policies without `type` are accepted as IoU for compatibility; responses include it.
+        Other threshold types are not supported.
+
+        Setting a child's threshold to `null` restores inheritance of the whole threshold.
+        Root requirements cannot inherit their threshold.
+      properties:
+        type:
+          allOf:
+          - $ref: '#/components/schemas/SimilarityThresholdPolicyTypeEnum'
+          description: |-
+            Threshold type. Omitted type is accepted as IoU for compatibility; responses always include it.
+
+            * `iou` - iou
+        mode:
+          $ref: '#/components/schemas/SimilarityThresholdPolicyModeEnum'
+        value:
+          type: number
+          format: double
+          maximum: 1
+          minimum: 0
+        input:
+          $ref: '#/components/schemas/InputEnum'
+        extrapolation:
+          $ref: '#/components/schemas/ExtrapolationEnum'
+        points:
+          type: array
+          items:
+            $ref: '#/components/schemas/ThresholdPolicyPointRequest'
+          description: 'Required in linear mode: 2-200 points sorted by unique positive
+            GT area.'
+      required:
+      - mode
+    SimilarityThresholdPolicyTypeEnum:
+      enum:
+      - iou
+      type: string
+      description: '* `iou` - iou'
     SortingMethod:
       enum:
       - lexicographical
@@ -13597,6 +13879,9 @@ components:
         segment_size:
           type: integer
           readOnly: true
+        initial_replicas:
+          type: integer
+          readOnly: true
         status:
           allOf:
           - $ref: '#/components/schemas/JobStatus'
@@ -13679,9 +13964,6 @@ components:
           nullable: true
           description: Describes how the task validation is performed. Configured
             at task creation
-        consensus_enabled:
-          type: boolean
-          readOnly: true
       required:
       - jobs
       - labels
@@ -13770,13 +14052,20 @@ components:
           $ref: '#/components/schemas/StorageRequest'
         source_storage:
           $ref: '#/components/schemas/StorageRequest'
+        initial_replicas:
+          type: integer
+          maximum: 2147483647
+          minimum: 0
+          description: The number of replica jobs for each annotation job. Configured
+            at task creation
         consensus_replicas:
           type: integer
           minimum: 0
-          default: 0
+          writeOnly: true
           description: |
-            The number of consensus replica jobs for each annotation job.
-            Configured at task creation
+            Deprecated. The number of replica jobs for each annotation job.
+            Use 'initial_replicas' instead
+          deprecated: true
       required:
       - name
     TasksSummary:
@@ -13789,6 +14078,38 @@ components:
           type: string
           format: uri
           readOnly: true
+    ThresholdPolicyPoint:
+      type: object
+      properties:
+        x:
+          type: number
+          format: double
+          minimum: 0
+          description: Finite GT shape area in px², strictly greater than zero.
+        y:
+          type: number
+          format: double
+          maximum: 1
+          minimum: 0
+      required:
+      - x
+      - y
+    ThresholdPolicyPointRequest:
+      type: object
+      properties:
+        x:
+          type: number
+          format: double
+          minimum: 0
+          description: Finite GT shape area in px², strictly greater than zero.
+        y:
+          type: number
+          format: double
+          maximum: 1
+          minimum: 0
+      required:
+      - x
+      - y
     Token:
       type: object
       description: Serializer for Token model.
@@ -13934,6 +14255,38 @@ components:
           type: boolean
           readOnly: true
           nullable: true
+        cvat_usage_reason:
+          description: |-
+            The main reason the user uses CVAT.
+
+            * `work_project` - work_project
+            * `academic_research` - academic_research
+            * `teaching_or_coursework` - teaching_or_coursework
+            * `personal_project` - personal_project
+          oneOf:
+          - $ref: '#/components/schemas/CvatUsageReasonEnum'
+          - $ref: '#/components/schemas/BlankEnum'
+        primary_role:
+          type: string
+          description: A predefined role code or custom role text.
+          maxLength: 255
+        planned_activities:
+          type: array
+          items:
+            $ref: '#/components/schemas/PlannedActivitiesEnum'
+          description: Predefined activity codes selected by the user.
+          maxItems: 6
+        data_types:
+          type: array
+          items:
+            type: string
+            maxLength: 255
+          description: Predefined data type codes and optionally one custom value.
+          maxItems: 6
+        discovery_source:
+          type: string
+          description: A predefined discovery source code or custom text.
+          maxLength: 255
         email_verified:
           type: boolean
           nullable: true

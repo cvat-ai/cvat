@@ -76,6 +76,34 @@ There are three types of feedbacks available for different cases:
 <img src="/images/immediate-feedback-reject.png" style="max-width: 300px;">
 <img src="/images/immediate-feedback-final-reject.png" style="max-width: 300px;">
 
+### Annotation hints
+
+When a job is rejected, the **Top problems** section may show up to three
+short hints based on the confusion matrices of requirements that were not met:
+
+- `Confused classes: "A" and "B"`
+- `Missing annotations: "C"`
+- `Extra annotations: "C"`
+
+The hints appear in a warning block. Hover over or focus the question mark next to
+a hint to read its explanation. **Missing annotations** indicates that your annotations
+might miss some objects of the indicated label. **Extra annotations** indicates that
+your annotations might include extra objects of that label. Incorrect attributes or
+inaccurate boundaries can also cause either type of discrepancy.
+
+The hints describe patterns in the checked portion of the job. They do not identify
+specific annotations or validation frames, reveal expected attribute values, or tell
+you which class should replace another. A hint about a single class means that some
+annotations could not be matched; it does not identify the cause.
+
+Only patterns with at least three discrepancies in a requirement's confusion matrix
+are considered. Missing and extra annotations are ranked separately, each with its own
+minimum of three. Both hints can appear for the same class and count toward the limit
+of three hints. A failed match can contribute to both missing and extra annotations.
+Repeated hints across requirements are combined, and the three strongest patterns are
+shown. These limits are fixed. If no pattern meets the minimum, the section is hidden.
+Hints are also available after the last validation attempt when that attempt is rejected.
+
 ## Additional details
 
 {{% alert title="Note" color="primary" %}}

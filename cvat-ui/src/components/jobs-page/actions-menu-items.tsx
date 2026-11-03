@@ -20,6 +20,8 @@ interface MenuItemsData {
     onImportAnnotations: () => void;
     onExportAnnotations: () => void;
     onMergeConsensusJob: (() => void) | null;
+    onAddReplicas: (() => void) | null;
+    onDistributeJobs: (() => void) | null;
     onDeleteJob: (() => void) | null;
     onGoToParent: (() => void) | null;
     onGoToReplicas: (() => void) | null;
@@ -38,6 +40,8 @@ enum MenuKeys {
     GO_TO_REPLICAS = 'go_to_replicas',
     VIEW_ANALYTICS = 'view-analytics',
     MERGE_SPECIFIC_CONSENSUS_JOBS = 'merge_specific_consensus_jobs',
+    ADD_REPLICAS = 'add_replicas',
+    DISTRIBUTE_JOBS = 'distribute_jobs',
     IMPORT_JOB = 'import_job',
     BUG_TRACKER = 'bug_tracker',
     PROJECT = 'project',
@@ -59,6 +63,8 @@ export default function JobActionsItems(
         onImportAnnotations,
         onExportAnnotations,
         onMergeConsensusJob,
+        onAddReplicas,
+        onDistributeJobs,
         onDeleteJob,
         jobsToAct,
         onGoToParent,
@@ -69,7 +75,8 @@ export default function JobActionsItems(
     const isBulkMode = jobsToAct.length > 1;
     const bulkAllowedKeys = [
         MenuKeys.EDIT_ASSIGNEE, MenuKeys.EDIT_STATE, MenuKeys.EDIT_STAGE, MenuKeys.EXPORT_JOB,
-        MenuKeys.DELETE, MenuKeys.GO_TO_PARENT, MenuKeys.GO_TO_REPLICAS,
+        MenuKeys.DELETE, MenuKeys.GO_TO_PARENT, MenuKeys.GO_TO_REPLICAS, MenuKeys.ADD_REPLICAS,
+        MenuKeys.DISTRIBUTE_JOBS,
     ];
     const isDisabled = (key: MenuKeys): boolean => isBulkMode && !bulkAllowedKeys.includes(key);
 
@@ -81,9 +88,13 @@ export default function JobActionsItems(
         [MenuKeys.EDIT_STATE]: jobsToAct,
         [MenuKeys.EDIT_STAGE]: jobsToAct,
         [MenuKeys.EXPORT_JOB]: jobsToAct,
-        [MenuKeys.DELETE]: jobsToAct.filter((j) => j.type === JobType.GROUND_TRUTH),
+        [MenuKeys.DELETE]: jobsToAct.filter((j) => (
+            j.type === JobType.GROUND_TRUTH || j.type === JobType.REPLICA
+        )),
         [MenuKeys.GO_TO_PARENT]: jobsToActWithParents,
         [MenuKeys.GO_TO_REPLICAS]: jobsToActWithReplicas,
+        [MenuKeys.ADD_REPLICAS]: jobsToAct,
+        [MenuKeys.DISTRIBUTE_JOBS]: jobsToAct,
     };
 
     const idsToAct = jobsToAct.map((j) => j.id);
@@ -155,12 +166,30 @@ export default function JobActionsItems(
         }, 70]);
     }
 
+    if (onAddReplicas) {
+        menuItems.push([{
+            key: MenuKeys.ADD_REPLICAS,
+            onClick: onAddReplicas,
+            label: withCount('Add replicas', MenuKeys.ADD_REPLICAS),
+            disabled: isDisabled(MenuKeys.ADD_REPLICAS),
+        }, 75]);
+    }
+
     menuItems.push([{
         key: MenuKeys.EDIT_ASSIGNEE,
         onClick: () => startEditField('assignee'),
         label: <CVATMenuEditLabel>{withCount('Assignee', MenuKeys.EDIT_ASSIGNEE)}</CVATMenuEditLabel>,
         disabled: isDisabled(MenuKeys.EDIT_ASSIGNEE),
     }, 80]);
+
+    if (onDistributeJobs) {
+        menuItems.push([{
+            key: MenuKeys.DISTRIBUTE_JOBS,
+            onClick: onDistributeJobs,
+            label: withCount('Distribute among users', MenuKeys.DISTRIBUTE_JOBS),
+            disabled: isDisabled(MenuKeys.DISTRIBUTE_JOBS),
+        }, 85]);
+    }
 
     menuItems.push([{
         key: MenuKeys.EDIT_STATE,

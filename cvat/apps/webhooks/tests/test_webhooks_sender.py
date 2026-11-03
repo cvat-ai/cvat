@@ -9,7 +9,6 @@ from allauth.account.models import EmailAddress
 from django.core import mail
 from django.test import override_settings
 from django.urls import re_path, reverse
-from django.views.generic import RedirectView
 from rest_framework import serializers, status
 
 from cvat.apps.engine.tests.utils import ApiTestBase
@@ -21,12 +20,13 @@ from cvat.urls import urlpatterns as original_urlpatterns
 from .utils import make_webhook
 
 urlpatterns = original_urlpatterns + [
+    # override_settings() does not rebuild the URLConf, which is loaded
+    # with email verification disabled by default.
     re_path(
         r"^account-confirm-email/(?P<key>[-:\w]+)/$",
         ConfirmEmailViewEx.as_view(),
         name="account_confirm_email",
     ),
-    re_path(r"^unused-account-login/$", RedirectView.as_view(url="/"), name="account_login"),
 ]
 
 CONFIRMATION_LINK_RE = re.compile(r"/account-confirm-email/(?P<key>[-:\w]+)/")
@@ -99,13 +99,29 @@ class TestServerWebhooksOnRegistration(ApiTestBase):
             "date_joined": serializers.DateTimeField().to_representation(db_user.date_joined),
             "created_via": "registration",
         }
+        _empty_profile_body = {
+            "cvat_usage_reason": "",
+            "primary_role": "",
+            "planned_activities": [],
+            "data_types": [],
+            "discovery_source": "",
+        }
 
         expected_webhook_deliveries_after_registration = [
             {
                 "event": "update:user",
                 "webhook_id": self.webhook.id,
                 "sender": None,
-                "user": {**_shared_user_body, "has_analytics_access": None, "email_verified": None},
+                "user": {
+                    **_shared_user_body,
+                    "has_analytics_access": None,
+                    "cvat_usage_reason": None,
+                    "primary_role": None,
+                    "planned_activities": None,
+                    "data_types": None,
+                    "discovery_source": None,
+                    "email_verified": None,
+                },
             },
             {
                 "event": "update:user",
@@ -113,6 +129,7 @@ class TestServerWebhooksOnRegistration(ApiTestBase):
                 "sender": None,
                 "user": {
                     **_shared_user_body,
+                    **_empty_profile_body,
                     "has_analytics_access": False,
                     "email_verified": None,
                 },
@@ -123,6 +140,7 @@ class TestServerWebhooksOnRegistration(ApiTestBase):
                 "sender": None,
                 "user": {
                     **_shared_user_body,
+                    **_empty_profile_body,
                     "has_analytics_access": False,
                     "email_verified": None,
                 },
@@ -133,6 +151,7 @@ class TestServerWebhooksOnRegistration(ApiTestBase):
                 "sender": None,
                 "user": {
                     **_shared_user_body,
+                    **_empty_profile_body,
                     "has_analytics_access": False,
                     "email_verified": False,
                 },
@@ -162,6 +181,7 @@ class TestServerWebhooksOnRegistration(ApiTestBase):
                 "sender": None,
                 "user": {
                     **_shared_user_body,
+                    **_empty_profile_body,
                     "has_analytics_access": False,
                     "email_verified": True,
                 },

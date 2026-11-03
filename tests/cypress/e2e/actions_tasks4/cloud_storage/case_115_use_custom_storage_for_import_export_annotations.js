@@ -38,7 +38,7 @@ context('Import and export annotations: specify source and target storage in mod
         displayName: 'Demo bucket',
         resource: 'public',
         manifest: 'images_with_manifest/manifest.jsonl',
-        endpointUrl: Cypress.config('minioUrl'),
+        endpointUrl: Cypress.config('motoUrl'),
     };
 
     const project = {
@@ -88,7 +88,7 @@ context('Import and export annotations: specify source and target storage in mod
     });
 
     describe(`Testing case "${caseId}"`, () => {
-        it('Export job annotations to custom minio bucket', () => {
+        it('Export job annotations to custom moto bucket', () => {
             // create an annotation task with local source & target storages
             cy.goToTaskList();
             cy.createAnnotationTask(
@@ -107,7 +107,7 @@ context('Import and export annotations: specify source and target storage in mod
             cy.openTask(task.name);
             cy.openJob();
 
-            // create dummy annotations and export them to "public" minio bucket
+            // create dummy annotations and export them to "public" moto bucket
             cy.createRectangle(createRectangleShape2Points).then(() => {
                 Cypress.config('scrollBehavior', false);
             });
@@ -126,7 +126,7 @@ context('Import and export annotations: specify source and target storage in mod
             cy.waitForFileUploadToCloudStorage();
         });
 
-        it('Export job annotations to custom minio bucket with folder path', () => {
+        it('Export job annotations to custom moto bucket with folder path', () => {
             const exportParams = {
                 type: 'annotations',
                 format,
@@ -147,7 +147,7 @@ context('Import and export annotations: specify source and target storage in mod
             cy.get('#cvat-objects-sidebar-state-item-1').should('not.exist');
         });
 
-        it('Import job annotations from custom minio "public" bucket', () => {
+        it('Import job annotations from custom moto "public" bucket', () => {
             cy.interactMenu('Upload annotations');
             cy.intercept('GET', '/api/jobs/**/annotations?**').as('uploadAnnotationsGet');
             cy.uploadAnnotations({

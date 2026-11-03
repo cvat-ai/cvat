@@ -15,6 +15,7 @@ import Modal from 'antd/lib/modal';
 import {
     Label, Project, QualitySettings, QualitySettingsSaveFields, Task,
 } from 'cvat-core-wrapper';
+import { getEffectiveQualitySettings, inheritsProjectQualitySettings } from 'utils/quality';
 import CVATLoadingSpinner from 'components/common/loading-spinner';
 import QualitySettingsForm from './shared/settings/quality-settings-form';
 import {
@@ -30,6 +31,7 @@ interface Props {
     qualitySettings: {
         settings: QualitySettings | null;
         childrenSettings: QualitySettings[] | null;
+        parentSettings: QualitySettings | null;
     };
     labels: Label[];
     setQualitySettings: (updatedSettingsData: UpdateSettingsData) => void;
@@ -40,7 +42,7 @@ function QualitySettingsTab(props: Readonly<Props>): JSX.Element | null {
     const {
         instance,
         fetching,
-        qualitySettings: { settings, childrenSettings },
+        qualitySettings: { settings, childrenSettings, parentSettings },
         labels,
         setQualitySettings,
         refreshQualitySettings,
@@ -49,8 +51,11 @@ function QualitySettingsTab(props: Readonly<Props>): JSX.Element | null {
     const [form] = Form.useForm();
     const [requirementFormVisible, setRequirementFormVisible] = useState(false);
 
+    const inherited = inheritsProjectQualitySettings(instance, settings);
+    const effectiveSettings = getEffectiveQualitySettings(instance, settings, parentSettings);
+
     const onSave = useCallback(async () => {
-        if (settings) {
+        if (settings && !inherited) {
             const values = await form.validateFields();
             const fields: QualitySettingsSaveFields = {
                 maxValidationsPerJob: values.maxValidationsPerJob ?? settings.maxValidationsPerJob,
@@ -74,7 +79,7 @@ function QualitySettingsTab(props: Readonly<Props>): JSX.Element | null {
 
             setQualitySettings({ [settings.id]: { settings, fields } });
         }
-    }, [form, settings, setQualitySettings]);
+    }, [form, settings, inherited, setQualitySettings]);
 
     const onInheritChange = useCallback((value: boolean) => {
         if (settings) {
@@ -147,13 +152,13 @@ function QualitySettingsTab(props: Readonly<Props>): JSX.Element | null {
         );
     }
 
-    if (settings) {
+    if (settings && effectiveSettings) {
         return (
             <div className='cvat-quality-control-settings-tab'>
                 {!requirementFormVisible && (
                     <Row justify='end' className='cvat-quality-settings-save-btn'>
                         <Col>
-                            <Button onClick={onSave} type='primary'>
+                            <Button onClick={onSave} type='primary' disabled={inherited}>
                                 Save
                             </Button>
                         </Col>
@@ -162,12 +167,12 @@ function QualitySettingsTab(props: Readonly<Props>): JSX.Element | null {
                 {!requirementFormVisible && header}
                 <QualitySettingsForm
                     form={form}
-                    settings={settings}
+                    settings={effectiveSettings}
                     labels={labels}
                     onSave={onSave}
                     onReload={refreshQualitySettings}
                     onRequirementFormVisibilityChange={setRequirementFormVisible}
-                    disabled={settings.inherit && instance instanceof Task && instance.projectId !== null}
+                    disabled={inherited}
                 />
             </div>
         );

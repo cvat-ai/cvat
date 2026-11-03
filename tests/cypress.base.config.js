@@ -8,7 +8,7 @@ const { allureCypress } = reporter;
 const plugins = require('./cypress/plugins/index');
 
 const baseUrl = process.env.BASE_URL ?? 'http://localhost:8080';
-const minioUrl = `http://${baseUrl.includes('3000') ? 'localhost' : 'minio'}:9000`;
+const motoUrl = `http://${baseUrl.includes('3000') ? 'localhost' : 'moto'}:9000`;
 
 module.exports = {
     video: true,
@@ -26,11 +26,12 @@ module.exports = {
         setupNodeEvents(on, config) {
             allureCypress(on, config, {
                 resultsDir: 'allure-results-e2e',
+                globalLabels: [{ name: 'layer', value: 'e2e' }],
             });
             return plugins(on, config);
         },
         testIsolation: false,
         baseUrl,
-        minioUrl,
+        motoUrl,
     },
 };

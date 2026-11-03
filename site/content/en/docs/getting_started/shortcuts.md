@@ -28,6 +28,7 @@ These shortcuts are organized by scopes. Some are global, meaning they work acro
 | **Attribute Annotation Workspace** | Must be unique across itself, Annotation Page and Global Scope.               |
 | **Review Workspace**             | Must be unique across itself, Annotation Page and Global Scope.                 |
 | **Tag Annotation Workspace**     | Must be unique across itself, Annotation Page and Global Scope.                 |
+| **Audio Workspace Controls**     | Must be unique across itself and Global Scope.                                  |
 | **Control Sidebar**              | Must be unique across itself, all workspaces, Annotation Page and Global Scope. |
 | **Objects Sidebar**              | Must be unique across itself, all workspaces, Annotation Page and Global Scope. |
 | **Labels Editor**                | Must be unique across itself and Global Scope.                                  |
@@ -43,7 +44,7 @@ You can customize shortcuts in CVAT settings.
 !["Settings" section with highlighted "Shortcuts" tab](/images/shortcuts02.png)
 
 - You'll see the shortcuts customization menu:\
-!["Shortcuts" tab with customization menu](/images/shortcuts03.png)
+!["Shortcuts" tab with customization menu](/images/shortcuts03_1.png)
 
 - As it can be seen there is a warning, that some shortcuts are reserved by a browser and cannot be overridden in CVAT,
  there isn't a specific list available for such combinations, but shortcuts such as ctrl + tab (switching tabs) or

@@ -2,7 +2,7 @@
 //
 // SPDX-License-Identifier: MIT
 
-import React, { useEffect, useState } from 'react';
+import React, { useState } from 'react';
 import Icon from '@ant-design/icons';
 import Popover from 'antd/lib/popover';
 import Button from 'antd/lib/button';
@@ -27,7 +27,7 @@ export interface Props {
     extendRegionShortkey: string;
     labels: Label[];
     activeLabelId: number | null;
-    updateActiveControl(activeControl: ActiveControl): void;
+    onUpdateActiveControl(activeControl: ActiveControl): void;
     onSetActiveLabel(labelId: number | null): void;
     onExtendRegion(labelId: number): void;
 }
@@ -71,70 +71,38 @@ function IntervalRegionControl(props: Props): JSX.Element {
         extendRegionShortkey,
         labels,
         activeLabelId,
-        updateActiveControl,
+        onUpdateActiveControl,
         onSetActiveLabel,
         onExtendRegion,
     } = props;
 
     const { keyMap } = useSelector((state: CombinedState) => state.shortcuts);
     const [popoverOpen, setPopoverOpen] = useState(false);
-    const [selectedLabelId, setSelectedLabelId] = useState<number | null>(
-        activeLabelId ?? (labels.length ? labels[0].id ?? null : null),
-    );
 
     const noLabels = labels.length === 0;
     const drawing = activeControl === ActiveControl.AUDIO_REGION_CREATE;
     const recording = activeControl === ActiveControl.AUDIO_REGION_RECORD;
     const isActive = drawing || recording;
 
-    useEffect(() => {
-        if (selectedLabelId === null && labels.length) {
-            setSelectedLabelId(activeLabelId ?? labels[0].id ?? null);
-        }
-    }, [activeLabelId, labels, selectedLabelId]);
+    const createUpdateActiveControlHandler = (nextControl: ActiveControl): (() => void) => (): void => {
+        if (noLabels || activeLabelId === null) return;
 
-    const getLabelId = (): number | null => selectedLabelId ?? activeLabelId ?? labels[0]?.id ?? null;
-    const activateLabel = (labelId: number): void => {
-        onSetActiveLabel(labelId);
-        setSelectedLabelId(labelId);
-    };
-
-    const drawInterval = (): void => {
-        if (noLabels) return;
-
-        const labelId = getLabelId();
-        if (labelId === null) return;
-
-        activateLabel(labelId);
-        updateActiveControl(ActiveControl.AUDIO_REGION_CREATE);
+        onUpdateActiveControl(nextControl);
         setPopoverOpen(false);
     };
 
-    const recordInterval = (): void => {
-        if (noLabels) return;
-
-        const labelId = getLabelId();
-        if (labelId === null) return;
-
-        activateLabel(labelId);
-        updateActiveControl(ActiveControl.AUDIO_REGION_RECORD);
-        setPopoverOpen(false);
-    };
-
+    const drawInterval = createUpdateActiveControlHandler(ActiveControl.AUDIO_REGION_CREATE);
+    const recordInterval = createUpdateActiveControlHandler(ActiveControl.AUDIO_REGION_RECORD);
     const extendInterval = (): void => {
-        if (noLabels || recording) return;
+        if (noLabels || recording || activeLabelId === null) return;
 
-        const labelId = getLabelId();
-        if (labelId === null) return;
-
-        activateLabel(labelId);
-        onExtendRegion(labelId);
+        onExtendRegion(activeLabelId);
         setPopoverOpen(false);
     };
 
     const stopActiveIntervalControl = (): void => {
         if (isActive) {
-            updateActiveControl(ActiveControl.CURSOR);
+            onUpdateActiveControl(ActiveControl.CURSOR);
             setPopoverOpen(false);
         }
     };
@@ -198,8 +166,12 @@ function IntervalRegionControl(props: Props): JSX.Element {
                     <LabelSelector
                         style={{ width: '100%' }}
                         labels={labels}
-                        value={selectedLabelId}
-                        onChange={(label: Label) => setSelectedLabelId(label.id ?? null)}
+                        value={activeLabelId}
+                        onChange={(label: Label) => {
+                            if (label.id !== undefined) {
+                                onSetActiveLabel(label.id);
+                            }
+                        }}
                     />
                 </Col>
             </Row>
@@ -210,7 +182,7 @@ function IntervalRegionControl(props: Props): JSX.Element {
                         'Draw an interval on the waveform',
                         createRegionShortkey,
                         drawInterval,
-                        selectedLabelId === null,
+                        activeLabelId === null,
                     )}
                 </Col>
                 <Col span={8}>
@@ -219,7 +191,7 @@ function IntervalRegionControl(props: Props): JSX.Element {
                         'Record an interval from playback position',
                         recordRegionShortkey,
                         recordInterval,
-                        selectedLabelId === null,
+                        activeLabelId === null,
                     )}
                 </Col>
                 <Col span={8}>
@@ -228,7 +200,7 @@ function IntervalRegionControl(props: Props): JSX.Element {
                         'Create an interval from the previous interval end to current time',
                         extendRegionShortkey,
                         extendInterval,
-                        selectedLabelId === null || recording,
+                        activeLabelId === null || recording,
                     )}
                 </Col>
             </Row>

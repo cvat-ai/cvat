@@ -41,6 +41,11 @@ export interface SerializedUser {
     date_joined?: string;
     email_verification_required: boolean;
     has_analytics_access: boolean;
+    cvat_usage_reason?: string;
+    primary_role?: string;
+    planned_activities?: string[];
+    data_types?: string[];
+    discovery_source?: string;
 }
 
 export interface SerializedUserGrowthData {
@@ -106,6 +111,7 @@ export interface SerializedTask {
     project_name: string | null;
     guide_id: number | null;
     segment_size: number;
+    initial_replicas: number;
     size: number;
     source_storage: SerializedStorage | null;
     target_storage: SerializedStorage | null;
@@ -113,7 +119,6 @@ export interface SerializedTask {
     subset: string;
     updated_date: string;
     url: string;
-    consensus_enabled: boolean;
 }
 
 export interface SerializedJob {

@@ -287,10 +287,10 @@ context('Customizable Shortcuts', () => {
             cy.get('.cvat-canvas-container').click();
             cy.realPress(['F1']);
             cy.get('.cvat-shortcuts-modal-window').should('exist').and('be.visible');
-            cy.get('.cvat-shortcuts-modal-window .ant-pagination-item-2').click();
-            cy.get('.cvat-shortcuts-modal-window-table').should('exist').and('be.visible');
-            cy.get('.cvat-shortcuts-modal-window-table').contains('Assign attribute value false');
-            cy.get('.cvat-shortcuts-modal-window-table').contains('Assign attribute value true');
+            cy.get('.cvat-shortcuts-modal-window .ant-pagination-item-1').click();
+            searchAcrossPages('Assign attribute value false');
+            cy.get('.cvat-shortcuts-modal-window .ant-pagination-item-1').click();
+            searchAcrossPages('Assign attribute value true');
             cy.realPress(['F1']);
         });
         it('Labels, Dynamic Titles and Description', () => {

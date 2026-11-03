@@ -28,6 +28,23 @@ export type ActionParameters = Record<string, {
     };
 }>;
 
+export interface ActionMetadata {
+    descriptions?: {
+        type: 'info' | 'warning';
+        message: string;
+    }[];
+}
+
+// Stores metadata used to configure action behavior at runtime.
+const actionMetadata = new WeakMap<object, ActionMetadata>();
+
+export function setActionMetadata(key: object, metadata: ActionMetadata): void {
+    actionMetadata.set(key, structuredClone({
+        ...actionMetadata.get(key),
+        ...metadata,
+    }));
+}
+
 export abstract class BaseAction {
     public abstract init(sessionInstance: Job | Task, parameters: Record<string, string | number>): Promise<void>;
     public abstract destroy(): Promise<void>;
@@ -37,6 +54,18 @@ export abstract class BaseAction {
 
     public abstract get name(): string;
     public abstract get parameters(): ActionParameters | null;
+
+    protected get metadataKey(): object {
+        return this;
+    }
+
+    public get metadata(): ActionMetadata {
+        return structuredClone(actionMetadata.get(this.metadataKey) ?? {});
+    }
+
+    public get descriptions(): ActionMetadata['descriptions'] {
+        return this.metadata.descriptions ?? [];
+    }
 }
 
 export function prepareActionParameters(declared: ActionParameters, defined: object): Record<string, string | number> {

@@ -67,24 +67,15 @@ allow if {
 
 allow if {
     input.scope in {utils.CREATE, utils.VIEW}
-    utils.is_sandbox
+    organizations.is_same_context_as_resource
     quality_utils.is_task_staff(input.resource.task, input.resource.project, input.auth)
     utils.has_perm(utils.WORKER)
 }
 
 allow if {
     input.scope in {utils.CREATE, utils.VIEW}
-    input.auth.organization.id == input.resource.organization.id
+    organizations.is_same_org_as_resource_with_perm(organizations.MAINTAINER)
     utils.has_perm(utils.USER)
-    organizations.has_perm(organizations.MAINTAINER)
-}
-
-allow if {
-    input.scope in {utils.CREATE, utils.VIEW}
-    quality_utils.is_task_staff(input.resource.task, input.resource.project, input.auth)
-    input.auth.organization.id == input.resource.organization.id
-    utils.has_perm(utils.WORKER)
-    organizations.has_perm(organizations.WORKER)
 }
 
 

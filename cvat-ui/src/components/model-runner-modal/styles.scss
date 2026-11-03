@@ -5,6 +5,17 @@
 
 @import '../../base';
 
+.cvat-model-selector-add-model {
+    display: flex;
+    gap: $grid-unit-size * 2;
+    margin: $grid-unit-size * 0.5;
+    font-weight: 500;
+
+    .cvat-model-selector-external-link {
+        margin-left: auto;
+    }
+}
+
 .cvat-runner-label-mapping-row {
     margin-bottom: $grid-unit-size;
     align-items: baseline;

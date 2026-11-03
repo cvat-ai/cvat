@@ -39,6 +39,8 @@
     --cvat-footer-text: #bababa;      /* normal text/links */
     --cvat-footer-hover: #f97526;     /* hover/active links */
     --cvat-footer-border: rgba(255,255,255,15%);
+    --td-navbar-min-height: 4rem;
+    --td-header-height: var(--td-navbar-min-height);
   }
 
 /* === Footer recolor === */
@@ -220,4 +222,201 @@ footer.bg-dark .col-12.col-lg-4 { justify-content: flex-end; }
 .navbar-nav .nav-link[href="/docs/"] span,
 .navbar-nav .nav-link[href*="auth/login"] span {
   font-weight: 400 !important;
+}
+
+// These overrides account for dynamic header height introduced by the announcement banner.
+// Otherwise, docsy has hardcoded 4rem height for fixed layouts.
+// At smaller breakpoints the header remains in normal flow.
+@include media-breakpoint-up(md) {
+  .td-navbar {
+    // Overrides: ../../themes/docsy/assets/scss/_nav.scss#L29
+    // Keeps Docsy's navbar minimum height configurable for the header calculation.
+    min-height: var(--td-navbar-min-height);
+
+    // Overrides: ../../themes/docsy/assets/scss/_nav.scss#L63-L66
+    // Places the fixed navbar directly below the announcement, when present.
+    top: calc(var(--td-header-height) - var(--td-navbar-min-height));
+  }
+
+  .td-default main > section:first-of-type {
+    // Overrides: ../../themes/docsy/assets/scss/_main-container.scss#L10-L14
+    // Preserves the section's 4rem visual spacing after clearing the full header.
+    padding-top: calc(var(--td-header-height) + 4rem);
+  }
+
+  .td-404 main,
+  .td-main main {
+    // Overrides: ../../themes/docsy/assets/scss/_main-container.scss#L27-L33
+    // Preserves the 1.5rem content spacing after clearing the full header.
+    padding-top: calc(var(--td-header-height) + 1.5rem);
+  }
+
+  .td-sidebar {
+    // Overrides: ../../themes/docsy/assets/scss/_sidebar-tree.scss#L105-L111
+    // Starts the left sidebar below the fixed header.
+    padding-top: var(--td-header-height);
+
+    &__inner {
+      @supports (position: sticky) {
+        // Overrides: ../../themes/docsy/assets/scss/_sidebar-tree.scss#L130-L136
+        // Keeps the sticky sidebar below the header and preserves its 2rem lower gap.
+        top: var(--td-header-height);
+        height: calc(100vh - var(--td-header-height) - 2rem);
+      }
+    }
+  }
+
+  .td-sidebar-nav {
+    @supports (position: sticky) {
+      // Overrides: ../../themes/docsy/assets/scss/_sidebar-tree.scss#L9-L13
+      // Retains the sidebar navigation's existing 6rem non-header allowance.
+      max-height: calc(100vh - var(--td-header-height) - 6rem);
+    }
+  }
+
+  .td-sidebar-toc {
+    @supports (position: sticky) {
+      // Overrides: ../../themes/docsy/assets/scss/_sidebar-toc.scss#L7-L11
+      // Keeps the table of contents wholly within the viewport below the header.
+      top: var(--td-header-height);
+      height: calc(100vh - var(--td-header-height));
+    }
+  }
+
+  .td-offset-anchor:target {
+    // Overrides: ../../themes/docsy/assets/scss/main.scss#L77-L84
+    // Keeps block anchors from landing beneath the fixed header.
+    top: calc(-1 * var(--td-header-height));
+  }
+
+  h2[id]::before,
+  h3[id]::before,
+  h4[id]::before,
+  h5[id]::before {
+    // Overrides: ../../themes/docsy/assets/scss/main.scss#L86-L95
+    // Retains the 1rem breathing room after clearing the fixed header for headings.
+    margin-top: calc(-1 * (var(--td-header-height) + 1rem));
+    height: calc(var(--td-header-height) + 1rem);
+  }
+}
+
+/* Site-wide audio release announcement */
+.cvat-announcement {
+  position: fixed;
+  inset: 0 0 auto;
+  z-index: 1100;
+  background: linear-gradient(100deg, #ffa900, #f50 50%, #ffa900);
+  color: #fff;
+  font-family: Sora, sans-serif;
+  padding: 12px 48px;
+  text-align: center;
+}
+
+.cvat-announcement[hidden] {
+  display: none !important;
+}
+
+.cvat-announcement-content {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  flex-wrap: wrap;
+  gap: 8px 14px;
+  font-size: 16px;
+  line-height: 1.45;
+  font-weight: 400;
+}
+
+.cvat-announcement-icon {
+  display: block;
+  flex: 0 0 32px;
+  width: 32px;
+  height: 32px;
+}
+
+.cvat-announcement-icon svg {
+  width: 100%;
+  height: 100%;
+}
+
+.cvat-announcement-content a {
+  color: #fff;
+  font-weight: 600;
+  white-space: nowrap;
+  text-decoration: underline;
+  text-underline-offset: 3px;
+}
+
+.cvat-announcement-content a:hover,
+.cvat-announcement-content a:focus {
+  color: #fff;
+  text-decoration-thickness: 2px;
+}
+
+.cvat-announcement-close {
+  position: absolute;
+  right: 13px;
+  top: 50%;
+  transform: translateY(-50%);
+  border: 0;
+  background: transparent;
+  color: #fff;
+  cursor: pointer;
+  font-size: 26px;
+  line-height: 1;
+  padding: 4px 8px;
+}
+
+/* Keep Docsy's existing body offset; padding the body again creates a blank gap. */
+@media (max-width: 1199.98px) {
+  .cvat-announcement {
+    padding: 10px 44px 10px 16px;
+    text-align: center;
+  }
+
+  .cvat-announcement-content {
+    flex-wrap: nowrap;
+    justify-content: center;
+    gap: 8px;
+    font-size: 14px;
+  }
+
+  .cvat-announcement-icon {
+    flex-basis: 28px;
+    width: 28px;
+    height: 28px;
+  }
+
+}
+
+@media (max-width: 767.98px) {
+  .cvat-announcement {
+    padding: 10px 44px 10px 12px;
+  }
+
+  .cvat-announcement-content {
+    display: grid;
+    grid-template-columns: 24px minmax(0, 1fr);
+    gap: 2px 8px;
+    justify-content: center;
+    font-size: 12px;
+    text-align: center;
+  }
+
+  .cvat-announcement-icon {
+    grid-row: 1 / 3;
+    align-self: center;
+    flex-basis: 24px;
+    width: 24px;
+    height: 24px;
+  }
+
+  .cvat-announcement-content a {
+    grid-column: 2;
+    justify-self: center;
+  }
+
+  .cvat-announcement-close {
+    right: 5px;
+  }
 }

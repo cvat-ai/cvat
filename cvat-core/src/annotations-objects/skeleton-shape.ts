@@ -274,7 +274,6 @@ export class SkeletonShape extends Shape {
         if (updatedElements.size && actionType) {
             const undoSource = this.source;
             const redoSource = this.readOnlyFields.includes('source') ? this.source : computeNewSource(this.source);
-
             const ownsTransaction = this.history.beginTransaction(actionType);
             try {
                 for (const [element, state] of updatedElements) {

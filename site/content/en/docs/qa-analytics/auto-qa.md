@@ -381,7 +381,7 @@ and open the **Settings** tab.
 The **Settings** tab has the following sections:
 
 - **General** contains the **Job selection filter**. Only matching annotation and
-  consensus-replica jobs are included in the next quality report.
+  replica jobs are included in the next quality report.
 - **Job validation** contains **Max validations per job**. A value above zero enables
   {{< ilink "/docs/qa-analytics/immediate-feedback" "Immediate feedback" >}} for the task.
 - **Requirements configuration** defines the criteria used to evaluate annotations.
@@ -478,7 +478,8 @@ The available controls depend on the requirement target:
 | General | Target metric threshold | The minimum target-metric score required to complete the requirement. |
 | General | Enabled | Includes or excludes the requirement from reports and immediate feedback. |
 | Shape comparison | IoU threshold | The minimum overlap used to distinguish matching and unmatched spatial annotations. Applies to rectangles, ellipses, polygons, masks, and polylines. |
-| Shape comparison | Point size | The relative radius of the region used to match points and skeleton keypoints. |
+| Shape comparison | OKS threshold | The minimum [OKS](#point-matching) value used to distinguish matching and unmatched points, skeletons, and skeleton keypoints. |
+| Shape comparison | Point size | The point "size", relative to the object size. Determines the size of the area used to match points, skeletons, and skeleton keypoints. Read more in [Point matching](#point-matching). |
 | Shape comparison | Point size base | Uses either the image size or the group bounding-box size as the reference for point size. |
 | Shape comparison | Line thickness | The relative thickness of the area used to match polylines. |
 | Shape comparison | Panoptic comparison | Uses only the visible parts of masks and polygons for comparison. |
@@ -494,6 +495,50 @@ The available controls depend on the requirement target:
 Save the settings after editing them. Changes apply when the next quality report is
 calculated; they do not alter existing reports. Open the **Requirements** tab to see the results.
 A requirement passes when its score meets or exceeds its threshold.
+
+##### Interpolated annotation similarity thresholds
+
+Use interpolation when small and large objects need different matching thresholds.
+To evaluate them together, use one requirement and remove area filters that were used
+only to select different thresholds. Filters still apply to both annotation sets and
+can exclude candidates before matching.
+
+Rectangle, polygon, mask, and ellipse requirements offer two IoU threshold modes:
+
+- **Constant** uses one threshold for every object and is the default.
+- **Linear interpolation** uses the area of the original ground-truth shape in px² to
+  choose a threshold. The graph connects neighboring key points with straight lines.
+
+GT shapes with areas outside the interpolated regions take their threshold from the nearest point.
+For example, a zero-area shape gets the threshold from the first point.
+
+For example, points at **100 px² / 40%** and **1000 px² / 90%** give a threshold of **65%**
+for a GT shape of **550 px²**. The area is determined only by the GT annotations.
+
+![IoU threshold interpolation from 40% at 100 px² to 90% at 1000 px²](/images/iou-threshold-interpolation.png)
+
+Hover over the graph to see the area and its calculated threshold. Left-click an empty
+position to add a point, hold the left mouse button on a point to drag it, or right-click
+a point to delete it. The table below the graph provides numerical editing, search by
+area or IoU, and add/delete controls. Use the arrows inside a numerical field to increase
+or decrease its value. Selecting a point on the graph opens its table page.
+Values are displayed with up to two decimal places, and numerical input accepts at most two
+decimal places. Opening or focusing a field preserves the precision of an existing policy.
+Invalid values are explained below their fields and must be corrected before saving.
+**Undo** restores the preceding edit in this curve editor only; its tooltip describes the
+action and the button is disabled when there is nothing to undo. **Fit** shows the whole curve.
+Switching modes preserves both drafts while the form remains open and saves the active mode.
+
+![IoU curve editor with graph and an editable table of key points](/images/iou-threshold-editor.png)
+
+Interpolation requires 2–200 points with unique positive areas and thresholds from 0 to 100%.
+Child requirements inherit the whole policy and can override it or revert to their parent.
+
+Areas are measured before panoptic comparison. When polygon or mask parts are compared
+as one object, their union determines its area. Ellipse areas use the same rotated,
+rasterized geometry as their mask-based IoU comparison.
+
+Polylines and OKS keep their existing constant thresholds.
 
 ### Quality target metrics
 
@@ -637,30 +682,20 @@ Each shape type can have their own spatial matching details. Specifically:
   objects will be cut to only the visible (non-covered) parts only, which is determined by the
   shape z order.
 - skeletons - The OKS metric [from the COCO](https://cocodataset.org/#keypoints-eval)
-  dataset is used. Briefly, each skeleton point gets a circular area around,
+  dataset is used. Each skeleton point gets a circular area around,
   determined by the _object size_ (bounding box side) and _Point size_ values,
-  where this point can be matched with the specified probability. If a bounding box is grouped
-  with the skeleton, it is used for object size computation, otherwise a bounding box of
-  visible points of the skeleton is used.
-
-  For example, consider a skeleton with 6 points and a square bounding box attached:
-
-  ![Skeleton OKS](/images/quality_comparison_skeleton1.svg)
-
-  In this example, the _Point size_ parameter is `0.05` (5%) of the bbox side.
-  Areas shown in the green color cover ~68.2% (1 sigma) of the points,
-  corresponding to each GT point. A point on the boundary of such an area will have ~88% of
-  probability to be correct. The blue-colored zone contains ~95% (2 sigma) of the correct points
-  for the corresponding GT point. A point on the boundary of such an area will have ~60% of
-  probability to be correct. These probabilities are then averaged over the visible points of the
-  skeleton to calculate their similarity. The point-size value corresponds to one standard
-  deviation in the [normal distribution](https://en.wikipedia.org/wiki/Normal_distribution).
-
+  where this point can be matched. The object size is computed from the bounding box
+  of the visible and occluded skeleton points.
+  If there are bounding boxes grouped with the skeleton, they are included in the object
+  bounding box too. If the _Point size base_ setting is _Image size_,
+  the image size is used as the object size instead, which can be useful for skeletons
+  with few visible points.
+  The exact formulas are described in [Point matching](#point-matching).
 - points - The OKS metric is used for each point group annotation. Same as for skeletons,
   _Point size_ determines relative point sizes. The _Point size base_ setting allows
   configuring whether points in point groups should use the group bounding box or the image space.
   Using image space for object size can be useful if you want to treat each point
-  as a separate annotation.
+  as a separate annotation. Read more in [Point matching](#point-matching).
 - polylines - A pair of lines is considered matching if all the points of one line lie within
   a "hull" of the other one. The "hull" is determined as the area around the polyline, such as
   if the line had some "thickness". For example, the black polyline can have a hull shown in
@@ -675,6 +710,81 @@ Each shape type can have their own spatial matching details. Specifically:
 {{% alert title="Note" color="primary" %}}
 2D cuboids are not supported.
 {{% /alert %}}
+
+#### Point matching
+
+Points, skeletons, and skeleton keypoints are matched using the
+[OKS](https://cocodataset.org/#keypoints-eval) (Object Keypoint Similarity) metric,
+following the COCO approach. For a GT point and a checked point, the OKS is computed as:
+
+```
+OKS = exp(-d^2 / (2 * s^2 * k^2)), k = 2 * sigma
+```
+
+where:
+- `d` is the distance between the points, in pixels
+- `s` is the object size, in pixels, computed as `sqrt(object area)`
+- `sigma` is the _Point size_ value, a fraction of the object size
+
+The object area depends on the _Point size base_ setting:
+- _Image size_ - the image area
+- _Group bbox size_ - the area of the mean bounding box
+  of the compared GT and checked objects (point groups or skeletons).
+
+Single points without a group are always compared in the image space.
+
+The bounding box of an object is the bounding box of all its visible and occluded parts,
+including grouped bounding boxes, if any.
+For skeleton keypoints, the object is the skeleton, and its bounding box only includes
+the skeleton points: the grouped bounding boxes are not used.
+When the object bounding boxes are used, the objects are not matched,
+if their bounding boxes don't overlap.
+
+In COCO, `sigma` is the standard deviation of the keypoint position in human annotations,
+relative to the object size, measured for each keypoint type in redundantly annotated images.
+With CVAT, such values can be estimated from a consensus-based annotation round on a set of images.
+The OKS formula models the annotation errors using the normal distribution with the doubled
+standard deviation (`k = 2 * sigma`). This is an empirical constant chosen in COCO to make
+the similarity values perceptually meaningful: small annotation errors still get high similarity.
+At the distances of 1, 2, and 3 `sigma * s` from the GT point, the OKS is `0.88`, `0.61`,
+and `0.32` respectively. CVAT uses the same constant, so the _Point size_ has the same meaning
+as in COCO, and COCO sigma values can be used as a reference.
+
+After the OKS is computed for a pair of annotations, the _Overlap threshold_ `t`
+is used to determine if they match:
+- single points and skeleton keypoints are matched, if their `OKS >= t`
+- skeletons and point annotations with multiple points are matched, if the mean OKS of
+  their points is `>= t`. The mean is computed over the visible points in any of the compared
+  annotations: a point present only in one of the annotations
+  gets `OKS = 0`. For skeletons, only keypoints with the same label can match.
+
+For single points and skeleton keypoints, it means that a checked point is matched, if it is
+inside the circle around the GT point with the radius:
+
+```
+r = 2 * sigma * s * sqrt(-2 * ln(t))
+```
+
+For example, with the _Point size_ of `5%`, the _Point size base_ set to _Group bbox size_,
+the _Overlap threshold_ of `80%` and a skeleton bounding box of `200x200` pixels,
+the radius is `2 * 0.05 * 200 * sqrt(-2 * ln(0.8)) = ~13.4` pixels.
+Larger point sizes and smaller thresholds give larger matching areas.
+With the threshold of `~88%`, the radius is exactly `sigma * s`.
+
+For skeletons and point annotations with multiple points, the mean OKS is used,
+so the radii of individual points can't be derived easily. A point can be further
+from the GT point, if the other points of the object are closer to their GT points.
+
+For example, consider a skeleton with 6 points and a square bounding box attached:
+
+![Skeleton OKS](/images/quality_comparison_skeleton1.svg)
+
+In this example, the _Point size_ is `5%` of the bbox side.
+The green circles have the radius of `sigma * s`, the OKS on their boundaries is `~0.88`.
+Following the normal distribution, ~68% of human annotations are expected to be within
+such circles around the GT points, and ~95% are expected to be within the circles of
+the doubled radius, where the OKS is `~0.61` (in practice, the values are typically higher).
+The OKS values of the skeleton points are then averaged to get the skeleton similarity.
 
 ### Tracks
 

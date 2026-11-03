@@ -1,0 +1,57 @@
+<aside class="cvat-announcement" id="cvat-audio-announcement" aria-label="Product announcement" hidden>
+  <div class="cvat-announcement-content">
+    <span class="cvat-announcement-icon" aria-hidden="true"></span>
+    <span>Beyond Vision: CVAT Goes Multimodal and Introduces Audio Annotation.</span>
+    <a href="https://www.cvat.ai/resources/changelog/2026-09-24">Learn more <span aria-hidden="true">→</span></a>
+  </div>
+  <button class="cvat-announcement-close" type="button" aria-label="Dismiss announcement" title="Dismiss announcement">×</button>
+</aside>
+<script>
+(function () {
+  var banner = document.getElementById('cvat-audio-announcement');
+  if (!banner) return;
+  var storageKey = 'cvat-audio-announcement-dismissed';
+  try {
+    if (sessionStorage.getItem(storageKey) === '1') return;
+  } catch (error) {
+    // Still display the announcement if storage is unavailable.
+  }
+  banner.hidden = false;
+  var icon = banner.querySelector('.cvat-announcement-icon');
+  var script = document.createElement('script');
+  script.src = 'https://cdnjs.cloudflare.com/ajax/libs/bodymovin/5.12.2/lottie.min.js';
+  script.async = true;
+  script.onload = function () {
+    if (!window.lottie || banner.hidden) return;
+    window.lottie.loadAnimation({
+      container: icon,
+      renderer: 'svg',
+      loop: true,
+      autoplay: true,
+      path: 'https://cdn.prod.website-files.com/62bebfb83044de7f13ae257e/6ab4fac0449188fc152d0687_icon_morph.json'
+    });
+  };
+  document.head.appendChild(script);
+  function setHeaderHeight() {
+    document.documentElement.style.setProperty(
+      '--td-header-height',
+      'calc(var(--td-navbar-min-height) + ' + banner.offsetHeight + 'px)',
+    );
+  }
+  setHeaderHeight();
+  if (window.ResizeObserver) {
+    new ResizeObserver(setHeaderHeight).observe(banner);
+  } else {
+    window.addEventListener('resize', setHeaderHeight);
+  }
+  banner.querySelector('.cvat-announcement-close').addEventListener('click', function () {
+    banner.hidden = true;
+    document.documentElement.style.removeProperty('--td-header-height');
+    try {
+      sessionStorage.setItem(storageKey, '1');
+    } catch (error) {
+      // Dismiss the announcement for this page even without storage.
+    }
+  });
+})();
+</script>

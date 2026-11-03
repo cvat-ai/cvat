@@ -10,18 +10,13 @@ from pathlib import Path
 from textwrap import dedent
 from unittest import mock
 
-import django_rq
-from django.conf import settings
 from drf_spectacular.types import OpenApiTypes
 from drf_spectacular.utils import OpenApiParameter, OpenApiResponse, extend_schema
 from rest_framework import mixins, status
 from rest_framework.decorators import action
 from rest_framework.response import Response
 
-from cvat.apps.dataset_manager.util import TmpDirManager
 from cvat.apps.engine.background import BackupExporter, DatasetExporter
-from cvat.apps.engine.handlers import clear_import_cache
-from cvat.apps.engine.log import ServerLogManager
 from cvat.apps.engine.models import Location
 from cvat.apps.engine.serializers import DataSerializer
 from cvat.apps.engine.tus import (
@@ -34,8 +29,6 @@ from cvat.apps.engine.tus import (
 from cvat.apps.engine.types import ExtendedRequest
 from cvat.apps.redis_handler.serializers import RqIdSerializer
 from cvat.utils.paths import join_untrusted_path
-
-slogger = ServerLogManager(__name__)
 
 
 class UploadMixin:
@@ -154,25 +147,6 @@ class UploadMixin:
         tus_file = TusFile.create_file(
             metadata=metadata, upload_dir=upload_dir, user_id=request.user.id
         )
-
-        # FUTURE-TODO: migrate to common TMP cache where files
-        # are deleted automatically by a periodic background job
-        if self.action in ("annotations", "dataset") and str(upload_dir) != TmpDirManager.TMP_ROOT:
-            scheduler = django_rq.get_scheduler(settings.CVAT_QUEUES.CLEANING.value)
-            file_path = upload_dir / (
-                tus_file.filename if replaceable_result_file else tus_file.file_id.as_str
-            )
-            cleaning_job = scheduler.enqueue_in(
-                time_delta=settings.IMPORT_CACHE_CLEAN_DELAY,
-                func=clear_import_cache,
-                path=file_path,
-                creation_time=file_path.stat().st_ctime,
-            )
-            slogger.glob.info(
-                f"The cleaning job {cleaning_job.id} is queued."
-                f"The check that the file {file_path} is deleted will be carried out after "
-                f"{settings.IMPORT_CACHE_CLEAN_DELAY}."
-            )
 
         return self._tus_response(
             status=status.HTTP_201_CREATED,

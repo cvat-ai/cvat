@@ -86,7 +86,7 @@ class WebhookPermission(OpenPolicyAgentPermission):
                 "id": self.obj.id,
                 "type": self.obj.type,
                 "owner": {"id": self.obj.owner_id},
-                "organization": {"id": self.obj.organization_id},
+                "organization": self.make_id_dict(self.obj.organization_id),
                 "project": None,
             }
             if self.obj.type == "project" and self.obj.project_id:
@@ -130,9 +130,7 @@ class WebhookPermission(OpenPolicyAgentPermission):
                     else None
                 )
 
-                template["organization"] = {
-                    "id": self.org_id if self.org_id is not None else None,
-                }
+                template["organization"] = self.make_id_dict(self.org_id)
                 return template
 
             if self.scope == self.Scopes.CREATE_IN_PROJECT:
@@ -141,15 +139,11 @@ class WebhookPermission(OpenPolicyAgentPermission):
                         "id": project.owner_id,
                     },
                 }
-                template["organization"] = {
-                    "id": project.organization_id,
-                }
+                template["organization"] = self.make_id_dict(project.organization_id)
                 return template
 
             if self.scope == self.Scopes.CREATE_IN_ORG:
-                template["organization"] = {
-                    "id": self.org_id,
-                }
+                template["organization"] = self.make_id_dict(self.org_id)
                 return template
 
             if self.scope == self.Scopes.CREATE_IN_SERVER:

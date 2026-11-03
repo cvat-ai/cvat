@@ -7,9 +7,9 @@ import React from 'react';
 import { Col, Row } from 'antd/lib/grid';
 
 import {
-    ActiveControl, NavigationType, ToolsBlockerState, Workspace,
+    ActiveControl, NavigationType, Workspace,
 } from 'reducers';
-import { Job } from 'cvat-core-wrapper';
+import { Job, JobType } from 'cvat-core-wrapper';
 import { RectDrawingMethod } from 'cvat-canvas-wrapper';
 import { KeyMap } from 'utils/mousetrap-react';
 import { Chapter } from 'cvat-core/src/frames';
@@ -35,7 +35,6 @@ interface Props {
     undoShortcut: string;
     redoShortcut: string;
     drawShortcut: string;
-    switchToolsBlockerShortcut: string;
     playPauseShortcut: string;
     deleteFrameShortcut: string;
     nextFrameShortcut: string;
@@ -47,7 +46,6 @@ interface Props {
     searchFrameByNameShortcut: string;
     activeControl: ActiveControl;
     rectDrawingMethod?: RectDrawingMethod;
-    toolsBlockerState: ToolsBlockerState;
     annotationFilters: object[];
     initialOpenGuide: boolean;
     showSearchFrameByName: boolean;
@@ -75,7 +73,6 @@ interface Props {
     onUndoClick(): void;
     onRedoClick(): void;
     onFinishDraw(): void;
-    onSwitchToolsBlockerState(): void;
     onDeleteFrame(): void;
     onRestoreFrame(): void;
     switchNavigationBlocked(blocked: boolean): void;
@@ -102,7 +99,6 @@ export default function AnnotationTopBarComponent(props: Props): JSX.Element {
         undoShortcut,
         redoShortcut,
         drawShortcut,
-        switchToolsBlockerShortcut,
         playPauseShortcut,
         deleteFrameShortcut,
         nextFrameShortcut,
@@ -113,7 +109,6 @@ export default function AnnotationTopBarComponent(props: Props): JSX.Element {
         searchFrameByNameShortcut,
         activeControl,
         rectDrawingMethod,
-        toolsBlockerState,
         annotationFilters,
         initialOpenGuide,
         navigationType,
@@ -140,7 +135,6 @@ export default function AnnotationTopBarComponent(props: Props): JSX.Element {
         onUndoClick,
         onRedoClick,
         onFinishDraw,
-        onSwitchToolsBlockerState,
         onDeleteFrame,
         onRestoreFrame,
         setNavigationType,
@@ -191,6 +185,7 @@ export default function AnnotationTopBarComponent(props: Props): JSX.Element {
             frameNumber={frameNumber}
             frameFilename={frameFilename}
             frameDeleted={frameDeleted}
+            frameDeletionAvailable={jobInstance.type !== JobType.REPLICA}
             deleteFrameShortcut={deleteFrameShortcut}
             focusFrameInputShortcut={focusFrameInputShortcut}
             searchFrameByNameShortcut={searchFrameByNameShortcut}
@@ -220,12 +215,9 @@ export default function AnnotationTopBarComponent(props: Props): JSX.Element {
                 activeControl={activeControl}
                 rectDrawingMethod={rectDrawingMethod}
                 drawShortcut={drawShortcut}
-                switchToolsBlockerShortcut={switchToolsBlockerShortcut}
-                toolsBlockerState={toolsBlockerState}
                 onUndoClick={onUndoClick}
                 onRedoClick={onRedoClick}
                 onFinishDraw={onFinishDraw}
-                onSwitchToolsBlockerState={onSwitchToolsBlockerState}
                 keyMap={keyMap}
             />
             <Col className='cvat-annotation-header-player-group'>

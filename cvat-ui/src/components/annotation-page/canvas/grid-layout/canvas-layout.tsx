@@ -223,6 +223,65 @@ function CanvasLayout({ type }: { type?: DimensionType }): JSX.Element {
     const singleClassName = 'cvat-canvas-grid-root-single';
     const className = !relatedFiles && children.length <= 1 ?
         `cvat-canvas-grid-root ${singleClassName}` : 'cvat-canvas-grid-root';
+    const showCommonSetups = Boolean(relatedFiles) || children.length > 1;
+    const commonSetups = (
+        <div className='cvat-grid-layout-common-setups'>
+            <CVATTooltip title='Fit views'>
+                <PicCenterOutlined
+                    onClick={() => {
+                        setLayoutConfig(fitLayout(type as DimensionType, layoutConfig));
+                        window.dispatchEvent(new Event('resize'));
+                    }}
+                />
+            </CVATTooltip>
+            <CVATTooltip title='Add context image'>
+                <PlusOutlined
+                    style={{
+                        pointerEvents: !relatedFiles ? 'none' : undefined,
+                        opacity: !relatedFiles ? 0.2 : undefined,
+                    }}
+                    disabled={!!relatedFiles}
+                    onClick={() => {
+                        const MAXIMUM_RELATED = 12;
+                        const existingRelated = layoutConfig
+                            .filter((configItem: ItemLayout) => configItem.viewType === ViewType.RELATED_IMAGE);
+
+                        if (existingRelated.length >= MAXIMUM_RELATED) {
+                            return;
+                        }
+
+                        if (existingRelated.length === 0) {
+                            setLayoutConfig(defaultLayout[type?.toUpperCase() as '2D' | '3D']['1']);
+                            return;
+                        }
+
+                        const viewIndexes = existingRelated
+                            .map((item: ItemLayout) => +(item.viewIndex as string)).sort();
+                        const max = Math.max(...viewIndexes);
+                        let viewIndex = max + 1;
+                        for (let i = 0; i < max + 1; i++) {
+                            if (!viewIndexes.includes(i)) {
+                                viewIndex = i;
+                                break;
+                            }
+                        }
+
+                        const latest = existingRelated[existingRelated.length - 1];
+                        const copy = { ...latest, offset: [0, viewIndex], viewIndex: `${viewIndex}` };
+                        setLayoutConfig(fitLayout(type as DimensionType, [...layoutConfig, copy]));
+                        window.dispatchEvent(new Event('resize'));
+                    }}
+                />
+            </CVATTooltip>
+            <CVATTooltip title='Reload layout'>
+                <ReloadOutlined onClick={() => {
+                    setLayoutConfig([...getLayout()]);
+                    window.dispatchEvent(new Event('resize'));
+                }}
+                />
+            </CVATTooltip>
+        </div>
+    );
 
     return (
         <Layout.Content>
@@ -302,68 +361,15 @@ function CanvasLayout({ type }: { type?: DimensionType }): JSX.Element {
                                 )}
 
                                 { child }
+                                {showCommonSetups && (
+                                    viewType === ViewType.CANVAS || viewType === ViewType.CANVAS_3D
+                                ) && commonSetups}
                             </div>
                         );
                     }) }
                 </ReactGridLayout>
             )}
             { type === DimensionType.DIMENSION_3D && <CanvasWrapper3DComponent /> }
-            <div className='cvat-grid-layout-common-setups'>
-                <CVATTooltip title='Fit views'>
-                    <PicCenterOutlined
-                        onClick={() => {
-                            setLayoutConfig(fitLayout(type as DimensionType, layoutConfig));
-                            window.dispatchEvent(new Event('resize'));
-                        }}
-                    />
-                </CVATTooltip>
-                <CVATTooltip title='Add context image'>
-                    <PlusOutlined
-                        style={{
-                            pointerEvents: !relatedFiles ? 'none' : undefined,
-                            opacity: !relatedFiles ? 0.2 : undefined,
-                        }}
-                        disabled={!!relatedFiles}
-                        onClick={() => {
-                            const MAXIMUM_RELATED = 12;
-                            const existingRelated = layoutConfig
-                                .filter((configItem: ItemLayout) => configItem.viewType === ViewType.RELATED_IMAGE);
-
-                            if (existingRelated.length >= MAXIMUM_RELATED) {
-                                return;
-                            }
-
-                            if (existingRelated.length === 0) {
-                                setLayoutConfig(defaultLayout[type?.toUpperCase() as '2D' | '3D']['1']);
-                                return;
-                            }
-
-                            const viewIndexes = existingRelated
-                                .map((item: ItemLayout) => +(item.viewIndex as string)).sort();
-                            const max = Math.max(...viewIndexes);
-                            let viewIndex = max + 1;
-                            for (let i = 0; i < max + 1; i++) {
-                                if (!viewIndexes.includes(i)) {
-                                    viewIndex = i;
-                                    break;
-                                }
-                            }
-
-                            const latest = existingRelated[existingRelated.length - 1];
-                            const copy = { ...latest, offset: [0, viewIndex], viewIndex: `${viewIndex}` };
-                            setLayoutConfig(fitLayout(type as DimensionType, [...layoutConfig, copy]));
-                            window.dispatchEvent(new Event('resize'));
-                        }}
-                    />
-                </CVATTooltip>
-                <CVATTooltip title='Reload layout'>
-                    <ReloadOutlined onClick={() => {
-                        setLayoutConfig([...getLayout()]);
-                        window.dispatchEvent(new Event('resize'));
-                    }}
-                    />
-                </CVATTooltip>
-            </div>
         </Layout.Content>
     );
 }

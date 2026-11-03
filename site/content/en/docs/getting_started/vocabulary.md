@@ -87,6 +87,15 @@ Related sections:
 Depends on the task data type that is defined when the
 {{< ilink "/docs/workspace/tasks-page#create-annotation-task" "task is created" >}}.
 
+### 1D
+
+The data format of 1d tasks is audio. Instead of shapes on frames, audio tasks use labeled time
+intervals on a waveform.
+
+Related sections:
+- {{< ilink "/docs/workspace/tasks-page#create-an-audio-task" "Creating an audio task" >}}
+- {{< ilink "/docs/annotation/audio-editor" "Audio Editor" >}}
+
 ### 2D
 
 The data format of 2d tasks are images and videos.

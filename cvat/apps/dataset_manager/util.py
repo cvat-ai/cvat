@@ -9,13 +9,13 @@ import os.path as osp
 import re
 import tempfile
 import zipfile
-from collections.abc import Generator, Iterable
+from collections.abc import Callable, Generator, Iterable
 from contextlib import contextmanager
 from copy import deepcopy
 from datetime import timedelta
 from enum import Enum
 from threading import Lock
-from typing import Any, Callable, Protocol
+from typing import Any, Protocol
 from uuid import UUID
 
 import attrs

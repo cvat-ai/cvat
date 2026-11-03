@@ -230,13 +230,18 @@ Cypress.Commands.add('audioOpenSlider', (controlClass) => {
     cy.get('.cvat-audio-slider-popover-overlay', { timeout: 5000 }).should('exist').and('be.visible');
 });
 
+Cypress.Commands.add('audioCloseSlider', (controlClass) => {
+    cy.get(`.${controlClass}`).click();
+    cy.get('.cvat-audio-slider-popover-overlay', { timeout: 5000 }).should('not.be.visible');
+});
+
 Cypress.Commands.add('audioSliderSetValue', (controlClass, arrowDirection, steps) => {
     cy.audioOpenSlider(controlClass);
-    cy.get('.cvat-audio-slider-popover-overlay .ant-slider-handle').should('be.visible').focus();
+    cy.get('.cvat-audio-slider-popover-overlay .ant-slider-handle').filter(':visible').focus();
     for (let i = 0; i < steps; i += 1) {
-        cy.get('.cvat-audio-slider-popover-overlay .ant-slider-handle').type(arrowDirection);
+        cy.get('.cvat-audio-slider-popover-overlay .ant-slider-handle').filter(':visible').type(arrowDirection);
     }
-    cy.get('.cvat-audio-canvas-wrapper').click('topLeft', { force: true });
+    cy.audioCloseSlider(controlClass);
 });
 
 Cypress.Commands.add('audioClearAnnotations', () => {

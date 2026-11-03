@@ -63,10 +63,10 @@ $ cvat-cli <resource> <action> --help # get help on action-specific options
 Create a task with local images:
 
 ```bash
-cvat-cli --auth user task create
-    --labels '[{"name": "car"}, {"name": "person"}]'
-    "test_task"
-    "local"
+cvat-cli --auth user task create \
+    --labels '[{"name": "car"}, {"name": "person"}]' \
+    "test_task" \
+    "local" \
     "image1.jpg" "image2.jpg"
 ```
 

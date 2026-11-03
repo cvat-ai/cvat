@@ -167,6 +167,12 @@ def jobs():
 
 
 @pytest.fixture(scope="session")
+def tasks_with_replicas(tasks, jobs):
+    task_ids = {j["task_id"] for j in jobs if j["type"] == "replica"}
+    return Container([t for t in tasks if t["id"] in task_ids])
+
+
+@pytest.fixture(scope="session")
 def jobs_wlc(jobs, tasks_wlc):  # jobs with labels count
     jobs = deepcopy(jobs)
     for job in jobs:

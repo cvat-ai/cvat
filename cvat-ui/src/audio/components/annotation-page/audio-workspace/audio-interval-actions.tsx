@@ -10,26 +10,27 @@ import Icon, {
     UnlockOutlined,
 } from '@ant-design/icons';
 import classNames from 'classnames';
-import { useDispatch } from 'react-redux';
+import { useDispatch, useSelector } from 'react-redux';
 
-import { AudioIntervalState } from 'cvat-core-wrapper';
 import {
     requestPlayAudioIntervalOnce,
     requestSetAudioPlaybackToIntervalBoundary,
     updateAudioIntervalAsync,
 } from 'actions/audio-actions';
 import CVATTooltip from 'components/common/cvat-tooltip';
+import { ActiveControl, CombinedState } from 'reducers';
 import { ThunkDispatch } from 'utils/redux';
 import {
     PlayRangeIcon,
     SeekToEndIcon,
     SeekToStartIcon,
 } from 'icons';
-import { intervalID } from './utils/audio-interval';
 
 interface Props {
-    interval: AudioIntervalState;
-    canPlayInterval?: boolean;
+    clientID: number;
+    locked: boolean;
+    hidden: boolean;
+    pinned: boolean;
     shortcuts: AudioIntervalActionShortcuts;
     more?: React.ReactNode;
 }
@@ -82,21 +83,22 @@ function AudioIntervalActionButton({
     );
 }
 
-export default function AudioIntervalActions({
-    interval,
-    canPlayInterval = true,
-    shortcuts,
-    more,
-}: Props): JSX.Element {
-    const dispatch = useDispatch<ThunkDispatch>();
+interface AudioIntervalPlayButtonProps {
+    clientID: number;
+    hidden: boolean;
+    shortcut: string;
+}
 
-    const id = intervalID(interval);
-    const locked = !!interval.lock;
-    const hidden = !!interval.hidden;
+function AudioIntervalPlayButton({
+    clientID,
+    hidden,
+    shortcut,
+}: AudioIntervalPlayButtonProps): JSX.Element {
+    const dispatch = useDispatch<ThunkDispatch>();
+    const canPlayInterval = useSelector((state: CombinedState) => (
+        state.annotation.canvas.activeControl === ActiveControl.CURSOR
+    ));
     const actionClassName = 'cvat-audio-region-item-action-btn';
-    const lockableActionClassName = classNames(actionClassName, {
-        'cvat-audio-region-item-action-btn-disabled': locked,
-    });
     const playActionClassName = classNames(actionClassName, {
         'cvat-audio-region-item-action-btn-disabled': !canPlayInterval || hidden,
     });
@@ -104,28 +106,54 @@ export default function AudioIntervalActions({
     const handlePlayInterval = useCallback((): void => {
         if (!canPlayInterval || hidden) return;
 
-        dispatch(requestPlayAudioIntervalOnce(id));
-    }, [canPlayInterval, dispatch, hidden, id]);
+        dispatch(requestPlayAudioIntervalOnce(clientID));
+    }, [canPlayInterval, clientID, dispatch, hidden]);
+
+    return (
+        <AudioIntervalActionButton
+            title={`Play interval as range ${shortcut}`}
+            className={playActionClassName}
+            onAction={handlePlayInterval}
+        >
+            <Icon component={PlayRangeIcon} aria-hidden />
+        </AudioIntervalActionButton>
+    );
+}
+
+export default function AudioIntervalActions({
+    clientID,
+    locked,
+    hidden,
+    pinned,
+    shortcuts,
+    more,
+}: Props): JSX.Element {
+    const dispatch = useDispatch<ThunkDispatch>();
+
+    const actionClassName = 'cvat-audio-region-item-action-btn';
+    const lockableActionClassName = classNames(actionClassName, {
+        'cvat-audio-region-item-action-btn-disabled': locked,
+    });
 
     const handleToggleLock = useCallback((): void => {
-        dispatch(updateAudioIntervalAsync(id, (item) => ({ lock: !item.lock })));
-    }, [dispatch, id]);
+        dispatch(updateAudioIntervalAsync(clientID, (item) => ({ lock: !item.lock })));
+    }, [clientID, dispatch]);
 
     const handleTogglePinned = useCallback((): void => {
         if (locked) return;
 
-        dispatch(updateAudioIntervalAsync(id, (item) => ({ pinned: !item.pinned })));
-    }, [dispatch, id, locked]);
+        dispatch(updateAudioIntervalAsync(clientID, (item) => ({ pinned: !item.pinned })));
+    }, [clientID, dispatch, locked]);
 
     const handleToggleHidden = useCallback((): void => {
         if (locked) return;
 
-        dispatch(updateAudioIntervalAsync(id, (item) => ({ hidden: !item.hidden })));
-    }, [dispatch, id, locked]);
+        dispatch(updateAudioIntervalAsync(clientID, (item) => ({ hidden: !item.hidden })));
+    }, [clientID, dispatch, locked]);
 
     const handleSetPlayback = useCallback((boundary: 'start' | 'end'): void => {
-        dispatch(requestSetAudioPlaybackToIntervalBoundary(id, boundary));
-    }, [dispatch, id]);
+        dispatch(requestSetAudioPlaybackToIntervalBoundary(clientID, boundary));
+    }, [clientID, dispatch]);
     const handleSetPlaybackToStart = useCallback((): void => {
         handleSetPlayback('start');
     }, [handleSetPlayback]);
@@ -148,13 +176,11 @@ export default function AudioIntervalActions({
                             </AudioIntervalActionButton>
                         </Col>
                         <Col>
-                            <AudioIntervalActionButton
-                                title={`Play interval as range ${shortcuts.playInterval}`}
-                                className={playActionClassName}
-                                onAction={handlePlayInterval}
-                            >
-                                <Icon component={PlayRangeIcon} aria-hidden />
-                            </AudioIntervalActionButton>
+                            <AudioIntervalPlayButton
+                                clientID={clientID}
+                                hidden={hidden}
+                                shortcut={shortcuts.playInterval}
+                            />
                         </Col>
                         <Col>
                             <AudioIntervalActionButton
@@ -180,20 +206,20 @@ export default function AudioIntervalActions({
                         </Col>
                         <Col>
                             <AudioIntervalActionButton
-                                title={`${interval.pinned ? 'Unpin interval' : 'Pin interval'} ${shortcuts.switchPinned}`}
+                                title={`${pinned ? 'Unpin interval' : 'Pin interval'} ${shortcuts.switchPinned}`}
                                 className={lockableActionClassName}
                                 onAction={handleTogglePinned}
                             >
-                                {interval.pinned ? <PushpinFilled /> : <PushpinOutlined />}
+                                {pinned ? <PushpinFilled /> : <PushpinOutlined />}
                             </AudioIntervalActionButton>
                         </Col>
                         <Col>
                             <AudioIntervalActionButton
-                                title={`${interval.hidden ? 'Show interval' : 'Hide interval'} ${shortcuts.switchHidden}`}
+                                title={`${hidden ? 'Show interval' : 'Hide interval'} ${shortcuts.switchHidden}`}
                                 className={lockableActionClassName}
                                 onAction={handleToggleHidden}
                             >
-                                {interval.hidden ? <EyeInvisibleFilled /> : <EyeOutlined />}
+                                {hidden ? <EyeInvisibleFilled /> : <EyeOutlined />}
                             </AudioIntervalActionButton>
                         </Col>
                     </Row>

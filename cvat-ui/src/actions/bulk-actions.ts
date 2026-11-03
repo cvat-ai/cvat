@@ -30,6 +30,7 @@ export const bulkActions = {
             items: any,
             operation: (item: any, idx: number, total: number) => Promise<void>,
             statusMessage: (item: any, idx: number, total: number) => string,
+            onSuccess?: () => void,
         };
     }) => createAction(
         BulkActionsTypes.BULK_OPERATION_FAILED, payload),
@@ -76,6 +77,7 @@ export function makeBulkOperationAsync<T>(
                     items: remainingItems,
                     operation,
                     statusMessage,
+                    onSuccess,
                 },
             }));
         } finally {

@@ -13,6 +13,7 @@ aliases:
 |Icon |Description |
 |-- |-- |
 |![Cursor icon](/images/image148.jpg)|`Cursor` (`Esc`)- a basic annotation editing tool. |
+|—|`Select objects` - activates persistent selection-box mode for selecting and editing multiple objects. See {{< ilink "/docs/annotation/manual-annotation/utilities/multi-object-selection" "Multi-object selection" >}}.|
 |![Move icon](/images/image149.jpg)|`Move the image`- a tool for moving around the image without<br/> the possibility of editing.|
 |![Rotate icon](/images/image102.jpg)|`Rotate`- two buttons to rotate the current frame<br/> a clockwise (`Ctrl+R`) and anticlockwise (`Ctrl+Shift+R`).<br/> You can enable `Rotate all images` in the settings to rotate all the images in the job|
 
@@ -33,8 +34,8 @@ aliases:
 **Shapes block** - contains all the tools for creating shapes.
 |Icon |Description |Links to section |
 |-- |-- |-- |
-|![AI Tools icon](/images/image189.jpg)|`AI Tools`|{{< ilink "/docs/annotation/auto-annotation/ai-tools" "AI Tools" >}}|
-|![OpenCV icon](/images/image201.jpg)|`OpenCV`|{{< ilink "/docs/annotation/auto-annotation/ai-tools" "OpenCV" >}}|
+|<img src="/images/ai-assistance-icon.svg" alt="AI assistance icon" width="24" height="24">|`AI assistance`|{{< ilink "/docs/annotation/auto-annotation/ai-tools" "AI assistance" >}}|
+|![OpenCV icon](/images/image201.jpg)|`OpenCV`|{{< ilink "/docs/annotation/manual-annotation/utilities/opencv-tools" "OpenCV" >}}|
 |![Rectangle icon](/images/image167.jpg)|`Rectangle`|{{< ilink "/docs/annotation/manual-annotation/shapes/shape-mode-basics" "Shape mode" >}}; {{< ilink "/docs/annotation/manual-annotation/shapes/track-mode-basics" "Track mode" >}};<br/> {{< ilink "/docs/annotation/manual-annotation/shapes/annotation-with-rectangles" "Drawing by 4 points" >}}|
 |![Polygon icon](/images/image168.jpg)|`Polygon`|{{< ilink "/docs/annotation/manual-annotation/shapes/annotation-with-polygons" "Annotation with polygons" >}}; {{< ilink "/docs/annotation/manual-annotation/shapes/annotation-with-polygons/track-mode-with-polygons" "Track mode with polygons" >}}|
 |![Polyline icon](/images/image169.jpg)|`Polyline`|{{< ilink "/docs/annotation/manual-annotation/shapes/annotation-with-polylines" "Annotation with polylines" >}}|
