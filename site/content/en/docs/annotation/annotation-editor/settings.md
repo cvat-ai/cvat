@@ -50,6 +50,8 @@ In the **Workspace** tab, you can:
   - `Source`- source of creating of objects `MANUAL`, `AUTO` or `SEMI-AUTO`.
   - `Descriptions` - description of attributes.
   - `Dimensions` - width, height and rotation for rectangles and ellipses.
+  - `Requirements` - requirement names in quality conflict tooltips (not selected by default).
+    The full list is always available in conflict cards in the right sidebar.
 
 
 - `Position of a text` - text positioning mode selection:

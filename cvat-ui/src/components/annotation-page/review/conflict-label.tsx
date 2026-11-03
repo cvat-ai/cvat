@@ -20,13 +20,14 @@ interface Props {
     severity: ConflictSeverity;
     conflict: QualityConflict;
     tooltipVisible: boolean;
+    showRequirements: boolean;
     onEnter: (conflict: QualityConflict) => void;
     onLeave: (conflict: QualityConflict) => void;
 }
 
 export default function ConflictLabel(props: Props): ReactPortal {
     const {
-        top, left, angle, scale, text, severity, darken, conflict, onEnter, onLeave, tooltipVisible,
+        top, left, angle, scale, text, severity, darken, conflict, onEnter, onLeave, tooltipVisible, showRequirements,
     } = props;
 
     const conflictColor = severity === ConflictSeverity.ERROR ? 'cvat-conflict-error' : 'cvat-conflict-warning';
@@ -37,7 +38,7 @@ export default function ConflictLabel(props: Props): ReactPortal {
             title={(
                 <>
                     <div>{text}</div>
-                    {!!conflict.requirements.length && (
+                    {showRequirements && !!conflict.requirements.length && (
                         <div className='cvat-conflict-tooltip-requirements'>
                             <div>Requirements:</div>
                             {conflict.requirements.map((requirement) => (

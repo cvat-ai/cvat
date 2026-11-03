@@ -1039,7 +1039,9 @@ export class CanvasModelImpl extends MasterImpl implements CanvasModel {
         if (typeof configuration.textContent === 'string') {
             const splitted = configuration.textContent.split(',').filter((entry: string) => !!entry);
             if (splitted.every((entry: string) => (
-                ['id', 'label', 'attributes', 'source', 'descriptions', 'dimensions', 'layer', 'zOrder'].includes(entry)
+                [
+                    'id', 'label', 'attributes', 'source', 'descriptions', 'dimensions', 'layer', 'zOrder', 'requirements',
+                ].includes(entry)
             ))) {
                 this.data.configuration.textContent = configuration.textContent;
             }
