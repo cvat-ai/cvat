@@ -19,8 +19,8 @@ import jsonLogic from 'json-logic-js';
 
 import { ResourceFilterHOC, defaultVisibility } from 'components/resource-sorting-filtering';
 import { generateCSV, downloadCSV as triggerCSVDownload } from 'utils/csv-writer';
+import { useScopedState } from 'utils/scoped-state';
 import CVATTooltip from './cvat-tooltip';
-import { useTableState } from './table-state';
 
 type Props = TableProps & {
     stateKey?: string;
@@ -102,7 +102,7 @@ function CVATTable(props: Props): JSX.Element {
     const [FilteringComponent, setFilteringComponent] = useState<ReturnType<typeof ResourceFilterHOC> | null>(null);
     const stateField = (field: string): string | undefined => (stateKey ? `${stateKey}:${field}` : undefined);
     const suppliedFilter = queryBuilder?.value;
-    const [filterState, setFilterState] = useTableState(stateField('filter'), {
+    const [filterState, setFilterState] = useScopedState(stateField('filter'), {
         value: suppliedFilter ?? null,
         suppliedValue: suppliedFilter,
     });
@@ -114,10 +114,10 @@ function CVATTable(props: Props): JSX.Element {
     useEffect(() => {
         if (suppliedFilterChanged) setFilterValue(suppliedFilter ?? null);
     }, [suppliedFilterChanged, suppliedFilter, setFilterValue]);
-    const [searchPhrase, setSearchPhrase] = useTableState<string | null>(stateField('search'), null);
-    const [searchInput, setSearchInput] = useTableState(stateField('searchInput'), '');
-    const [hiddenColumns, setHiddenColumns] = useTableState<Record<string, boolean>>(stateField('columns'), {});
-    const [tableChange, setTableChange] = useTableState<{
+    const [searchPhrase, setSearchPhrase] = useScopedState<string | null>(stateField('search'), null);
+    const [searchInput, setSearchInput] = useScopedState(stateField('searchInput'), '');
+    const [hiddenColumns, setHiddenColumns] = useScopedState<Record<string, boolean>>(stateField('columns'), {});
+    const [tableChange, setTableChange] = useScopedState<{
         pagination?: Exclude<TableProps['pagination'], false>;
         filters?: Parameters<NonNullable<TableProps['onChange']>>[1];
         sorter?: { columnKey?: React.Key; order?: 'ascend' | 'descend' | null }[];

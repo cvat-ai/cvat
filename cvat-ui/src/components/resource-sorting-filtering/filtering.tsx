@@ -19,7 +19,7 @@ import Menu from 'antd/lib/menu';
 import { useSelector } from 'react-redux';
 import { CombinedState } from 'reducers';
 import { User } from 'cvat-core-wrapper';
-import { useTableState } from 'components/common/table-state';
+import { useScopedState } from 'utils/scoped-state';
 
 interface ResourceFilterProps {
     stateKey?: string;
@@ -176,12 +176,12 @@ export default function ResourceFilterHOC(
         const user = useSelector((state: CombinedState) => state.auth.user);
         const [isMounted, setIsMounted] = useState<boolean>(false);
         const [recentFilters, setRecentFilters] = useState<Record<string, string>>({});
-        const [appliedFilter, setAppliedFilter] = useTableState(
+        const [appliedFilter, setAppliedFilter] = useScopedState(
             stateKey ? `${stateKey}:applied` : undefined, defaultAppliedFilter,
         );
-        const [state, setState] = useTableState<ImmutableTree>(stateKey ? `${stateKey}:tree` : undefined, defaultTree);
+        const [state, setState] = useScopedState<ImmutableTree>(stateKey ? `${stateKey}:tree` : undefined, defaultTree);
         const initialized = useRef(false);
-        const [lastValue, setLastValue] = useTableState(stateKey ? `${stateKey}:value` : undefined, value);
+        const [lastValue, setLastValue] = useScopedState(stateKey ? `${stateKey}:value` : undefined, value);
 
         const predefinedFilters = getPredefinedFilters(user, predefinedFilterValues);
 
