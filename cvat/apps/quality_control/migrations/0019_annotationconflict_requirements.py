@@ -7,7 +7,7 @@ from django.db import migrations, models
 
 class Migration(migrations.Migration):
     dependencies = [
-        ("quality_control", "0015_qualityrequirement_threshold_policy"),
+        ("quality_control", "0018_qualityrequirement_boundary_f"),
     ]
 
     operations = [
