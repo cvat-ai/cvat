@@ -771,5 +771,5 @@ Set the `CVAT_HEALTH_DISK_USAGE_MAX` environment variable before starting CVAT,
 and it will be passed to the backend containers by `docker-compose.yml`:
 
 ```shell
-export CVAT_HEALTH_DISK_USAGE_MAX=95
+export CVAT_HEALTH_DISK_USAGE_MAX=90
 ```
