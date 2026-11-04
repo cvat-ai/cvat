@@ -8052,7 +8052,6 @@ components:
         id:
           type: integer
           readOnly: true
-          nullable: true
         name:
           type: string
           readOnly: true

@@ -43,7 +43,7 @@ class AnnotationIdSerializer(serializers.ModelSerializer):
 
 
 class AnnotationConflictRequirementSerializer(serializers.Serializer):
-    id = serializers.IntegerField(allow_null=True, read_only=True)
+    id = serializers.IntegerField(read_only=True)
     name = serializers.CharField(read_only=True)
 
 

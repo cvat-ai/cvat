@@ -1232,9 +1232,7 @@ class TestListQualityConflicts(_PermissionTestBase):
         ]
         for conflict in conflicts:
             assert len(conflict["requirements"]) == len(expected_requirements)
-            assert (
-                DeepDiff(expected_requirements, conflict["requirements"], ignore_order=True) == {}
-            )
+            assert conflict["requirements"] == sorted(expected_requirements, key=lambda r: r["id"])
 
         with make_api_client(admin_user) as api_client:
             _, response = api_client.quality_api.retrieve_report_data(task_report["id"])

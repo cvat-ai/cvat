@@ -24,6 +24,7 @@ import Paragraph from 'antd/lib/typography/Paragraph';
 import { ConflictSeverity, QualityConflict, Issue } from 'cvat-core-wrapper';
 import { changeShowGroundTruth } from 'actions/settings-actions';
 import { ShowGroundTruthIcon } from 'icons';
+import ConflictRequirements from '../../review/conflict-requirements';
 
 export default function IssuesListComponent(): JSX.Element {
     const dispatch = useDispatch();
@@ -56,8 +57,6 @@ export default function IssuesListComponent(): JSX.Element {
         ready: state.annotation.canvas.ready,
         activeControl: state.annotation.canvas.activeControl,
     }), shallowEqual);
-
-    const qualityControlURL = job ? `/tasks/${job.taskId}/quality-control#jobs?job=${job.id}` : null;
 
     if (workspace === Workspace.AUDIO) {
         throw new Error('Not supported in audio workspace');
@@ -281,23 +280,7 @@ export default function IssuesListComponent(): JSX.Element {
                                 <Text />
                             </Row>
                             {!!frameConflict.requirements.length && (
-                                <div className='cvat-conflict-requirements'>
-                                    <Text type='secondary'>Requirements:</Text>
-                                    {frameConflict.requirements.map((requirement) => (
-                                        <div key={requirement.id ?? requirement.name}>
-                                            {requirement.id !== null && qualityControlURL ? (
-                                                <a
-                                                    href={`${qualityControlURL}&matrix=${requirement.id}`}
-                                                    target='_blank'
-                                                    rel='noopener noreferrer'
-                                                    className='cvat-conflict-requirement-link'
-                                                >
-                                                    {requirement.name}
-                                                </a>
-                                            ) : <Text>{requirement.name}</Text>}
-                                        </div>
-                                    ))}
-                                </div>
+                                <ConflictRequirements job={job} requirements={frameConflict.requirements} />
                             )}
                         </div>
                     ),

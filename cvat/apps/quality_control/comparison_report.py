@@ -220,7 +220,10 @@ class AnnotationConflict(ReportNode):
                 else cls.default_severity_for_type(conflict_type)
             ),
             attribute_names=sorted(set(d.get("attribute_names") or [])),
-            requirements=[dict(requirement) for requirement in d.get("requirements", [])],
+            requirements=sorted(
+                (dict(requirement) for requirement in d.get("requirements", [])),
+                key=lambda requirement: requirement["id"],
+            ),
         )
 
 
@@ -255,13 +258,13 @@ def merge_annotation_conflicts(
     target: AnnotationConflict, other: AnnotationConflict
 ) -> AnnotationConflict:
     requirements = {
-        requirement["id"] if requirement["id"] is not None else requirement["name"]: requirement
+        requirement["id"]: requirement
         for requirement in itertools.chain(target.requirements, other.requirements)
     }
     return evolve(
         target,
         attribute_names=sorted(set(target.attribute_names) | set(other.attribute_names)),
-        requirements=list(requirements.values()),
+        requirements=[requirements[requirement_id] for requirement_id in sorted(requirements)],
     )
 
 

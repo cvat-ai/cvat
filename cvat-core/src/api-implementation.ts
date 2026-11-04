@@ -530,9 +530,9 @@ export default function implementAPI(cvat: CVATCore): CVATCore {
                     const description = descriptionList.join(', ');
                     const requirements = Array.from(new Map(objectConflicts.flatMap((conflict) => (
                         conflict.requirements.map((requirement) => [
-                            requirement.id ?? requirement.name, requirement,
+                            requirement.id, requirement,
                         ] as const)
-                    ))).values());
+                    ))).values()).sort((a, b) => a.id - b.id);
                     const visibleConflict = new Proxy(mainObjectConflict, {
                         get(target, prop) {
                             if (prop === 'description') {

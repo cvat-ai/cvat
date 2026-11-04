@@ -239,7 +239,23 @@
 }
 
 .cvat-conflict-requirements {
-    overflow-wrap: anywhere;
+    min-width: 0;
+
+    .cvat-conflict-requirement-list {
+        max-height: $grid-unit-size * 30;
+        overflow-y: auto;
+    }
+
+    .cvat-conflict-requirement-name > * {
+        display: block;
+        overflow: hidden;
+        text-overflow: ellipsis;
+        white-space: nowrap;
+    }
+
+    .cvat-conflict-requirements-toggle {
+        padding: 0;
+    }
 }
 
 .cvat-objects-sidebar-item-active {

@@ -17,7 +17,7 @@ export enum ConflictSeverity {
 }
 
 export interface QualityConflictRequirement {
-    readonly id: number | null;
+    readonly id: number;
     readonly name: string;
 }
 
@@ -85,7 +85,8 @@ export default class QualityConflict {
         this.#frame = initialData.frame ?? null;
         this.#type = initialData.type as QualityConflictType;
         this.#severity = initialData.severity as ConflictSeverity;
-        this.#requirements = (initialData.requirements ?? []).map((requirement) => ({ ...requirement }));
+        this.#requirements = (initialData.requirements ?? [])
+            .map((requirement) => ({ ...requirement })).sort((a, b) => a.id - b.id);
         this.#annotationConflicts = initialData.annotation_ids
             .map((rawData: SerializedAnnotationConflictData) => new AnnotationConflict({
                 ...rawData,

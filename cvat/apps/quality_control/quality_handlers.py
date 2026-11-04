@@ -84,7 +84,7 @@ class EffectiveQualityRequirement:
     annotation_type: str
     target_metric: models.QualityTargetMetricType
     target_metric_threshold: float
-    source_requirement_id: int | None = None
+    source_requirement_id: int = attrs.field(validator=attrs.validators.instance_of(int))
     parent_requirement: int | None = None
     sort_order: int = 0
     iou_threshold: float | ThresholdPolicy | None = None
