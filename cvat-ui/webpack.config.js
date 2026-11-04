@@ -92,10 +92,6 @@ module.exports = (env, argv = {}) => {
                 secure: false,
                 changeOrigin: true,
                 onProxyReq: (proxyReq) => {
-                    // Traefik uses the upstream Host to populate X-Forwarded-Host.
-                    // Keep it equal to the browser-facing dev server so generated
-                    // TUS upload locations are proxied through this server as well.
-                    proxyReq.setHeader('Host', `${host}:${port}`);
                     proxyReq.setHeader('X-FORWARDED-HOST', `${host}:${port}`);
                 },
             }],
