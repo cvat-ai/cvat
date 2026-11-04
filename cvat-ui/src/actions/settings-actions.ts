@@ -7,7 +7,7 @@ import _ from 'lodash';
 import { AnyAction } from 'redux';
 import { ThunkAction } from 'utils/redux';
 import {
-    GridColor, ColorBy, SettingsState, ToolsBlockerState,
+    GridColor, ColorBy, SettingsState,
     CombinedState,
 } from 'reducers';
 import { OrientationVisibility } from 'cvat-canvas3d-wrapper';
@@ -15,6 +15,7 @@ import { SerializedImageFilter } from 'cvat-core-wrapper';
 import { ImageFilter, ImageFilterAlias } from 'utils/image-processing';
 import GammaCorrection, { GammaFilterOptions } from 'utils/fabric-wrapper/gamma-correction';
 import { resolveConflicts } from 'utils/conflict-detector';
+import { migrateShortcutsSettings, SHORTCUTS_SETTINGS_VERSION } from 'utils/shortcuts-migration';
 import { shortcutsActions } from './shortcuts-actions';
 
 export enum SettingsActionTypes {
@@ -54,7 +55,6 @@ export enum SettingsActionTypes {
     CHANGE_CANVAS_BACKGROUND_COLOR = 'CHANGE_CANVAS_BACKGROUND_COLOR',
     SWITCH_SETTINGS_DIALOG = 'SWITCH_SETTINGS_DIALOG',
     SET_SETTINGS = 'SET_SETTINGS',
-    SWITCH_TOOLS_BLOCKER_STATE = 'SWITCH_TOOLS_BLOCKER_STATE',
     SWITCH_SHOWING_DELETED_FRAMES = 'SWITCH_SHOWING_DELETED_FRAMES',
     SWITCH_SHOWING_TAGS_ON_FRAME = 'SWITCH_SHOWING_TAGS_ON_FRAME',
     ENABLE_IMAGE_FILTER = 'ENABLE_IMAGE_FILTER',
@@ -386,15 +386,6 @@ export function changeDefaultApproxPolyAccuracy(approxPolyAccuracy: number): Any
     };
 }
 
-export function switchToolsBlockerState(toolsBlockerState: ToolsBlockerState): AnyAction {
-    return {
-        type: SettingsActionTypes.SWITCH_TOOLS_BLOCKER_STATE,
-        payload: {
-            toolsBlockerState,
-        },
-    };
-}
-
 export function setSettings(settings: Partial<SettingsState>): AnyAction {
     return {
         type: SettingsActionTypes.SET_SETTINGS,
@@ -488,6 +479,12 @@ export function restoreSettingsAsync(): ThunkAction {
         dispatch(setSettings(newSettings));
 
         if ('shortcuts' in loadedSettings) {
+            const migratedShortcuts = migrateShortcutsSettings(loadedSettings.shortcuts);
+            if (migratedShortcuts) {
+                loadedSettings.shortcuts = migratedShortcuts;
+                localStorage.setItem('clientSettings', JSON.stringify(loadedSettings));
+            }
+
             const updateKeyMap = structuredClone(shortcuts.keyMap);
 
             Object.entries(loadedSettings.shortcuts.keyMap).forEach(([key, value]) => {
@@ -509,6 +506,7 @@ export function updateCachedSettings(settings: CombinedState['settings'], shortc
         player: settings.player,
         workspace: settings.workspace,
         shortcuts: {
+            version: SHORTCUTS_SETTINGS_VERSION,
             keyMap: Object.entries(shortcuts.keyMap).reduce<Record<string, { sequences: string[] }>>(
                 (acc, [key, value]) => {
                     if (key in shortcuts.defaultState) {

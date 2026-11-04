@@ -61,6 +61,7 @@ class EventRecorder {
 
     public initSave(): void {
         if (this.#savingTimeout) return;
+        window.addEventListener('pagehide', this.saveBeforePageExit);
         this.#savingTimeout = window.setTimeout(() => {
             const scheduleSave = (): void => {
                 this.#savingTimeout = null;
@@ -80,6 +81,7 @@ class EventRecorder {
     }
 
     public cancelSave(): void {
+        window.removeEventListener('pagehide', this.saveBeforePageExit);
         if (this.#savingTimeout) {
             window.clearTimeout(this.#savingTimeout);
             this.#savingTimeout = null;
@@ -89,6 +91,10 @@ class EventRecorder {
     public set logger(logger: Logger | null) {
         this.#logger = logger;
     }
+
+    private saveBeforePageExit = (): void => {
+        core.logger.saveCriticalEvents();
+    };
 
     private filterClassName(cls: string): string {
         if (typeof cls === 'string') {

@@ -8,6 +8,8 @@ import type { Label } from '../labels';
 import type { DimensionType, JobType } from '../enums';
 import type { MaskShape } from './mask-shape';
 
+export type Constructor<T = object> = new (...args: any[]) => T;
+
 export type FrameInfo = {
     width: number;
     height: number;
@@ -84,4 +86,5 @@ export interface UpdateFlags extends CommonUpdateFlags {
 
 export interface AudioIntervalUpdateFlags extends CommonUpdateFlags {
     position?: boolean;
+    pinned?: boolean;
 }

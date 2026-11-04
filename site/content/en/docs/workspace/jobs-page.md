@@ -15,7 +15,7 @@ as well as track progress, sort, and apply filters to the job list.
 On the page, there is a list of jobs presented in the form of tiles, where each tile is one job.
 Each element contains:
 - job ID
-- dimension `2D` or `3D`
+- dimension `1D`, `2D`, or `3D`
 - preview
 - {{< ilink "/docs/getting_started/vocabulary#stage" "stage" >}} and
   {{< ilink "/docs/getting_started/vocabulary#state" "state" >}}
@@ -57,7 +57,7 @@ To clear all filters, select `Clear filters`.
 | -------------- | -------------------------------------------- | ------------------------------------------- |
 | `State`        | all the state names                          | The state of the job <br>(can be changed in the menu inside the job) |
 | `Stage`        | all the stage names                          | The stage of the job <br>(is specified by a drop-down list on the task page) |
-| `Dimension`    | `2D` or `3D`                                 | Depends on the data format <br>(read more in {{< ilink "/docs/workspace/tasks-page#create-annotation-task" "creating an annotation task" >}}) |
+| `Dimension`    | `1D`, `2D`, or `3D`                          | Depends on the data format <br>(read more in {{< ilink "/docs/workspace/tasks-page#create-annotation-task" "creating an annotation task" >}}) |
 | `Assignee`     | username                                     | Assignee is the user who is working on the job. <br>(is specified on task page) |
 | `Last updated` | last modified date and time (or value range) | The date can be entered in the `dd.MM.yyyy HH:mm` format <br>or by selecting the date in the window that appears <br>when you click on the input field |
 | `ID`           | number or range of job ID                    |                                             |
@@ -65,3 +65,120 @@ To clear all filters, select `Clear filters`.
 | `Project ID`   | number or range of project ID                |                                             |
 | `Task name`    | task name                                    | Set when creating a task, <br>can be changed on the ({{< ilink "/docs/workspace/tasks-page" "task page" >}}) |
 | `Project name` | project name                                 | Specified when creating a project, <br>can be changed on the ({{< ilink "/docs/workspace/projects" "project section" >}}) |
+| `Job Type`     | `Annotation`, `Ground truth`, or `Replica`   | The type of the job |
+| `Parent ID`    | number or range of job ID                    | The ID of the parent annotation job of a replica job |
+
+## Replica jobs
+
+A **replica job** (_replica_) is a copy of an annotation job that is annotated separately.
+One of the ways to use replicas is
+{{< ilink "/docs/qa-analytics/consensus" "consensus-based annotation" >}}.
+_Replicas_ work similarly to regular annotation jobs - they can be assigned, annotated,
+imported and exported.
+
+Key properties of replica jobs:
+- _Replicas_ are connected to annotation jobs (_parent jobs_). Each annotation job can have
+  several related _replicas_.
+- Only annotation jobs can have replicas. Ground Truth jobs cannot have replicas.
+- Replicas use the same frame range as their parent annotation jobs.
+- Annotations in replicas and parent jobs are independent from each other.
+  Modifying a replica doesn't affect the parent job or other replicas and vice versa.
+  Removing annotations in a parent job doesn't change annotations in its replicas.
+- Replicas are not included in _task_ annotation import or export.
+  _Per-job_ import and export still work for all job types, including replicas.
+
+In the job list, parent jobs have the **Parent** tag and replicas have the **Replica** tag.
+By default, the task job list hides replicas. To see them, click **Clear filters**
+or use **Go to replicas** in the parent job **Actions** menu.
+To return from a replica to its parent job, use **Go to parent**.
+
+![Parent and replica jobs in the task job list](/images/consensus-replicas-list-task.png)
+
+### How to create replicas with a task
+
+You can set the number of replicas when you create a task.
+Each annotation job of the task gets this number of replicas.
+
+1. Go to the {{< ilink "/docs/workspace/tasks-page#create-annotation-task" "task creation" >}} page
+1. Configure basic and advanced parameters according to your requirements,
+   and attach a dataset to be annotated.
+1. Open the **Advanced** section and set **Initial replicas** to the number of
+   replicas for each annotation job. The default value `0` creates no replicas.
+
+   ![Initial replicas parameter](/images/consensus-replicas-task-parameter.png)
+
+1. Create the task and open the task page
+
+**Initial replicas** is used only when the task is created.
+To change the replicas later, [add](#how-to-add-replicas-to-existing-jobs) or
+[delete](#how-to-delete-replica-jobs) them in the jobs.
+
+### How to add replicas to existing jobs
+
+You can add replicas to any annotation job, including jobs of a task created without replicas.
+This way you can start consensus annotation in an existing task,
+or collect more opinions only for the jobs with difficult data.
+
+1. Open the task page or the **Jobs** page
+1. Select one or {{< ilink "/docs/workspace/bulk-actions" "several" >}} annotation jobs
+   and open the job **Actions** menu
+1. Click **Add replicas**
+1. Enter the number of replicas to add to each selected job and click **Add**
+
+   ![Add replicas dialog](/images/consensus-add-replicas-dialog.png)
+
+The new replicas have no assignee, and they are in the **annotation** stage and the **new** state.
+
+### How to delete replica jobs
+
+If a job has more replicas than you need, you can delete the extra ones.
+
+1. Open the task page or the **Jobs** page
+1. Select one or {{< ilink "/docs/workspace/bulk-actions" "several" >}} replica jobs
+   and open the job **Actions** menu
+1. Click **Delete** and confirm the deletion
+
+Deleting a replica also deletes its annotations. This operation cannot be undone.
+The parent job and its other replicas are not changed.
+
+{{% alert title="Note" color="primary" %}}
+Only replica and Ground Truth jobs can be deleted.
+{{% /alert %}}
+
+## Distribute jobs among users
+
+You can assign several jobs to a list of users at once.
+CVAT gives the jobs to the users in turn: the first job goes to the first user,
+the second job goes to the second user, and so on.
+When there are more jobs than users, it starts again from the first user.
+
+The action is available on the **Jobs** page and in the job list of the task page
+when two or more jobs are selected. It is not available in the
+{{< ilink "/docs/account_management/organization#personal-workspace" "personal workspace" >}}.
+
+1. Select the jobs. Read more about selecting several jobs in
+   {{< ilink "/docs/workspace/bulk-actions" "Bulk actions" >}}.
+1. Open the job **Actions** menu and click **Distribute among users**.
+1. Add the users in one of the following ways:
+   - Start typing a username in the **Usernames** field and select the user from the list.
+   - Paste several usernames into the **Usernames** field, for example, a column copied from a spreadsheet.
+     The usernames can be separated by spaces, line breaks, commas, or semicolons.
+   - Click the upload area or drag a CSV file to it. The file must have one column with usernames,
+     without a header, for example, [usernames.csv](/files/usernames.csv):
+
+     ```csv
+     alice
+     bob
+     carol
+     ```
+
+   Usernames that are not found and repeated usernames are skipped.
+
+1. Check the **Preview**. It shows the user that each job will be assigned to.
+
+   ![Distribute jobs dialog](/images/distribute-jobs-dialog.png)
+
+1. Click **Distribute**.
+
+The jobs are assigned in the order they are listed on the page.
+If there are more users than jobs, the extra users get no job.

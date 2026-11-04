@@ -19,7 +19,7 @@ import MdGuideControl from 'components/md-guide/md-guide-control';
 import Preview from 'components/common/preview';
 import { cancelInferenceAsync } from 'actions/models-actions';
 import { CombinedState, ActiveInference } from 'reducers';
-import CVATTag, { TagType } from 'components/common/cvat-tag';
+import { usePlugins } from 'utils/hooks';
 import UserSelector from './user-selector';
 import BugTrackerEditor from './bug-tracker-editor';
 import CloudStorageEditor from './cloud-storage-editor';
@@ -65,10 +65,32 @@ const core = getCore();
 interface State {
     name: string;
     subset: string;
-    consensusEnabled: boolean;
 }
 
 type Props = DispatchToProps & StateToProps & OwnProps;
+
+function DetailsTopBarExtras({ targetProps, targetState }: {
+    targetProps: Props;
+    targetState: State;
+}): JSX.Element {
+    // the component is used as a plugin entrypoint
+    // only implemented as a separated functional component in order to use usePlugins inside
+    const extras = usePlugins(
+        (state: CombinedState) => state.plugins.components.taskPage.details.topBar.extras,
+        targetProps,
+        targetState,
+    );
+
+    return (
+        <>
+            {extras.sort((left, right) => left.weight - right.weight).map(({
+                component: Component,
+            }, index) => (
+                <Component key={index} targetProps={targetProps} targetState={targetState} />
+            ))}
+        </>
+    );
+}
 
 class DetailsComponent extends React.PureComponent<Props, State> {
     constructor(props: Props) {
@@ -77,7 +99,6 @@ class DetailsComponent extends React.PureComponent<Props, State> {
         this.state = {
             name: taskInstance.name,
             subset: taskInstance.subset,
-            consensusEnabled: taskInstance.consensusEnabled,
         };
     }
 
@@ -128,7 +149,7 @@ class DetailsComponent extends React.PureComponent<Props, State> {
             cloudStorageInstance,
             onUpdateTaskMeta,
         } = this.props;
-        const { consensusEnabled } = this.state;
+
         const owner = taskInstance.owner ? taskInstance.owner.username : null;
         const assignee = taskInstance.assignee ? taskInstance.assignee : null;
         const created = dayjs(taskInstance.createdDate).format('MMMM Do YYYY');
@@ -154,7 +175,6 @@ class DetailsComponent extends React.PureComponent<Props, State> {
                                 </Text>
                             </div>
                         )}
-                        {consensusEnabled && <CVATTag type={TagType.CONSENSUS} />}
                     </Col>
                     <Col>
                         <Text type='secondary'>Assigned to</Text>
@@ -230,8 +250,11 @@ class DetailsComponent extends React.PureComponent<Props, State> {
 
         return (
             <div className='cvat-task-details'>
-                <Row justify='start' align='middle'>
+                <Row justify='space-between' align='middle'>
                     <Col className='cvat-task-details-task-name'>{this.renderTaskName()}</Col>
+                    <Col>
+                        <DetailsTopBarExtras targetProps={this.props} targetState={this.state} />
+                    </Col>
                 </Row>
                 <Row justify='space-between' align='top'>
                     <Col md={8} lg={7} xl={7} xxl={6}>

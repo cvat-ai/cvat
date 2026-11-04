@@ -1354,6 +1354,9 @@ export class Canvas3dViewImpl implements Canvas3dView, Listener {
         };
 
         if (reason === UpdateReasons.IMAGE_CHANGED) {
+            const frameNumber = model.data.imageID;
+            const { domElement } = this.views.perspective.renderer;
+            domElement.removeAttribute('data-frame-number');
             this.statesToBeGrouped = [];
             this.clearScene();
 
@@ -1361,6 +1364,7 @@ export class Canvas3dViewImpl implements Canvas3dView, Listener {
                 try {
                     this.onSceneImageLoaded(points);
                     model.updateCanvasObjects();
+                    domElement.setAttribute('data-frame-number', String(frameNumber));
                 } finally {
                     model.unlockFrameUpdating();
                     this.dispatchEvent(new CustomEvent('canvas.setup'));
@@ -1395,6 +1399,7 @@ export class Canvas3dViewImpl implements Canvas3dView, Listener {
                             canvasContext.strokeText('IMAGE REMOVED', width / 2, height / 2);
                             canvasContext.fillStyle = 'black';
                             canvasContext.fillText('IMAGE REMOVED', width / 2, height / 2);
+                            domElement.setAttribute('data-frame-number', String(frameNumber));
                             this.dispatchEvent(new CustomEvent('canvas.setup'));
                         } finally {
                             model.unlockFrameUpdating();

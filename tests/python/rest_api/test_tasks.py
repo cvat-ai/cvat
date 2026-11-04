@@ -34,6 +34,7 @@ from cvat_sdk.api_client.exceptions import ForbiddenException
 from cvat_sdk.core.exceptions import BackgroundRequestException
 from cvat_sdk.core.helpers import get_paginated_collection
 from cvat_sdk.core.progress import NullProgressReporter
+from cvat_sdk.core.proxies.annotations import AnnotationUpdateAction
 from cvat_sdk.core.proxies.tasks import ResourceType, Task
 from cvat_sdk.core.uploading import Uploader
 from deepdiff import DeepDiff
@@ -54,6 +55,7 @@ from rest_api.utils import (
     import_task_annotations,
 )
 from shared.fixtures.init import container_exec_cvat
+from shared.fixtures.params import CACHE
 from shared.tasks.interface import ITaskSpec
 from shared.tasks.types import SourceDataType
 from shared.tasks.utils import parse_frame_step, to_rel_frames
@@ -264,7 +266,7 @@ class TestGetTasks:
         )
 
     @pytest.mark.parametrize("org, project_id, role", [({"id": 2, "slug": "org2"}, 2, "worker")])
-    def test_org_task_assigneed_to_see_task(
+    def test_org_task_assigned_to_see_task(
         self, org, project_id, role, users, tasks, find_users, is_task_staff
     ):
         users = find_users(org=org["id"], role=role)
@@ -914,6 +916,32 @@ class TestGetTaskDataset:
             format=format_name,
         )
 
+    def test_org_worker_cannot_export_task_dataset_as_assignee_without_ownership(
+        self, find_users, tasks, is_org_member, is_task_staff, is_project_staff
+    ):
+        """Regression test for https://github.com/cvat-ai/cvat/pull/10685.
+
+        An organization worker who is assigned to a task, but owns neither the task
+        nor its project, is not allowed to export the task dataset.
+        """
+        users = find_users(role="worker", exclude_privilege="admin")
+
+        user, task = next(
+            (user, task)
+            for user, task in product(users, tasks)
+            if is_task_staff(user["id"], task["id"])
+            and task["owner"]["id"] != user["id"]
+            and not is_project_staff(user["id"], task["project_id"])
+            and task["organization"]
+            and is_org_member(user["id"], task["organization"], role="worker")
+            and task["target_storage"] is None
+        )
+
+        with pytest.raises(ForbiddenException):
+            export_task_dataset(
+                user["username"], save_images=True, id=task["id"], expect_forbidden=True
+            )
+
     @pytest.mark.parametrize("tid", [8])
     def test_can_export_task_to_coco_format(
         self,
@@ -1423,13 +1451,16 @@ class TestPatchTaskLabel:
 class TestWorkWithTask:
     _USERNAME = "admin1"
 
+    # Tests negatively for cloud data corruption, so timeout can be greater
+    @pytest.mark.timeout(25)
     @pytest.mark.with_external_services
     @pytest.mark.parametrize(
         "cloud_storage_id, manifest",
         [(1, "images_with_manifest/manifest.jsonl")],  # public bucket
     )
+    @pytest.mark.parametrize("use_cache", CACHE)
     def test_work_with_task_containing_non_stable_cloud_storage_files(
-        self, cloud_storage_id, manifest, cloud_storages, request
+        self, cloud_storage_id, manifest, use_cache, cloud_storages, request
     ):
         image_name = "images_with_manifest/image_case_65_1.png"
         cloud_storage_content = [image_name, manifest]
@@ -1440,7 +1471,7 @@ class TestWorkWithTask:
 
         data_spec = {
             "image_quality": 75,
-            "use_cache": True,
+            "use_cache": use_cache,
             "cloud_storage_id": cloud_storage_id,
             "server_files": cloud_storage_content,
         }
@@ -1506,8 +1537,8 @@ class TestTaskBackups:
         )["id"]
         self._test_can_export_backup(task_id)
 
-    def test_can_export_backup_for_consensus_task(self, tasks):
-        task_id = next(t for t in tasks if t["dimension"] == "2d" if t["consensus_enabled"])["id"]
+    def test_can_export_backup_for_consensus_task(self, tasks_with_replicas):
+        task_id = next(t for t in tasks_with_replicas if t["dimension"] == "2d")["id"]
         self._test_can_export_backup(task_id)
 
     def test_can_export_backup_for_honeypot_task(self, tasks):
@@ -1567,9 +1598,13 @@ class TestTaskBackups:
 
         self._test_can_restore_task_from_backup(task_id)
 
+    @pytest.mark.timeout(20)
     @pytest.mark.with_external_services
     @pytest.mark.parametrize("lightweight_backup", [True, False])
-    def test_can_export_and_import_backup_task_with_cloud_storage(self, lightweight_backup):
+    def test_can_export_and_import_backup_task_with_cloud_storage(
+        self,
+        lightweight_backup,
+    ):
         task_spec = {
             "name": "Task with files from cloud storage",
             "labels": [
@@ -1606,7 +1641,9 @@ class TestTaskBackups:
             expected_media.update(["images/image_1.jpg", "images/image_3.jpg"])
         assert files_in_data == expected_media
 
-        self._test_can_restore_task_from_backup(task_id, lightweight_backup=lightweight_backup)
+        self._test_can_restore_task_from_backup(
+            task_id, lightweight_backup=lightweight_backup, backup_file=filename
+        )
 
     @pytest.mark.parametrize("mode", ["annotation", "interpolation"])
     def test_can_import_backup(self, tasks, mode):
@@ -1636,14 +1673,181 @@ class TestTaskBackups:
         )["id"]
         self._test_can_restore_task_from_backup(task_id)
 
-    def test_can_import_backup_with_consensus_task(self, tasks):
-        task_id = next(t for t in tasks if t["dimension"] == "2d" if t["consensus_enabled"])["id"]
+    def test_can_import_backup_with_consensus_task(self, tasks_with_replicas):
+        task_id = next(t for t in tasks_with_replicas if t["dimension"] == "2d")["id"]
         self._test_can_restore_task_from_backup(task_id)
 
+    def _annotate_job_with_box(
+        self, job_id: int, label_id: int, frame: int, points: list[float]
+    ) -> None:
+        self.client.api_client.jobs_api.update_annotations(
+            id=job_id,
+            labeled_data_request=models.LabeledDataRequest(
+                shapes=[
+                    models.LabeledShapeRequest(
+                        type="rectangle",
+                        frame=frame,
+                        label_id=label_id,
+                        points=points,
+                        rotation=0,
+                        z_order=0,
+                        occluded=False,
+                        outside=False,
+                        group=0,
+                        attributes=[],
+                    )
+                ]
+            ),
+        )
+
+    def _get_job_boxes(self, job_id: int) -> list[list[float]]:
+        _, response = self.client.api_client.jobs_api.retrieve_annotations(id=job_id)
+        return [shape["points"] for shape in json.loads(response.data)["shapes"]]
+
+    def test_can_import_backup_with_different_replica_counts(self):
+        # 2 annotation jobs with 1 frame each, both are created with 2 replicas
+        task_id, _ = create_task(
+            username=self.user,
+            spec={
+                "name": "A task with different replica counts",
+                "labels": [{"name": "car"}],
+                "segment_size": 1,
+                "initial_replicas": 2,
+            },
+            data={"image_quality": 70, "client_files": generate_image_files(count=2)},
+        )
+        task = self.client.tasks.retrieve(task_id)
+        label_id = task.get_labels()[0].id
+        (
+            first_job,
+            first_job_deleted_replica,
+            first_job_replica,
+            second_job,
+            second_job_replica_1,
+            second_job_replica_2,
+        ) = sorted(task.get_jobs(), key=lambda j: j.id)
+
+        # The first annotation job is left with 1 replica, the second one has 2
+        self.client.api_client.jobs_api.destroy(id=first_job_deleted_replica.id)
+
+        # Every job gets its own box, so the annotations of any two jobs can't be mixed up
+        self._annotate_job_with_box(
+            job_id=first_job.id, label_id=label_id, frame=0, points=[10, 10, 11, 11]
+        )
+        self._annotate_job_with_box(
+            job_id=first_job_replica.id, label_id=label_id, frame=0, points=[20, 20, 21, 21]
+        )
+        self._annotate_job_with_box(
+            job_id=second_job.id, label_id=label_id, frame=1, points=[30, 30, 31, 31]
+        )
+        self._annotate_job_with_box(
+            job_id=second_job_replica_1.id, label_id=label_id, frame=1, points=[40, 40, 41, 41]
+        )
+        self._annotate_job_with_box(
+            job_id=second_job_replica_2.id, label_id=label_id, frame=1, points=[50, 50, 51, 51]
+        )
+
+        new_task = self._test_can_restore_task_from_backup(task_id)
+
+        new_jobs = new_task.get_jobs()
+        new_first_job = next(j for j in new_jobs if j.type == "annotation" and j.start_frame == 0)
+        new_second_job = next(j for j in new_jobs if j.type == "annotation" and j.start_frame == 1)
+        new_first_job_replicas = sorted(
+            (j for j in new_jobs if j.parent_job_id == new_first_job.id), key=lambda j: j.id
+        )
+        new_second_job_replicas = sorted(
+            (j for j in new_jobs if j.parent_job_id == new_second_job.id), key=lambda j: j.id
+        )
+
+        assert len(new_jobs) == 5
+        assert len(new_first_job_replicas) == 1
+        assert len(new_second_job_replicas) == 2
+
+        assert self._get_job_boxes(job_id=new_first_job.id) == [[10, 10, 11, 11]]
+        assert self._get_job_boxes(job_id=new_first_job_replicas[0].id) == [[20, 20, 21, 21]]
+        assert self._get_job_boxes(job_id=new_second_job.id) == [[30, 30, 31, 31]]
+        assert self._get_job_boxes(job_id=new_second_job_replicas[0].id) == [[40, 40, 41, 41]]
+        assert self._get_job_boxes(job_id=new_second_job_replicas[1].id) == [[50, 50, 51, 51]]
+
+    def test_can_import_backup_with_replicas_added_after_task_creation(self):
+        task_id, _ = create_task(
+            username=self.user,
+            spec={
+                "name": "A task with added replicas",
+                "labels": [{"name": "car"}],
+                "segment_size": 1,
+            },
+            data={"image_quality": 70, "client_files": generate_image_files(count=2)},
+        )
+        task = self.client.tasks.retrieve(task_id)
+        label_id = task.get_labels()[0].id
+        first_job, second_job = sorted(task.get_jobs(), key=lambda j: j.id)
+
+        def add_replica(parent_job) -> int:
+            replica, _ = self.client.api_client.jobs_api.create(
+                models.JobWriteRequest(type="replica", task_id=task_id, parent_job_id=parent_job.id)
+            )
+            return replica.id
+
+        # The replicas of the first job get higher ids than the replicas of the second one,
+        # so the order of the job ids doesn't match the order of the parents
+        second_job_replica_1_id = add_replica(second_job)
+        second_job_replica_2_id = add_replica(second_job)
+        first_job_replica_id = add_replica(first_job)
+
+        self._annotate_job_with_box(
+            job_id=first_job.id, label_id=label_id, frame=0, points=[10, 10, 11, 11]
+        )
+        self._annotate_job_with_box(
+            job_id=first_job_replica_id, label_id=label_id, frame=0, points=[20, 20, 21, 21]
+        )
+        self._annotate_job_with_box(
+            job_id=second_job.id, label_id=label_id, frame=1, points=[30, 30, 31, 31]
+        )
+        self._annotate_job_with_box(
+            job_id=second_job_replica_1_id, label_id=label_id, frame=1, points=[40, 40, 41, 41]
+        )
+        self._annotate_job_with_box(
+            job_id=second_job_replica_2_id, label_id=label_id, frame=1, points=[50, 50, 51, 51]
+        )
+
+        new_task = self._test_can_restore_task_from_backup(task_id)
+
+        new_jobs = new_task.get_jobs()
+        new_first_job = next(j for j in new_jobs if j.type == "annotation" and j.start_frame == 0)
+        new_second_job = next(j for j in new_jobs if j.type == "annotation" and j.start_frame == 1)
+        new_first_job_replicas = sorted(
+            (j for j in new_jobs if j.parent_job_id == new_first_job.id), key=lambda j: j.id
+        )
+        new_second_job_replicas = sorted(
+            (j for j in new_jobs if j.parent_job_id == new_second_job.id), key=lambda j: j.id
+        )
+
+        assert len(new_jobs) == 5
+        assert len(new_first_job_replicas) == 1
+        assert len(new_second_job_replicas) == 2
+
+        assert self._get_job_boxes(job_id=new_first_job.id) == [[10, 10, 11, 11]]
+        assert self._get_job_boxes(job_id=new_first_job_replicas[0].id) == [[20, 20, 21, 21]]
+        assert self._get_job_boxes(job_id=new_second_job.id) == [[30, 30, 31, 31]]
+        assert self._get_job_boxes(job_id=new_second_job_replicas[0].id) == [[40, 40, 41, 41]]
+        assert self._get_job_boxes(job_id=new_second_job_replicas[1].id) == [[50, 50, 51, 51]]
+
     def test_can_import_backup_with_consensus_task_created_before_consensus_replica_removal(self):
+        # The backup has "consensus_replica" jobs
         original_task_id = 30
         backup_file = ASSETS_DIR / "backups" / "task_30_backup_pre_consensus_replica_removal.zip"
-        self._test_can_restore_task_from_backup(original_task_id, backup_file=backup_file)
+
+        new_task = self._test_can_restore_task_from_backup(
+            task_id=original_task_id, backup_file=backup_file
+        )
+
+        # Task 30 has 2 annotation jobs with 3 replica jobs each
+        jobs = new_task.get_jobs()
+        annotation_job_ids = [j.id for j in jobs if j.type == "annotation"]
+        replica_parent_job_ids = [j.parent_job_id for j in jobs if j.type == "replica"]
+        assert len(annotation_job_ids) == 2
+        assert [replica_parent_job_ids.count(job_id) for job_id in annotation_job_ids] == [3, 3]
 
     def test_can_import_backup_with_annotation_scores(self, tasks, jobs, labels, annotations):
         task_id = next(
@@ -1703,31 +1907,50 @@ class TestTaskBackups:
         task_id = next(t for t in tasks if t["media_type"] == "audio")["id"]
         self._test_can_export_backup(task_id)
 
-    @pytest.mark.with_external_services
-    def test_can_export_and_import_backup_with_backing_cs(self, request, cloud_storages):
+    def _test_can_export_and_import_backup_with_backing_cs(
+        self, request, task, cloud_storages, expected_file_suffixes
+    ):
         cloud_storage_id = next(cs["id"] for cs in cloud_storages if cs["resource"] == "backingcs")
 
-        with make_sdk_client(self.user) as client:
-            task = client.tasks.create_from_data(
-                models.TaskWriteRequest(name="Canvas3D"),
-                [SHARE_DIR / "test_canvas3d.zip"],
-                data_params={"use_cache": True},
-            )
+        container_exec_cvat(
+            request, ["./manage.py", "movetasktobackingcs", str(task.id), str(cloud_storage_id)]
+        )
 
-            container_exec_cvat(
-                request, ["./manage.py", "movetasktobackingcs", str(task.id), str(cloud_storage_id)]
-            )
+        backup_path = self.tmp_dir / "backup.zip"
+        task.download_backup(backup_path)
 
-            backup_path = self.tmp_dir / "backup.zip"
-            task.download_backup(backup_path)
+        with zipfile.ZipFile(backup_path) as zip_file:
+            names = zip_file.namelist()
 
-            with zipfile.ZipFile(backup_path) as zip_file:
-                names = zip_file.namelist()
+            for ext in expected_file_suffixes:
+                assert any(name.endswith(ext) for name in names)
 
-                assert any(name.endswith(".pcd") for name in names)
-                assert any(name.endswith(".png") for name in names)
+        self._test_can_restore_task_from_backup(task.id, backup_file=backup_path)
 
-            self._test_can_restore_task_from_backup(task.id, backup_file=backup_path)
+    @pytest.mark.with_external_services
+    def test_can_export_and_import_backup_with_images_in_backing_cs(self, request, cloud_storages):
+        task = self.client.tasks.create_from_data(
+            models.TaskWriteRequest(name="Canvas3D"),
+            [SHARE_DIR / "test_canvas3d.zip"],
+            data_params={"use_cache": True},
+        )
+
+        self._test_can_export_and_import_backup_with_backing_cs(
+            request, task, cloud_storages, (".pcd", ".png")
+        )
+
+    @pytest.mark.with_external_services
+    def test_can_export_and_import_backup_with_video_in_backing_cs(
+        self, request, tasks, cloud_storages
+    ):
+        task_id = next(
+            t for t in tasks if t["media_type"] == "image" if t["mode"] == "interpolation"
+        )["id"]
+        task = self.client.tasks.retrieve(task_id)
+
+        self._test_can_export_and_import_backup_with_backing_cs(
+            request, task, cloud_storages, (".mp4",)
+        )
 
     def _test_can_restore_task_from_backup(
         self,
@@ -1874,6 +2097,8 @@ class TestTaskBackups:
             )
             == {}
         )
+
+        return new_task
 
 
 @pytest.mark.usefixtures("restore_db_per_function")
@@ -2711,7 +2936,7 @@ class TestWorkWithConsensusTasks:
         self, admin_user, jobs, annotations, task_id: int
     ):
         task_jobs = [j for j in jobs if j["task_id"] == task_id]
-        consensus_jobs = [j for j in task_jobs if j["type"] == "consensus_replica"]
+        consensus_jobs = [j for j in task_jobs if j["type"] == "replica"]
 
         # Ensure there are annotations in replicas
         assert any(
@@ -2723,7 +2948,7 @@ class TestWorkWithConsensusTasks:
 
         with make_api_client(admin_user) as api_client:
             for annotation_job in task_jobs:
-                if annotation_job["type"] != "consensus_replica":
+                if annotation_job["type"] != "replica":
                     api_client.jobs_api.destroy_annotations(annotation_job["id"])
 
             updated_task_annotations, _ = api_client.tasks_api.retrieve_annotations(task_id)
@@ -2786,7 +3011,7 @@ class TestGetTaskPreview:
         self._test_assigned_users_to_see_task_preview(tasks, users, is_task_staff)
 
     @pytest.mark.parametrize("org, project_id, role", [({"id": 2, "slug": "org2"}, 2, "worker")])
-    def test_org_task_assigneed_to_see_task_preview(
+    def test_org_task_assigned_to_see_task_preview(
         self, org, project_id, role, users, tasks, find_users, is_task_staff
     ):
         users = find_users(org=org["id"], role=role)
@@ -3629,39 +3854,6 @@ class TestImportTaskAnnotations:
         task.import_annotations(self.import_format, filename)
         self._check_annotations(task_id)
 
-    @pytest.mark.skip("Fails sometimes, needs to be fixed")
-    @pytest.mark.timeout(70)
-    def test_check_import_cache_after_previous_interrupted_upload(self, tasks_with_shapes, request):
-        task_id = tasks_with_shapes[0]["id"]
-        with NamedTemporaryFile() as f:
-            filename = self.tmp_dir / f"task_{task_id}_{Path(f.name).name}_coco.zip"
-        task = self.client.tasks.retrieve(task_id)
-        task.export_dataset(self.export_format, filename, include_images=False)
-
-        params = {"format": self.import_format, "filename": filename.name}
-        url = self.client.api_map.make_endpoint_url(
-            self.client.api_client.tasks_api.create_annotations_endpoint.path
-        ).format(id=task_id)
-
-        uploader = Uploader(self.client)
-        uploader._tus_start_upload(url, query_params=params)
-        uploader._upload_file_data_with_tus(
-            url,
-            filename,
-            meta=params,
-            pbar=NullProgressReporter(),
-        )
-        number_of_files = 1
-        sleep(30)  # wait when the cleaning job from rq worker will be started
-        command = ["/bin/bash", "-c", f"ls data/tasks/{task_id}/tmp | wc -l"]
-        for _ in range(12):
-            sleep(2)
-            result = container_exec_cvat(request, command)
-            number_of_files = int(result)
-            if not number_of_files:
-                break
-        assert not number_of_files
-
     def test_import_annotations_after_deleting_related_cloud_storage(
         self, admin_user: str, tasks_with_shapes
     ):
@@ -3742,6 +3934,21 @@ class TestImportTaskAnnotations:
             for t in tasks
             if t.get("size")
             if t["media_type"] == "audio" and t.get("validation_mode") != "gt_pool"
+        )
+        task_obj = self.client.tasks.retrieve(task["id"])
+        # add an annotation covering the whole interval with exclusive stop after the last frame
+        label = next(label for label in task_obj.get_labels() if label.type == "interval")
+        task_obj.update_annotations(
+            models.PatchedLabeledDataRequest(
+                intervals=[
+                    models.LabeledIntervalRequest(
+                        label_id=label.id,
+                        start=0,
+                        stop=task["size"],
+                    )
+                ]
+            ),
+            action=AnnotationUpdateAction.CREATE,
         )
 
         format_name = "Generic TSV 1.0"

@@ -42,6 +42,7 @@ export const config: Partial<Config> = {
             valueSources: ['value'],
             fieldSettings: {
                 listValues: [
+                    { value: '1d', title: '1D' },
                     { value: '2d', title: '2D' },
                     { value: '3d', title: '3D' },
                 ],
@@ -51,7 +52,7 @@ export const config: Partial<Config> = {
             label: 'Assignee',
             type: 'select',
             valueSources: ['value'],
-            operators: ['select_equals'],
+            operators: ['select_equals', 'is_empty', 'is_not_empty'],
             fieldSettings: {
                 useAsyncSearch: true,
                 forceAsyncSearch: true,
@@ -105,7 +106,7 @@ export const config: Partial<Config> = {
                 listValues: [
                     { value: 'annotation', title: 'Annotation' },
                     { value: 'ground_truth', title: 'Ground truth' },
-                    { value: 'consensus_replica', title: 'Consensus replica' },
+                    { value: 'replica', title: 'Replica' },
                 ],
             },
         },

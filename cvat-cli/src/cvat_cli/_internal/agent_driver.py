@@ -5,12 +5,11 @@
 from __future__ import annotations
 
 from collections.abc import Callable
-from typing import TYPE_CHECKING, Any, ClassVar, Generic, Protocol, TypeVar
+from typing import TYPE_CHECKING, Any, ClassVar, Generic, Protocol, Self, TypeVar
 
 import cvat_sdk.auto_annotation as cvataa
 import cvat_sdk.datasets as cvatds
 from cvat_sdk import Client
-from typing_extensions import Self
 
 if TYPE_CHECKING:
     from .agent import RecoverableExecutor

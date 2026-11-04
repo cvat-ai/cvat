@@ -175,10 +175,12 @@ class AnnotationIR:
 
     @staticmethod
     def is_interval_inside(interval: dict[str, Any], start: int, stop: int) -> bool:
+        # Task ranges are inclusive, while an interval stop is exclusive.
+        # So an interval may stop immediately after the last frame in the range.
         return (
             interval["start"] >= start
             and interval["start"] <= stop
-            and (interval["stop"] is None or interval["stop"] <= stop)
+            and (interval["stop"] is None or interval["stop"] <= stop + 1)
         )
 
     def slice(self, start, stop):

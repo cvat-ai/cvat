@@ -159,6 +159,9 @@ function RightGroup(props: Props): JSX.Element {
                     value={workspace}
                 >
                     {Object.values(Workspace).map((ws) => {
+                        if (jobInstance.mediaType !== 'audio' && ws === Workspace.AUDIO) {
+                            return null;
+                        }
                         if (jobInstance.dimension === DimensionType.DIMENSION_3D) {
                             if (ws === Workspace.STANDARD) {
                                 return null;

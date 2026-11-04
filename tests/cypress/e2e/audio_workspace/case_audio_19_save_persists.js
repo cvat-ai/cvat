@@ -22,7 +22,7 @@ context('Audio annotation. Save annotations persists across reload.', () => {
         it('Create region, save, reload — region is loaded back', () => {
             cy.audioCreateRegionViaButton(firstLabelName, 100, 250);
             cy.get('.cvat-audio-region-item').should('have.length', 1);
-            cy.audioSaveAnnotations();
+            cy.saveJob();
             cy.reload();
             cy.assertWaveformReady();
             cy.get('.cvat-audio-region-item', { timeout: 15000 }).should('have.length', 1);

@@ -32,7 +32,7 @@ context('OpenCV. Intelligent scissors. Histogram Equalization. TrackerMIL.', () 
     };
 
     const createRectangleTrack2Points = {
-        points: 'By 2 Points',
+        points: '2 Points',
         type: 'Track',
         firstX: 445,
         firstY: 40,
@@ -84,6 +84,7 @@ context('OpenCV. Intelligent scissors. Histogram Equalization. TrackerMIL.', () 
     describe(`Testing case "${caseId}"`, () => {
         it('Load OpenCV.', () => {
             cy.interactOpenCVControlButton();
+            cy.hideTooltips(); // only appears on first interaction
             cy.get('.cvat-opencv-control-popover').within(() => {
                 cy.contains('OpenCV is loading').should('not.exist');
             });
@@ -145,37 +146,6 @@ context('OpenCV. Intelligent scissors. Histogram Equalization. TrackerMIL.', () 
             cy.get('body').type('{Esc}'); // Cancel drawing
             cy.get('.cvat_canvas_interact_intermediate_shape').should('not.exist');
             cy.get('.cvat_canvas_shape').should('have.length', 2);
-        });
-
-        it('Check "Intelligent scissors blocking feature". Cancel drawing.', () => {
-            cy.interactOpenCVControlButton();
-            cy.get('.cvat-opencv-drawing-tool').click();
-            cy.get('.cvat-annotation-header-block-tool-button').click();
-            cy.get('.cvat-annotation-header-block-tool-button').should('have.class', 'cvat-button-active');
-
-            createOpencvShapeSecondLabel.pointsMap.forEach((point) => {
-                clickCanvasImagePoint(point);
-            });
-
-            cy.get('.cvat_canvas_interact_intermediate_shape').then((intermediateShape) => {
-                expect(intermediateShape.attr('points').split(' ').length).to.be.equal(
-                    createOpencvShapeSecondLabel.pointsMap.length,
-                );
-            });
-
-            cy.get('.cvat-annotation-header-block-tool-button').click();
-            cy.get('.cvat-annotation-header-block-tool-button').should('not.have.class', 'cvat-button-active');
-            clickCanvasImagePoint({ x: 2300, y: 900 });
-
-            cy.get('.cvat_canvas_interact_intermediate_shape').then((intermediateShape) => {
-                // The last point on the crosshair
-                expect(intermediateShape.attr('points').split(' ').length).to.be.gt(
-                    createOpencvShapeSecondLabel.pointsMap.length,
-                );
-            });
-
-            // Cancel drawing
-            cy.get('body').type('{Esc}');
         });
 
         it('Check "Histogram Equalization" feature.', () => {

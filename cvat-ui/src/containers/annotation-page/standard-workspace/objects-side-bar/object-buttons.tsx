@@ -6,7 +6,9 @@
 import React from 'react';
 import { connect } from 'react-redux';
 
-import { ObjectState, Job } from 'cvat-core-wrapper';
+import {
+    ObjectState, Job, ObjectType, ShapeType,
+} from 'cvat-core-wrapper';
 import isAbleToChangeFrame from 'utils/is-able-to-change-frame';
 import { ThunkDispatch } from 'utils/redux';
 import {
@@ -16,6 +18,8 @@ import {
 } from 'actions/annotation-actions';
 import { CombinedState } from 'reducers';
 import ItemButtonsComponent from 'components/annotation-page/standard-workspace/objects-side-bar/object-item-buttons';
+import { TrackerButton } from 'components/annotation-page/standard-workspace/tracker-controls';
+import { getObjectStateByClientID } from 'utils/objects-sidebar';
 
 interface OwnProps {
     clientID: number;
@@ -57,11 +61,7 @@ function mapStateToProps(state: CombinedState, own: OwnProps): StateToProps {
     const {
         clientID, outsideDisabled, hiddenDisabled, keyframeDisabled,
     } = own;
-    let [objectState] = states.filter((_objectState): boolean => _objectState.clientID === clientID);
-    if (!objectState) {
-        const elements = states.map((_objectState: any): any[] => _objectState.elements).flat();
-        [objectState] = elements.filter((_objectState): boolean => _objectState.clientID === clientID);
-    }
+    const objectState = getObjectStateByClientID(states, clientID)!;
 
     return {
         objectState,
@@ -240,6 +240,9 @@ class ItemButtonsWrapper extends React.PureComponent<StateToProps & DispatchToPr
 
         return (
             <ItemButtonsComponent
+                trackingControl={objectType === ObjectType.TRACK && shapeType === ShapeType.RECTANGLE ? (
+                    <TrackerButton objectState={objectState} />
+                ) : undefined}
                 parentID={parentID}
                 objectType={objectType}
                 shapeType={shapeType}

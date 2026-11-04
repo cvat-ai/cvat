@@ -29,6 +29,7 @@ import { makeBulkOperationAsync } from 'actions/bulk-actions';
 import {
     Dumper, ProjectOrTaskOrJob, Job, Project,
     Storage, StorageData, StorageLocation, Task,
+    DimensionType,
 } from 'cvat-core-wrapper';
 
 type FormValues = {
@@ -134,6 +135,10 @@ function ExportDatasetModal(props: Readonly<StateToProps>): JSX.Element {
         }
     }, [isBulkMode, instanceType, allTasks, allProjects, allJobs, instance]);
 
+    const canSaveImages = isBulkMode ?
+        selectedInstances.some((selectedInstance) => selectedInstance.dimension !== DimensionType.DIMENSION_1D) :
+        instance?.dimension !== DimensionType.DIMENSION_1D;
+
     const [nameTemplate, setNameTemplate] = useState('dataset_task_{{id}}');
 
     useEffect(() => {
@@ -185,6 +190,9 @@ function ExportDatasetModal(props: Readonly<StateToProps>): JSX.Element {
     const handleExport = useCallback(
         (values: FormValues): void => {
             const exportExtension = getExportExtension(dumpers, values.selectedFormat);
+            const shouldSaveImages = (target: ProjectOrTaskOrJob): boolean => (
+                target.dimension !== DimensionType.DIMENSION_1D && values.saveImages
+            );
             if (isBulkMode) {
                 dispatch(makeBulkOperationAsync<ProjectOrTaskOrJob>(
                     selectedInstances,
@@ -198,7 +206,7 @@ function ExportDatasetModal(props: Readonly<StateToProps>): JSX.Element {
                             exportDatasetAsync(
                                 inst,
                                 values.selectedFormat as string,
-                                values.saveImages,
+                                shouldSaveImages(inst),
                                 false, // always custom storage in bulk
                                 new Storage({
                                     location: values.targetStorage?.location,
@@ -231,7 +239,7 @@ function ExportDatasetModal(props: Readonly<StateToProps>): JSX.Element {
                 exportDatasetAsync(
                     instance as ProjectOrTaskOrJob,
                     values.selectedFormat as string,
-                    values.saveImages,
+                    shouldSaveImages(instance as ProjectOrTaskOrJob),
                     useDefaultTargetStorage,
                     useDefaultTargetStorage ? new Storage({
                         location: defaultStorageLocation,
@@ -335,16 +343,19 @@ function ExportDatasetModal(props: Readonly<StateToProps>): JSX.Element {
                             )}
                     </Select>
                 </Form.Item>
-                <Space>
-                    <Form.Item
-                        className='cvat-modal-export-switch-use-default-storage'
-                        name='saveImages'
-                        valuePropName='checked'
-                    >
-                        <Switch className='cvat-modal-export-save-images' />
-                    </Form.Item>
-                    <Text strong>Save images</Text>
-                </Space>
+                {
+                    canSaveImages &&
+                    <Space>
+                        <Form.Item
+                            className='cvat-modal-export-switch-use-default-storage'
+                            name='saveImages'
+                            valuePropName='checked'
+                        >
+                            <Switch className='cvat-modal-export-save-images' />
+                        </Form.Item>
+                        <Text strong>Save images</Text>
+                    </Space>
+                }
                 {isBulkMode ? (
                     <Form.Item label={<Text strong>Name template</Text>} required>
                         <Input

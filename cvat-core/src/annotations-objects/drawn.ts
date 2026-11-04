@@ -6,17 +6,17 @@
 import type ObjectState from '../object-state';
 import { checkObjectType } from '../common';
 import { clamp } from '../opencv/math-utils';
-import { ShapeType, HistoryActions, DimensionType } from '../enums';
+import { ShapeType, DimensionType } from '../enums';
 import {
     checkNumberOfPoints, checkShapeArea,
 } from '../object-utils';
 import { ImageObject } from './image-object';
 import type { AnnotationInjection } from './types';
 import { isChildObject } from './utils';
+import { PinnableMixin } from './pinnable';
 
-export class Drawn extends ImageObject {
+export class Drawn extends PinnableMixin(ImageObject) {
     protected descriptions: string[];
-    protected pinned: boolean;
     public shapeType: ShapeType;
 
     constructor(data, clientID: number, color: string, injection: AnnotationInjection) {
@@ -28,27 +28,6 @@ export class Drawn extends ImageObject {
 
     protected saveDescriptions(descriptions: string[]): void {
         this.descriptions = [...descriptions];
-    }
-
-    protected savePinned(pinned: boolean, frame: number): void {
-        const undoPinned = this.pinned;
-        const redoPinned = pinned;
-
-        this.history.do(
-            HistoryActions.CHANGED_PINNED,
-            () => {
-                this.pinned = undoPinned;
-                this.updated = Date.now();
-            },
-            () => {
-                this.pinned = redoPinned;
-                this.updated = Date.now();
-            },
-            [this.clientID],
-            frame,
-        );
-
-        this.pinned = pinned;
     }
 
     private fitPoints(points: number[], rotation: number, maxX: number, maxY: number): number[] {

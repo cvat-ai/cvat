@@ -10,7 +10,7 @@ context('Annotations statistics.', () => {
     const caseId = '48';
     const issueId = '2663';
     const createRectangleShape2Points = {
-        points: 'By 2 Points',
+        points: '2 Points',
         type: 'Shape',
         labelName,
         firstX: 250,
@@ -19,7 +19,7 @@ context('Annotations statistics.', () => {
         secondY: 450,
     };
     const createRectangleTrack2Points = {
-        points: 'By 2 Points',
+        points: '2 Points',
         type: 'Track',
         labelName,
         firstX: createRectangleShape2Points.firstX,

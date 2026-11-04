@@ -7,7 +7,7 @@ from io import BytesIO
 import boto3
 from botocore.exceptions import ClientError
 
-from shared.utils.config import MINIO_ENDPOINT_URL, MINIO_KEY, MINIO_SECRET_KEY
+from shared.utils.config import MOTO_ENDPOINT_URL, MOTO_KEY, MOTO_SECRET_KEY
 
 
 class S3Client:
@@ -61,8 +61,8 @@ class S3Client:
 
 def make_client(*, bucket: str | None = None) -> S3Client:
     return S3Client(
-        endpoint_url=MINIO_ENDPOINT_URL,
-        access_key=MINIO_KEY,
-        secret_key=MINIO_SECRET_KEY,
+        endpoint_url=MOTO_ENDPOINT_URL,
+        access_key=MOTO_KEY,
+        secret_key=MOTO_SECRET_KEY,
         bucket=bucket,
     )

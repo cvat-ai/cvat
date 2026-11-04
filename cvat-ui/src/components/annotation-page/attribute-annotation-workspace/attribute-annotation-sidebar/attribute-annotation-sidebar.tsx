@@ -17,6 +17,7 @@ import {
     updateAnnotationsAsync,
 } from 'actions/annotation-actions';
 import isAbleToChangeFrame from 'utils/is-able-to-change-frame';
+import getHiddenZLayers from 'utils/get-hidden-z-layers';
 import GlobalHotKeys, { KeyMap } from 'utils/mousetrap-react';
 import { ThunkDispatch } from 'utils/redux';
 import AppearanceBlock from 'components/annotation-page/appearance-block';
@@ -38,7 +39,7 @@ interface StateToProps {
     keyMap: KeyMap;
     normalizedKeyMap: Record<string, string>;
     canvasIsReady: boolean;
-    curZLayer: number;
+    hiddenZLayers: Set<number>;
 }
 
 interface DispatchToProps {
@@ -105,7 +106,6 @@ function mapStateToProps(state: CombinedState): StateToProps {
                 activatedStateID,
                 activatedAttributeID,
                 states,
-                zLayer: { cur },
             },
             job: { labels },
             canvas: { ready: canvasIsReady },
@@ -121,7 +121,7 @@ function mapStateToProps(state: CombinedState): StateToProps {
         keyMap,
         normalizedKeyMap,
         canvasIsReady,
-        curZLayer: cur,
+        hiddenZLayers: getHiddenZLayers(state),
     };
 }
 
@@ -151,10 +151,12 @@ function AttributeAnnotationSidebar(props: StateToProps & DispatchToProps): JSX.
         keyMap,
         normalizedKeyMap,
         canvasIsReady,
-        curZLayer,
+        hiddenZLayers,
     } = props;
 
-    const filteredStates = states.filter((state) => !state.outside && !state.hidden && state.zOrder <= curZLayer);
+    const filteredStates = states.filter((state) => (
+        !state.outside && !state.hidden && !hiddenZLayers.has(state.zOrder)
+    ));
     const [labelAttrMap, setLabelAttrMap] = useState(
         labels.reduce((acc, label): LabelAttrMap => {
             acc[label.id] = label.attributes.length ? label.attributes[0] : null;

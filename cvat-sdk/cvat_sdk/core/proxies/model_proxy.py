@@ -9,9 +9,7 @@ from abc import ABC
 from collections.abc import Callable, Sequence
 from copy import deepcopy
 from pathlib import Path
-from typing import TYPE_CHECKING, Any, Generic, Literal, TypeVar, overload
-
-from typing_extensions import Self
+from typing import TYPE_CHECKING, Any, Generic, Literal, Self, TypeVar, overload
 
 from cvat_sdk.api_client import exceptions
 from cvat_sdk.api_client.model_utils import IModelData, ModelNormal, to_json

@@ -9,6 +9,7 @@ import textwrap
 from drf_spectacular.authentication import BasicScheme, SessionScheme, TokenScheme
 from drf_spectacular.extensions import OpenApiAuthenticationExtension, OpenApiFilterExtension
 from drf_spectacular.openapi import AutoSchema
+from drf_spectacular.utils import PolymorphicProxySerializer
 from rest_framework import serializers
 
 
@@ -130,12 +131,17 @@ class CustomAutoSchema(AutoSchema):
     def _get_request_for_media_type(self, serializer, *args, **kwargs):
         # Enables support for required=False serializers in request body specification
         # in drf-spectacular. Doesn't block other extensions on the target serializer.
-        # This is supported by OpenAPI and by SDK generator, but not by drf-spectacular
+        # This is supported by OpenAPI and by the SDK generator, but not by drf-spectacular.
 
         schema, required = super()._get_request_for_media_type(serializer, *args, **kwargs)
 
         if isinstance(serializer, serializers.Serializer):
             if not serializer.required:
                 required = False
+            elif isinstance(serializer, PolymorphicProxySerializer):
+                # PolymorphicProxySerializer has no fields of its own (they live in the wrapped
+                # serializers), so drf-spectacular makes the body optional, even if
+                # serializer.required=True.
+                required = True
 
         return schema, required

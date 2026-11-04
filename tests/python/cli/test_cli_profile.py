@@ -3,6 +3,8 @@
 # SPDX-License-Identifier: MIT
 
 
+import json
+
 import pytest
 from cvat_sdk.core.auth import AuthStore, ProfileEntry
 
@@ -144,7 +146,10 @@ class TestProfileCreate:
         assert "mycvat" in capsys.readouterr().out
 
     def test_create_prompts_for_token_without_echo(self, store_path, monkeypatch):
-        monkeypatch.setattr("getpass.getpass", lambda *a, **k: "prompted-pat")
+        prompts = []
+        monkeypatch.setattr(
+            "getpass.getpass", lambda prompt: prompts.append(prompt) or "prompted-pat"
+        )
         run_cli(
             self,
             "--server-host",
@@ -155,6 +160,7 @@ class TestProfileCreate:
             "p",
         )
         assert AuthStore(path=store_path).get_profile("p").token == "prompted-pat"
+        assert prompts == ["Personal Access Token (PAT) for 'https://app.cvat.ai': "]
 
     def test_create_existing_requires_force(self, store_path):
         _seed(store_path, "p", "https://app.cvat.ai", "old")
@@ -256,6 +262,185 @@ class TestProfileCreate:
             "p",
             expected_code=1,
         )
+        assert AuthStore(path=store_path).get_profile("p") is None
+
+
+class TestProfileCreateFromFile:
+    def test_plain_token_file(self, store_path, tmp_path):
+        f = tmp_path / "pat.txt"
+        f.write_text("  raw-token\n")
+        run_cli(
+            self,
+            "--server-host",
+            "https://app.cvat.ai",
+            "profile",
+            "create",
+            "--name",
+            "release-bot",
+            "--file",
+            str(f),
+        )
+        assert AuthStore(path=store_path).get_profile("release-bot").token == "raw-token"
+
+    def test_empty_token_file_reports_non_empty_pat_error(self, store_path, tmp_path, capsys):
+        f = tmp_path / "pat.txt"
+        f.write_text("")
+        run_cli(
+            self,
+            "profile",
+            "create",
+            "--name",
+            "p",
+            "--file",
+            str(f),
+            expected_code=1,
+        )
+        assert "A non-empty PAT is required." in capsys.readouterr().err
+        assert AuthStore(path=store_path).get_profile("p") is None
+
+    def test_json_envelope_zero_args(self, store_path, tmp_path):
+        f = tmp_path / "cvat-token.json"
+        f.write_text(
+            json.dumps(
+                {
+                    "version": 1,
+                    "server": "https://app.cvat.ai",
+                    "name": "my-laptop",
+                    "token": "envelope-pat",
+                }
+            )
+        )
+        run_cli(self, "profile", "create", "--file", str(f))
+        entry = AuthStore(path=store_path).get_profile("my-laptop")
+        assert entry.server == "https://app.cvat.ai"
+        assert entry.token == "envelope-pat"
+
+    def test_jsonc_envelope_supports_comments_and_trailing_commas(self, store_path, tmp_path):
+        f = tmp_path / "cvat-token.jsonc"
+        f.write_text("""{
+                // The server where this token was created.
+                "server": "https://app.cvat.ai",
+                "name": "my-laptop",
+                "token": "envelope-pat",
+            }""")
+        run_cli(self, "profile", "create", "--file", str(f))
+        entry = AuthStore(path=store_path).get_profile("my-laptop")
+        assert entry.server == "https://app.cvat.ai"
+        assert entry.token == "envelope-pat"
+
+    def test_explicit_name_overrides_envelope(self, store_path, tmp_path):
+        f = tmp_path / "t.json"
+        f.write_text(
+            json.dumps(
+                {
+                    "version": 1,
+                    "server": "https://app.cvat.ai",
+                    "name": "env-name",
+                    "token": "p",
+                }
+            )
+        )
+        run_cli(self, "profile", "create", "--name", "explicit", "--file", str(f))
+        store = AuthStore(path=store_path)
+        assert store.get_profile("explicit") is not None
+        assert store.get_profile("env-name") is None
+
+    def test_explicit_server_overrides_envelope(self, store_path, tmp_path):
+        f = tmp_path / "t.json"
+        f.write_text(
+            json.dumps(
+                {
+                    "version": 1,
+                    "server": "https://envelope.example.com",
+                    "name": "n",
+                    "token": "p",
+                }
+            )
+        )
+        run_cli(
+            self,
+            "--server-host",
+            "https://explicit.example.com",
+            "profile",
+            "create",
+            "--file",
+            str(f),
+        )
+        entry = AuthStore(path=store_path).get_profile("n")
+        assert entry.server == "https://explicit.example.com"
+
+    def test_token_argument_conflicts_with_file(self, store_path, tmp_path, capsys):
+        f = tmp_path / "pat.txt"
+        f.write_text("file-token")
+        run_cli(
+            self,
+            "--server-host",
+            "https://app.cvat.ai",
+            "profile",
+            "create",
+            "--name",
+            "p",
+            "argument-token",
+            "--file",
+            str(f),
+            expected_code=1,
+        )
+        assert "Cannot combine a PAT argument with '--file'." in capsys.readouterr().err
+        assert AuthStore(path=store_path).get_profile("p") is None
+
+    def test_rejects_non_file_path(self, store_path, tmp_path, capsys):
+        run_cli(
+            self,
+            "profile",
+            "create",
+            "--name",
+            "p",
+            "--file",
+            str(tmp_path),
+            expected_code=1,
+        )
+        assert "path must be a regular file" in capsys.readouterr().err
+        assert AuthStore(path=store_path).get_profile("p") is None
+
+    def test_rejects_missing_file(self, store_path, tmp_path, capsys):
+        run_cli(
+            self,
+            "profile",
+            "create",
+            "--name",
+            "p",
+            "--file",
+            str(tmp_path / "missing.txt"),
+            expected_code=1,
+        )
+        assert "path must be a regular file" in capsys.readouterr().err
+        assert AuthStore(path=store_path).get_profile("p") is None
+
+    @pytest.mark.parametrize(
+        ("envelope", "error_message"),
+        [
+            ({}, "JSON envelope field 'token' must be a string"),
+            ({"token": 1}, "JSON envelope field 'token' must be a string"),
+            ({"token": "p", "server": 1}, "JSON envelope field 'server' must be a string"),
+            ({"token": "p", "name": ["p"]}, "JSON envelope field 'name' must be a string"),
+        ],
+    )
+    def test_rejects_invalid_json_envelope(
+        self, store_path, tmp_path, capsys, envelope, error_message
+    ):
+        f = tmp_path / "invalid.json"
+        f.write_text(json.dumps(envelope))
+        run_cli(
+            self,
+            "profile",
+            "create",
+            "--name",
+            "p",
+            "--file",
+            str(f),
+            expected_code=1,
+        )
+        assert error_message in capsys.readouterr().err
         assert AuthStore(path=store_path).get_profile("p") is None
 
 

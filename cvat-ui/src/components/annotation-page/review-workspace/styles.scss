@@ -8,21 +8,3 @@
 .cvat-review-workspace.ant-layout {
     height: 100%;
 }
-
-.cvat-issue-control {
-    font-size: 40px;
-
-    &.cvat-disabled-canvas-control {
-        &::after {
-            opacity: 0.3;
-        }
-    }
-
-    &::after {
-        content: '\FE56';
-        font-size: 32px;
-        position: absolute;
-        bottom: $grid-unit-size;
-        right: -$grid-unit-size;
-    }
-}

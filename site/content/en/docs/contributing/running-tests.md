@@ -14,14 +14,14 @@ description: 'Instructions on how to run all existence tests.'
              -f docker-compose.yml \
              -f docker-compose.dev.yml \
              -f components/serverless/docker-compose.serverless.yml \
-             -f tests/docker-compose.minio.yml \
+             -f tests/docker-compose.moto.yml \
              -f tests/docker-compose.file_share.yml up -d
    ```
 1. Add test user in CVAT:
    ```shell
    docker exec -i cvat_server \
              /bin/bash -c \
-             "echo \"from django.contrib.auth.models import User; User.objects.create_superuser('admin', 'admin@localhost.company', '12qwaszx')\" | python3 ~/manage.py shell"
+             "echo \"from django.contrib.auth import get_user_model; get_user_model().objects.create_superuser('admin', 'admin@localhost.company', '12qwaszx')\" | python3 ~/manage.py shell"
    ```
 1. Install npm dependencies:
    ```bash

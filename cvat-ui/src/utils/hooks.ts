@@ -56,8 +56,8 @@ export function usePlugins(
             component,
             weight: data.weight,
         }));
-    const ref = useRef<Plugin[]>(mappedComponents);
 
+    const ref = useRef<Plugin[]>(mappedComponents);
     if (!_.isEqual(ref.current, mappedComponents)) {
         ref.current = mappedComponents;
     }

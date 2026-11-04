@@ -144,6 +144,44 @@ context('Manipulations with skeletons', { scrollBehavior: false }, () => {
                 cy.get('.cvat_canvas_skeleton_wrapping_rect').should('exist').and('not.be.visible');
             });
 
+            // Reuse this fixture to exercise variable-height Parts through a real virtual-row remount.
+            cy.saveJob();
+            cy.window().then(async (win) => {
+                const jobId = Number(win.location.pathname.split('/').pop());
+                const [job] = await win.cvat.jobs.get({ jobID: jobId });
+                await job.annotations.get(0);
+                const { shapes } = await job.annotations.export();
+                const copies = new win.Array();
+                for (let index = 0; index < 20; index++) {
+                    copies.push(win.JSON.parse(win.JSON.stringify(shapes[0]), (key, value) => (
+                        key === 'id' ? undefined : value
+                    )));
+                }
+                await job.annotations.import({ shapes: copies });
+                await job.annotations.save();
+            });
+            cy.reload();
+            cy.get('.cvat-canvas-container').should('be.visible');
+            const viewport = '.cvat-objects-sidebar-virtual-list [data-virtual-list-viewport]';
+            const parts = '#cvat-objects-sidebar-state-item-1 .cvat-objects-sidebar-state-item-elements-collapse';
+            cy.getObjectSidebarItem(1);
+            cy.get(`${parts} .ant-collapse-header`).click();
+            cy.get('#cvat-objects-sidebar-state-item-element-2').should('be.visible');
+            cy.get(viewport).scrollTo('bottom', { duration: 0 });
+            cy.get('#cvat-objects-sidebar-state-item-1').should('not.exist');
+            cy.getObjectSidebarItem(1);
+            cy.get('#cvat-objects-sidebar-state-item-element-2').should('be.visible');
+            cy.get(`${parts} .ant-collapse-header`).click();
+            cy.get('#cvat-objects-sidebar-state-item-element-2').should('not.be.visible');
+            cy.get(viewport).scrollTo('bottom', { duration: 0 });
+            cy.get('#cvat_canvas_shape_2').trigger('mousemove', { force: true });
+            cy.get('#cvat_canvas_shape_2').dblclick({ force: true });
+            cy.get('#cvat-objects-sidebar-state-item-element-2').should(($item) => {
+                const holder = $item[0].closest('[data-virtual-list-viewport]');
+                expect($item[0].getBoundingClientRect().top, 'jump aligns the expanded skeleton part')
+                    .to.be.closeTo(holder.getBoundingClientRect().top + holder.clientTop, 1);
+            });
+
             cy.removeAnnotations();
         });
 
@@ -169,6 +207,40 @@ context('Manipulations with skeletons', { scrollBehavior: false }, () => {
                 cy.get('span[aria-label="user"]').click();
             });
             cy.get('#cvat_canvas_shape_2').should('have.class', 'cvat_canvas_shape_occluded');
+
+            deleteSkeleton('#cvat_canvas_shape_1', 'shape', false);
+            cy.removeAnnotations();
+        });
+
+        it('Undo and redo outside property for a skeleton point', () => {
+            createSkeletonObject('shape');
+
+            const skeletonPointSelector = '#cvat-objects-sidebar-state-item-element-2';
+            cy.get(skeletonPointSelector).within(() => {
+                cy.get('.cvat-object-item-button-outside').click();
+                cy.get('.cvat-object-item-button-outside-enabled').should('exist');
+                cy.get('.cvat-object-item-button-occluded-enabled').should('not.exist');
+            });
+
+            cy.get('.cvat-annotation-header-undo-button').trigger('mouseover');
+            cy.get('.ant-tooltip-inner').should('contain.text', 'Undo: Changed outside');
+            cy.get('.cvat-annotation-header-undo-button').click();
+            cy.get(skeletonPointSelector).within(() => {
+                cy.get('.cvat-object-item-button-outside-enabled').should('not.exist');
+                cy.get('.cvat-object-item-button-occluded-enabled').should('not.exist');
+            });
+
+            cy.get('.cvat-annotation-header-redo-button').click();
+            cy.get(skeletonPointSelector).within(() => {
+                cy.get('.cvat-object-item-button-outside-enabled').should('exist');
+                cy.get('.cvat-object-item-button-occluded-enabled').should('not.exist');
+            });
+
+            cy.get('.cvat-annotation-header-undo-button').click();
+            cy.get(skeletonPointSelector).within(() => {
+                cy.get('.cvat-object-item-button-outside-enabled').should('not.exist');
+                cy.get('.cvat-object-item-button-occluded-enabled').should('not.exist');
+            });
 
             deleteSkeleton('#cvat_canvas_shape_1', 'shape', false);
             cy.removeAnnotations();
@@ -256,8 +328,8 @@ context('Manipulations with skeletons', { scrollBehavior: false }, () => {
             createSkeletonObject('shape');
             cy.get('#cvat_canvas_shape_2').click();
             cy.get('#cvat_canvas_shape_2').trigger('mouseover');
-            cy.get('body').type('{ctrl}c');
-            cy.get('body').type('{ctrl}v');
+            cy.pressWithPlatformModifier('c');
+            cy.pressWithPlatformModifier('v');
             cy.get('.cvat-canvas-container').click();
 
             cy.get('#cvat_canvas_shape_7').should('exist').and('be.visible');

@@ -16,8 +16,8 @@ from cvat.apps.engine.models import (
     Project,
     Task,
     TimestampedModel,
-    User,
 )
+from cvat.apps.iam.models import User
 from cvat.apps.organizations.models import Invitation, Membership, Organization
 from cvat.apps.webhooks.models import Webhook
 

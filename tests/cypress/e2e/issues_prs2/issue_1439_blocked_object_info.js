@@ -9,7 +9,7 @@ import { taskName, labelName } from '../../support/const';
 context('Information about a blocked object disappears if hover the cursor over another object', () => {
     const issueId = '1439';
     const createRectangleShape2Points = {
-        points: 'By 2 Points',
+        points: '2 Points',
         type: 'Shape',
         labelName,
         firstX: 250,
@@ -18,7 +18,7 @@ context('Information about a blocked object disappears if hover the cursor over 
         secondY: 450,
     };
     const createRectangleShape2PointsSecond = {
-        points: 'By 2 Points',
+        points: '2 Points',
         type: 'Shape',
         labelName,
         firstX: createRectangleShape2Points.firstX,

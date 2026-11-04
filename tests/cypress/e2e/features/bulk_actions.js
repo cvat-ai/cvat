@@ -186,13 +186,12 @@ context('Bulk actions in UI', () => {
             cy.get('.cvat-header-requests-button').click();
             cy.get('.cvat-spinner').should('not.exist');
             cy.get('.cvat-requests-list').should('be.visible');
-            cy.get('.cvat-requests-card')
-                .should('have.length.at.least', numberOfObjects)
-                .then(($cards) => {
-                    cy.wrap($cards.slice(0, numberOfObjects)).each((card) => {
-                        cy.wrap(card).find('.cvat-request-item-progress-success').should('exist');
-                    });
-                });
+            // Cards are replaced as requests finish; keep these queries retryable and tied to each exported job.
+            taskTwoJobs.jobIds.forEach((jobId) => {
+                const requestSelector = '.cvat-requests-card:has(' +
+                    `.cvat-requests-name a[href="/tasks/${taskTwoJobs.id}/jobs/${jobId}"])`;
+                cy.get(requestSelector).find('.cvat-request-item-progress-success', { timeout: 60000 }).should('exist');
+            });
         });
     });
 
@@ -202,7 +201,11 @@ context('Bulk actions in UI', () => {
         });
 
         it('Delete all tasks, ensure deletion', () => {
-            cy.intercept('DELETE', '/api/tasks/**').as('deleteTask');
+            cy.intercept('DELETE', '/api/tasks/**', (request) => {
+                request.continue((response) => {
+                    response.setDelay(1000);
+                });
+            }).as('deleteTask');
 
             selectAll();
             getBulkActionsMenu().within(() => {
@@ -216,14 +219,13 @@ context('Bulk actions in UI', () => {
             cy.contains('Delete selected')
                 .should('be.visible')
                 .click();
-            // Bulk delete sends one request per selected task. Use the first
-            // response to confirm the delete flow started, then wait for the
-            // second task deletion as well.
-            cy.wait('@deleteTask').then(() => {
-                cy.get('.cvat-bulk-progress-wrapper').should('be.visible');
-            });
+            // Keep the responses pending long enough to observe the progress state reliably.
+            cy.get('.cvat-bulk-progress-wrapper').should('be.visible');
             cy.wait('@deleteTask');
+            cy.wait('@deleteTask');
+            cy.get('.cvat-bulk-progress-wrapper').should('not.exist');
 
+            // Ensure UI shows them as deleted (=becomes non-interactive)
             cy.get('.cvat-tasks-list-item').each(($el) => {
                 cy.wrap($el)
                     .invoke('attr', 'style')

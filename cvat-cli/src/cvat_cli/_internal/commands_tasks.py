@@ -137,6 +137,12 @@ class TaskCreate:
             help="the number of frames in a segment",
         )
         parser.add_argument(
+            "--subset",
+            default=argparse.SUPPRESS,
+            type=str,
+            help="subset assigned to the task, e.g. Train, Validation, or Test",
+        )
+        parser.add_argument(
             "--sorting-method",
             default="lexicographical",
             choices=["lexicographical", "natural", "predefined", "random"],

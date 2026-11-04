@@ -167,3 +167,22 @@ export function getShapeCoord(type, objectSelector) {
     }
     return cy.wrap(arrToPush);
 }
+
+export function checkDegRotate(deg) {
+    cy.get('#cvat_canvas_background').should('have.attr', 'style').and('contain', `rotate(${deg}deg);`);
+}
+
+export function imageRotate(direction = 'anticlockwise', deg) {
+    cy.get('.cvat-rotate-canvas-control').click();
+    cy.hideTooltips();
+    cy.get('.cvat-rotate-canvas-popover').should('be.visible');
+    if (direction === 'clockwise') {
+        cy.get('.cvat-rotate-canvas-controls-right').should('be.visible').click();
+    } else {
+        cy.get('.cvat-rotate-canvas-controls-left').should('be.visible').click();
+    }
+    if (Number.isInteger(deg)) {
+        checkDegRotate(deg);
+    }
+    cy.get('body').click();
+}

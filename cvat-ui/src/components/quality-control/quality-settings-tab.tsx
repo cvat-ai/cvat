@@ -2,7 +2,7 @@
 //
 // SPDX-License-Identifier: MIT
 
-import React, { useCallback } from 'react';
+import React, { useCallback, useState } from 'react';
 import { Link } from 'react-router-dom';
 import Text from 'antd/lib/typography/Text';
 import Form from 'antd/lib/form';
@@ -13,10 +13,15 @@ import Alert from 'antd/lib/alert';
 import { ExclamationCircleFilled } from '@ant-design/icons/lib/icons';
 import Modal from 'antd/lib/modal';
 import {
-    Project, QualitySettings, QualitySettingsSaveFields, Task,
+    Label, Project, QualitySettings, QualitySettingsSaveFields, Task,
 } from 'cvat-core-wrapper';
+import { getEffectiveQualitySettings, inheritsProjectQualitySettings } from 'utils/quality';
 import CVATLoadingSpinner from 'components/common/loading-spinner';
-import QualitySettingsForm from './task-quality/quality-settings-form';
+import QualitySettingsForm from './shared/settings/quality-settings-form';
+import {
+    QUALITY_REQUIREMENTS_ENABLED_FIELD,
+    requirementToSaveFields,
+} from './shared/requirements/quality-requirements-utils';
 
 export type UpdateSettingsData = Record<number, { settings: QualitySettings, fields: QualitySettingsSaveFields }>;
 
@@ -26,46 +31,55 @@ interface Props {
     qualitySettings: {
         settings: QualitySettings | null;
         childrenSettings: QualitySettings[] | null;
+        parentSettings: QualitySettings | null;
     };
+    labels: Label[];
     setQualitySettings: (updatedSettingsData: UpdateSettingsData) => void;
+    refreshQualitySettings: () => Promise<void>;
 }
 
 function QualitySettingsTab(props: Readonly<Props>): JSX.Element | null {
     const {
         instance,
         fetching,
-        qualitySettings: { settings, childrenSettings },
+        qualitySettings: { settings, childrenSettings, parentSettings },
+        labels,
         setQualitySettings,
+        refreshQualitySettings,
     } = props;
 
     const [form] = Form.useForm();
+    const [requirementFormVisible, setRequirementFormVisible] = useState(false);
+
+    const inherited = inheritsProjectQualitySettings(instance, settings);
+    const effectiveSettings = getEffectiveQualitySettings(instance, settings, parentSettings);
 
     const onSave = useCallback(async () => {
-        if (settings) {
+        if (settings && !inherited) {
             const values = await form.validateFields();
             const fields: QualitySettingsSaveFields = {
-                targetMetric: values.targetMetric,
-                targetMetricThreshold: values.targetMetricThreshold / 100,
-                maxValidationsPerJob: values.maxValidationsPerJob,
-                lowOverlapThreshold: values.lowOverlapThreshold / 100,
-                iouThreshold: values.iouThreshold / 100,
-                compareAttributes: values.compareAttributes,
-                emptyIsAnnotated: values.emptyIsAnnotated,
-                oksSigma: values.oksSigma / 100,
-                pointSizeBase: values.pointSizeBase,
-                lineThickness: values.lineThickness / 100,
-                lineOrientationThreshold: values.lineOrientationThreshold / 100,
-                compareLineOrientation: values.compareLineOrientation,
-                compareGroups: values.compareGroups,
-                groupMatchThreshold: values.groupMatchThreshold / 100,
-                checkCoveredAnnotations: values.checkCoveredAnnotations,
-                objectVisibilityThreshold: values.objectVisibilityThreshold / 100,
-                panopticComparison: values.panopticComparison,
+                maxValidationsPerJob: values.maxValidationsPerJob ?? settings.maxValidationsPerJob,
                 jobFilter: values.jobFilter ?? '',
             };
+
+            const enabledValues = form.getFieldValue(QUALITY_REQUIREMENTS_ENABLED_FIELD) as
+                Record<string, boolean> | undefined;
+            const hasEnabledChanges = !!enabledValues && settings.requirements.some((requirement) => (
+                typeof enabledValues[requirement.id] === 'boolean' &&
+                enabledValues[requirement.id] !== requirement.enabled
+            ));
+
+            if (hasEnabledChanges) {
+                fields.requirements = settings.requirements.map((requirement) => ({
+                    id: requirement.id,
+                    ...requirementToSaveFields(requirement),
+                    enabled: enabledValues?.[requirement.id] ?? requirement.enabled,
+                })) as QualitySettingsSaveFields['requirements'];
+            }
+
             setQualitySettings({ [settings.id]: { settings, fields } });
         }
-    }, [form, settings, setQualitySettings]);
+    }, [form, settings, inherited, setQualitySettings]);
 
     const onInheritChange = useCallback((value: boolean) => {
         if (settings) {
@@ -138,22 +152,27 @@ function QualitySettingsTab(props: Readonly<Props>): JSX.Element | null {
         );
     }
 
-    if (settings) {
+    if (settings && effectiveSettings) {
         return (
             <div className='cvat-quality-control-settings-tab'>
-                <Row justify='end' className='cvat-quality-settings-save-btn'>
-                    <Col>
-                        <Button onClick={onSave} type='primary'>
-                            Save
-                        </Button>
-                    </Col>
-                </Row>
-                {header}
+                {!requirementFormVisible && (
+                    <Row justify='end' className='cvat-quality-settings-save-btn'>
+                        <Col>
+                            <Button onClick={onSave} type='primary' disabled={inherited}>
+                                Save
+                            </Button>
+                        </Col>
+                    </Row>
+                )}
+                {!requirementFormVisible && header}
                 <QualitySettingsForm
                     form={form}
-                    settings={settings}
+                    settings={effectiveSettings}
+                    labels={labels}
                     onSave={onSave}
-                    disabled={settings.inherit && instance instanceof Task && instance.projectId !== null}
+                    onReload={refreshQualitySettings}
+                    onRequirementFormVisibilityChange={setRequirementFormVisible}
+                    disabled={inherited}
                 />
             </div>
         );

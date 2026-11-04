@@ -25,6 +25,7 @@ __all__ = (
     "find_psycopg_cause",
     "is_lock_timeout_error",
     "bulk_create",
+    "clear_prefetched_relation_cache",
     "is_prefetched",
     "is_field_cached",
     "add_prefetch_fields",
@@ -119,6 +120,12 @@ def bulk_create(
         update_fields=update_fields,
         unique_fields=unique_fields,
     )
+
+
+def clear_prefetched_relation_cache(instance: Model, relation_name: str) -> None:
+    prefetched_objects_cache = getattr(instance, "_prefetched_objects_cache", None)
+    if prefetched_objects_cache is not None:
+        prefetched_objects_cache.pop(relation_name, None)
 
 
 def is_prefetched(queryset: QuerySet, field: str) -> bool:

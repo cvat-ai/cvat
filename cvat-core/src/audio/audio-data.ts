@@ -5,50 +5,40 @@
 import { ChunkQuality } from 'cvat-data';
 import serverProxy from '../server-proxy';
 
-function encodeWav(buffer: AudioBuffer): Blob {
-    const { numberOfChannels, sampleRate, length } = buffer;
-    const bitsPerSample = 16;
-    const bytesPerSample = bitsPerSample / 8;
-    const blockAlign = numberOfChannels * bytesPerSample;
-    const dataLength = length * blockAlign;
-    const headerLength = 44;
+const PEAKS_SAMPLE_RATE = 8000;
 
-    const out = new ArrayBuffer(headerLength + dataLength);
-    const view = new DataView(out);
+export interface AssembledAudioData {
+    /** original sample rate PCM audio buffer for playback */
+    audioBuffer: AudioBuffer;
+    /** resampled peaks to display waveform */
+    peaks: Float32Array[];
+    /** track duration, corresponds to audioBuffer.duration */
+    duration: number;
+}
 
-    const writeStr = (off: number, s: string): void => {
-        for (let i = 0; i < s.length; i++) view.setUint8(off + i, s.charCodeAt(i));
+async function prepareWaveformData(audioBuffer: AudioBuffer): Promise<AssembledAudioData> {
+    let peaksBuffer = audioBuffer;
+    if (audioBuffer.sampleRate !== PEAKS_SAMPLE_RATE) {
+        const context = new OfflineAudioContext(
+            audioBuffer.numberOfChannels,
+            Math.round(audioBuffer.duration * PEAKS_SAMPLE_RATE),
+            PEAKS_SAMPLE_RATE,
+        );
+        const source = context.createBufferSource();
+        source.buffer = audioBuffer;
+        source.connect(context.destination);
+        source.start();
+        peaksBuffer = await context.startRendering();
+    }
+
+    return {
+        audioBuffer,
+        peaks: Array.from(
+            { length: peaksBuffer.numberOfChannels },
+            (_, channel) => peaksBuffer.getChannelData(channel),
+        ),
+        duration: audioBuffer.duration,
     };
-
-    writeStr(0, 'RIFF');
-    view.setUint32(4, headerLength + dataLength - 8, true);
-    writeStr(8, 'WAVE');
-    writeStr(12, 'fmt ');
-    view.setUint32(16, 16, true);
-    view.setUint16(20, 1, true);
-    view.setUint16(22, numberOfChannels, true);
-    view.setUint32(24, sampleRate, true);
-    view.setUint32(28, sampleRate * blockAlign, true);
-    view.setUint16(32, blockAlign, true);
-    view.setUint16(34, bitsPerSample, true);
-    writeStr(36, 'data');
-    view.setUint32(40, dataLength, true);
-
-    const byChannelDate = new Array(numberOfChannels);
-    for (let ch = 0; ch < numberOfChannels; ch++) {
-        byChannelDate[ch] = buffer.getChannelData(ch);
-    }
-
-    let offset = headerLength;
-    for (let i = 0; i < length; i++) {
-        for (let ch = 0; ch < numberOfChannels; ch++) {
-            const sample = Math.max(-1, Math.min(1, byChannelDate[ch][i]));
-            view.setInt16(offset, sample < 0 ? sample * 0x8000 : sample * 0x7FFF, true);
-            offset += bytesPerSample;
-        }
-    }
-
-    return new Blob([out], { type: 'audio/wav' });
 }
 
 export async function fetchAndAssembleAudio(
@@ -56,61 +46,74 @@ export async function fetchAndAssembleAudio(
     totalFrames: number,
     chunkSize: number,
     quality: ChunkQuality = ChunkQuality.COMPRESSED,
-): Promise<Blob> {
+): Promise<AssembledAudioData> {
     const chunkCount = Math.ceil(totalFrames / chunkSize);
 
-    // NB: every chunk is decoded to PCM and re-encoded as WAV, including the
-    // single-chunk case. Serving the raw compressed blob (e.g. a VBR MP3)
-    // directly to the player desynchronizes the waveform from playback: the
-    // waveform is drawn from the Web-Audio-decoded buffer (exact duration),
-    // while seeking/cursor use the <audio> element's duration, which the
-    // browser only estimates for VBR streams. WAV is PCM, so both durations
-    // match and the rendered waveform stays aligned with what is played.
     const audioContext = new AudioContext();
     try {
         const rawChunks = await Promise.all(
-            Array.from({ length: chunkCount }, (_, i) => (
-                serverProxy.frames.getAudioChunk(jobId, i, quality)
+            Array.from({ length: chunkCount }, (_, index) => (
+                serverProxy.frames.getAudioChunk(jobId, index, quality)
             )),
         );
-
-        const decoded = await Promise.all(
-            rawChunks.map(({ data }) => audioContext.decodeAudioData(data.slice(0))),
-        );
-
-        const { sampleRate, numberOfChannels } = decoded[0];
-        const totalContentMs = totalFrames;
-        const totalContentSamples = Math.round((totalContentMs / 1000) * sampleRate);
-        const output = audioContext.createBuffer(numberOfChannels, totalContentSamples, sampleRate);
-
+        let output: AudioBuffer | null = null;
+        let sampleRate = 0;
+        let numberOfChannels = 0;
+        let totalContentSamples = 0;
         let writePos = 0;
-        for (let i = 0; i < decoded.length; i++) {
-            const buf = decoded[i];
-            const { contentOffset } = rawChunks[i];
-            const startSample = Math.round((contentOffset / 1000) * sampleRate);
 
-            const isLastChunk = i === decoded.length - 1;
+        for (let i = 0; i < chunkCount; i++) {
+            const rawChunk = rawChunks[i];
+            rawChunks[i] = null;
+            const { data, contentOffset } = rawChunk;
+            const buffer = await audioContext.decodeAudioData(data);
+
+            if (i === 0) {
+                sampleRate = buffer.sampleRate;
+                numberOfChannels = buffer.numberOfChannels;
+                totalContentSamples = Math.round((totalFrames / 1000) * sampleRate);
+            }
+
+            const startSample = Math.round((contentOffset / 1000) * sampleRate);
+            const isLastChunk = i === chunkCount - 1;
             const contentMs = isLastChunk ?
-                totalContentMs - i * chunkSize :
+                totalFrames - i * chunkSize :
                 chunkSize;
             const contentSamples = Math.min(
                 Math.round((contentMs / 1000) * sampleRate),
-                buf.length - startSample,
+                buffer.length - startSample,
                 totalContentSamples - writePos,
             );
+
+            if (
+                chunkCount === 1 &&
+                startSample === 0 &&
+                contentSamples === totalContentSamples &&
+                buffer.length === totalContentSamples
+            ) {
+                return prepareWaveformData(buffer);
+            }
+
+            if (!output) {
+                output = audioContext.createBuffer(numberOfChannels, totalContentSamples, sampleRate);
+            }
 
             if (contentSamples > 0) {
                 for (let ch = 0; ch < numberOfChannels; ch++) {
                     output.getChannelData(ch).set(
-                        buf.getChannelData(ch).subarray(startSample, startSample + contentSamples),
+                        buffer.getChannelData(ch).subarray(startSample, startSample + contentSamples),
                         writePos,
                     );
                 }
                 writePos += contentSamples;
             }
+            // buffer is scoped to this iteration, so its PCM can be reclaimed before the next decode.
         }
 
-        return encodeWav(output);
+        if (!output) {
+            throw new Error('Audio job has no chunks to decode');
+        }
+        return prepareWaveformData(output);
     } finally {
         await audioContext.close();
     }

@@ -16,7 +16,7 @@ from drf_spectacular.utils import (
 )
 from rest_framework import mixins, status, viewsets
 from rest_framework.decorators import action
-from rest_framework.exceptions import ValidationError
+from rest_framework.exceptions import NotFound, ValidationError
 from rest_framework.response import Response
 from rq.job import JobStatus as RqJobStatus
 
@@ -25,27 +25,38 @@ from cvat.apps.engine.models import Job, Project, Task
 from cvat.apps.engine.rq import BaseRQMeta
 from cvat.apps.engine.types import ExtendedRequest
 from cvat.apps.engine.view_utils import deprecate_response
-from cvat.apps.quality_control import quality_reports as qc
 from cvat.apps.quality_control.export import (
     QualityReportExportFormat,
+    prepare_confusion_matrices_archive_for_downloading,
     prepare_report_for_downloading,
+    prepare_requirement_confusion_matrix_for_downloading,
+    prepare_requirement_confusion_matrix_json,
 )
 from cvat.apps.quality_control.models import (
+    CURRENT_REPORT_DATA_REGEX,
     AnnotationConflict,
     QualityReport,
     QualityReportTarget,
+    QualityRequirement,
     QualitySettings,
 )
 from cvat.apps.quality_control.permissions import (
     AnnotationConflictPermission,
     QualityReportPermission,
+    QualityRequirementPermission,
     QualitySettingPermission,
     get_iam_context,
 )
+from cvat.apps.quality_control.queue_manager import QualityReportQueueManager
 from cvat.apps.quality_control.serializers import (
     AnnotationConflictSerializer,
+    QualityReportConfusionMatrixSerializer,
     QualityReportCreateSerializer,
+    QualityReportListQuerySerializer,
     QualityReportSerializer,
+    QualityRequirementBulkCreateSerializer,
+    QualityRequirementListItemSerializer,
+    QualityRequirementSerializer,
     QualitySettingsParentType,
     QualitySettingsSerializer,
 )
@@ -138,20 +149,18 @@ REPORT_TARGET_PARAM_NAME = "target"
     list=extend_schema(
         summary="Method returns a paginated list of quality reports.",
         description=textwrap.dedent("""\
-            Please note that children reports are included by default
-            if the "task_id", "project_id" filters are used.
-            If you want to restrict the list of results to a specific report type,
-            use the "{}" parameter.
+            The "{}" parameter is required when the "task_id" or "project_id"
+            filter is used.
 
-            The "parent_id" filter includes all the nested reports recursively.
-            For instance, if the "parent_id" is a project report,
-            all the related task and job reports will be returned.
+            The "parent_id" filter requires the "{}" parameter. Valid parent
+            report target to requested target combinations are: task to job,
+            project to task, and project to job.
 
             Please note that a report can be reused in several parent reports,
             but the "parent_id" field in responses will include only the first parent report id.
-            The "parent_id" filter still returns all the relevant nested reports,
-            even though the response "parent_id" values may be different from the requested one.
-        """).format(REPORT_TARGET_PARAM_NAME),
+            Filtering project report children with target "job" still returns all the relevant
+            nested job reports, even though their response "parent_id" values refer to task reports.
+        """).format(REPORT_TARGET_PARAM_NAME, REPORT_TARGET_PARAM_NAME),
         parameters=[
             # These filters are implemented differently from others
             OpenApiParameter(
@@ -165,13 +174,20 @@ REPORT_TARGET_PARAM_NAME = "target"
             OpenApiParameter(
                 "parent_id",
                 type=OpenApiTypes.INT,
-                description="A simple equality filter for parent id",
+                description="A parent report id filter. Requires a compatible target filter",
             ),
             OpenApiParameter(
                 REPORT_TARGET_PARAM_NAME,
                 type=OpenApiTypes.STR,
                 description="A simple equality filter for target",
                 enum=[v[0] for v in QualityReportTarget.choices()],
+            ),
+            OpenApiParameter(
+                "include_legacy",
+                type=OpenApiTypes.BOOL,
+                required=False,
+                default=False,
+                description="Include reports stored in the legacy data format",
             ),
         ],
         responses={
@@ -204,7 +220,7 @@ class QualityReportViewSet(
     ordering_fields = list(filter_fields)
     ordering = "-id"
 
-    def get_serializer_class(self):
+    def get_serializer_class(self) -> type[QualityReportSerializer]:
         # a separate method is required for drf-spectacular to work
         return QualityReportSerializer
 
@@ -212,7 +228,10 @@ class QualityReportViewSet(
         queryset = super().get_queryset()
 
         if self.action == "list":
+            query_serializer = QualityReportListQuerySerializer(data=self.request.query_params)
+            query_serializer.is_valid(raise_exception=True)
             iam_context = None
+            target = self.request.query_params.get(REPORT_TARGET_PARAM_NAME, None)
 
             # NOTE: the parent_id filter requires a different queryset
             if parent_id := self.request.query_params.get("parent_id", None):
@@ -220,10 +239,19 @@ class QualityReportViewSet(
                 self.check_object_permissions(self.request, parent_report)
                 iam_context = get_iam_context(self.request, parent_report)
 
-                # For m2m relations this is actually "in"
-                queryset = queryset.filter(
-                    Q(parents=parent_report) | Q(parents__parents=parent_report)
-                )
+                parent_filter = {
+                    (QualityReportTarget.TASK, QualityReportTarget.JOB): "parents",
+                    (QualityReportTarget.PROJECT, QualityReportTarget.TASK): "parents",
+                    (QualityReportTarget.PROJECT, QualityReportTarget.JOB): "parents__parents",
+                }.get((parent_report.target, target))
+                if parent_filter is None:
+                    raise ValidationError(
+                        "Invalid combination of 'parent_id' and 'target' filters. "
+                        "Valid parent target to requested target combinations are: "
+                        "task to job, project to task, project to job."
+                    )
+
+                queryset = queryset.filter(**{parent_filter: parent_report})
 
             if job_id := self.request.query_params.get("job_id", None):
                 job = db_utils.get_or_404(Job, job_id)
@@ -236,7 +264,20 @@ class QualityReportViewSet(
                 self.check_object_permissions(self.request, task)
                 iam_context = get_iam_context(self.request, task)
 
-                queryset = queryset.filter(Q(job__segment__task__id=task_id) | Q(task__id=task_id))
+                if target == QualityReportTarget.JOB:
+                    queryset = queryset.filter(job__segment__task_id=task_id)
+                elif target == QualityReportTarget.TASK:
+                    queryset = queryset.filter(task_id=task_id)
+                elif target == QualityReportTarget.PROJECT:
+                    queryset = queryset.none()
+                else:
+                    raise ValidationError(
+                        "Unexpected '{}' filter value '{}'. Valid values are: {}".format(
+                            REPORT_TARGET_PARAM_NAME,
+                            target,
+                            ", ".join(m[0] for m in QualityReportTarget.choices()),
+                        )
+                    )
 
             if project_id := self.request.query_params.get("project_id", None):
                 # NOTE: This filter is too complex to be implemented by other means
@@ -244,16 +285,25 @@ class QualityReportViewSet(
                 self.check_object_permissions(self.request, project)
                 iam_context = get_iam_context(self.request, project)
 
-                queryset = queryset.filter(
-                    Q(job__segment__task__project__id=project_id)
-                    | Q(task__project__id=project_id)
-                    | Q(project__id=project_id)
-                )
+                if target == QualityReportTarget.JOB:
+                    queryset = queryset.filter(job__segment__task__project_id=project_id)
+                elif target == QualityReportTarget.TASK:
+                    queryset = queryset.filter(task__project_id=project_id)
+                elif target == QualityReportTarget.PROJECT:
+                    queryset = queryset.filter(project_id=project_id)
+                else:
+                    raise ValidationError(
+                        "Unexpected '{}' filter value '{}'. Valid values are: {}".format(
+                            REPORT_TARGET_PARAM_NAME,
+                            target,
+                            ", ".join(m[0] for m in QualityReportTarget.choices()),
+                        )
+                    )
 
             perm = QualityReportPermission.create_scope_list(self.request, iam_context=iam_context)
             queryset = perm.filter(queryset)
 
-            if target := self.request.query_params.get(REPORT_TARGET_PARAM_NAME, None):
+            if target is not None:
                 if target == QualityReportTarget.JOB:
                     queryset = queryset.filter(job__isnull=False)
                 elif target == QualityReportTarget.TASK:
@@ -269,8 +319,13 @@ class QualityReportViewSet(
                         )
                     )
 
+            if not query_serializer.validated_data["include_legacy"]:
+                # The new UI only understands generalized reports. Legacy reports remain
+                # downloadable, and API clients can discover them with include_legacy=true.
+                queryset = queryset.filter(data__regex=CURRENT_REPORT_DATA_REGEX)
             queryset = queryset.defer("data")  # heavy field, should be excluded from COUNT(*)
-        else:
+
+        if self.action != "list":
             queryset = queryset.select_related(
                 "job",
                 "job__segment",
@@ -334,7 +389,7 @@ class QualityReportViewSet(
             else:
                 assert False
 
-            manager = qc.QualityReportRQJobManager(request=request, db_instance=target)
+            manager = QualityReportQueueManager(request=request, db_instance=target)
             return manager.enqueue_job()
 
         else:
@@ -342,7 +397,7 @@ class QualityReportViewSet(
             serializer = RqIdSerializer(data={"rq_id": rq_id})
             serializer.is_valid(raise_exception=True)
             rq_id = serializer.validated_data["rq_id"]
-            rq_job = qc.QualityReportRQJobManager(request=request).get_job_by_id(rq_id)
+            rq_job = QualityReportQueueManager(request=request).get_job_by_id(rq_id)
 
             # FUTURE-TODO: move into permissions
             # and allow not only rq job owner to check the status
@@ -419,7 +474,7 @@ class QualityReportViewSet(
             OpenApiParameter(
                 "format",
                 type=OpenApiTypes.STR,
-                enum=QualityReportExportFormat.values,
+                enum=[QualityReportExportFormat.JSON.value],
                 default=QualityReportExportFormat.JSON.value,
             ),
         ],
@@ -428,13 +483,129 @@ class QualityReportViewSet(
     @action(detail=True, methods=["GET"], url_path="data", serializer_class=None)
     def data(self, request: ExtendedRequest, pk):
         report = self.get_object()  # check permissions
-        format_name = QualityReportExportFormat(
-            request.query_params.get("format", default=QualityReportExportFormat.JSON.value)
+        if not report.has_readable_data:
+            raise NotFound("Quality report data is not readable")
+
+        format_name = request.query_params.get(
+            "format", default=QualityReportExportFormat.JSON.value
         )
+        if format_name != QualityReportExportFormat.JSON.value:
+            raise ValidationError(
+                {"format": f"Expected one of: {QualityReportExportFormat.JSON.value}."}
+            )
+
         report_data, content_type = prepare_report_for_downloading(
-            report, host=request.build_absolute_uri("/"), export_format=format_name
+            report,
+            host=request.build_absolute_uri("/"),
         )
         return HttpResponse(report_data, content_type=content_type)
+
+    @extend_schema(
+        operation_id="quality_retrieve_report_confusion",
+        summary="Download quality report confusion matrices",
+        responses={
+            "200": OpenApiResponse(
+                response=OpenApiTypes.BINARY,
+                description="ZIP archive with per-requirement confusion matrices",
+            )
+        },
+    )
+    @action(detail=True, methods=["GET"], url_path="confusion", serializer_class=None)
+    def confusion(self, request, pk):
+        report = self.get_object()  # check permissions
+        if not report.has_current_data_format:
+            raise NotFound("Confusion matrices are not available for this report format")
+
+        archive = prepare_confusion_matrices_archive_for_downloading(report)
+        response = HttpResponse(archive, content_type="application/zip")
+        response["Content-Disposition"] = (
+            f'attachment; filename="quality-report-{report.id}-confusion.zip"'
+        )
+        return response
+
+    @extend_schema(
+        operation_id="quality_retrieve_report_requirement_confusion",
+        summary="Get a quality report requirement confusion matrix",
+        parameters=[
+            OpenApiParameter(
+                "requirement",
+                type=OpenApiTypes.INT,
+                required=True,
+                description="Quality requirement id in the report",
+            ),
+            OpenApiParameter(
+                "format",
+                type=OpenApiTypes.STR,
+                enum=QualityReportExportFormat.values,
+                default=QualityReportExportFormat.JSON.value,
+            ),
+        ],
+        responses={
+            (200, "application/json"): OpenApiResponse(
+                response=QualityReportConfusionMatrixSerializer,
+                description="JSON confusion matrix for the requested quality requirement",
+            ),
+            (200, "text/csv"): OpenApiResponse(
+                response=OpenApiTypes.BINARY,
+                description="CSV confusion matrix for the requested quality requirement",
+            ),
+            "404": OpenApiResponse(description="Requirement confusion matrix was not found"),
+        },
+    )
+    @action(detail=True, methods=["GET"], url_path="confusion/matrix", serializer_class=None)
+    def confusion_matrix(self, request, pk):
+        report = self.get_object()  # check permissions
+        if not report.has_current_data_format:
+            raise NotFound("Confusion matrices are not available for this report format")
+
+        requirement = request.query_params.get("requirement")
+        if not requirement:
+            raise ValidationError({"requirement": "This query parameter is required."})
+        try:
+            requirement_id = int(requirement)
+        except ValueError as ex:
+            raise ValidationError({"requirement": "A valid integer is required."}) from ex
+
+        try:
+            format_name = QualityReportExportFormat(
+                request.query_params.get("format", default=QualityReportExportFormat.JSON.value)
+            )
+        except ValueError as ex:
+            raise ValidationError(
+                {"format": f"Expected one of: {', '.join(QualityReportExportFormat.values)}."}
+            ) from ex
+
+        match format_name:
+            case QualityReportExportFormat.JSON:
+                matrix_json = prepare_requirement_confusion_matrix_json(
+                    report,
+                    requirement_id=requirement_id,
+                )
+                if matrix_json is None:
+                    raise NotFound(
+                        f"Confusion matrix for quality requirement '{requirement_id}' was not found"
+                    )
+
+                return Response(matrix_json)
+            case QualityReportExportFormat.CSV:
+                matrix_csv = prepare_requirement_confusion_matrix_for_downloading(
+                    report,
+                    requirement_id=requirement_id,
+                )
+                if matrix_csv is None:
+                    raise NotFound(
+                        f"Confusion matrix for quality requirement '{requirement_id}' was not found"
+                    )
+
+                filename_requirement = f"requirement-{requirement_id}"
+                response = HttpResponse(matrix_csv, content_type="text/csv")
+                response["Content-Disposition"] = (
+                    f'attachment; filename="quality-report-{report.id}-'
+                    f'{filename_requirement}-confusion.csv"'
+                )
+                return response
+            case _:
+                raise AssertionError(f"Unsupported quality report export format '{format_name}'")
 
 
 SETTINGS_PARENT_TYPE_PARAM_NAME = "parent_type"
@@ -496,14 +667,30 @@ SETTINGS_PARENT_TYPE_PARAM_NAME = "parent_type"
             "200": QualitySettingsSerializer,
         },
     ),
+    update=extend_schema(
+        summary="Replace a quality settings instance",
+        parameters=[
+            OpenApiParameter(
+                "id",
+                type=OpenApiTypes.INT,
+                location="path",
+                description="An id of a quality settings instance",
+            )
+        ],
+        request=QualitySettingsSerializer,
+        responses={
+            "200": QualitySettingsSerializer,
+        },
+    ),
 )
 class QualitySettingsViewSet(
     viewsets.GenericViewSet,
     mixins.ListModelMixin,
     mixins.RetrieveModelMixin,
+    mixins.UpdateModelMixin,
     PartialUpdateModelMixin,
 ):
-    queryset = QualitySettings.objects
+    queryset = QualitySettings.objects.prefetch_related("requirements", "requirements__parent")
 
     iam_supports_organization_params = True
     iam_permission_class = QualitySettingPermission
@@ -558,3 +745,161 @@ class QualitySettingsViewSet(
             queryset = permissions.filter(queryset)
 
         return queryset
+
+
+@extend_schema(tags=["quality"])
+@extend_schema_view(
+    list=extend_schema(
+        summary="List quality requirements",
+        parameters=[
+            OpenApiParameter("task_id", type=OpenApiTypes.INT, description="Task id filter"),
+            OpenApiParameter("project_id", type=OpenApiTypes.INT, description="Project id filter"),
+            OpenApiParameter(
+                "settings_id", type=OpenApiTypes.INT, description="Settings id filter"
+            ),
+        ],
+        responses={"200": QualityRequirementListItemSerializer(many=True)},
+    ),
+    create=extend_schema(
+        summary="Create a quality requirement",
+        request=QualityRequirementSerializer,
+        responses={"201": QualityRequirementSerializer},
+    ),
+    retrieve=extend_schema(
+        summary="Get quality requirement details",
+        responses={"200": QualityRequirementSerializer},
+    ),
+    partial_update=extend_schema(
+        summary="Update a quality requirement",
+        request=QualityRequirementSerializer(partial=True),
+        responses={"200": QualityRequirementSerializer},
+    ),
+    update=extend_schema(
+        summary="Replace a quality requirement",
+        request=QualityRequirementSerializer,
+        responses={"200": QualityRequirementSerializer},
+    ),
+    destroy=extend_schema(
+        summary="Delete a quality requirement",
+        responses={"204": OpenApiResponse(description="Requirement deleted")},
+    ),
+)
+class QualityRequirementViewSet(
+    viewsets.GenericViewSet,
+    mixins.ListModelMixin,
+    mixins.CreateModelMixin,
+    mixins.RetrieveModelMixin,
+    mixins.UpdateModelMixin,
+    PartialUpdateModelMixin,
+    mixins.DestroyModelMixin,
+):
+    queryset = QualityRequirement.objects.all()
+
+    iam_supports_organization_params = True
+    iam_permission_class = QualityRequirementPermission
+
+    search_fields = []
+    simple_filters = ("annotation_type", "enabled")
+    filter_fields = (
+        *simple_filters,
+        "id",
+        "settings_id",
+        "task_id",
+        "project_id",
+        "created_date",
+        "updated_date",
+    )
+    lookup_fields = {
+        "task_id": "settings__task_id",
+        "project_id": "settings__project_id",
+    }
+    ordering_fields = list(filter_fields) + ["name", "sort_order"]
+    ordering = "id"
+
+    serializer_class = QualityRequirementSerializer
+
+    def get_serializer_class(self) -> type[QualityRequirementSerializer]:
+        if self.action == "list":
+            return QualityRequirementListItemSerializer
+
+        return super().get_serializer_class()
+
+    def get_queryset(self):
+        queryset = super().get_queryset()
+
+        if self.action == "list":
+            iam_context = None
+            if settings_id := self.request.query_params.get("settings_id", None):
+                settings = db_utils.get_or_404(QualitySettings, settings_id)
+                self.check_object_permissions(self.request, settings)
+                iam_context = get_iam_context(self.request, settings)
+                queryset = queryset.filter(settings_id=settings_id)
+            elif task_id := self.request.query_params.get("task_id", None):
+                task = db_utils.get_or_404(Task, task_id)
+                self.check_object_permissions(self.request, task)
+                iam_context = get_iam_context(self.request, task)
+                queryset = queryset.filter(settings__task_id=task_id)
+            elif project_id := self.request.query_params.get("project_id", None):
+                project = db_utils.get_or_404(Project, project_id)
+                self.check_object_permissions(self.request, project)
+                iam_context = get_iam_context(self.request, project)
+                # Include requirements from both project settings and task settings under the project.
+                queryset = queryset.filter(
+                    Q(settings__project_id=project_id) | Q(settings__task__project_id=project_id)
+                )
+
+            permissions = QualityRequirementPermission.create_scope_list(
+                self.request, iam_context=iam_context
+            )
+            queryset = permissions.filter(queryset)
+            # NOTE @grigorii: Exclude the potentially large JSON field from the pagination
+            # COUNT query. The page serializer loads it separately for returned objects.
+            queryset = queryset.defer("attribute_comparison")
+        else:
+            queryset = queryset.select_related(
+                "settings",
+                "settings__task",
+                "settings__task__project",
+                "settings__project",
+                "parent",
+            )
+
+        return queryset
+
+    @extend_schema(
+        summary="Create a hierarchy of quality requirements",
+        request=QualityRequirementBulkCreateSerializer,
+        responses={"201": QualityRequirementSerializer(many=True)},
+    )
+    @action(
+        detail=False,
+        methods=["POST"],
+        url_path="bulk",
+        serializer_class=QualityRequirementBulkCreateSerializer,
+        pagination_class=None,
+        filter_backends=[],
+    )
+    def bulk_create(self, request: ExtendedRequest) -> Response:
+        serializer = self.get_serializer(data=request.data)
+        serializer.is_valid(raise_exception=True)
+        requirements = serializer.save()
+        response_serializer = QualityRequirementSerializer(
+            requirements,
+            many=True,
+            context=self.get_serializer_context(),
+        )
+        return Response(response_serializer.data, status=status.HTTP_201_CREATED)
+
+    def perform_destroy(self, instance):
+        if instance.is_base:
+            raise ValidationError("Base quality requirements cannot be deleted.")
+
+        if instance.children.exists():
+            raise ValidationError(
+                "A quality requirement with child requirements cannot be deleted."
+            )
+
+        settings = instance.settings
+        result = super().perform_destroy(instance)
+        settings.save()
+        return result

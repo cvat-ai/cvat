@@ -65,9 +65,9 @@ For clear all filters press `Clear filters`.
 
 | Properties     | Supported values                             | Description                                 |
 | -------------- | -------------------------------------------- | ------------------------------------------- |
-| `Dimension`    | `2D` or `3D`                                 | Depends on the data format <br>(read more in {{< ilink "/docs/workspace/tasks-page#create-annotation-task" "creating an annotation task" >}}) |
+| `Dimension`    | `1D`, `2D`, or `3D`                          | Depends on the data format <br>(read more in {{< ilink "/docs/workspace/tasks-page#create-annotation-task" "creating an annotation task" >}}) |
 | `Status`       | `annotation`, `validation` or `completed`    |                                             |
-| `Data`         | `video`, `images`                            | Depends on the data format <br>(read more in {{< ilink "/docs/workspace/tasks-page#create-annotation-task" "creating an annotation task" >}}) |
+| `Data`         | `audio`, `video`, `images`                   | Depends on the data format <br>(read more in {{< ilink "/docs/workspace/tasks-page#create-annotation-task" "creating an annotation task" >}}) |
 | `Subset`       | `test`, `train`, `validation` or custom subset | {{< ilink "/docs/getting_started/vocabulary#subset" "learn more" >}} |
 | `Assignee`     | username                                     | Assignee is the user who is working on the project, task or job <br>(they are specified on task page) |
 | `Owner`        | username                                     | The user who owns the project, task, or job |
@@ -177,11 +177,21 @@ Next, specify the task parameters in the configurator:
 1. Select **Submit and open** to submit the configuration and open the created task,
     <br>or **Submit and continue**, to submit the configuration and start a new task.
 
+### Create an audio task
+
+To create a task for audio annotation, on the **Tasks** page select **+** and then
+**Create a new audio task**. Add labels, attributes, and an audio file in the same way as for a standard task.
+
+ ![Create audio task](/images/create_audio_task_01.webp)
+
+Audio tasks accept audio files only. Common supported formats include `WAV`, `MP3`, `FLAC`, and
+`OPUS`. An audio file cannot be longer than 4 hours.
+
 ### Label shape
 
 Labels (or classes) are categories of objects that you can annotate.
 
-**Label shape** limits the use of the label to certain
+For image, video, and 3D tasks, **Label shape** limits the use of the label to certain
 {{< ilink "/docs/annotation/annotation-editor/controls-sidebar#shapes" "shape tool" >}}.
 
 `Any` is the default setting that does not limit the use of the
@@ -382,6 +392,7 @@ The following parameters are available:
 | Stop frame        | Defines the last frame of the video. |
 | Frame step        | Use this parameter to filter video frames or images in a dataset. Specify frame step value to include only <br>certain frames or images in the dataset. <br>For example, if the frame step value is `25`, the dataset will include every 25th frame or image. If a video <br>has `100` frames, setting the frame step to `25` will include only frames `1`, `26`, `51`, `76`, and `100` in the dataset. <br>This can be useful for reducing the size of the dataset, or for focusing on specific frames or images<br>of particular interest. |
 | Chunk size        | Defines amount of frames to be packed in a chunk when send from client to server. <br>The server defines automatically if the chunk is empty. <br>Recommended values: <li> 1080p or less: 36 <li> 2k or less: 8 <li>16 - 4k or less: 4 <li>8 - More: 1 - 4 |
+| Initial replicas  | The number of replica jobs to create for each annotation job. Replicas are used for {{< ilink "/docs/qa-analytics/consensus" "consensus-based annotation" >}}. <br>The default value `0` creates no replicas. Replicas can also be added or deleted after the task is created. |
 | Issue tracker     | Use this parameter to specify the issue tracker URL. |
 | Source storage    | Specify the source storage for importing resources like annotations and backups. <br>If the task was assigned to the project, use the **Use project source storage** toggle to determine whether to <br>use project values or specify new ones. |
 | Target storage    | Specify the target storage (local or cloud) for exporting resources like annotations and backups. <br>If the task is created in the project, use the **Use project target storage** toggle to determine whether to<br> use project values or specify new ones. |
@@ -497,6 +508,11 @@ For more information, consult
 You can delete the current frame from a task.
 This frame will not be presented either in the UI or in the exported annotation.
 Thus, it is possible to mark corrupted frames that are not subject to annotation.
+
+{{% alert title="Note" color="primary" %}}
+Frames cannot be deleted or restored in
+{{< ilink "/docs/workspace/jobs-page#replica-jobs" "replica jobs" >}}.
+{{% /alert %}}
 
 1. Go to the Job annotation view and click on the **Delete frame** button (**Alt**+**Del**).
 

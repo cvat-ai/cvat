@@ -21,11 +21,22 @@ interface WrappingBBox {
     bottom: number;
 }
 
+type DrawnObject = fabric.Polygon | fabric.Circle | fabric.Rect | fabric.Line | fabric.Image;
+interface HistoryAction {
+    objects: DrawnObject[];
+    description: string;
+}
+type HistoryChangedCallback = (undoAction?: string, redoAction?: string) => void;
+
+type CanvasWithTopContext = fabric.Canvas & { contextTop: CanvasRenderingContext2D };
+
 export interface MasksHandler {
     draw(drawData: DrawData): void;
     edit(state: MasksEditData): void;
     configure(configuration: Configuration): void;
     transform(geometry: Geometry): void;
+    undo(): boolean;
+    redo(): boolean;
     cancel(): void;
     enabled: boolean;
 }
@@ -40,6 +51,7 @@ export class MasksHandlerImpl implements MasksHandler {
     private onDrawRepeat: (data: DrawData) => void;
     private onEditStart: (state: any) => void;
     private onEditDone: (state: any, points: number[]) => void;
+    private onHistoryChanged: HistoryChangedCallback;
     private vectorDrawHandler: DrawHandler;
 
     private redraw: number | null;
@@ -52,7 +64,10 @@ export class MasksHandlerImpl implements MasksHandler {
     private brushMarker: fabric.Rect | fabric.Circle | null;
     private drawablePolygon: null | fabric.Polygon;
     private isPolygonDrawing: boolean;
-    private drawnObjects: (fabric.Polygon | fabric.Circle | fabric.Rect | fabric.Line | fabric.Image)[];
+    private drawnObjects: DrawnObject[];
+    private undoStack: HistoryAction[];
+    private redoStack: HistoryAction[];
+    private activeHistoryAction: HistoryAction | null;
 
     private tool: DrawData['brushTool'] | null;
     private drawData: DrawData | null;
@@ -75,11 +90,40 @@ export class MasksHandlerImpl implements MasksHandler {
         this.vectorDrawHandler.draw({ enabled: false }, this.geometry);
     }
 
+    private get topContext(): CanvasRenderingContext2D {
+        return (this.canvas as CanvasWithTopContext).contextTop;
+    }
+
+    private disableImageSmoothing(): void {
+        this.canvas.imageSmoothingEnabled = false;
+        this.canvas.getContext().imageSmoothingEnabled = false;
+        this.topContext.imageSmoothingEnabled = false;
+    }
+
+    private renderObject(ctx: CanvasRenderingContext2D, object: DrawnObject): void {
+        const [a, b, c, d, e, f] = this.canvas.viewportTransform;
+        ctx.save();
+        ctx.transform(a, b, c, d, e, f);
+        object.render(ctx);
+        ctx.restore();
+    }
+
+    private renderDrawnObject(object: DrawnObject): void {
+        this.renderObject(this.canvas.getContext(), object);
+    }
+
+    private renderBrushMarker(): void {
+        const ctx = this.topContext;
+        this.canvas.clearContext(ctx);
+        if (this.brushMarker) {
+            this.renderObject(ctx, this.brushMarker);
+        }
+    }
+
     private removeBrushMarker(): void {
         if (this.brushMarker) {
-            this.canvas.remove(this.brushMarker);
             this.brushMarker = null;
-            this.canvas.renderAll();
+            this.canvas.clearContext(this.topContext);
         }
     }
 
@@ -88,9 +132,10 @@ export class MasksHandlerImpl implements MasksHandler {
             const common = {
                 evented: false,
                 selectable: false,
+                objectCaching: false,
                 opacity: 0.75,
-                left: this.latestMousePos.x - this.tool.size / 2,
-                top: this.latestMousePos.y - this.tool.size / 2,
+                left: Math.round(this.latestMousePos.x - this.tool.size / 2),
+                top: Math.round(this.latestMousePos.y - this.tool.size / 2),
                 strokeWidth: 1,
                 stroke: 'white',
             };
@@ -104,7 +149,7 @@ export class MasksHandlerImpl implements MasksHandler {
             });
 
             this.canvas.defaultCursor = 'none';
-            this.canvas.add(this.brushMarker);
+            this.renderBrushMarker();
         } else {
             this.canvas.defaultCursor = 'inherit';
         }
@@ -123,6 +168,7 @@ export class MasksHandlerImpl implements MasksHandler {
         this.canvas.renderAll();
         this.isInsertion = false;
         this.drawnObjects = this.createDrawnObjectsArray();
+        this.clearHistory();
         this.onDrawDone(null);
     }
 
@@ -139,6 +185,7 @@ export class MasksHandlerImpl implements MasksHandler {
         this.isInsertion = false;
         this.redraw = null;
         this.drawnObjects = this.createDrawnObjectsArray();
+        this.clearHistory();
     }
 
     private releaseEdit(): void {
@@ -152,6 +199,7 @@ export class MasksHandlerImpl implements MasksHandler {
         this.canvas.renderAll();
         this.isEditing = false;
         this.drawnObjects = this.createDrawnObjectsArray();
+        this.clearHistory();
         this.onEditDone(null, null);
     }
 
@@ -224,6 +272,56 @@ export class MasksHandlerImpl implements MasksHandler {
                 wrappingBBox.bottom - wrappingBBox.top + 1,
             ).data;
         return imageData;
+    }
+
+    private clearHistory(): void {
+        this.undoStack = [];
+        this.redoStack = [];
+        this.activeHistoryAction = null;
+        this.onHistoryChanged();
+    }
+
+    private historyActionDescription(): string {
+        const descriptions: Record<BrushTool['type'], string> = {
+            brush: 'Draw mask stroke',
+            eraser: 'Erase mask stroke',
+            'polygon-plus': 'Add polygon to mask',
+            'polygon-minus': 'Subtract polygon from mask',
+        };
+        return this.tool ? descriptions[this.tool.type] : 'Edit mask';
+    }
+
+    private notifyHistoryChanged(): void {
+        this.onHistoryChanged(
+            this.undoStack.at(-1)?.description,
+            this.redoStack.at(-1)?.description,
+        );
+    }
+
+    private startHistoryAction(): void {
+        this.activeHistoryAction = {
+            objects: [],
+            description: this.historyActionDescription(),
+        };
+    }
+
+    private addToHistoryAction(object: DrawnObject): void {
+        this.activeHistoryAction?.objects.push(object);
+    }
+
+    private finishHistoryAction(): void {
+        if (this.activeHistoryAction?.objects.length) {
+            this.undoStack.push(this.activeHistoryAction);
+            this.redoStack = [];
+            this.notifyHistoryChanged();
+        }
+        this.activeHistoryAction = null;
+    }
+
+    private addDrawnObject(object: DrawnObject): void {
+        this.canvas.add(object);
+        this.drawnObjects.push(object);
+        this.addToHistoryAction(object);
     }
 
     private updateHidden(value: boolean): void {
@@ -302,8 +400,9 @@ export class MasksHandlerImpl implements MasksHandler {
                         globalCompositeOperation: this.tool.type === 'polygon-minus' ? 'destination-out' : 'xor',
                     });
 
-                    this.canvas.add(polygon);
-                    this.drawnObjects.push(polygon);
+                    this.startHistoryAction();
+                    this.addDrawnObject(polygon);
+                    this.finishHistoryAction();
                     this.canvas.renderAll();
                 },
             }, this.geometry);
@@ -323,13 +422,7 @@ export class MasksHandlerImpl implements MasksHandler {
             return;
         }
         const wrappingBbox = this.getDrawnObjectsWrappingBox();
-        if (this.brushMarker) {
-            this.canvas.remove(this.brushMarker);
-        }
         const imageData = this.imageDataFromCanvas(wrappingBbox);
-        if (this.brushMarker) {
-            this.canvas.add(this.brushMarker);
-        }
         const rle = imageDataToRLE(imageData);
         const isEmptyMask = rle.length < 2;
         this.tool.onBlockUpdated({
@@ -358,6 +451,7 @@ export class MasksHandlerImpl implements MasksHandler {
         onEditDone: MasksHandlerImpl['onEditDone'],
         vectorDrawHandler: DrawHandler,
         canvas: HTMLCanvasElement,
+        onHistoryChanged: HistoryChangedCallback,
     ) {
         this.redraw = null;
         this.isDrawing = false;
@@ -375,19 +469,24 @@ export class MasksHandlerImpl implements MasksHandler {
         this.onDrawRepeat = onDrawRepeat;
         this.onEditDone = onEditDone;
         this.onEditStart = onEditStart;
+        this.onHistoryChanged = onHistoryChanged;
         this.vectorDrawHandler = vectorDrawHandler;
         this.canvas = new fabric.Canvas(canvas, {
             containerClass: 'cvat_masks_canvas_wrapper',
             fireRightClick: true,
             selection: false,
             defaultCursor: 'inherit',
+            renderOnAddRemove: false,
         });
-        this.canvas.imageSmoothingEnabled = false;
+        this.disableImageSmoothing();
+        this.canvas.calcViewportBoundaries();
         this.drawnObjects = this.createDrawnObjectsArray();
+        this.clearHistory();
 
         this.canvas.getElement().parentElement.addEventListener('contextmenu', (e: MouseEvent) => e.preventDefault());
         this.latestMousePos = { x: -1, y: -1 };
         window.document.addEventListener('mouseup', () => {
+            this.finishHistoryAction();
             this.isMouseDown = false;
             this.isBrushSizeChanging = false;
         });
@@ -396,6 +495,10 @@ export class MasksHandlerImpl implements MasksHandler {
             const { isDrawing, isEditing, isInsertion } = this;
             this.isMouseDown = (isDrawing || isEditing) && options.e.button === 0 && !options.e.altKey;
             this.isBrushSizeChanging = (isDrawing || isEditing) && options.e.button === 2 && options.e.altKey;
+
+            if (this.isMouseDown && !isInsertion && ['brush', 'eraser'].includes(this.tool?.type)) {
+                this.startHistoryAction();
+            }
 
             if (isInsertion) {
                 const continueInserting = options.e.ctrlKey;
@@ -470,10 +573,11 @@ export class MasksHandlerImpl implements MasksHandler {
             }
 
             if (this.brushMarker) {
-                this.brushMarker.left = position.x - tool.size / 2;
-                this.brushMarker.top = position.y - tool.size / 2;
-                this.canvas.bringToFront(this.brushMarker);
-                this.canvas.renderAll();
+                // Rounding prevents flickering of the brush marker edge
+                // when mouse moves
+                this.brushMarker.left = Math.round(position.x - tool.size / 2);
+                this.brushMarker.top = Math.round(position.y - tool.size / 2);
+                this.renderBrushMarker();
             }
 
             if (isMouseDown && !this.isHidden && !isBrushSizeChanging && ['brush', 'eraser'].includes(tool?.type)) {
@@ -483,6 +587,12 @@ export class MasksHandlerImpl implements MasksHandler {
                 const commonProperties = {
                     selectable: false,
                     evented: false,
+                    /*
+                        Every stroke is rendered exactly once, when it is created. Caching it
+                        would allocate an offscreen canvas per stroke, and a mask easily
+                        consists of thousands of them.
+                    */
+                    objectCaching: false,
                     globalCompositeOperation: tool.type === 'eraser' ? 'destination-out' : 'xor',
                 };
 
@@ -507,9 +617,9 @@ export class MasksHandlerImpl implements MasksHandler {
                     });
                 }
 
-                this.canvas.add(shape);
                 if (['brush', 'eraser'].includes(tool?.type)) {
-                    this.drawnObjects.push(shape);
+                    this.addDrawnObject(shape);
+                    this.renderDrawnObject(shape);
                 }
 
                 // add line to smooth the mask
@@ -529,13 +639,12 @@ export class MasksHandlerImpl implements MasksHandler {
                             strokeLineCap: tool.form === 'circle' ? 'round' : 'square',
                         });
 
-                        this.canvas.add(line);
                         if (['brush', 'eraser'].includes(tool?.type)) {
-                            this.drawnObjects.push(line);
+                            this.addDrawnObject(line);
+                            this.renderDrawnObject(line);
                         }
                     }
                 }
-                this.canvas.renderAll();
             } else if (tool?.type.startsWith('polygon-') && this.drawablePolygon) {
                 // update the polygon position
                 const points = this.drawablePolygon.get('points');
@@ -571,6 +680,10 @@ export class MasksHandlerImpl implements MasksHandler {
             this.canvas.setHeight(height);
             this.canvas.setWidth(width);
             this.canvas.setDimensions({ width, height });
+
+            this.disableImageSmoothing();
+            this.canvas.renderAll();
+            this.renderBrushMarker();
         }
 
         topCanvas.style.top = `${top}px`;
@@ -738,6 +851,52 @@ export class MasksHandlerImpl implements MasksHandler {
 
     get enabled(): boolean {
         return this.isDrawing || this.isEditing || this.isInsertion;
+    }
+
+    public undo(): boolean {
+        if (!this.enabled) {
+            return false;
+        }
+
+        const action = this.undoStack.pop();
+        if (!action) {
+            return false;
+        }
+
+        for (const object of action.objects) {
+            this.canvas.remove(object);
+            const index = this.drawnObjects.indexOf(object);
+            if (index !== -1) {
+                this.drawnObjects.splice(index, 1);
+            }
+        }
+
+        this.redoStack.push(action);
+        this.canvas.renderAll();
+        this.notifyHistoryChanged();
+
+        return true;
+    }
+
+    public redo(): boolean {
+        if (!this.enabled) {
+            return false;
+        }
+
+        const action = this.redoStack.pop();
+        if (!action) {
+            return false;
+        }
+
+        for (const object of action.objects) {
+            this.canvas.add(object);
+            this.drawnObjects.push(object);
+        }
+        this.undoStack.push(action);
+        this.canvas.renderAll();
+        this.notifyHistoryChanged();
+
+        return true;
     }
 
     public cancel(): void {

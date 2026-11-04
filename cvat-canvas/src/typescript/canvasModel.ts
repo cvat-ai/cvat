@@ -22,11 +22,8 @@ export interface Position {
     y: number;
 }
 
-export interface CanvasHint {
-    type: 'text' | 'list';
-    content: string | string[];
-    className?: string;
-    icon?: 'info' | 'loading';
+export enum CanvasHistorySource {
+    MASK = 'mask',
 }
 
 export interface RenderData {
@@ -66,6 +63,20 @@ export interface HighlightedElements {
 export enum RectDrawingMethod {
     CLASSIC = 'By 2 points',
     EXTREME_POINTS = 'By 4 points',
+    ROTATED_POINTS = 'Rotated points',
+}
+
+export interface RotatedShapeFitter {
+    minAreaRect(points: [number, number][]): {
+        center: { x: number; y: number };
+        size: { width: number; height: number };
+        angle: number;
+    };
+    fitEllipse(points: [number, number][]): {
+        center: { x: number; y: number };
+        size: { width: number; height: number };
+        angle: number;
+    };
 }
 
 export enum CuboidDrawingMethod {
@@ -79,9 +90,13 @@ export enum ColorBy {
     LABEL = 'Label',
 }
 
+export type MultiSelectModifier = 'shift' | 'ctrl' | 'alt' | 'meta';
+
 export interface Configuration {
     smoothImage?: boolean;
     autoborders?: boolean;
+    multiSelectModifier?: MultiSelectModifier;
+    multiSelectObjectModifier?: MultiSelectModifier;
     snapToPoint?: boolean;
     adaptiveZoom?: boolean;
     displayAllText?: boolean;
@@ -119,15 +134,17 @@ export interface DrawData {
     continue?: boolean;
     shapeType?: string;
     rectDrawingMethod?: RectDrawingMethod;
+    rotatedShapeFitter?: RotatedShapeFitter;
     cuboidDrawingMethod?: CuboidDrawingMethod;
     skeletonSVG?: SVGSVGElement;
     numberOfPoints?: number;
     initialState?: any;
+    initialStates?: any[];
     crosshair?: boolean;
     brushTool?: BrushTool;
     redraw?: number;
     simplifyPoly?: boolean;
-    onDrawDone?: (data: object) => void;
+    onDrawDone?: (data: object, duration?: number, continueDraw?: boolean, drawData?: DrawData) => void;
     onUpdateConfiguration?: (configuration: { brushTool?: Pick<BrushTool, 'size'> }) => void;
 }
 
@@ -138,6 +155,7 @@ export interface InteractionData {
         shapes: {
             shapeType: string;
             points: ArrayLike<number>;
+            maskOutlines?: ArrayLike<number>[];
         }[];
     };
     settings?: {
@@ -145,7 +163,10 @@ export interface InteractionData {
         points_type?: 'any' | 'positive' | 'negative'; // default is any
         removalStrategy?: 'any' | 'last'; // default is any
         appendCursorPositionAsPoint?: boolean; // default is false
-        hint?: string;
+        hint?: {
+            markdown: string;
+            topic: string;
+        };
         regionOfInterest?: [number, number, number, number];
     };
 }
@@ -171,6 +192,11 @@ export interface MasksEditData {
 
 export interface GroupData {
     enabled: boolean;
+}
+
+export interface SelectData {
+    enabled: boolean;
+    once?: boolean;
 }
 
 export interface MergeData {
@@ -221,6 +247,8 @@ export enum UpdateReasons {
     JOIN = 'join',
     SLICE = 'slice',
     SELECT = 'select',
+    SELECT_OBJECTS = 'select_objects',
+    SELECTED_OBJECTS_UPDATED = 'selected_objects_updated',
     CANCEL = 'cancel',
     BITMAP = 'bitmap',
     SELECT_REGION = 'select_region',
@@ -243,12 +271,14 @@ export enum Mode {
     JOIN = 'join',
     SLICE = 'slice',
     INTERACT = 'interact',
+    SELECT = 'select',
     SELECT_REGION = 'select_region',
     DRAG_CANVAS = 'drag_canvas',
     ZOOM_CANVAS = 'zoom_canvas',
 }
 
 export interface CanvasModel {
+    readonly imageID: number | null;
     readonly imageBitmap: boolean;
     readonly imageIsDeleted: boolean;
     readonly image: Image | null;
@@ -267,6 +297,8 @@ export interface CanvasModel {
     readonly groupData: GroupData;
     readonly joinData: JoinData;
     readonly sliceData: SliceData;
+    readonly selectData: SelectData;
+    readonly selectedObjects: number[];
     readonly configuration: Configuration;
     readonly selected: any;
     geometry: Geometry;
@@ -293,6 +325,8 @@ export interface CanvasModel {
     split(splitData: SplitData): void;
     merge(mergeData: MergeData): void;
     select(objectState: any): void;
+    selectObjects(selectData: SelectData): void;
+    setSelectedObjects(clientIDs: number[]): void;
     interact(interactionData: InteractionData): void;
 
     fitCanvas(width: number, height: number): void;
@@ -321,6 +355,9 @@ const defaultData = {
         enabled: false,
     },
     groupData: {
+        enabled: false,
+    },
+    selectData: {
         enabled: false,
     },
     splitData: {
@@ -384,10 +421,12 @@ export class CanvasModelImpl extends MasterImpl implements CanvasModel {
         interactionData: InteractionData;
         mergeData: MergeData;
         groupData: GroupData;
+        selectData: SelectData;
         joinData: JoinData;
         sliceData: SliceData;
         splitData: SplitData;
         selected: any;
+        selectedObjects: number[];
         mode: Mode;
         exception: Error | null;
     };
@@ -434,6 +473,8 @@ export class CanvasModelImpl extends MasterImpl implements CanvasModel {
                 undefinedAttrValue: consts.DEFAULT_UNDEFINED_ATTR_VALUE,
                 hideEditedObject: false,
                 focusedObjectPadding: 50,
+                multiSelectModifier: 'shift',
+                multiSelectObjectModifier: 'meta',
             },
             imageBitmap: false,
             image: null,
@@ -461,6 +502,7 @@ export class CanvasModelImpl extends MasterImpl implements CanvasModel {
             left: 0,
             fittedScale: 0,
             selected: null,
+            selectedObjects: [],
             mode: Mode.IDLE,
             exception: null,
             ...defaultData,
@@ -763,6 +805,8 @@ export class CanvasModelImpl extends MasterImpl implements CanvasModel {
     }
 
     public draw(drawData: DrawData): void {
+        const rotatedShapeFitter = drawData.rotatedShapeFitter ?? this.data.drawData.rotatedShapeFitter;
+
         const supportedShapes = [
             'rectangle', 'polygon', 'polyline', 'points', 'ellipse', 'cuboid', 'skeleton', 'mask',
         ];
@@ -775,7 +819,7 @@ export class CanvasModelImpl extends MasterImpl implements CanvasModel {
                 throw new Error('Skeleton template must be specified when drawing a skeleton');
             }
 
-            if (!drawData.shapeType && !drawData.initialState) {
+            if (!drawData.shapeType && !drawData.initialState && !drawData.initialStates?.length) {
                 throw new Error('A shape type is not specified');
             }
 
@@ -797,7 +841,7 @@ export class CanvasModelImpl extends MasterImpl implements CanvasModel {
             const [state] = this.data.objects.filter((_state: any): boolean => _state.clientID === clientID);
 
             if (state) {
-                this.data.drawData = { ...drawData };
+                this.data.drawData = { ...drawData, rotatedShapeFitter };
                 this.data.drawData.shapeType = state.shapeType;
             } else {
                 return;
@@ -808,7 +852,7 @@ export class CanvasModelImpl extends MasterImpl implements CanvasModel {
                 return;
             }
 
-            this.data.drawData = { ...drawData };
+            this.data.drawData = { ...drawData, rotatedShapeFitter };
             if (this.data.drawData.initialState) {
                 this.data.drawData.shapeType = this.data.drawData.initialState.shapeType;
             }
@@ -820,7 +864,8 @@ export class CanvasModelImpl extends MasterImpl implements CanvasModel {
                 this.data.drawData.rectDrawingMethod = drawData.rectDrawingMethod || RectDrawingMethod.CLASSIC;
             }
             if (drawData.shapeType === 'cuboid') {
-                this.data.drawData.cuboidDrawingMethod = drawData.cuboidDrawingMethod || CuboidDrawingMethod.CLASSIC;
+                this.data.drawData.cuboidDrawingMethod = drawData.cuboidDrawingMethod ||
+                    CuboidDrawingMethod.CLASSIC;
             }
         }
 
@@ -836,13 +881,19 @@ export class CanvasModelImpl extends MasterImpl implements CanvasModel {
             throw Error('State must be specified when call edit() editing process');
         }
 
-        if (this.data.editData.enabled && editData.enabled &&
-            editData.state.clientID !== this.data.editData.state.clientID
-        ) {
-            throw Error('State cannot be updated during editing, need to finish current editing first');
-        }
-
         if (editData.enabled) {
+            const isSameObject = this.data.editData.enabled &&
+                editData.state.clientID === this.data.editData.state.clientID;
+            const hasUpdates = 'brushTool' in editData || 'onUpdateConfiguration' in editData || 'pointID' in editData;
+
+            if (isSameObject && !hasUpdates) {
+                return;
+            }
+
+            if (this.data.editData.enabled && !isSameObject) {
+                throw Error('State cannot be updated during editing, need to finish current editing first');
+            }
+
             this.data.editData = { ...editData };
         } else if (disableInternalSVGDrawing(editData, this.data.editData)) {
             this.notify(UpdateReasons.EDIT);
@@ -891,6 +942,26 @@ export class CanvasModelImpl extends MasterImpl implements CanvasModel {
 
         this.data.groupData = { ...groupData };
         this.notify(UpdateReasons.GROUP);
+    }
+
+    public selectObjects(selectData: SelectData): void {
+        if (![Mode.IDLE, Mode.SELECT].includes(this.data.mode)) {
+            throw Error(`Canvas is busy. Action: ${this.data.mode}`);
+        }
+
+        if ((this.data.selectData.enabled && selectData.enabled) || (
+            !this.data.selectData.enabled && !selectData.enabled
+        )) {
+            return;
+        }
+
+        this.data.selectData = { ...selectData };
+        this.notify(UpdateReasons.SELECT_OBJECTS);
+    }
+
+    public setSelectedObjects(clientIDs: number[]): void {
+        this.data.selectedObjects = [...clientIDs];
+        this.notify(UpdateReasons.SELECTED_OBJECTS_UPDATED);
     }
 
     public join(joinData: JoinData): void {
@@ -992,6 +1063,13 @@ export class CanvasModelImpl extends MasterImpl implements CanvasModel {
         if (typeof configuration.smoothImage === 'boolean') {
             this.data.configuration.smoothImage = configuration.smoothImage;
         }
+        if (['shift', 'ctrl', 'alt', 'meta'].includes(configuration.multiSelectModifier)) {
+            this.data.configuration.multiSelectModifier = configuration.multiSelectModifier;
+        }
+        if (['shift', 'ctrl', 'alt', 'meta'].includes(configuration.multiSelectObjectModifier)) {
+            this.data.configuration.multiSelectObjectModifier = configuration.multiSelectObjectModifier;
+        }
+
         if (typeof configuration.undefinedAttrValue === 'string') {
             this.data.configuration.undefinedAttrValue = configuration.undefinedAttrValue;
         }
@@ -1049,9 +1127,14 @@ export class CanvasModelImpl extends MasterImpl implements CanvasModel {
     }
 
     public cancel(): void {
+        const { rotatedShapeFitter } = this.data.drawData;
         this.data = {
             ...this.data,
             ...defaultData,
+            drawData: {
+                ...defaultData.drawData,
+                rotatedShapeFitter,
+            },
         };
         this.notify(UpdateReasons.CANCEL);
     }
@@ -1098,6 +1181,10 @@ export class CanvasModelImpl extends MasterImpl implements CanvasModel {
 
     public get imageIsDeleted(): boolean {
         return this.data.imageIsDeleted;
+    }
+
+    public get imageID(): number | null {
+        return this.data.imageID;
     }
 
     public get image(): Image | null {
@@ -1164,6 +1251,14 @@ export class CanvasModelImpl extends MasterImpl implements CanvasModel {
 
     public get groupData(): GroupData {
         return { ...this.data.groupData };
+    }
+
+    public get selectData(): SelectData {
+        return { ...this.data.selectData };
+    }
+
+    public get selectedObjects(): number[] {
+        return [...this.data.selectedObjects];
     }
 
     public get selected(): any {

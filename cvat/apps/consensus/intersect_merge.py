@@ -12,28 +12,32 @@ from typing import ClassVar, TypeAlias
 import attrs
 import datumaro as dm
 import datumaro.components.merge.intersect_merge
-from datumaro.util import filter_dict
 from datumaro.util.annotation_util import mean_bbox
 from datumaro.util.attrs_util import ensure_cls
 
-from cvat.apps.quality_control.quality_reports import (
+from cvat.apps.dataset_manager.bindings import CVAT_INTERNAL_ATTRIBUTES
+from cvat.apps.quality_control.backends.datumaro.matching import (
     ComparisonParameters,
     DistanceComparator,
     segment_iou,
 )
+from cvat.apps.quality_control.matching import PairwiseComparison
+from cvat.apps.quality_control.models import DefaultComparisonSettings, ShapeSimilarityMetricType
 
 
 @attrs.define(kw_only=True, slots=False)
 class IntersectMerge(datumaro.components.merge.intersect_merge.IntersectMerge):
+    _DISCARDED_INTERNAL_ATTRIBUTES: ClassVar[set[str]] = {"keyframe", "source", "track_id"}
+
     @attrs.define(kw_only=True, slots=False)
     class Conf:
-        pairwise_dist: float = 0.5
-        sigma: float = 0.1
+        pairwise_dist: float = DefaultComparisonSettings.iou_threshold
+        sigma: float = DefaultComparisonSettings.oks_sigma
 
         output_conf_thresh: float = 0
         quorum: int = 0
         ignored_attributes: Collection[str] = attrs.field(factory=tuple)
-        torso_r: float = 0.01
+        torso_r: float = DefaultComparisonSettings.line_thickness
 
         groups: Collection[Collection[str]] = attrs.field(factory=tuple)
         close_distance: float = 0  # disabled
@@ -42,15 +46,56 @@ class IntersectMerge(datumaro.components.merge.intersect_merge.IntersectMerge):
 
         def __attrs_post_init__(self):
             if self.included_annotation_types is None:
-                self.included_annotation_types = ComparisonParameters.included_annotation_types
+                self.included_annotation_types = [
+                    dm.AnnotationType.bbox,
+                    dm.AnnotationType.points,
+                    dm.AnnotationType.mask,
+                    dm.AnnotationType.polygon,
+                    dm.AnnotationType.polyline,
+                    dm.AnnotationType.skeleton,
+                    dm.AnnotationType.label,
+                    dm.AnnotationType.ellipse,
+                ]
 
     conf: Conf = attrs.field(converter=ensure_cls(Conf), factory=Conf)
 
     def __call__(self, *datasets):
         return dm.Dataset(super().__call__(*datasets))
 
+    def _get_user_defined_attributes(self) -> set[str]:
+        label_categories = self._categories.get(dm.AnnotationType.label)
+        if not isinstance(label_categories, dm.LabelCategories):
+            return set()
+
+        declared_attributes = set(label_categories.attributes)
+        for label_category in label_categories:
+            declared_attributes.update(label_category.attributes)
+
+        return declared_attributes - CVAT_INTERNAL_ATTRIBUTES - set(self.conf.ignored_attributes)
+
+    def _get_output_attributes(self) -> set[str]:
+        return (
+            self._get_user_defined_attributes()
+            | (CVAT_INTERNAL_ATTRIBUTES - self._DISCARDED_INTERNAL_ATTRIBUTES)
+        ) - set(self.conf.ignored_attributes)
+
     def _find_cluster_attrs(self, cluster, ann):
-        merged_attributes = super()._find_cluster_attrs(cluster, ann)
+        user_defined_attributes = self._get_user_defined_attributes()
+        original_attributes = [s.attributes for s in cluster]
+
+        try:
+            for s in cluster:
+                s.attributes = {
+                    name: value
+                    for name, value in s.attributes.items()
+                    if name in user_defined_attributes
+                }
+
+            merged_attributes = super()._find_cluster_attrs(cluster, ann)
+        finally:
+            for s, attributes in zip(cluster, original_attributes):
+                s.attributes = attributes
+
         merged_attributes["source"] = "consensus"
         return merged_attributes
 
@@ -61,9 +106,21 @@ class IntersectMerge(datumaro.components.merge.intersect_merge.IntersectMerge):
         # A workaround for the incorrect implementation of attribute filtering in Datumaro
         # TODO: fix in Datumaro
         merged_annotations = super()._merge_clusters(t, clusters)
+        output_attributes = self._get_output_attributes()
 
         for ann in merged_annotations:
-            ann.attributes = filter_dict(ann.attributes, exclude_keys=self.conf.ignored_attributes)
+            ann.attributes = {
+                name: value for name, value in ann.attributes.items() if name in output_attributes
+            }
+
+            if isinstance(ann, dm.Skeleton):
+                for element in ann.elements:
+                    element.attributes = {
+                        name: value
+                        for name, value in element.attributes.items()
+                        if name in output_attributes
+                    }
+                    element.attributes["source"] = "consensus"
 
         return merged_annotations
 
@@ -193,6 +250,9 @@ class CachedSimilarityFunction:
 
 @attrs.define(kw_only=True, slots=False)
 class ShapeMatcher(AnnotationMatcher, metaclass=ABCMeta):
+    _annotation_type: ClassVar[dm.AnnotationType]
+    _similarity_metric: ClassVar[ShapeSimilarityMetricType] = ShapeSimilarityMetricType.IOU
+
     pairwise_dist: float = 0.9
     cluster_dist: float | None = None
     categories: dm.CategoriesInfo
@@ -205,11 +265,17 @@ class ShapeMatcher(AnnotationMatcher, metaclass=ABCMeta):
 
         self._comparator = DistanceComparator(
             categories=self.categories,
-            return_distances=True,
-            iou_threshold=self.pairwise_dist,
-            oks_sigma=self._context.conf.sigma,
-            line_torso_radius=self._context.conf.torso_r,
-            panoptic_comparison=False,
+            settings=ComparisonParameters(
+                annotation_type=self._annotation_type,
+                similarity_metric=self._similarity_metric,
+                iou_threshold=self.pairwise_dist,
+                oks_threshold=self.pairwise_dist,
+                oks_sigma=self._context.conf.sigma,
+                line_thickness=self._context.conf.torso_r,
+                compare_line_orientation=False,
+                panoptic_comparison=False,
+            ),
+            return_comparisons=True,
             # allow_groups=True is not supported. Requires significant logic changes in
             # the whole merging algorithm, as it's likely to produce clusters with annotations
             # from the same source or some new annotations (instances).
@@ -234,18 +300,18 @@ class ShapeMatcher(AnnotationMatcher, metaclass=ABCMeta):
     def _match_annotations_between_two_items(
         self, item_a: dm.DatasetItem, item_b: dm.DatasetItem
     ) -> list[tuple[dm.Annotation, dm.Annotation]]:
-        matches, distances = self.match_annotations_between_two_items(item_a, item_b)
+        matches, comparisons = self.match_annotations_between_two_items(item_a, item_b)
 
         # Remember distances
-        for (p_a_id, p_b_id), dist in distances.items():
-            self._distance.set((p_a_id, p_b_id), dist)
+        for (p_a_id, p_b_id), comparison in comparisons.items():
+            self._distance.set((p_a_id, p_b_id), comparison.similarity)
 
         return matches
 
     @abstractmethod
     def match_annotations_between_two_items(
         self, item_a: dm.DatasetItem, item_b: dm.DatasetItem
-    ) -> tuple[list[tuple[dm.Annotation, dm.Annotation]], dict[CacheKey, float]]: ...
+    ) -> tuple[list[tuple[dm.Annotation, dm.Annotation]], dict[CacheKey, PairwiseComparison]]: ...
 
     def match_annotations(self, sources):
         distance = self.distance
@@ -316,9 +382,11 @@ class ShapeMatcher(AnnotationMatcher, metaclass=ABCMeta):
 
 @attrs.define(kw_only=True, slots=False)
 class BboxMatcher(ShapeMatcher):
+    _annotation_type: ClassVar[dm.AnnotationType] = dm.AnnotationType.bbox
+
     def match_annotations_between_two_items(self, item_a, item_b):
-        matches, _, _, _, distances = self._comparator.match_boxes(item_a, item_b)
-        return matches, distances
+        matches, _, _, _, comparisons = self._comparator.match_boxes(item_a, item_b)
+        return matches, comparisons
 
 
 @attrs.define(kw_only=True, slots=False)
@@ -326,14 +394,8 @@ class PolygonMatcher(ShapeMatcher):
     _annotation_type: ClassVar[dm.AnnotationType] = dm.AnnotationType.polygon
 
     def match_annotations_between_two_items(self, item_a, item_b):
-        item_a = item_a.wrap(
-            annotations=[a for a in item_a.annotations if a.type == self._annotation_type]
-        )
-        item_b = item_b.wrap(
-            annotations=[a for a in item_b.annotations if a.type == self._annotation_type]
-        )
-        matches, _, _, _, distances = self._comparator.match_segmentations(item_a, item_b)
-        return matches, distances
+        matches, _, _, _, comparisons = self._comparator.match_segmentations(item_a, item_b)
+        return matches, comparisons
 
 
 @attrs.define(kw_only=True, slots=False)
@@ -343,30 +405,40 @@ class MaskMatcher(PolygonMatcher):
 
 @attrs.define(kw_only=True, slots=False)
 class PointsMatcher(ShapeMatcher):
+    _annotation_type: ClassVar[dm.AnnotationType] = dm.AnnotationType.points
+    _similarity_metric: ClassVar[ShapeSimilarityMetricType] = ShapeSimilarityMetricType.OKS
+
     def match_annotations_between_two_items(self, item_a, item_b):
-        matches, _, _, _, distances = self._comparator.match_points(item_a, item_b)
-        return matches, distances
+        matches, _, _, _, comparisons = self._comparator.match_points(item_a, item_b)
+        return matches, comparisons
 
 
 @attrs.define(kw_only=True, slots=False)
 class SkeletonMatcher(ShapeMatcher):
+    _annotation_type: ClassVar[dm.AnnotationType] = dm.AnnotationType.skeleton
+    _similarity_metric: ClassVar[ShapeSimilarityMetricType] = ShapeSimilarityMetricType.OKS
+
     def match_annotations_between_two_items(self, item_a, item_b):
-        matches, _, _, _, distances = self._comparator.match_skeletons(item_a, item_b)
-        return matches, distances
+        matches, _, _, _, comparisons = self._comparator.match_skeletons(item_a, item_b)
+        return matches, comparisons
 
 
 @attrs.define(kw_only=True, slots=False)
 class LineMatcher(ShapeMatcher):
+    _annotation_type: ClassVar[dm.AnnotationType] = dm.AnnotationType.polyline
+
     def match_annotations_between_two_items(self, item_a, item_b):
-        matches, _, _, _, distances = self._comparator.match_lines(item_a, item_b)
-        return matches, distances
+        matches, _, _, _, comparisons = self._comparator.match_lines(item_a, item_b)
+        return matches, comparisons
 
 
 @attrs.define(kw_only=True, slots=False)
 class EllipseMatcher(ShapeMatcher):
+    _annotation_type: ClassVar[dm.AnnotationType] = dm.AnnotationType.ellipse
+
     def match_annotations_between_two_items(self, item_a, item_b):
-        matches, _, _, _, distances = self._comparator.match_ellipses(item_a, item_b)
-        return matches, distances
+        matches, _, _, _, comparisons = self._comparator.match_ellipses(item_a, item_b)
+        return matches, comparisons
 
 
 @attrs.define(kw_only=True, slots=False)

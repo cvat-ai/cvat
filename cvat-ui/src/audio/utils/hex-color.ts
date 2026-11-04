@@ -24,9 +24,9 @@ function hexToRgb(hex: string): { r: number; g: number; b: number } {
     };
 }
 
-export function hexToRgba(hex: string, opacityPercent: number): string {
+export function hexToRgba(hex: string, alpha: number): string {
     const { r, g, b } = hexToRgb(hex);
-    return `rgba(${r}, ${g}, ${b}, ${opacityPercent / 100})`;
+    return `rgba(${r}, ${g}, ${b}, ${alpha})`;
 }
 
 export function hexToRgbComponents(hex: string): string {

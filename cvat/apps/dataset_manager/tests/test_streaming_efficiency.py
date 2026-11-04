@@ -1,5 +1,4 @@
 import os
-import tempfile
 from collections import namedtuple
 from collections.abc import Callable
 from unittest import TestCase, mock
@@ -10,7 +9,7 @@ from datumaro import AnnotationType, Bbox, LabelCategories
 from datumaro.components import media
 from datumaro.components.dataset import StreamDataset
 from datumaro.components.dataset_base import CategoriesInfo, DatasetBase, DatasetItem
-from django.contrib.auth.models import Group, User
+from django.contrib.auth.models import Group
 from rest_framework import status
 from rq.job import Job as RQJob
 
@@ -35,6 +34,7 @@ from cvat.apps.engine.tests.utils import (
     generate_image_file,
     get_paginated_collection,
 )
+from cvat.apps.iam.models import User
 
 
 class TestExtractors(TestCase):
@@ -281,13 +281,11 @@ class TestImporters(ApiTestBase):
         assert len(jobs) == 1
         self.job_id = jobs[0]["id"]
 
-        self.dir_name = tempfile.TemporaryDirectory()
-        self.extractor = self._make_extractor(self.dir_name.name)
         self._make_importer()
+        self.ann_init_count: int
 
     def tearDown(self):
         del registry.IMPORT_FORMATS["dummy_format 1.0"]
-        self.dir_name.cleanup()
         super().tearDown()
 
     def _make_extractor(self, dir_name):
@@ -303,14 +301,16 @@ class TestImporters(ApiTestBase):
                 image.save(image_path)
                 dataset_items[subset].append((item_id, image_path))
 
+        test = self
+
         class DummyStreamingExtractor(DatasetBase):
             def __init__(self):
                 super().__init__(subsets=subsets)
-                self.ann_init_count = 0
+                test.ann_init_count = 0
 
             def _gen_anns(self):
-                assert self.ann_init_count < 6
-                self.ann_init_count += 1
+                assert test.ann_init_count < 6
+                test.ann_init_count += 1
                 return [Bbox(x=5, y=5, w=2, h=2, label=1)]
 
             def __iter__(self):
@@ -415,7 +415,7 @@ class TestImporters(ApiTestBase):
             import_kwargs: dict | None = None,
             **kwargs,
         ):
-            extractor = self.extractor
+            extractor = self._make_extractor(temp_dir)
 
             # import single subset to job and task
             if not isinstance(instance_data, ProjectData):
@@ -432,14 +432,14 @@ class TestImporters(ApiTestBase):
             fake_file_name = os.path.join(temp_dir, "fake.zip")
             open(fake_file_name, "w").close()
             import_job_annotations(fake_file_name, self.job_id, "dummy_format 1.0", True)
-            assert self.extractor.ann_init_count == 2
+            assert self.ann_init_count == 2
 
     def test_import_task_annotations_efficiency(self):
         with TmpDirManager.get_tmp_directory() as temp_dir:
             fake_file_name = os.path.join(temp_dir, "fake.zip")
             open(fake_file_name, "w").close()
             import_task_annotations(fake_file_name, self.task_id, "dummy_format 1.0", True)
-            assert self.extractor.ann_init_count == 2
+            assert self.ann_init_count == 2
 
     @mock.patch("rq.get_current_job")
     def test_import_project_annotations_efficiency(self, mock_current_job):
@@ -455,4 +455,4 @@ class TestImporters(ApiTestBase):
             fake_file_name = os.path.join(temp_dir, "fake.zip")
             open(fake_file_name, "w").close()
             import_dataset_as_project(fake_file_name, self.project_id, "dummy_format 1.0", True)
-            assert self.extractor.ann_init_count == 6
+            assert self.ann_init_count == 6

@@ -11,7 +11,7 @@ from cvat_sdk.api_client.api_client import ApiClient, Endpoint
 from cvat_sdk.api_client.exceptions import ForbiddenException
 from deepdiff import DeepDiff
 
-from shared.utils.config import get_method, make_api_client, patch_method
+from shared.utils.config import get_method, get_paginated_collection, make_api_client, patch_method
 
 from .utils import CollectionSimpleFilterTestBase
 
@@ -19,10 +19,9 @@ from .utils import CollectionSimpleFilterTestBase
 @pytest.mark.usefixtures("restore_db_per_class")
 class TestGetMemberships:
     def _test_can_see_memberships(self, user, data, **kwargs):
-        response = get_method(user, "memberships", **kwargs)
+        results = get_paginated_collection(user, "memberships", **kwargs)
 
-        assert response.status_code == HTTPStatus.OK
-        assert DeepDiff(data, response.json()["results"]) == {}
+        assert DeepDiff(data, results) == {}
 
     def _test_cannot_see_memberships(self, user, **kwargs):
         response = get_method(user, "memberships", **kwargs)
@@ -30,14 +29,12 @@ class TestGetMemberships:
         assert response.status_code == HTTPStatus.FORBIDDEN
 
     def test_admin_can_see_all_memberships(self, memberships):
-        self._test_can_see_memberships("admin2", memberships.raw, page_size="all")
+        self._test_can_see_memberships("admin2", memberships.raw)
 
     @pytest.mark.parametrize("field_value, query_value", [(1, 1), (None, "")])
     def test_can_filter_by_org_id(self, field_value, query_value, memberships):
         memberships = filter(lambda m: m["organization"] == field_value, memberships)
-        self._test_can_see_memberships(
-            "admin2", list(memberships), page_size="all", org_id=query_value
-        )
+        self._test_can_see_memberships("admin2", list(memberships), org_id=query_value)
 
     def test_non_admin_can_see_only_self_memberships(self, memberships):
         non_admins = ["user1", "dummy1", "worker2"]
@@ -108,13 +105,17 @@ class TestPatchMemberships:
             ("supervisor", "supervisor", "worker", False),
             ("supervisor", "maintainer", "supervisor", False),
             ("supervisor", "owner", "worker", False),
+            ("maintainer", "worker", "supervisor", True),
+            ("maintainer", "supervisor", "worker", True),
+            ("maintainer", "supervisor", "maintainer", False),
+            ("maintainer", "supervisor", "owner", False),
             ("maintainer", "maintainer", "worker", False),
             ("maintainer", "owner", "worker", False),
-            ("maintainer", "supervisor", "worker", True),
-            ("maintainer", "worker", "supervisor", True),
-            ("owner", "maintainer", "worker", True),
-            ("owner", "supervisor", "worker", True),
             ("owner", "worker", "supervisor", True),
+            ("owner", "worker", "maintainer", True),
+            ("owner", "supervisor", "worker", True),
+            ("owner", "maintainer", "worker", True),
+            ("owner", "maintainer", "owner", False),
         ],
     )
     def test_user_can_change_role_of_member(self, who, whom, new_role, is_allow, find_users):

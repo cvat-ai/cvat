@@ -5,10 +5,11 @@
 
 from django.contrib import admin
 from django.contrib.auth.admin import GroupAdmin, UserAdmin
-from django.contrib.auth.models import Group, User
+from django.contrib.auth.models import Group
 from django.utils.translation import gettext_lazy as _
 
 from cvat.apps.engine.models import Profile
+from cvat.apps.iam.models import User
 
 
 class ProfileInline(admin.StackedInline):
@@ -20,8 +21,9 @@ class ProfileInline(admin.StackedInline):
 class CustomUserAdmin(UserAdmin):
     inlines = (ProfileInline,)
     list_display = ("username", "email", "first_name", "last_name", "is_active", "is_staff")
+    readonly_fields = ("created_via",)
     fieldsets = (
-        (None, {"fields": ("username", "password")}),
+        (None, {"fields": ("username", "password", "created_via")}),
         (_("Personal info"), {"fields": ("first_name", "last_name", "email")}),
         (
             _("Permissions"),
@@ -60,7 +62,6 @@ class CustomGroupAdmin(GroupAdmin):
     fieldsets = ((None, {"fields": ("name",)}),)
 
 
-admin.site.unregister(User)
 admin.site.unregister(Group)
 admin.site.register(User, CustomUserAdmin)
 admin.site.register(Group, CustomGroupAdmin)

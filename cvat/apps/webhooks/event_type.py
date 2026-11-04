@@ -13,58 +13,50 @@ def event_key(action: str, resource: str) -> str:
 
 class Events:
     _RESOURCES: dict[tuple[str, EventGroup], list[str]] = {
+        ("user", EventGroup(display_name="User")): ["create", "update", "delete"],
         ("project", EventGroup(display_name="Project")): ["create", "update", "delete"],
         ("task", EventGroup(display_name="Task")): ["create", "update", "delete"],
         ("job", EventGroup(display_name="Job")): ["create", "update", "delete"],
         ("issue", EventGroup(display_name="Issue")): ["create", "update", "delete"],
         ("comment", EventGroup(display_name="Comment")): ["create", "update", "delete"],
-        ("organization", EventGroup(display_name="Organization")): ["update"],
+        ("organization", EventGroup(display_name="Organization")): ["create", "update", "delete"],
         ("invitation", EventGroup(display_name="Invitation")): ["create", "delete"],
         ("membership", EventGroup(display_name="Membership")): ["create", "update", "delete"],
         **{(resource, group): ["completed"] for resource, group in REQUEST_COMPLETION_RESOURCES},
     }
 
     @classmethod
-    def select(cls, resources: list[str]) -> list[Event]:
-        result: list[Event] = []
+    def as_list(cls) -> list[Event]:
+        return [
+            Event(action=action, resource=resource, group=group)
+            for (resource, group), actions in cls._RESOURCES.items()
+            for action in actions
+        ]
 
-        for (resource, group), actions in cls._RESOURCES.items():
-            if resource in resources:
-                for action in actions:
-                    result.append(
-                        Event(
-                            action=action,
-                            resource=resource,
-                            group=group,
-                        )
-                    )
+    @classmethod
+    def select_by_resources(cls, resources: list[str]) -> list[Event]:
+        return [event for event in cls.as_list() if event.resource in resources]
 
-        return result
+    @classmethod
+    def select_by_keys(cls, keys: list[str]) -> list[Event]:
+        return [event for event in cls.as_list() if event.key in keys]
 
 
 class EventKeyChoice:
     @classmethod
     def choices(cls):
-        return sorted((val.key, val.key.upper()) for val in AllEvents.events)
+        return sorted((event.key, event.key.upper()) for event in Events.as_list())
 
 
 class AllEvents:
     webhook_type = "all"
-    events: list[Event] = list(
-        Event(
-            resource=resource,
-            group=group,
-            action=action,
-        )
-        for (resource, group), actions in Events._RESOURCES.items()
-        for action in actions
-    )
+    events: list[Event] = Events.as_list()
 
 
 class ProjectEvents:
     webhook_type = WebhookTypeChoice.PROJECT
     events: list[Event] = [
-        *Events.select(
+        *Events.select_by_resources(
             [
                 "task",
                 "job",
@@ -74,19 +66,40 @@ class ProjectEvents:
                 *(resource for (resource, _) in REQUEST_COMPLETION_RESOURCES),
             ]
         ),
-        Event(
-            action="update",
-            group=EventGroup(display_name="Project"),
-            resource="project",
-        ),
-        Event(
-            action="delete",
-            group=EventGroup(display_name="Project"),
-            resource="project",
-        ),
+        *Events.select_by_keys(["update:project", "delete:project"]),
     ]
 
 
 class OrganizationEvents:
     webhook_type = WebhookTypeChoice.ORGANIZATION
-    events: list[Event] = AllEvents.events
+    events: list[Event] = [
+        *Events.select_by_resources(
+            resources=[
+                "project",
+                "task",
+                "job",
+                "issue",
+                "comment",
+                "invitation",
+                "membership",
+                *(resource for (resource, _) in REQUEST_COMPLETION_RESOURCES),
+            ]
+        ),
+        *Events.select_by_keys(
+            keys=[
+                "update:organization",
+            ]
+        ),
+    ]
+
+
+class ServerEvents:
+    webhook_type = WebhookTypeChoice.SERVER
+    events: list[Event] = [
+        *Events.select_by_resources(
+            resources=[
+                "user",
+            ]
+        ),
+        *Events.select_by_keys(keys=["create:organization", "delete:organization"]),
+    ]

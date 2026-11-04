@@ -1,0 +1,212 @@
+// Copyright (C) CVAT.ai Corporation
+//
+// SPDX-License-Identifier: MIT
+
+@import 'base';
+
+.ant-modal-root .ant-modal-wrap.cvat-github-star-modal-wrap {
+    display: flex;
+    position: absolute;
+    min-width: $grid-unit-size * 136;
+    align-items: center;
+    justify-content: center;
+    overflow: hidden;
+}
+
+.ant-modal.cvat-github-star-modal {
+    max-width: none;
+    margin: 0;
+    padding-bottom: 0;
+    top: 0;
+
+    .ant-modal-content {
+        overflow: hidden;
+        padding: 0;
+        border-radius: $border-radius-base * 2;
+        background: #f8f6f1;
+    }
+
+    .ant-modal-body {
+        padding: 0;
+    }
+
+    .ant-modal-close {
+        z-index: 1;
+        color: $text-color-secondary;
+    }
+}
+
+.cvat-github-star-modal-layout {
+    display: grid;
+    min-height: $grid-unit-size * 67.5;
+    grid-template-columns: minmax($grid-unit-size * 56.75, 0.95fr) minmax(0, 1.12fr);
+}
+
+.cvat-github-star-modal-copy {
+    position: relative;
+    display: flex;
+    flex-direction: column;
+    justify-content: center;
+    padding: $grid-unit-size * 7;
+    padding-left: $grid-unit-size * 10;
+    background: #f8f6f1;
+}
+
+.cvat-github-star-modal-spark {
+    position: absolute;
+    top: $grid-unit-size * 3;
+    left: $grid-unit-size * 3;
+    width: $grid-unit-size * 9;
+    height: $grid-unit-size * 11;
+
+    i {
+        position: absolute;
+        display: block;
+        width: $grid-unit-size * 3.75;
+        height: $grid-unit-size * 0.625;
+        border-radius: $grid-unit-size * 0.5;
+        background: #ff6b00;
+        transform-origin: 0 50%;
+    }
+
+    i:nth-child(1) {
+        top: 0;
+        left: $grid-unit-size * 4.75;
+        width: $grid-unit-size * 4.25;
+        transform: rotate(62deg);
+    }
+
+    i:nth-child(2) {
+        top: $grid-unit-size * 4.375;
+        left: 0;
+        width: $grid-unit-size * 5.25;
+        transform: rotate(25deg);
+    }
+
+    i:nth-child(3) {
+        top: $grid-unit-size * 10;
+        left: 0;
+        width: $grid-unit-size * 4.25;
+        transform: rotate(-2deg);
+    }
+}
+
+.cvat-github-star-modal-title.ant-typography {
+    margin: 0 0 $grid-unit-size * 4;
+    color: #151515;
+    font-size: $grid-unit-size * 6;
+    font-weight: 700;
+    line-height: 1.16;
+    letter-spacing: 0;
+
+    span {
+        color: #ff6b00;
+    }
+}
+
+.cvat-github-star-modal-subtitle.ant-typography {
+    margin: 0 0 $grid-unit-size * 4;
+    color: #202020;
+    font-size: $grid-unit-size * 3.125;
+    font-weight: 600;
+    line-height: 1.3;
+    letter-spacing: 0;
+
+    .anticon {
+        margin-left: $grid-unit-size;
+        color: #ffbf22;
+        font-size: $grid-unit-size * 2.75;
+        vertical-align: $grid-unit-size * 0.125;
+    }
+}
+
+.cvat-github-star-modal-text.ant-typography {
+    max-width: $grid-unit-size * 43.75;
+    margin: 0 0 $grid-unit-size * 6;
+    color: #444;
+    font-size: $grid-unit-size * 2.625;
+    line-height: 1.42;
+}
+
+.cvat-github-star-modal-actions {
+    display: flex;
+    align-items: center;
+    gap: $grid-unit-size * 2;
+
+    .ant-btn.ant-btn-primary.cvat-github-star-modal-support-button {
+        height: $grid-unit-size * 7;
+        padding: 0 $grid-unit-size * 3;
+        border-color: #ff6b00;
+        background: #ff6b00;
+        color: #fff;
+        font-size: $grid-unit-size * 2.125;
+        font-weight: 600;
+
+        &:not(:disabled, .ant-btn-disabled) {
+            &:hover,
+            &:focus,
+            &:focus-visible,
+            &:active {
+                color: #fff;
+                border-color: #ff8a3d;
+                background: #ff8a3d;
+                box-shadow: 0 0 0 $grid-unit-size * 0.25 rgba(255, 138, 61, 35%);
+                outline: none;
+            }
+        }
+    }
+
+    .ant-btn.ant-btn-link.cvat-github-star-prompt-not-now-button {
+        height: $grid-unit-size * 7;
+        padding: 0;
+        border-color: transparent;
+        background: transparent;
+        color: #303030;
+        box-shadow: none;
+        font-size: $grid-unit-size * 2.125;
+        text-decoration: underline;
+
+        &:not(:disabled, .ant-btn-disabled) {
+            &:hover,
+            &:focus,
+            &:focus-visible,
+            &:active {
+                color: #ff8a3d;
+                border-color: transparent;
+                background: transparent;
+                box-shadow: none;
+                outline: none;
+            }
+        }
+    }
+}
+
+.cvat-github-star-modal-arrow {
+    position: absolute;
+    bottom: $grid-unit-size;
+    left: $grid-unit-size * 5;
+    width: $grid-unit-size * 18;
+    height: $grid-unit-size * 8;
+
+    svg {
+        display: block;
+        width: 100%;
+        height: 100%;
+        transform: scale(0.7);
+        transform-origin: bottom left;
+    }
+}
+
+.cvat-github-star-modal-scene {
+    min-width: 0;
+    overflow: hidden;
+    background: #f8f6f1;
+
+    img {
+        display: block;
+        width: 100%;
+        height: 100%;
+        object-fit: cover;
+        object-position: right center;
+    }
+}

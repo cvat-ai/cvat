@@ -8,26 +8,27 @@ import Text from 'antd/lib/typography/Text';
 import Select from 'antd/lib/select';
 import {
     EyeInvisibleFilled, EyeOutlined, LockFilled, UnlockOutlined,
+    PushpinFilled, PushpinOutlined,
 } from '@ant-design/icons';
 
 import CVATTooltip from 'components/common/cvat-tooltip';
 
-export enum AudioRegionsOrdering {
-    INSERTION = 'Insertion order',
-    START_TIME = 'Start time',
-    LABEL_NAME = 'Label name',
-}
+import { AudioRegionsOrdering } from './utils/audio-interval';
 
 interface Props {
     count: number;
     ordering: AudioRegionsOrdering;
     allLocked: boolean;
+    allPinned: boolean;
     allHidden: boolean;
     switchLockAllShortcut: string;
+    switchPinAllShortcut: string;
     switchHiddenAllShortcut: string;
     onChangeOrdering(value: AudioRegionsOrdering): void;
     onLockAll(): void;
     onUnlockAll(): void;
+    onPinAll(): void;
+    onUnpinAll(): void;
     onHideAll(): void;
     onShowAll(): void;
 }
@@ -37,12 +38,16 @@ function AudioRegionsListHeader(props: Props): JSX.Element {
         count,
         ordering,
         allLocked,
+        allPinned,
         allHidden,
         switchLockAllShortcut,
+        switchPinAllShortcut,
         switchHiddenAllShortcut,
         onChangeOrdering,
         onLockAll,
         onUnlockAll,
+        onPinAll,
+        onUnpinAll,
         onHideAll,
         onShowAll,
     } = props;
@@ -59,6 +64,13 @@ function AudioRegionsListHeader(props: Props): JSX.Element {
                             <LockFilled onClick={onUnlockAll} />
                         ) : (
                             <UnlockOutlined onClick={onLockAll} />
+                        )}
+                    </CVATTooltip>
+                    <CVATTooltip title={`Switch pin for all ${switchPinAllShortcut}`}>
+                        {allPinned ? (
+                            <PushpinFilled onClick={onUnpinAll} />
+                        ) : (
+                            <PushpinOutlined onClick={onPinAll} />
                         )}
                     </CVATTooltip>
                     <CVATTooltip title={`Switch hidden for all ${switchHiddenAllShortcut}`}>

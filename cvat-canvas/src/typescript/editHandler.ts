@@ -81,7 +81,8 @@ export class EditHandlerImpl implements EditHandler {
         };
 
         this.canvas.on('mousemove.edit', (e: MouseEvent): void => {
-            if (e.shiftKey && ['polygon', 'polyline'].includes(this.editData.state.shapeType)) {
+            const slidingEnabled = e.shiftKey && !e.ctrlKey && !e.altKey && !e.metaKey;
+            if (slidingEnabled && ['polygon', 'polyline'].includes(this.editData.state.shapeType)) {
                 if (lastDrawnPoint.x === null || lastDrawnPoint.y === null) {
                     (this.editLine as any).draw('point', e);
                 } else {

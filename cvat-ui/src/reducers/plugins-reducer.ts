@@ -14,6 +14,9 @@ const defaultState: PluginsState = {
     },
     current: {},
     callbacks: {
+        auth: {
+            onAuthenticationStart: [],
+        },
         annotationPage: {
             header: {
                 menu: {
@@ -34,11 +37,11 @@ const defaultState: PluginsState = {
         },
         qualityControlPage: {
             task: {
-                overviewTab: [],
+                requirementsTab: [],
                 allocationTable: [],
             },
             project: {
-                overviewTab: [],
+                requirementsTab: [],
             },
         },
         analyticsReportPage: {
@@ -46,6 +49,11 @@ const defaultState: PluginsState = {
         },
     },
     components: {
+        qualityControlPage: {
+            tabs: {
+                items: [],
+            },
+        },
         header: {
             userMenu: {
                 items: [],
@@ -60,6 +68,20 @@ const defaultState: PluginsState = {
             },
             menuActions: {
                 items: [],
+            },
+        },
+        taskPage: {
+            details: {
+                topBar: {
+                    extras: [],
+                },
+            },
+        },
+        projectPage: {
+            details: {
+                topBar: {
+                    extras: [],
+                },
             },
         },
         modelsPage: {
@@ -232,7 +254,7 @@ export default function (state: PluginsState = defaultState, action: PluginActio
             const { path, callback } = action.payload;
             const updatedState = {
                 ...state,
-                components: { ...state.components },
+                callbacks: { ...state.callbacks },
             };
 
             const container = findContainerFromPath(path, updatedState, 'callbacks') as CallableFunction[];
@@ -244,7 +266,7 @@ export default function (state: PluginsState = defaultState, action: PluginActio
             const { path, callback } = action.payload;
             const updatedState = {
                 ...state,
-                components: { ...state.components },
+                callbacks: { ...state.callbacks },
             };
 
             const container = findContainerFromPath(path, updatedState, 'callbacks') as CallableFunction[];

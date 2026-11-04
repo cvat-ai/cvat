@@ -122,7 +122,18 @@ function RegionOfInterestInputComponent(props: Props): JSX.Element {
             command: 'draw_box',
             settings: {
                 crosshair: true,
-                hint: 'Draw a region of interest',
+                hint: {
+                    markdown: [
+                        '### Region of interest',
+                        '',
+                        'Outline the area where the model should run.',
+                        '',
+                        '**Actions**',
+                        '- Click opposite corners to draw a box.',
+                        '- Hold the `Mouse wheel` and drag to pan.',
+                    ].join('\n'),
+                    topic: 'region-of-interest-v1',
+                },
             },
         });
     }, [canvasInstance]);

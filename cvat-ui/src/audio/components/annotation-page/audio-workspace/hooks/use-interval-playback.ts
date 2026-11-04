@@ -9,82 +9,111 @@ import { audioActions } from 'actions/audio-actions';
 import { CombinedState } from 'reducers';
 import { shallowEqual, ThunkDispatch } from 'utils/redux';
 
-import {
-    clientIDFromWaveRegionId, intervalEndSeconds, intervalStartSeconds,
-} from '../utils/audio-interval';
-import type { WaveformPlayback } from './use-waveform-playback';
-import type { WaveformRegionRuntime } from './use-audio-waveform';
-
 interface Params {
-    regionRuntime: WaveformRegionRuntime;
-    playback: WaveformPlayback;
-    ready: boolean;
+    getCurrentTime(): number;
+    durationRef: React.MutableRefObject<number>;
+}
+
+interface ObservedIntervalRange {
+    sourceIntervalID: number;
+    start: number;
+    end: number;
 }
 
 /**
- * Applies play-once and looping interval policies through the generic playback controller.
+ * Keeps interval-sourced playback ranges in sync with their source interval.
  */
-export function useIntervalPlayback({ regionRuntime, playback, ready }: Params): void {
+export function useIntervalPlayback({ getCurrentTime, durationRef }: Params): void {
     const dispatch = useDispatch<ThunkDispatch>();
     const {
-        play, pause, seek, subscribeTimeUpdates,
-    } = playback;
-    const {
-        request, loop, playing, activeIntervalID, intervals,
-    } = useSelector((state: CombinedState) => ({
-        request: state.audio.player.playIntervalOnceRequest,
-        loop: state.audio.player.loop,
-        playing: state.audio.player.playing,
-        activeIntervalID: state.audio.player.activeIntervalID,
-        intervals: state.audio.player.intervals,
-    }), shallowEqual);
-    const latestRef = useRef({
-        request, loop, playing, activeIntervalID, intervals,
-    });
-    latestRef.current = {
-        request, loop, playing, activeIntervalID, intervals,
-    };
+        currentPlaybackRange,
+        currentPlaybackRangeSource,
+        currentSourceInterval,
+    } = useSelector((state: CombinedState) => {
+        const { intervals } = state.audio.player;
+        const { playbackRange: playerPlaybackRange } = state.audio.player;
+        const { playbackRangeSource: playerPlaybackRangeSource } = state.audio.player;
 
-    // Start play-once through the generic transport.
+        return {
+            currentPlaybackRange: playerPlaybackRange,
+            currentPlaybackRangeSource: playerPlaybackRangeSource,
+            currentSourceInterval: playerPlaybackRangeSource === null ?
+                null : intervals.find(
+                    (interval) => interval.clientID === playerPlaybackRangeSource.intervalID,
+                ) ?? null,
+        };
+    }, shallowEqual);
+    const previousPlaybackRangeRef = useRef<ObservedIntervalRange | null>(null);
+
     useEffect(() => {
-        if (!ready || !request) return;
-        const latest = latestRef.current;
-        if (!latest.intervals.some((interval) => interval.clientID === request.intervalID)) {
-            dispatch(audioActions.completePlayAudioIntervalOnce(request));
+        if (!currentPlaybackRange) {
+            if (currentPlaybackRangeSource) {
+                dispatch(audioActions.clearAudioIntervalPlaybackSource(currentPlaybackRangeSource.rangeID));
+            }
+            previousPlaybackRangeRef.current = null;
             return;
         }
 
-        const region = regionRuntime.regionsPlugin.getRegions().find(
-            (item) => clientIDFromWaveRegionId(item.id) === request.intervalID,
-        );
-        if (!region) return;
+        if (!currentPlaybackRangeSource) {
+            // Some other source of playback range, not interval
+            previousPlaybackRangeRef.current = null;
+            return;
+        }
 
-        seek(region.start);
-        play();
-    }, [ready, request]);
+        const { id: currentPlaybackRangeID } = currentPlaybackRange;
+        if (currentPlaybackRangeSource.rangeID !== currentPlaybackRangeID) {
+            dispatch(audioActions.clearAudioIntervalPlaybackSource(currentPlaybackRangeSource.rangeID));
+            previousPlaybackRangeRef.current = null;
+            return;
+        }
 
-    useEffect(() => {
-        if (!ready) return undefined;
+        // at this point the source exists and its range ID matches the playback range ID
+        if (!currentSourceInterval) {
+            // e.g. interval was deleted
+            dispatch(audioActions.clearAudioPlaybackRange(currentPlaybackRangeID));
+            dispatch(audioActions.clearAudioIntervalPlaybackSource(currentPlaybackRangeID));
+            previousPlaybackRangeRef.current = null;
+            return;
+        }
 
-        return subscribeTimeUpdates((time: number): void => {
-            const latest = latestRef.current;
-            const intervalID = latest.request?.intervalID ?? (
-                latest.playing && latest.loop ? latest.activeIntervalID : null
-            );
-            if (intervalID === null) return;
+        const currentSourcePlaybackRange = {
+            start: currentSourceInterval.start / 1000,
+            end: currentSourceInterval.stop === null ? durationRef.current : currentSourceInterval.stop / 1000,
+        };
+        const previousPlaybackRange = previousPlaybackRangeRef.current;
+        previousPlaybackRangeRef.current = {
+            sourceIntervalID: currentPlaybackRangeSource.intervalID,
+            ...currentSourcePlaybackRange,
+        };
 
-            const interval = latest.intervals.find((item) => item.clientID === intervalID);
-            if (!interval || time < intervalEndSeconds(interval)) return;
+        if (
+            !previousPlaybackRange ||
+            previousPlaybackRange?.sourceIntervalID !== currentPlaybackRangeSource.intervalID ||
+            (
+                previousPlaybackRange.start === currentSourcePlaybackRange.start &&
+                previousPlaybackRange.end === currentSourcePlaybackRange.end
+            )
+        ) {
+            return;
+        }
 
-            if (latest.request?.intervalID === intervalID) {
-                pause();
-                dispatch(audioActions.completePlayAudioIntervalOnce(latest.request));
-                return;
-            }
+        const currentTime = getCurrentTime();
+        if (
+            currentTime < currentSourcePlaybackRange.start ||
+            currentSourcePlaybackRange.end <= currentTime
+        ) {
+            dispatch(audioActions.clearAudioPlaybackRange(currentPlaybackRangeID));
+            dispatch(audioActions.clearAudioIntervalPlaybackSource(currentPlaybackRangeID));
+            return;
+        }
 
-            if (latest.playing && latest.loop && latest.activeIntervalID === intervalID) {
-                seek(intervalStartSeconds(interval));
-            }
-        });
-    }, [ready]);
+        dispatch(audioActions.updateAudioPlaybackRange({
+            ...currentSourcePlaybackRange,
+            id: currentPlaybackRangeID,
+        }));
+    }, [
+        currentPlaybackRange,
+        currentPlaybackRangeSource,
+        currentSourceInterval,
+    ]);
 }

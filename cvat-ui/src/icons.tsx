@@ -7,6 +7,8 @@ import React from 'react';
 
 import SVGCVATIcon from './assets/cvat-icon.svg';
 import SVGCursorIcon from './assets/cursor-icon.svg';
+import SVGSelectIcon from './assets/select-icon.svg';
+import SVGIssueIcon from './assets/issue-icon.svg';
 import SVGMoveIcon from './assets/move-icon.svg';
 import SVGRotateIcon from './assets/rotate-icon.svg';
 import SVGFitIcon from './assets/fit-to-window-icon.svg';
@@ -80,9 +82,13 @@ import SVGSnapToContourIcon from './assets/snap-to-contour-icon.svg';
 import SVGSnapToPointIcon from './assets/snap-to-point-icon.svg';
 import SVGLayerStackIcon from './assets/layer-stack-icon.svg';
 import SVGIntervalToolsIcon from './assets/interval-tools-icon.svg';
-import SVGIntervalEditIcon from './assets/interval-edit-icon.svg';
+import SVGPlayRangeIcon from './assets/play-range-icon.svg';
+import SVGSeekToStartIcon from './assets/seek-to-start-icon.svg';
+import SVGSeekToEndIcon from './assets/seek-to-end-icon.svg';
 
 export const CVATIcon = React.memo((): JSX.Element => <SVGCVATIcon />);
+export const IssueIcon = React.memo((): JSX.Element => <SVGIssueIcon />);
+export const SelectIcon = React.memo((): JSX.Element => <SVGSelectIcon />);
 export const CursorIcon = React.memo((): JSX.Element => <SVGCursorIcon />);
 export const MoveIcon = React.memo((): JSX.Element => <SVGMoveIcon />);
 export const RotateIcon = React.memo((): JSX.Element => <SVGRotateIcon />);
@@ -157,4 +163,6 @@ export const SnapToContourIcon = React.memo((): JSX.Element => <SVGSnapToContour
 export const SnapToPointIcon = React.memo((): JSX.Element => <SVGSnapToPointIcon />);
 export const LayerStackIcon = React.memo((): JSX.Element => <SVGLayerStackIcon />);
 export const IntervalToolsIcon = React.memo((): JSX.Element => <SVGIntervalToolsIcon />);
-export const IntervalEditIcon = React.memo((): JSX.Element => <SVGIntervalEditIcon />);
+export const PlayRangeIcon = React.memo((): JSX.Element => <SVGPlayRangeIcon />);
+export const SeekToStartIcon = React.memo((): JSX.Element => <SVGSeekToStartIcon />);
+export const SeekToEndIcon = React.memo((): JSX.Element => <SVGSeekToEndIcon />);

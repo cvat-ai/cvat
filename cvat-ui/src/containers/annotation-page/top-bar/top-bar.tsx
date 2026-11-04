@@ -29,15 +29,16 @@ import {
     undoActionAsync,
 } from 'actions/annotation-actions';
 import AnnotationTopBarComponent from 'components/annotation-page/top-bar/top-bar';
-import { Canvas } from 'cvat-canvas-wrapper';
+import {
+    Canvas, CanvasMode, RectDrawingMethod, CanvasHistorySource,
+} from 'cvat-canvas-wrapper';
 import { Canvas3d } from 'cvat-canvas3d-wrapper';
 import { FramesMetaData, Job } from 'cvat-core-wrapper';
 import {
-    ActiveControl, CombinedState, FrameSpeed, NavigationType, ToolsBlockerState, Workspace,
+    ActiveControl, CombinedState, FrameSpeed, NavigationType, Workspace,
 } from 'reducers';
 import isAbleToChangeFrame from 'utils/is-able-to-change-frame';
 import { KeyMap } from 'utils/mousetrap-react';
-import { switchToolsBlockerState } from 'actions/settings-actions';
 import { writeLatestFrame } from 'utils/remember-latest-frame';
 import { finishDraw } from 'utils/drawing';
 import { toClipboard } from 'utils/to-clipboard';
@@ -59,9 +60,11 @@ interface StateToProps {
     canvasIsReady: boolean;
     undoAction?: string;
     redoAction?: string;
+    canvasUndoAction?: string;
+    canvasRedoAction?: string;
+    canvasHistorySource?: CanvasHistorySource;
     autoSave: boolean;
     autoSaveInterval: number;
-    toolsBlockerState: ToolsBlockerState;
     showDeletedFrames: boolean;
     workspace: Workspace;
     keyMap: KeyMap;
@@ -70,6 +73,7 @@ interface StateToProps {
     forceExit: boolean;
     ranges: string;
     activeControl: ActiveControl;
+    rectDrawingMethod?: RectDrawingMethod;
     annotationFilters: object[];
     initialOpenGuide: boolean;
     navigationType: NavigationType;
@@ -101,7 +105,6 @@ interface DispatchToProps {
     setForceExitAnnotationFlag(forceExit: boolean): void;
     changeWorkspace(workspace: Workspace): void;
     setHoveredChapter(id: number | null): void;
-    onSwitchToolsBlockerState(toolsBlockerState: ToolsBlockerState): void;
     deleteFrame(frame: number): void;
     restoreFrame(frame: number): void;
     switchNavigationBlocked(blocked: boolean): void;
@@ -130,7 +133,17 @@ function mapStateToProps(state: CombinedState): StateToProps {
                 filters: annotationFilters,
             },
             job: { instance: jobInstance, queryParameters: { initialOpenGuide }, meta },
-            canvas: { ready: canvasIsReady, instance: canvasInstance, activeControl },
+            canvas: {
+                ready: canvasIsReady,
+                instance: canvasInstance,
+                activeControl,
+                history: {
+                    source: canvasHistorySource,
+                    undoAction: canvasUndoAction,
+                    redoAction: canvasRedoAction,
+                },
+            },
+            drawing: { activeRectDrawingMethod: rectDrawingMethod },
             workspace,
         },
         settings: {
@@ -138,7 +151,6 @@ function mapStateToProps(state: CombinedState): StateToProps {
             workspace: {
                 autoSave,
                 autoSaveInterval,
-                toolsBlockerState,
             },
         },
         shortcuts: { keyMap, normalizedKeyMap },
@@ -170,9 +182,11 @@ function mapStateToProps(state: CombinedState): StateToProps {
         jobInstance: jobInstance as Job,
         undoAction: history.undo.length ? history.undo[history.undo.length - 1][0] : undefined,
         redoAction: history.redo.length ? history.redo[history.redo.length - 1][0] : undefined,
+        canvasUndoAction,
+        canvasRedoAction,
+        canvasHistorySource,
         autoSave,
         autoSaveInterval,
-        toolsBlockerState,
         showDeletedFrames,
         workspace,
         keyMap,
@@ -180,6 +194,7 @@ function mapStateToProps(state: CombinedState): StateToProps {
         canvasInstance: canvasInstance as NonNullable<typeof canvasInstance>,
         forceExit,
         activeControl,
+        rectDrawingMethod,
         ranges,
         annotationFilters,
         initialOpenGuide,
@@ -241,9 +256,6 @@ function mapDispatchToProps(dispatch: any): DispatchToProps {
         setForceExitAnnotationFlag(forceExit: boolean): void {
             dispatch(setForceExitAnnotationFlagAction(forceExit));
         },
-        onSwitchToolsBlockerState(toolsBlockerState: ToolsBlockerState): void {
-            dispatch(switchToolsBlockerState(toolsBlockerState));
-        },
         deleteFrame(frame: number): void {
             dispatch(deleteFrameAsync(frame));
         },
@@ -260,6 +272,7 @@ function mapDispatchToProps(dispatch: any): DispatchToProps {
 }
 
 type Props = StateToProps & DispatchToProps & RouteComponentProps;
+
 class AnnotationTopBarContainer extends React.PureComponent<Props> {
     private inputFrameRef: React.RefObject<HTMLInputElement>;
     private autoSaveInterval: number | undefined;
@@ -364,7 +377,13 @@ class AnnotationTopBarContainer extends React.PureComponent<Props> {
     }
 
     private undo = (): void => {
-        const { undo, undoAction } = this.props;
+        const { undo, undoAction, canvasInstance } = this.props;
+
+        if (canvasInstance instanceof Canvas) {
+            if (canvasInstance.undo() || ![CanvasMode.IDLE, CanvasMode.SELECT].includes(canvasInstance.mode())) {
+                return;
+            }
+        }
 
         if (isAbleToChangeFrame() && undoAction) {
             undo();
@@ -372,7 +391,13 @@ class AnnotationTopBarContainer extends React.PureComponent<Props> {
     };
 
     private redo = (): void => {
-        const { redo, redoAction } = this.props;
+        const { redo, redoAction, canvasInstance } = this.props;
+
+        if (canvasInstance instanceof Canvas) {
+            if (canvasInstance.redo() || ![CanvasMode.IDLE, CanvasMode.SELECT].includes(canvasInstance.mode())) {
+                return;
+            }
+        }
 
         if (isAbleToChangeFrame() && redoAction) {
             redo();
@@ -621,11 +646,6 @@ class AnnotationTopBarContainer extends React.PureComponent<Props> {
         finishDraw(canvasInstance, activeControl);
     };
 
-    private onSwitchToolsBlockerState = (): void => {
-        const { toolsBlockerState, onSwitchToolsBlockerState } = this.props;
-        onSwitchToolsBlockerState({ algorithmsLocked: !toolsBlockerState.algorithmsLocked });
-    };
-
     private onURLIconClick = (): void => {
         const { frameNumber } = this.props;
         const { origin, pathname } = window.location;
@@ -710,20 +730,31 @@ class AnnotationTopBarContainer extends React.PureComponent<Props> {
             frameIsDeleted,
             undoAction,
             redoAction,
+            canvasUndoAction,
+            canvasRedoAction,
+            canvasHistorySource,
             workspace,
             keyMap,
             ranges,
             normalizedKeyMap,
             activeControl,
+            rectDrawingMethod,
             annotationFilters,
             initialOpenGuide,
-            toolsBlockerState,
             navigationType,
             switchNavigationBlocked,
             setNavigationType,
             switchShowSearchPallet,
             showSearchFrameByName,
         } = this.props;
+        const maskHistoryMode = [ActiveControl.DRAW_MASK, ActiveControl.EDIT].includes(activeControl);
+        const maskHistory = canvasHistorySource === CanvasHistorySource.MASK;
+        let availableUndoAction = maskHistoryMode ? undefined : undoAction;
+        let availableRedoAction = maskHistoryMode ? undefined : redoAction;
+        if (maskHistoryMode && maskHistory) {
+            availableUndoAction = canvasUndoAction;
+            availableRedoAction = canvasRedoAction;
+        }
 
         return (
             <AnnotationTopBarComponent
@@ -764,12 +795,11 @@ class AnnotationTopBarContainer extends React.PureComponent<Props> {
                 frameFilename={frameFilename}
                 frameDeleted={frameIsDeleted}
                 inputFrameRef={this.inputFrameRef}
-                undoAction={undoAction}
-                redoAction={redoAction}
+                undoAction={availableUndoAction}
+                redoAction={availableRedoAction}
                 undoShortcut={normalizedKeyMap.UNDO}
                 redoShortcut={normalizedKeyMap.REDO}
                 drawShortcut={normalizedKeyMap.SWITCH_DRAW_MODE_STANDARD_CONTROLS}
-                switchToolsBlockerShortcut={normalizedKeyMap.SWITCH_TOOLS_BLOCKER_STATE}
                 playPauseShortcut={normalizedKeyMap.PLAY_PAUSE}
                 deleteFrameShortcut={normalizedKeyMap.DELETE_FRAME}
                 nextFrameShortcut={normalizedKeyMap.NEXT_FRAME}
@@ -784,10 +814,9 @@ class AnnotationTopBarContainer extends React.PureComponent<Props> {
                 onUndoClick={this.undo}
                 onRedoClick={this.redo}
                 onFinishDraw={this.onFinishDraw}
-                onSwitchToolsBlockerState={this.onSwitchToolsBlockerState}
-                toolsBlockerState={toolsBlockerState}
                 jobInstance={jobInstance}
                 activeControl={activeControl}
+                rectDrawingMethod={rectDrawingMethod}
             />
         );
     }

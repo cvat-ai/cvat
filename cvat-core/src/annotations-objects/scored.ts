@@ -3,8 +3,8 @@
 // SPDX-License-Identifier: MIT
 
 import type { AnnotationContext } from './annotation-context';
+import type { Constructor } from './types';
 
-type Constructor<T = object> = new (...args: any[]) => T;
 type AnnotationContextConstructor = Constructor<AnnotationContext>;
 
 export type Scored = {

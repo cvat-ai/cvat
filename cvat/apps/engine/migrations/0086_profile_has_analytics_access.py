@@ -5,7 +5,7 @@ from django.db import migrations, models
 
 
 def set_has_analytics_access(apps, schema_editor):
-    User = apps.get_model("auth", "User")
+    User = apps.get_model(settings.AUTH_USER_MODEL)
     for user in User.objects.all():
         is_admin = user.groups.filter(name=settings.IAM_ADMIN_ROLE).exists()
         user.profile.has_analytics_access = user.is_superuser or is_admin
@@ -16,6 +16,7 @@ class Migration(migrations.Migration):
 
     dependencies = [
         ("engine", "0085_segment_chunks_updated_date"),
+        migrations.swappable_dependency(settings.AUTH_USER_MODEL),
     ]
 
     operations = [

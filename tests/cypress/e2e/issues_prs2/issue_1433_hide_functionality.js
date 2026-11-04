@@ -10,7 +10,7 @@ import { taskName, labelName } from '../../support/const';
 context('Check hide functionality (H)', () => {
     const issueId = '1433';
     const createRectangleShape2Points = {
-        points: 'By 2 Points',
+        points: '2 Points',
         type: 'Shape',
         labelName,
         firstX: 250,

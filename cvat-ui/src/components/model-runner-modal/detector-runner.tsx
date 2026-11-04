@@ -23,6 +23,7 @@ import { type Canvas } from 'cvat-canvas-wrapper';
 
 import LabelsMapperComponent, { LabelInterface, FullMapping } from './labels-mapper';
 import RegionOfInterestInputComponent from './region-of-interest-input';
+import ModelSelectorDropdownContent from './model-selector-dropdown-content';
 
 export type RegionOfInterest = NonNullable<AnnotateTaskRequestBody['roi']> | null;
 
@@ -145,10 +146,15 @@ function DetectorRunner(props: Props): JSX.Element {
 
     return (
         <div className='cvat-run-model-content'>
+            <Row justify='start'>
+                <Col>
+                    <Text className='cvat-text-color'>Model</Text>
+                </Col>
+            </Row>
             <Row align='middle'>
-                <Col span={4}>Model:</Col>
-                <Col span={20}>
+                <Col span={24}>
                     <Select
+                        dropdownRender={(menu) => <ModelSelectorDropdownContent>{menu}</ModelSelectorDropdownContent>}
                         placeholder={dimension === DimensionType.DIMENSION_2D ? 'Select a model' : 'No models available'}
                         disabled={dimension !== DimensionType.DIMENSION_2D}
                         style={{ width: '100%' }}

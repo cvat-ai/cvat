@@ -17,7 +17,7 @@ context('Changing a default value for an attribute.', () => {
         { name: 'shape', values: 'false', type: 'Checkbox' },
     ];
     const rectangleShape2Points = {
-        points: 'By 2 Points',
+        points: '2 Points',
         type: 'Shape',
         labelName: additionalLabel,
         firstX: 400,

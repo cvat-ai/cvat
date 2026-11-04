@@ -24,6 +24,7 @@ import data.organizations
 #     },
 #     "resource": {
 #         "role": <"owner"|"maintainer"|"supervisor"|"worker">,
+#         "new_role": <"owner"|"maintainer"|"supervisor"|"worker"> or null,
 #         "is_active": <true|false>,
 #         "user": { "id": <num> },
 #         "organization": { "id": <num> }
@@ -82,22 +83,21 @@ allow if {
     input.resource.organization.id == input.auth.organization.id
 }
 
-# maintainer of the organization can change the role of any member and remove any member except
-# himself/another maintainer/owner
+# maintainer of the organization can change the role of any member to supervisor or lower,
+# and remove any member except himself/another maintainer/owner
 allow if {
     input.scope in {utils.CHANGE_ROLE, utils.DELETE}
     input.resource.organization.id == input.auth.organization.id
     utils.has_perm(utils.USER)
     organizations.is_maintainer
-    not input.resource.role in {
-        organizations.OWNER,
-        organizations.MAINTAINER
-    }
+    not input.resource.role in {organizations.OWNER, organizations.MAINTAINER}
+    not input.resource.new_role in {organizations.OWNER, organizations.MAINTAINER}
     input.resource.user.id != input.auth.user.id
 }
 
 
-# owner of the organization can change the role of any member and remove any member except himself
+# owner of the organization can change the role of any member to maintainer or lower,
+# and remove any member except himself
 allow if {
     input.scope in {utils.CHANGE_ROLE, utils.DELETE}
     input.resource.organization.id == input.auth.organization.id
@@ -105,6 +105,7 @@ allow if {
     organizations.is_owner
     input.resource.user.id != input.auth.user.id
     input.resource.role != organizations.OWNER
+    input.resource.new_role != organizations.OWNER
 }
 
 # member can leave the organization except case when member is the owner

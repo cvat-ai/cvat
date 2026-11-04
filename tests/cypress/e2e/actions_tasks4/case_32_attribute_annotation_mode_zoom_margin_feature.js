@@ -13,7 +13,7 @@ context('Attribute annotation mode (AAM) zoom padding feature', () => {
     allure.tags(AllureTag.HEAVY, AllureTag.SETTINGS);
     const caseId = '32';
     const rectangleShape2Points = {
-        points: 'By 2 Points',
+        points: '2 Points',
         type: 'Shape',
         labelName,
         firstX: 100,

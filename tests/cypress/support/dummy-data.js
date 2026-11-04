@@ -95,9 +95,9 @@ const createDummyAWSBucket = {
     display_name: dummyAWSBucket.results[0].display_name,
     credentials_type: dummyAWSBucket.results[0].credentials_type,
     manifests: ['images_with_manifest/manifest.jsonl'],
-    secret_key: 'minio_secret_key',
-    key: 'minio_access_key',
-    specific_attributes: `endpoint_url=${Cypress.config('minioUrl')}`,
+    secret_key: 'moto_secret_key',
+    key: 'moto_access_key',
+    specific_attributes: `endpoint_url=${Cypress.config('motoUrl')}`,
 };
 
 module.exports = {

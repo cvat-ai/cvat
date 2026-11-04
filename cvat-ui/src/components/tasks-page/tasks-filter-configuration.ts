@@ -15,6 +15,7 @@ export const config: Partial<Config> = {
             valueSources: ['value'],
             fieldSettings: {
                 listValues: [
+                    { value: '1d', title: '1D' },
                     { value: '2d', title: '2D' },
                     { value: '3d', title: '3D' },
                 ],
@@ -71,6 +72,11 @@ export const config: Partial<Config> = {
                 forceAsyncSearch: true,
                 asyncFetch: asyncFetchUsers,
             },
+        },
+        created_date: {
+            label: 'Created at',
+            type: 'datetime',
+            operators: ['between', 'greater', 'greater_or_equal', 'less', 'less_or_equal'],
         },
         updated_date: {
             label: 'Last updated',

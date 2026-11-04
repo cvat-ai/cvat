@@ -14,12 +14,9 @@ services:
     depends_on:
       - cvat_server
     environment:
-      CONTAINER_COVERAGE_DATA_DIR:
       GITHUB_ACTIONS:
       GITHUB_TOKEN:
       GITHUB_WORKSPACE:
       GITHUB_REF:
       GITHUB_HEAD_REF:
       GITHUB_RUN_ID:
-    volumes:
-      - ${HOST_COVERAGE_DATA_DIR}:${CONTAINER_COVERAGE_DATA_DIR}

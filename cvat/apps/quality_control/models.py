@@ -5,26 +5,33 @@
 from __future__ import annotations
 
 from collections.abc import Sequence
-from copy import deepcopy
+from dataclasses import dataclass
 from enum import Enum
 from functools import cached_property
 from typing import TYPE_CHECKING, Any
 
+from django.conf import settings
 from django.core.exceptions import ValidationError
 from django.db import models
 from django.forms.models import model_to_dict
 
-from cvat.apps.engine.models import Job, JobType, Project, ShapeType, Task, TimestampedModel, User
+from cvat.apps.engine.models import Job, JobType, Project, ShapeType, Task, TimestampedModel
+from cvat.apps.quality_control.utils import is_current_report_data
+from cvat.utils import django_database as db_utils
 
 if TYPE_CHECKING:
     from cvat.apps.organizations.models import Organization
+
+
+# QualityReport.data contains a serialized JSON object stored as a JSON string. PostgreSQL's
+# text representation can therefore contain escaped or unescaped quotes around object keys.
+CURRENT_REPORT_DATA_REGEX = r'\\?"groups\\?"\s*:'
 
 
 class AnnotationConflictType(str, Enum):
     MISSING_ANNOTATION = "missing_annotation"
     EXTRA_ANNOTATION = "extra_annotation"
     MISMATCHING_LABEL = "mismatching_label"
-    LOW_OVERLAP = "low_overlap"
     MISMATCHING_DIRECTION = "mismatching_direction"
     MISMATCHING_ATTRIBUTES = "mismatching_attributes"
     MISMATCHING_GROUPS = "mismatching_groups"
@@ -39,7 +46,6 @@ class AnnotationConflictType(str, Enum):
 
 
 class AnnotationConflictSeverity(str, Enum):
-    WARNING = "warning"
     ERROR = "error"
 
     def __str__(self) -> str:
@@ -75,17 +81,83 @@ class QualityReportTarget(str, Enum):
         return tuple((x.value, x.name) for x in cls)
 
 
-class QualityTargetMetricType(str, Enum):
+class QualityMetric(str, Enum):
     ACCURACY = "accuracy"
     PRECISION = "precision"
     RECALL = "recall"
+    JACCARD_INDEX = "jaccard_index"
+    DICE = "dice"
+
+    def __str__(self) -> str:
+        return self.value
+
+
+class QualityMetricAggregation(str, Enum):
+    MICRO = "micro"
+    MEAN = "mean"
+    LABEL = "label"
+
+    @classmethod
+    def from_metric_value(cls, value: str) -> QualityMetricAggregation:
+        return next(
+            (
+                aggregation
+                for aggregation in cls
+                if aggregation != cls.MICRO and value.startswith(f"{aggregation.value}_")
+            ),
+            cls.MICRO,
+        )
+
+
+@dataclass(frozen=True)
+class QualityTargetMetricType:
+    metric: QualityMetric
+    aggregation: QualityMetricAggregation = QualityMetricAggregation.MICRO
+
+    @classmethod
+    def parse(cls, value: QualityTargetMetricType | QualityMetric | str) -> QualityTargetMetricType:
+        if isinstance(value, cls):
+            return value
+
+        value = str(value)
+        aggregation = QualityMetricAggregation.from_metric_value(value)
+        metric_value = (
+            value.removeprefix(f"{aggregation.value}_")
+            if aggregation != QualityMetricAggregation.MICRO
+            else value
+        )
+        return cls(metric=QualityMetric(metric_value), aggregation=aggregation)
+
+    @property
+    def value(self) -> str:
+        prefix = (
+            f"{self.aggregation.value}_"
+            if self.aggregation != QualityMetricAggregation.MICRO
+            else ""
+        )
+        return f"{prefix}{self.metric.value}"
 
     def __str__(self) -> str:
         return self.value
 
     @classmethod
-    def choices(cls):
-        return tuple((x.value, x.name) for x in cls)
+    def choices(cls) -> tuple[tuple[str, str], ...]:
+        target_metrics = (
+            cls(metric=metric, aggregation=aggregation)
+            for aggregation in QualityMetricAggregation
+            for metric in QualityMetric
+        )
+        return tuple(
+            (target_metric.value, target_metric.value.upper()) for target_metric in target_metrics
+        )
+
+    @classmethod
+    def __class_getitem__(cls, name: str) -> QualityTargetMetricType:
+        # NOTE @grigorii: Keep enum-style lookup compatible with migration 0003.
+        return cls(metric=QualityMetric[name])
+
+
+QUALITY_TARGET_METRIC_CHOICES = QualityTargetMetricType.choices()
 
 
 class QualityReport(models.Model):
@@ -109,7 +181,11 @@ class QualityReport(models.Model):
     gt_last_updated = models.DateTimeField(null=True)
 
     assignee = models.ForeignKey(
-        User, on_delete=models.SET_NULL, related_name="quality_reports", null=True, blank=True
+        settings.AUTH_USER_MODEL,
+        on_delete=models.SET_NULL,
+        related_name="quality_reports",
+        null=True,
+        blank=True,
     )
     assignee_last_updated = models.DateTimeField(null=True)
 
@@ -152,7 +228,7 @@ class QualityReport(models.Model):
             assert False
 
     def _parse_report_summary(self):
-        from cvat.apps.quality_control.quality_reports import ComparisonReport
+        from cvat.apps.quality_control.comparison_report import ComparisonReport
 
         return ComparisonReport.summary_from_json(self.data)
 
@@ -162,6 +238,31 @@ class QualityReport(models.Model):
 
     def get_report_data(self) -> str:
         return self.data
+
+    @property
+    def has_readable_data(self) -> bool:
+        from datumaro.util import parse_json
+
+        try:
+            report_data = parse_json(self.data)
+        except (TypeError, ValueError):
+            return False
+
+        return isinstance(report_data, dict) and {
+            "parameters",
+            "comparison_summary",
+        }.issubset(report_data)
+
+    @property
+    def has_current_data_format(self) -> bool:
+        from datumaro.util import parse_json
+
+        try:
+            report_data = parse_json(self.data)
+        except (TypeError, ValueError):
+            return False
+
+        return is_current_report_data(report_data)
 
     def get_task(self) -> Task | None:
         if self.task:
@@ -201,6 +302,7 @@ class AnnotationConflict(models.Model):
     frame = models.PositiveIntegerField()
     type = models.CharField(max_length=32, choices=AnnotationConflictType.choices())
     severity = models.CharField(max_length=32, choices=AnnotationConflictSeverity.choices())
+    attribute_names = models.JSONField(default=list, blank=True)
 
     annotation_ids: Sequence[AnnotationId]
 
@@ -257,9 +359,116 @@ class PointSizeBase(str, Enum):
         return tuple((x.value, x.name) for x in cls)
 
 
+class ShapeSimilarityMetricType(models.TextChoices):
+    IOU = "iou", "IoU"
+    OKS = "oks", "OKS"
+    BOUNDARY_F = "boundary_f", "Boundary F"
+    EQUALITY = "equality", "Equality"
+
+
+class DefaultComparisonSettings:
+    # Shared between the quality checks and consensus
+
+    compare_attributes: bool = True
+    "Enables or disables attribute checks"
+
+    boundary_f_tolerance: float = 5
+    "The maximum allowed boundary deviation, px"
+
+    boundary_f_threshold: float = 0.8
+    "Used for distinction between matched / unmatched shapes with the Boundary F metric"
+
+    iou_threshold: float = 0.4
+    "Used for distinction between matched / unmatched shapes with the IoU metric"
+
+    oks_threshold: float = 0.4
+    "Used for distinction between matched / unmatched shapes with the OKS metric"
+
+    # This specific value is from the original implementation:
+    # https://cocodataset.org/#keypoints-eval
+    # https://github.com/cocodataset/cocoapi/blob/8c9bcc3cf640524c4c20a9c40e89cb6a2f2fa0e9/PythonAPI/pycocotools/cocoeval.py#L523
+    oks_sigma: float = 0.09
+    """
+    The point size, as a fraction of the object size, defined by the point size base.
+    Corresponds to the standard deviation of the keypoint position.
+    """
+
+    point_size_base: PointSizeBase = PointSizeBase.GROUP_BBOX_SIZE
+    "Determines how to obtain the object size for point comparisons"
+
+    line_thickness: float = 0.01
+    "Thickness of polylines, relatively to the (image area) ^ 0.5"
+
+    compare_line_orientation: bool = True
+    "Indicates that polylines have direction"
+
+    line_orientation_threshold: float = 0.1
+    """
+    The minimal gain in the IoU between the given and reversed line directions
+    to count the line inverted
+    """
+
+    compare_groups: bool = True
+    "Enables or disables group checks"
+
+    group_match_threshold: float = 0.5
+    "Minimal IoU for groups to be considered matching"
+
+    check_covered_annotations: bool = True
+    "Check for fully-covered annotations"
+
+    object_visibility_threshold: float = 0.05
+    "Minimal visible area % of the spatial annotations"
+
+    panoptic_comparison: bool = True
+    "Use only the visible part of the masks and polygons in comparisons"
+
+    @staticmethod
+    def get_default_similarity_metric(
+        annotation_type: QualityRequirementAnnotationType,
+    ) -> ShapeSimilarityMetricType:
+        match annotation_type:
+            case QualityRequirementAnnotationType.TAG:
+                return ShapeSimilarityMetricType.EQUALITY
+            case (
+                QualityRequirementAnnotationType.POINTS
+                | QualityRequirementAnnotationType.SKELETON
+                | QualityRequirementAnnotationType.SKELETON_KEYPOINT
+            ):
+                return ShapeSimilarityMetricType.OKS
+            case (
+                QualityRequirementAnnotationType.RECTANGLE
+                | QualityRequirementAnnotationType.POLYGON
+                | QualityRequirementAnnotationType.MASK
+                | QualityRequirementAnnotationType.POLYLINE
+                | QualityRequirementAnnotationType.ELLIPSE
+            ):
+                return ShapeSimilarityMetricType.IOU
+            case _:
+                assert False, f"Unknown quality requirement annotation type '{annotation_type}'"
+
+    @classmethod
+    def as_dict(cls) -> dict[str, Any]:
+        return {
+            k: v
+            for k, v in cls.__dict__.items()
+            if not k.startswith("_")
+            if not callable(v)
+            if not isinstance(v, classmethod | staticmethod)
+        }
+
+
 class QualitySettings(TimestampedModel):
-    class InvalidParametersError(ValidationError):
-        pass
+    class Meta:
+        constraints = [
+            models.CheckConstraint(
+                name="quality_settings_task_or_project",
+                condition=(
+                    models.Q(task_id__isnull=False, project_id__isnull=True)
+                    | models.Q(task_id__isnull=True, project_id__isnull=False)
+                ),
+            )
+        ]
 
     task = models.OneToOneField(
         Task, on_delete=models.CASCADE, related_name="quality_settings", null=True, blank=True
@@ -276,71 +485,9 @@ class QualitySettings(TimestampedModel):
         blank=True,
     )
 
-    iou_threshold = models.FloatField()
-    oks_sigma = models.FloatField()
-    line_thickness = models.FloatField()
-
-    low_overlap_threshold = models.FloatField()
-
-    point_size_base = models.CharField(
-        max_length=32, choices=PointSizeBase.choices(), default=PointSizeBase.GROUP_BBOX_SIZE
-    )
-
-    compare_line_orientation = models.BooleanField()
-    line_orientation_threshold = models.FloatField()
-
-    compare_groups = models.BooleanField()
-    group_match_threshold = models.FloatField()
-
-    check_covered_annotations = models.BooleanField()
-    object_visibility_threshold = models.FloatField()
-
-    panoptic_comparison = models.BooleanField()
-
-    compare_attributes = models.BooleanField()
-
-    empty_is_annotated = models.BooleanField(default=False)
-
-    target_metric = models.CharField(
-        max_length=32,
-        choices=QualityTargetMetricType.choices(),
-        default=QualityTargetMetricType.ACCURACY,
-    )
-
-    target_metric_threshold = models.FloatField(default=0.7)
-
     max_validations_per_job = models.PositiveIntegerField(default=0)
 
-    class Meta:
-        constraints = [
-            models.CheckConstraint(
-                name="quality_settings_task_or_project",
-                condition=(
-                    models.Q(task_id__isnull=False, project_id__isnull=True)
-                    | models.Q(task_id__isnull=True, project_id__isnull=False)
-                ),
-            )
-        ]
-
-    def __init__(self, *args: Any, **kwargs: Any) -> None:
-        defaults = deepcopy(self.get_defaults())
-        for field in self._meta.fields:
-            if field.name in defaults:
-                field.default = defaults[field.name]
-
-        super().__init__(*args, **kwargs)
-
-    @classmethod
-    def get_defaults(cls) -> dict:
-        import cvat.apps.quality_control.quality_reports as qc
-
-        default_settings = qc.DatasetComparator.DEFAULT_SETTINGS.to_dict()
-
-        existing_fields = {f.name for f in cls._meta.fields}
-        return {k: v for k, v in default_settings.items() if k in existing_fields}
-
-    def to_dict(self):
-        return model_to_dict(self)
+    requirements: Sequence[QualityRequirement]
 
     @property
     def organization_id(self):
@@ -353,6 +500,204 @@ class QualitySettings(TimestampedModel):
 
     @classmethod
     def get_job_filter_terms(cls) -> list[str]:
-        from .quality_reports import TaskQualityCalculator
+        from .quality_calculators import TaskQualityCalculator
 
         return sorted(TaskQualityCalculator.JOB_FILTER_LOOKUPS.keys())
+
+    def to_dict(self):
+        return model_to_dict(self)
+
+
+class QualityRequirementAnnotationType(models.TextChoices):
+    TAG = "tag"
+    RECTANGLE = "rectangle"
+    SKELETON = "skeleton"
+    SKELETON_KEYPOINT = "skeleton_keypoint"
+    POINTS = "points"
+    POLYLINE = "polyline"
+    MASK = "mask"
+    POLYGON = "polygon"
+    ELLIPSE = "ellipse"
+
+
+class QualityRequirement(TimestampedModel):
+    class Meta:
+        constraints = [
+            models.UniqueConstraint(
+                fields=["settings", "name"],
+                name="quality_requirements_unique_per_settings",
+            )
+        ]
+
+    settings = models.ForeignKey(
+        QualitySettings,
+        on_delete=models.CASCADE,
+        related_name="requirements",
+        related_query_name="requirement",
+        null=False,
+        blank=False,
+    )
+
+    name = models.CharField(max_length=250, blank=False)
+
+    sort_order = models.IntegerField(default=0)
+
+    annotation_type = models.CharField(
+        max_length=32,
+        choices=QualityRequirementAnnotationType.choices,
+        null=True,
+        blank=True,
+    )
+
+    target_metric = models.CharField(
+        max_length=32,
+        choices=QUALITY_TARGET_METRIC_CHOICES,
+        null=True,
+        blank=True,
+    )
+
+    target_metric_threshold = models.FloatField(null=True, blank=True)
+
+    filter = models.TextField(blank=True)
+    enabled = models.BooleanField(default=True)
+
+    parent = models.ForeignKey(
+        "self", on_delete=models.DO_NOTHING, null=True, blank=True, related_name="children"
+    )
+
+    similarity_metric = models.CharField(
+        max_length=32,
+        choices=ShapeSimilarityMetricType.choices,
+        null=True,
+        blank=True,
+    )
+
+    boundary_f_tolerance = models.FloatField(null=True, blank=True)
+    boundary_f_threshold = models.FloatField(null=True, blank=True)
+
+    iou_threshold = models.JSONField(null=True, blank=True)
+
+    oks_threshold = models.FloatField(null=True, blank=True)
+    oks_sigma = models.FloatField(null=True, blank=True)
+
+    line_thickness = models.FloatField(null=True, blank=True)
+
+    point_size_base = models.CharField(
+        max_length=32,
+        choices=PointSizeBase.choices(),
+        null=True,
+        blank=True,
+    )
+
+    compare_line_orientation = models.BooleanField(null=True, blank=True)
+    line_orientation_threshold = models.FloatField(null=True, blank=True)
+
+    compare_groups = models.BooleanField(null=True, blank=True)
+    group_match_threshold = models.FloatField(null=True, blank=True)
+
+    check_covered_annotations = models.BooleanField(null=True, blank=True)
+    object_visibility_threshold = models.FloatField(null=True, blank=True)
+
+    panoptic_comparison = models.BooleanField(null=True, blank=True)
+
+    compare_attributes = models.BooleanField(null=True, blank=True)
+    attribute_comparison = models.JSONField(null=True, blank=True)
+
+    @property
+    def organization_id(self) -> int | None:
+        return self.settings.organization_id
+
+    @property
+    def is_base(self) -> bool:
+        return self.parent_id is None
+
+    @classmethod
+    def get_base_defaults(cls, annotation_type: QualityRequirementAnnotationType) -> dict[str, Any]:
+        default_settings = DefaultComparisonSettings.as_dict()
+        default_settings.update(
+            similarity_metric=DefaultComparisonSettings.get_default_similarity_metric(
+                annotation_type
+            ),
+            target_metric=str(QualityTargetMetricType(metric=QualityMetric.ACCURACY)),
+            target_metric_threshold=0.7,
+            compare_attributes=False,
+            attribute_comparison=None,
+        )
+
+        existing_fields = {f.name for f in cls._meta.fields}
+        return {k: v for k, v in default_settings.items() if k in existing_fields}
+
+    @staticmethod
+    def get_supported_similarity_metrics() -> (
+        dict[QualityRequirementAnnotationType, tuple[ShapeSimilarityMetricType, ...]]
+    ):
+        region_metrics = (ShapeSimilarityMetricType.IOU, ShapeSimilarityMetricType.BOUNDARY_F)
+        point_metrics = (ShapeSimilarityMetricType.OKS,)
+        return {
+            QualityRequirementAnnotationType.TAG: (ShapeSimilarityMetricType.EQUALITY,),
+            QualityRequirementAnnotationType.RECTANGLE: region_metrics,
+            QualityRequirementAnnotationType.POLYGON: region_metrics,
+            QualityRequirementAnnotationType.MASK: region_metrics,
+            QualityRequirementAnnotationType.POLYLINE: region_metrics,
+            QualityRequirementAnnotationType.ELLIPSE: region_metrics,
+            QualityRequirementAnnotationType.POINTS: point_metrics,
+            QualityRequirementAnnotationType.SKELETON: point_metrics,
+            QualityRequirementAnnotationType.SKELETON_KEYPOINT: point_metrics,
+        }
+
+    def to_dict(self):
+        return model_to_dict(self)
+
+
+_BASE_REQUIREMENT_ANNOTATION_TYPES = (
+    QualityRequirementAnnotationType.TAG,
+    QualityRequirementAnnotationType.RECTANGLE,
+    QualityRequirementAnnotationType.SKELETON,
+    QualityRequirementAnnotationType.SKELETON_KEYPOINT,
+    QualityRequirementAnnotationType.POINTS,
+    QualityRequirementAnnotationType.POLYLINE,
+    QualityRequirementAnnotationType.MASK,
+    QualityRequirementAnnotationType.POLYGON,
+    QualityRequirementAnnotationType.ELLIPSE,
+)
+
+
+def get_base_requirement_name(annotation_type: str) -> str:
+    return f"Base {str(annotation_type).replace('_', ' ')}"
+
+
+def ensure_base_quality_requirements(quality_settings: QualitySettings) -> bool:
+    existing_base_annotation_types = set(
+        quality_settings.requirements.filter(
+            parent__isnull=True,
+            annotation_type__in=_BASE_REQUIREMENT_ANNOTATION_TYPES,
+        ).values_list("annotation_type", flat=True)
+    )
+
+    requirements_to_create = []
+    for sort_order, annotation_type in enumerate(_BASE_REQUIREMENT_ANNOTATION_TYPES):
+        if annotation_type in existing_base_annotation_types:
+            continue
+
+        base_defaults = QualityRequirement.get_base_defaults(annotation_type)
+
+        requirements_to_create.append(
+            QualityRequirement(
+                settings=quality_settings,
+                name=get_base_requirement_name(annotation_type),
+                sort_order=sort_order,
+                annotation_type=annotation_type,
+                enabled=False,
+                **base_defaults,
+            )
+        )
+
+    if not requirements_to_create:
+        return False
+
+    # Avoid using upsert as it can lead to a deadlock when there are concurrent transactions.
+    # A simple insert should just fail on a constraint in such cases, which is what we need.
+    db_utils.bulk_create(QualityRequirement, requirements_to_create)
+    db_utils.clear_prefetched_relation_cache(quality_settings, "requirements")
+    quality_settings.touch()
+    return True

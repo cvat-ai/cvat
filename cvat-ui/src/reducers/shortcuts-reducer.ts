@@ -7,6 +7,7 @@ import { AuthActions, AuthActionTypes } from 'actions/auth-actions';
 import { ShortcutsActions, ShortcutsActionsTypes } from 'actions/shortcuts-actions';
 import { KeyMap, KeyMapItem } from 'utils/mousetrap-react';
 import { conflictDetector } from 'utils/conflict-detector';
+import { isMacOS } from 'utils/platform-checker';
 import { ShortcutsState } from '.';
 
 const capitalize = (text: string): string => text.slice(0, 1).toUpperCase() + text.slice(1);
@@ -28,6 +29,8 @@ const prettify = (key: string): string => {
             return 'Arrow Left';
         case 'arrowright':
             return 'Arrow Right';
+        case 'command':
+            return 'Cmd';
         default:
             return capitalize(key);
     }
@@ -35,10 +38,15 @@ const prettify = (key: string): string => {
 
 function formatShortcuts(shortcuts: KeyMapItem): string {
     const list: string[] = shortcuts.displayedSequences || (shortcuts.sequences as string[]);
-    if (!list?.length) {
+    const displayedSequences = isMacOS() ? list : list.filter((shortcut) => (
+        !shortcut.toLowerCase().split(/[+\s]/).includes('command')
+    ));
+
+    if (!displayedSequences.length) {
         return '';
     }
-    return `[${list
+
+    return `[${displayedSequences
         .map((shortcut: string): string => {
             let keys = shortcut.toLowerCase().split('+');
             keys = keys.map((key: string): string => prettify(key));

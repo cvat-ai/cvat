@@ -1,8 +1,6 @@
 # Only these rules are disabled because they currently fail on existing workflows.
 # They can be re-enabled later as the corresponding findings are fixed.
 rules:
-  artipacked:
-    disable: true
   cache-poisoning:
     disable: true
   dependabot-cooldown:

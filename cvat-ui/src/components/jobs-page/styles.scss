@@ -50,6 +50,7 @@
         flex-direction: column;
 
         .ant-card-cover {
+            position: relative;
             flex: 1;
             height: 0;
             margin: 0;
@@ -106,6 +107,18 @@
 
             &:hover {
                 cursor: pointer;
+            }
+        }
+
+        .cvat-job-page-list-item-status {
+            position: absolute;
+            bottom: $grid-unit-size;
+            right: $grid-unit-size;
+            max-width: calc(100% - #{$grid-unit-size * 2});
+            pointer-events: none;
+
+            .cvat-job-stage-state-badges {
+                justify-content: flex-end;
             }
         }
 
@@ -177,5 +190,38 @@
         bottom: $grid-unit-size * 2;
         right: $grid-unit-size;
         font-size: 16px;
+    }
+}
+
+.cvat-modal-distribute-jobs {
+    .cvat-distribute-jobs-users {
+        width: 100%;
+        margin: $grid-unit-size 0 $grid-unit-size * 2;
+
+        .ant-select-selector {
+            @extend .cvat-scrollbar;
+
+            max-height: $grid-unit-size * 16;
+            padding-inline-end: $grid-unit-size * 5;
+        }
+
+        .ant-select-arrow {
+            inset-inline-end: $grid-unit-size * 3;
+        }
+    }
+
+    .cvat-distribute-jobs-csv {
+        display: block;
+        margin-bottom: $grid-unit-size * 2;
+    }
+
+    .cvat-distribute-jobs-preview {
+        display: grid;
+        grid-template-columns: max-content max-content 1fr;
+        column-gap: $grid-unit-size;
+        align-items: center;
+        max-height: $grid-unit-size * 30;
+        overflow-y: auto;
+        margin: $grid-unit-size 0 $grid-unit-size * 2;
     }
 }

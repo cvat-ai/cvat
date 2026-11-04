@@ -10,7 +10,7 @@ import Modal from 'antd/lib/modal';
 import Dropdown from 'antd/lib/dropdown';
 
 import {
-    RQStatus, Task, User, Organization,
+    RQStatus, Task, User, Organization, DimensionType,
 } from 'cvat-core-wrapper';
 import { useDropdownEditField, usePlugins } from 'utils/hooks';
 
@@ -63,6 +63,12 @@ function TaskActionsComponent(props: Readonly<Props>): JSX.Element {
     }), shallowEqual);
 
     const isBulkMode = selectedIds.length > 1;
+    const isExportDatasetDisabled = isBulkMode &&
+        new Set(
+            currentTasks
+                .filter((task) => selectedIds.includes(task.id))
+                .map((task) => task.dimension),
+        ).size > 1;
     const {
         dropdownOpen,
         editField,
@@ -79,22 +85,20 @@ function TaskActionsComponent(props: Readonly<Props>): JSX.Element {
     }, [taskInstance.bugTracker]);
 
     const onMergeConsensusJobs = useCallback(() => {
-        if (taskInstance.consensusEnabled) {
-            Modal.confirm({
-                title: 'The consensus jobs will be merged',
-                content: 'Existing annotations in parent jobs will be updated. Continue?',
-                className: 'cvat-modal-confirm-consensus-merge-task',
-                onOk: () => {
-                    dispatch(mergeConsensusJobsAsync(taskInstance));
-                },
-                okButtonProps: {
-                    type: 'primary',
-                    danger: true,
-                },
-                okText: 'Merge',
-            });
-        }
-    }, [taskInstance.consensusEnabled, taskInstance]);
+        Modal.confirm({
+            title: 'The replica jobs will be merged',
+            content: 'Existing annotations in parent jobs will be updated. Continue?',
+            className: 'cvat-modal-confirm-consensus-merge-task',
+            onOk: () => {
+                dispatch(mergeConsensusJobsAsync(taskInstance));
+            },
+            okButtonProps: {
+                type: 'primary',
+                danger: true,
+            },
+            okText: 'Merge',
+        });
+    }, [taskInstance]);
 
     const onExportDataset = useCallback(() => {
         dispatch(exportActions.openExportDatasetModal(taskInstance));
@@ -256,10 +260,9 @@ function TaskActionsComponent(props: Readonly<Props>): JSX.Element {
                 activeInference &&
                 ![RQStatus.FAILED, RQStatus.FINISHED].includes(activeInference.status)
             ),
-            isConsensusEnabled: taskInstance.consensusEnabled,
             isMergingConsensusEnabled: mergingConsensus[`task_${taskInstance.id}`],
             pluginActions,
-            onMergeConsensusJobs: taskInstance.consensusEnabled ? onMergeConsensusJobs : null,
+            onMergeConsensusJobs,
             onOpenBugTracker: taskInstance.bugTracker ? onOpenBugTracker : null,
             onUploadAnnotations,
             onExportDataset,
@@ -268,6 +271,8 @@ function TaskActionsComponent(props: Readonly<Props>): JSX.Element {
             onMoveTaskToProject,
             onDeleteTask,
             selectedIds,
+            isExportDatasetDisabled,
+            isQualityControlDisabled: taskInstance.dimension === DimensionType.DIMENSION_1D,
         }, props);
     }
 

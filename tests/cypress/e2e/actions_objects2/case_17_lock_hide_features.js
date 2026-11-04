@@ -14,6 +14,8 @@ context('Lock/hide features.', () => {
     const newLabelName2 = `Second label case ${caseId}`;
     const newLabelName3 = `Third label case ${caseId}`;
     const newLabelName4 = `Fourth label case ${caseId}`;
+    const shapeIds = [1, 2, 3, 4, 5, 6, 7];
+    const objectIds = [...shapeIds, 8]; // The eighth object is a tag.
     let cvatObjectsSidebarStateItem1 = '';
     const createPolygonShape = {
         reDraw: false,
@@ -28,7 +30,7 @@ context('Lock/hide features.', () => {
         numberOfPoints: null,
     };
     const createRectangleTrack2Points = {
-        points: 'By 2 Points',
+        points: '2 Points',
         type: 'Track',
         labelName,
         firstX: 260,
@@ -68,7 +70,7 @@ context('Lock/hide features.', () => {
         numberOfPoints: null,
     };
     const createRectangleShape4Points = {
-        points: 'By 4 Points',
+        points: '4 Points',
         type: 'Shape',
         labelName: newLabelName3,
         firstX: 550,
@@ -113,7 +115,7 @@ context('Lock/hide features.', () => {
         it('Draw several objects (different shapes, tracks, tags, labels)', () => {
             cy.createPolygon(createPolygonShape);
             // Get css "background-color" for further comparison.
-            cy.get('#cvat-objects-sidebar-state-item-1').then(($cvatObjectsSidebarStateItem1) => {
+            cy.getObjectSidebarItem(1).then(($cvatObjectsSidebarStateItem1) => {
                 cvatObjectsSidebarStateItem1 = $cvatObjectsSidebarStateItem1.css('background-color');
             });
             cy.createRectangle(createRectangleTrack2Points);
@@ -128,20 +130,24 @@ context('Lock/hide features.', () => {
             cy.get('.cvat-objects-sidebar-states-header').within(() => {
                 cy.get('span[aria-label="unlock"]').click();
             });
-            cy.get('.cvat-objects-sidebar-state-item').each((item) => {
-                cy.get(item).within(() => {
-                    cy.get('.cvat-object-item-button-lock-enabled').should('exist');
-                });
+            shapeIds.forEach((id) => {
+                cy.getObjectSidebarItem(id).find('.cvat-object-item-button-lock-enabled').should('exist');
+            });
+            cy.contains('.cvat-annotation-header-button', 'Undo').click();
+            shapeIds.forEach((id) => {
+                cy.getObjectSidebarItem(id).find('.cvat-object-item-button-lock-enabled').should('not.exist');
+            });
+            cy.contains('.cvat-annotation-header-button', 'Redo').click();
+            shapeIds.forEach((id) => {
+                cy.getObjectSidebarItem(id).find('.cvat-object-item-button-lock-enabled').should('exist');
             });
         });
         it('Hide all the objects. Objects are still visible because they cannot be hidden while locked.', () => {
             cy.get('.cvat-objects-sidebar-states-header').within(() => {
                 cy.get('span[aria-label="eye-invisible"]').click();
             });
-            cy.get('.cvat-objects-sidebar-state-item').each((item) => {
-                cy.get(item).within(() => {
-                    cy.get('.cvat-object-item-button-hidden-enabled').should('not.exist');
-                });
+            shapeIds.forEach((id) => {
+                cy.getObjectSidebarItem(id).find('.cvat-object-item-button-hidden-enabled').should('not.exist');
             });
             cy.get('.cvat_canvas_shape').each((item) => {
                 cy.get(item).should('be.visible');
@@ -152,33 +158,30 @@ context('Lock/hide features.', () => {
                 cy.get('span[aria-label="lock"]').click();
                 cy.get('span[aria-label="eye"]').click();
             });
-            cy.get('.cvat-objects-sidebar-state-item').each((item) => {
-                cy.get(item)
-                    .invoke('text')
-                    .then(($itemText) => {
-                        // Sidebar for "Tag" doesn't have "Switch hidden property" button.
-                        if (!$itemText.match(/\d+TAG/)) {
-                            cy.get(item).within(() => {
-                                cy.get('.cvat-object-item-button-hidden-enabled').should('exist');
-                            });
-                        }
-                    });
+            shapeIds.forEach((id) => {
+                cy.getObjectSidebarItem(id).find('.cvat-object-item-button-hidden-enabled').should('exist');
             });
+            cy.get('.cvat_canvas_shape').each((item) => {
+                cy.get(item).should('have.class', 'cvat_canvas_hidden');
+            });
+            cy.contains('.cvat-annotation-header-button', 'Undo').click();
+            cy.get('.cvat_canvas_shape').should('not.have.class', 'cvat_canvas_hidden');
+            cy.contains('.cvat-annotation-header-button', 'Redo').click();
             cy.get('.cvat_canvas_shape').each((item) => {
                 cy.get(item).should('have.class', 'cvat_canvas_hidden');
             });
         });
         it('Set properties occluded & pinned to true for a shape. Shape is occluded is visualized (dashed contour) and the shape cannot be moved, but can be resized.', () => {
             // Unhide rectangle shape.
-            cy.get('#cvat-objects-sidebar-state-item-6').within(() => {
+            cy.getObjectSidebarItem(6).within(() => {
                 cy.get('span[aria-label="eye-invisible"]').click();
             });
             cy.get('#cvat_canvas_shape_6').should('be.visible');
-            cy.get('#cvat-objects-sidebar-state-item-6').within(() => {
+            cy.getObjectSidebarItem(6).within(() => {
                 cy.get('.cvat-object-item-button-occluded').click();
             });
             cy.get('#cvat_canvas_shape_6').should('have.css', 'stroke-dasharray');
-            cy.get('#cvat-objects-sidebar-state-item-6').within(() => {
+            cy.getObjectSidebarItem(6).within(() => {
                 cy.get('.cvat-object-item-button-pinned').click();
             });
             cy.get('#cvat_canvas_shape_6').should('not.have.class', 'cvat_canvas_shape_draggable');
@@ -200,11 +203,11 @@ context('Lock/hide features.', () => {
                 });
         });
         it('Go to polygon. Pinned is set to true by default. Set it to false. Polygon can be moved.', () => {
-            cy.get('#cvat-objects-sidebar-state-item-1').within(() => {
+            cy.getObjectSidebarItem(1).within(() => {
                 cy.get('.cvat-object-item-button-pinned-enabled').should('exist');
             });
             cy.get('#cvat_canvas_shape_1').should('not.have.class', 'cvat_canvas_shape_draggable');
-            cy.get('#cvat-objects-sidebar-state-item-1').within(() => {
+            cy.getObjectSidebarItem(1).within(() => {
                 cy.get('.cvat-object-item-button-pinned').click();
                 // Unhide polygon shape.
                 cy.get('.cvat-object-item-button-hidden').click();
@@ -245,22 +248,19 @@ context('Lock/hide features.', () => {
                 cy.contains('Objects').click();
             });
             // Objects that have a label different from the "Main task" should not be blocked.
-            cy.get('.cvat-objects-sidebar-state-item').then((objectSidebarList) => {
-                for (let i = 0; i < objectSidebarList.length; i++) {
-                    if (!objectSidebarList[i].textContent.match(fullMatch(labelName))) {
-                        cy.get(objectSidebarList[i]).within(() => {
-                            cy.get('.ant-select-selection-item').click({ force: true });
-                        });
+            objectIds.forEach((id) => {
+                cy.getObjectSidebarItem(id).then(($item) => {
+                    if (!$item[0].textContent.match(fullMatch(labelName))) {
+                        cy.wrap($item).find('.ant-select-selection-item').click({ force: true });
                         cy.get('.ant-select-dropdown').last().contains(labelName).click({ force: true });
-                        // Checking that the css parameter "background-color" has become the same as
-                        // the ".cvat-objects-sidebar-state-item" with "Main task" label.
-                        cy.get(objectSidebarList[i]).should(
+                        // Check that the color matches objects with the "Main task" label.
+                        cy.getObjectSidebarItem(id).should(
                             'have.css',
                             'background-color',
                             cvatObjectsSidebarStateItem1,
                         );
                     }
-                }
+                });
             });
         });
     });

@@ -10,15 +10,19 @@ import { translatePoint } from '../../support/utils';
 
 context('Join polygons feature', { scrollBehavior: false }, () => {
     /**
-     * Joins multiple polygon shapes together
-     * @param {{id: string, position?: Cypress.PositionType}[]} shapes
+     * Joins multiple polygon shapes together using positions relative to each bounding box (0–1).
+     * @param {{objectId: string, position: {x: number, y: number}}[]} shapes
      * @returns {void}
      */
     function joinShapes(shapes) {
         cy.get('.cvat-join-control').should('exist').and('be.visible').click();
         cy.get('.cvat-join-control').should('have.class', 'cvat-active-canvas-control');
         for (const shape of shapes) {
-            cy.get(shape.objectId).click(shape.position); // non-overlapping shape parts
+            cy.get(shape.objectId).then(($shape) => {
+                const { width, height } = $shape[0].getBoundingClientRect();
+                cy.wrap($shape).click(width * shape.position.x, height * shape.position.y);
+            });
+            cy.get(shape.objectId).should('have.class', 'cvat_canvas_shape_selection');
         }
         cy.realPress('j');
     }
@@ -83,8 +87,8 @@ context('Join polygons feature', { scrollBehavior: false }, () => {
         cy.createPolygon(overlapPolygonPoints);
         joinShapes([
             // non-overlapping shape parts
-            { objectId: '#cvat_canvas_shape_1', position: 'top' },
-            { objectId: '#cvat_canvas_shape_2', position: 'bottom' },
+            { objectId: '#cvat_canvas_shape_1', position: { x: 0.5, y: 0.125 } },
+            { objectId: '#cvat_canvas_shape_2', position: { x: 0.5, y: 0.875 } },
         ]);
         checkMergeSuccess();
     });
@@ -93,8 +97,8 @@ context('Join polygons feature', { scrollBehavior: false }, () => {
         cy.createPolygon(includedPolygonPoints);
         getShapeCoord('polygon', '#cvat_canvas_shape_1').invoke('toSorted').then((coords1) => {
             joinShapes([
-                { objectId: '#cvat_canvas_shape_2', position: 'center' },
-                { objectId: '#cvat_canvas_shape_1', position: 'bottom' },
+                { objectId: '#cvat_canvas_shape_2', position: { x: 0.5, y: 0.5 } },
+                { objectId: '#cvat_canvas_shape_1', position: { x: 0.5, y: 0.875 } },
             ]);
             checkMergeSuccess();
             getShapeCoord('polygon', '#cvat_canvas_shape_3').invoke('toSorted')
@@ -107,8 +111,8 @@ context('Join polygons feature', { scrollBehavior: false }, () => {
         getShapeCoord('polygon', '#cvat_canvas_shape_1').invoke('toSorted').then((coords1) => {
             getShapeCoord('polygon', '#cvat_canvas_shape_2').invoke('toSorted').then((coords2) => {
                 joinShapes([
-                    { objectId: '#cvat_canvas_shape_2' },
-                    { objectId: '#cvat_canvas_shape_1' },
+                    { objectId: '#cvat_canvas_shape_2', position: { x: 0.5, y: 0.5 } },
+                    { objectId: '#cvat_canvas_shape_1', position: { x: 0.5, y: 0.5 } },
                 ]);
                 cy.get('.cvat-notification-warning-canvas')
                     .should('exist').and('be.visible')
@@ -133,8 +137,9 @@ context('Join polygons feature', { scrollBehavior: false }, () => {
         });
         cy.createPolygon(selfIntersectingPolygonPoints);
         joinShapes([
-            { objectId: '#cvat_canvas_shape_1', position: 'top' },
-            { objectId: '#cvat_canvas_shape_2', position: 'right' },
+            { objectId: '#cvat_canvas_shape_1', position: { x: 0.5, y: 0.125 } },
+            // Inside the lower-right lobe, outside the first polygon; avoid boundary hit testing.
+            { objectId: '#cvat_canvas_shape_2', position: { x: 0.875, y: 0.8 } },
         ]);
         cy.get('.cvat-notification-notice-canvas-error-occurred')
             .should('exist').and('be.visible');

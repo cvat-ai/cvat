@@ -7,7 +7,9 @@ from unittest.mock import MagicMock, patch
 
 from django.test import TestCase
 
-from cvat.apps.webhooks.models import WebhookDelivery
+from cvat.apps.engine.models import Project
+from cvat.apps.iam.models import User
+from cvat.apps.webhooks.models import WebhookDelivery, WebhookTypeChoice
 from cvat.apps.webhooks.services import send_webhook
 
 from .utils import make_webhook, payload
@@ -16,7 +18,14 @@ from .utils import make_webhook, payload
 class TestSendWebhook(TestCase):
     @classmethod
     def setUpTestData(cls) -> None:
-        cls.webhook = make_webhook()
+        owner = User.objects.create(username="owner")
+        project = Project.objects.create(name="p", owner=owner)
+        cls.webhook = make_webhook(
+            _type=WebhookTypeChoice.PROJECT.value,
+            events="update:project",
+            owner=owner,
+            project=project,
+        )
 
     @patch("cvat.apps.webhooks.utils.perform_webhook_request")
     def test_creates_delivery_with_request_result(self, perform: MagicMock) -> None:

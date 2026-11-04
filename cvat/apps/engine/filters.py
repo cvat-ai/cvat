@@ -306,7 +306,7 @@ class SimpleFilter(DjangoFilterBackend):
                 model = queryset.model
                 fields = list(lookup_fields.values())
                 filter_overrides = {
-                    # By default, ForeignKey fields correspond to ModelChoiceFilter.
+                    # By default, ForeignKey and OneToOneField correspond to ModelChoiceFilter.
                     # The problem with that is that when DRF renders the browsable API,
                     # it generates a filter form with a widget for every filter,
                     # which for a ModelChoiceFilter is a dropdown with all possible values.
@@ -317,6 +317,7 @@ class SimpleFilter(DjangoFilterBackend):
                     # To prevent that, we override the filter class,
                     # so that a simple numeric input widget is used instead.
                     models.ForeignKey: {"filter_class": djf.NumberFilter},
+                    models.OneToOneField: {"filter_class": djf.NumberFilter},
                     # ManyToManyField corresponds to ModelMultipleChoiceFilter,
                     # which exhibits the same problem.
                     # There's no "NumberMultipleChoiceFilter" we could use,
@@ -514,9 +515,8 @@ class NonModelJsonLogicFilter(JsonLogicFilter, _NestedAttributeHandler):
     def _apply_filter(self, rules, lookup_fields, obj):
         op, args = next(iter(rules.items()))
         if op in ["or", "and"]:
-            return reduce(
-                {"or": any, "and": all}[op],
-                [self._apply_filter(arg, lookup_fields, obj) for arg in args],
+            return {"or": any, "and": all}[op](
+                self._apply_filter(arg, lookup_fields, obj) for arg in args
             )
         elif op == "!":
             return not self._apply_filter(args, lookup_fields, obj)

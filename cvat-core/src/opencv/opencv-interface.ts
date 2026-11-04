@@ -17,6 +17,12 @@ enum MatType {
     CV_8UC4,
 }
 
+export interface RotatedRect {
+    center: { x: number; y: number };
+    size: { width: number; height: number };
+    angle: number;
+}
+
 export interface OpenCVInterface {
     mat: {
         fromData: (width: number, height: number, type: MatType, data: ArrayLike<number>) => any;
@@ -26,6 +32,8 @@ export interface OpenCVInterface {
     };
     contours: {
         convexHull: (src: [number, number][][]) => [number, number][];
+        minAreaRect: (points: [number, number][]) => RotatedRect;
+        fitEllipse: (points: [number, number][]) => RotatedRect;
         findContours: (src: any) => [number, number][][];
         approxPoly: (points: [number, number][], threshold: number, closed?: boolean) => [number, number][];
         simplifyPolygon: (points: number[], threshold: number, closed: boolean) => number[];
@@ -83,6 +91,34 @@ export function createOpenCVInterface(cv: any): OpenCVInterface {
                     return converted;
                 } finally {
                     output.delete();
+                    input.delete();
+                }
+            },
+
+            minAreaRect: (points: [number, number][]): RotatedRect => {
+                const input = cv.matFromArray(points.length, 1, cv.CV_32FC2, points.flat());
+                try {
+                    const rectangle = cv.minAreaRect(input);
+                    return {
+                        center: { x: rectangle.center.x, y: rectangle.center.y },
+                        size: { width: rectangle.size.width, height: rectangle.size.height },
+                        angle: rectangle.angle,
+                    };
+                } finally {
+                    input.delete();
+                }
+            },
+
+            fitEllipse: (points: [number, number][]): RotatedRect => {
+                const input = cv.matFromArray(points.length, 1, cv.CV_32FC2, points.flat());
+                try {
+                    const ellipse = cv.fitEllipse(input);
+                    return {
+                        center: { x: ellipse.center.x, y: ellipse.center.y },
+                        size: { width: ellipse.size.width, height: ellipse.size.height },
+                        angle: ellipse.angle,
+                    };
+                } finally {
                     input.delete();
                 }
             },

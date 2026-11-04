@@ -6,8 +6,8 @@ import data.utils
 import data.organizations
 
 # input : {
-#     "scope": <"create@project" | "create@organization" | "update" | "delete" |
-#         "list" | "view"> or null,
+#     "scope": <"create@project" | "create@organization" | "create@server" |
+#         "update" | "delete" | "list" | "view"> or null,
 #     "auth": {
 #         "user": {
 #             "id": <num>
@@ -25,6 +25,7 @@ import data.organizations
 #     },
 #     "resource": {
 #         "id": <num>,
+#         "type": <"project"|"organization"|"server">,
 #         "owner": { "id": <num> },
 #         "organization": { "id": <num> } or null,
 #         "project": {
@@ -34,12 +35,10 @@ import data.organizations
 # }
 #
 
+SERVER := "server"
+
 is_project_owner if {
     input.resource.project.owner.id == input.auth.user.id
-}
-
-is_webhook_owner if {
-    input.resource.owner.id == input.auth.user.id
 }
 
 default allow := false
@@ -49,8 +48,17 @@ allow if {
 }
 
 allow if {
+    input.scope in {
+        utils.CREATE_IN_PROJECT, utils.CREATE_IN_ORGANIZATION, utils.DELETE, utils.UPDATE,
+        utils.VIEW
+    }
+    organizations.is_same_org_as_resource_with_perm(organizations.MAINTAINER)
+    utils.has_perm(utils.WORKER)
+}
+
+allow if {
     input.scope == utils.CREATE_IN_PROJECT
-    utils.is_sandbox
+    organizations.is_same_context_as_resource
     utils.has_perm(utils.USER)
     is_project_owner
 }
@@ -70,9 +78,12 @@ base_filter := {} if { # Django Q object to filter list of entries
 } else := qobject if {
     utils.is_sandbox
     user := input.auth.user
-    qobject := ["|",
-        {"owner_id": user.id},
-        {"project__owner_id": user.id},
+    qobject := ["&",
+        ["~", {"type": SERVER}],
+        ["|",
+            {"owner_id": user.id},
+            {"project__owner_id": user.id},
+        ],
     ]
 } else := {} if {
     utils.is_organization
@@ -94,79 +105,28 @@ filter := utils.add_organization_filter(base_filter, ["organization"])
 
 allow if {
     input.scope == utils.VIEW
-    utils.is_sandbox
+    organizations.is_same_context_as_resource
+    input.resource.type != SERVER
     utils.is_resource_owner
 }
 
 allow if {
     input.scope == utils.VIEW
-    utils.is_sandbox
+    organizations.is_same_context_as_resource
     is_project_owner
 }
 
 allow if {
     input.scope in {utils.UPDATE, utils.DELETE}
-    utils.is_sandbox
+    organizations.is_same_context_as_resource
     utils.has_perm(utils.WORKER)
+    input.resource.type != SERVER
     utils.is_resource_owner
 }
 
 allow if {
     input.scope in {utils.UPDATE, utils.DELETE}
-    utils.is_sandbox
+    organizations.is_same_context_as_resource
     utils.has_perm(utils.WORKER)
-    is_project_owner
-}
-
-allow if {
-    input.scope == utils.VIEW
-    input.auth.organization.id == input.resource.organization.id
-    organizations.has_perm(organizations.WORKER)
-    utils.is_resource_owner
-}
-
-allow if {
-    input.scope == utils.VIEW
-    input.auth.organization.id == input.resource.organization.id
-    organizations.has_perm(organizations.WORKER)
-    is_project_owner
-}
-
-allow if {
-    input.scope in {utils.UPDATE, utils.DELETE}
-    input.auth.organization.id == input.resource.organization.id
-    utils.has_perm(utils.WORKER)
-    organizations.has_perm(organizations.WORKER)
-    utils.is_resource_owner
-}
-
-
-allow if {
-    input.scope in {utils.UPDATE, utils.DELETE, utils.VIEW}
-    input.auth.organization.id == input.resource.organization.id
-    utils.has_perm(utils.WORKER)
-    organizations.has_perm(organizations.MAINTAINER)
-}
-
-allow if {
-    input.scope in {utils.CREATE_IN_PROJECT, utils.CREATE_IN_ORGANIZATION}
-    input.auth.organization.id == input.resource.organization.id
-    utils.has_perm(utils.WORKER)
-    organizations.has_perm(organizations.MAINTAINER)
-}
-
-allow if {
-    input.scope in {utils.UPDATE, utils.DELETE}
-    input.auth.organization.id == input.resource.organization.id
-    utils.has_perm(utils.WORKER)
-    organizations.has_perm(organizations.WORKER)
-    is_project_owner
-}
-
-allow if {
-    input.scope in {utils.CREATE_IN_PROJECT}
-    input.auth.organization.id == input.resource.organization.id
-    utils.has_perm(utils.WORKER)
-    organizations.has_perm(organizations.WORKER)
     is_project_owner
 }

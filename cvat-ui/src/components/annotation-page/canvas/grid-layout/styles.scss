@@ -24,17 +24,13 @@
     .cvat-grid-item-close-button {
         display: none;
     }
-
-    & +.cvat-grid-layout-common-setups {
-        display: none;
-    }
 }
 
 .cvat-grid-layout-common-setups {
     position: absolute;
     top: 0;
-    right: 50%;
-    transform: translate(0, calc($grid-unit-size * 12 - 1px));
+    left: 50%;
+    transform: translateX(-50%);
     z-index: 1000;
     background: $background-color-2;
     line-height: $grid-unit-size * 3;

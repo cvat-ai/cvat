@@ -22,6 +22,7 @@ class WebhookPermission(OpenPolicyAgentPermission):
         CREATE = "create"
         CREATE_IN_PROJECT = "create@project"
         CREATE_IN_ORG = "create@organization"
+        CREATE_IN_SERVER = "create@server"
         DELETE = "delete"
         UPDATE = "update"
         LIST = "list"
@@ -80,21 +81,35 @@ class WebhookPermission(OpenPolicyAgentPermission):
         return scopes
 
     def get_resource(self):
-        data = None
         if self.obj:
-            data = {
+            template = {
                 "id": self.obj.id,
+                "type": self.obj.type,
                 "owner": {"id": self.obj.owner_id},
-                "organization": {"id": self.obj.organization_id},
+                "organization": self.make_id_dict(self.obj.organization_id),
                 "project": None,
             }
             if self.obj.type == "project" and self.obj.project_id:
-                data["project"] = {"owner": {"id": self.obj.project.owner_id}}
+                template["project"] = {"owner": {"id": self.obj.project.owner_id}}
+
+            return template
+
         elif self.scope in [
             self.Scopes.CREATE,
             self.Scopes.CREATE_IN_PROJECT,
             self.Scopes.CREATE_IN_ORG,
+            self.Scopes.CREATE_IN_SERVER,
         ]:
+            template = {
+                "id": None,
+                "owner": {"id": self.user_id},
+                "project": None,
+                "organization": None,
+                "user": {
+                    "id": self.user_id,
+                },
+            }
+
             project = None
             if self.project_id:
                 try:
@@ -104,32 +119,34 @@ class WebhookPermission(OpenPolicyAgentPermission):
                         f"Could not find project with provided id: {self.project_id}"
                     )
 
-            data = {
-                "id": None,
-                "owner": self.user_id,
-                "project": (
+            if self.scope == self.Scopes.CREATE:
+                template["project"] = (
                     {
-                        "owner": (
-                            {
-                                "id": project.owner_id,
-                            }
-                            if project.owner_id
-                            else None
-                        ),
+                        "owner": {
+                            "id": project.owner_id if project.owner_id is not None else None,
+                        }
                     }
                     if project
                     else None
-                ),
-                "organization": (
-                    {
-                        "id": self.org_id,
-                    }
-                    if self.org_id is not None
-                    else None
-                ),
-                "user": {
-                    "id": self.user_id,
-                },
-            }
+                )
 
-        return data
+                template["organization"] = self.make_id_dict(self.org_id)
+                return template
+
+            if self.scope == self.Scopes.CREATE_IN_PROJECT:
+                template["project"] = {
+                    "owner": {
+                        "id": project.owner_id,
+                    },
+                }
+                template["organization"] = self.make_id_dict(project.organization_id)
+                return template
+
+            if self.scope == self.Scopes.CREATE_IN_ORG:
+                template["organization"] = self.make_id_dict(self.org_id)
+                return template
+
+            if self.scope == self.Scopes.CREATE_IN_SERVER:
+                return template
+
+        return None

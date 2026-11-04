@@ -11,6 +11,8 @@ const DISCORD_URL = 'https://discord.gg/fNR3eXfk6C';
 const GITHUB_URL = 'https://github.com/cvat-ai/cvat';
 const GITHUB_IMAGE_URL = 'https://github.com/cvat-ai/cvat/raw/develop/site/content/en/images/cvat.jpg';
 const GUIDE_URL = 'https://docs.cvat.ai/docs';
+const QUALITY_TARGET_METRICS_GUIDE_URL =
+    `${GUIDE_URL}/qa-analytics/auto-qa/#quality-target-metrics`;
 const UPGRADE_GUIDE_URL = 'https://docs.cvat.ai/docs/administration/advanced/upgrade_guide';
 const SHARE_MOUNT_GUIDE_URL =
     'https://docs.cvat.ai/docs/administration/basics/installation/#share-path';
@@ -110,6 +112,7 @@ const RESET_NOTIFICATIONS_PATHS = {
 const BUCKET_CONTENT_KEY = 'All files';
 
 const NUMERIC_VALUE_CLAMP_THRESHOLD = 5000;
+const MAX_REPLICAS_TO_ADD = 100; // per job and action, UI only. The server limit is MAX_JOBS_PER_TASK
 const OPENCV_PATH = '/assets/opencv_4.8.0.js';
 
 const LOCAL_STORAGE_SEEN_GUIDES_MEMORY_LIMIT = 10;
@@ -146,6 +149,7 @@ export default {
     GITHUB_URL,
     GITHUB_IMAGE_URL,
     GUIDE_URL,
+    QUALITY_TARGET_METRICS_GUIDE_URL,
     UPGRADE_GUIDE_URL,
     SHARE_MOUNT_GUIDE_URL,
     CANVAS_BACKGROUND_COLORS,
@@ -173,6 +177,7 @@ export default {
     RESET_NOTIFICATIONS_PATHS,
     BUCKET_CONTENT_KEY,
     NUMERIC_VALUE_CLAMP_THRESHOLD,
+    MAX_REPLICAS_TO_ADD,
     OPENCV_PATH,
     LOCAL_STORAGE_SEEN_GUIDES_MEMORY_LIMIT,
     LOCAL_STORAGE_LAST_FRAME_MEMORY_LIMIT,

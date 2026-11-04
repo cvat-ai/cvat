@@ -14,7 +14,7 @@ import datumaro
 import numpy as np
 from datumaro.components.annotation import Mask
 from datumaro.components.dataset import Dataset, DatasetItem
-from django.contrib.auth.models import Group, User
+from django.contrib.auth.models import Group
 from rest_framework import status
 
 import cvat.apps.dataset_manager as dm
@@ -33,6 +33,7 @@ from cvat.apps.engine.tests.utils import (
     generate_image_file,
     get_paginated_collection,
 )
+from cvat.apps.iam.models import User
 
 
 class _DbTestBase(ApiTestBase):

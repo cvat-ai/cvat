@@ -5,20 +5,10 @@
 /// <reference types="cypress" />
 
 import { taskName } from '../../support/const';
+import { imageRotate } from '../../support/utils.cy';
 
 context('Check if the image is rotated', () => {
     const caseId = '5';
-
-    function imageRotate(direction = 'anticlockwise') {
-        cy.interactControlButton('rotate-canvas');
-        if (direction === 'clockwise') {
-            cy.get('.cvat-rotate-canvas-controls-right').click();
-        } else {
-            cy.get('.cvat-rotate-canvas-controls-left').click();
-        }
-        cy.get('.cvat-canvas-container').click(); // Hide popover
-        cy.get('.cvat-rotate-canvas-popover').should('be.hidden');
-    }
 
     function scaleFitImage() {
         let scaleBefore;

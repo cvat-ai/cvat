@@ -10,18 +10,65 @@ const MAX_HISTORY_LENGTH = 32;
 interface ActionItem {
     action: HistoryActions;
     clientIds: number[];
-    frame: number;
-    undo: () => void;
-    redo: () => void;
+    frame: number | null;
+    undo: () => void | number[] | Promise<void | number[]>;
+    redo: () => void | number[] | Promise<void | number[]>;
+}
+
+class HistoryTransaction implements ActionItem {
+    public action: HistoryActions;
+    public frame: number | null = null;
+    private actions: ActionItem[] = [];
+
+    constructor(action: HistoryActions) {
+        this.action = action;
+    }
+
+    public get clientIds(): number[] {
+        return [...new Set(this.actions.flatMap((action) => action.clientIds))];
+    }
+
+    public get empty(): boolean {
+        return !this.actions.length;
+    }
+
+    public add(action: ActionItem): void {
+        if (!this.actions.length) {
+            this.frame = action.frame;
+        } else if (this.frame !== action.frame) {
+            throw new Error('All history actions in a transaction must target the same frame');
+        }
+        this.actions.push(action);
+    }
+
+    public async undo(): Promise<void | number[]> {
+        let affectedIDs: number[] | undefined;
+        for (let index = this.actions.length - 1; index >= 0; index--) {
+            const result = await this.actions[index].undo();
+            if (result) affectedIDs = result;
+        }
+        return affectedIDs;
+    }
+
+    public async redo(): Promise<void | number[]> {
+        let affectedIDs: number[] | undefined;
+        for (const action of this.actions) {
+            const result = await action.redo();
+            if (result) affectedIDs = result;
+        }
+        return affectedIDs;
+    }
 }
 
 export default class AnnotationHistory {
     private frozen: boolean;
     private _undo: ActionItem[];
     private _redo: ActionItem[];
+    private transaction: HistoryTransaction | null;
 
     constructor() {
         this.frozen = false;
+        this.transaction = null;
         this.clear();
     }
 
@@ -41,8 +88,8 @@ export default class AnnotationHistory {
 
     public do(
         action: HistoryActions,
-        undo: () => void,
-        redo: () => void,
+        undo: ActionItem['undo'],
+        redo: ActionItem['redo'],
         clientIds: number[],
         frame: number | null,
     ): void {
@@ -56,9 +103,75 @@ export default class AnnotationHistory {
             frame,
         };
 
+        if (this.transaction) {
+            this.transaction.add(actionItem);
+            return;
+        }
+
         this._undo = this._undo.slice(-MAX_HISTORY_LENGTH + 1);
         this._undo.push(actionItem);
         this._redo = [];
+    }
+
+    public recordSelection(
+        previousClientIDs: number[],
+        nextClientIDs: number[],
+        frame: number,
+        mergeWithPrevious = false,
+    ): void {
+        if (!mergeWithPrevious) {
+            this.do(
+                HistoryActions.CHANGED_SELECTION,
+                () => [...previousClientIDs],
+                () => [...nextClientIDs],
+                [...new Set([...previousClientIDs, ...nextClientIDs])],
+                frame,
+            );
+            return;
+        }
+
+        if (this.frozen) return;
+        const previousAction = this._undo.pop();
+        if (!previousAction || previousAction.action !== HistoryActions.CHANGED_HIDDEN ||
+            previousAction.frame !== frame) {
+            if (previousAction) this._undo.push(previousAction);
+            throw new Error('Only a hidden-state change can be merged with a selection change');
+        }
+
+        const transaction = new HistoryTransaction(HistoryActions.CHANGED_HIDDEN_AND_SELECTION);
+        transaction.add(previousAction);
+        transaction.add({
+            action: HistoryActions.CHANGED_SELECTION,
+            undo: () => [...previousClientIDs],
+            redo: () => [...nextClientIDs],
+            clientIds: [...new Set([...previousClientIDs, ...nextClientIDs])],
+            frame,
+        });
+        this._undo.push(transaction);
+        this._redo = [];
+    }
+
+    public beginTransaction(action: HistoryActions): boolean {
+        if (this.transaction) return false;
+
+        this.transaction = new HistoryTransaction(action);
+        return true;
+    }
+
+    public endTransaction(): void {
+        const { transaction } = this;
+        this.transaction = null;
+        if (!transaction || transaction.empty) return;
+
+        this._undo = this._undo.slice(-MAX_HISTORY_LENGTH + 1);
+        this._undo.push(transaction);
+        this._redo = [];
+    }
+
+    public async abortTransaction(): Promise<void> {
+        const { transaction } = this;
+        this.transaction = null;
+        await transaction?.undo();
     }
 
     public async undo(count: number): Promise<number[]> {
@@ -66,9 +179,9 @@ export default class AnnotationHistory {
         for (let i = 0; i < count; i++) {
             const action = this._undo.pop();
             if (action) {
-                await action.undo();
+                const clientIds = await action.undo();
                 this._redo.push(action);
-                affectedObjects.push(...action.clientIds);
+                affectedObjects.push(...(clientIds || action.clientIds));
             } else {
                 break;
             }
@@ -82,9 +195,9 @@ export default class AnnotationHistory {
         for (let i = 0; i < count; i++) {
             const action = this._redo.pop();
             if (action) {
-                await action.redo();
+                const clientIds = await action.redo();
                 this._undo.push(action);
-                affectedObjects.push(...action.clientIds);
+                affectedObjects.push(...(clientIds || action.clientIds));
             } else {
                 break;
             }

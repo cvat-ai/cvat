@@ -24,7 +24,7 @@ context('Import annotations for frames with dots in name.', { browser: '!firefox
     const directoryToArchive = imagesFolder;
 
     const createRectangleShape2Points = {
-        points: 'By 2 Points',
+        points: '2 Points',
         type: 'Shape',
         labelName,
         firstX: 250,

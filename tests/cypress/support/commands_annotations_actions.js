@@ -17,8 +17,10 @@ Cypress.Commands.add('openAnnotationsActionsModal', () => {
 
 Cypress.Commands.add('runAnnotationsAction', () => {
     cy.get('.cvat-action-runner-run-btn').click();
-    cy.get('.cvat-action-runner-progress').should('exist').and('be.visible');
     cy.get('.cvat-action-runner-run-btn').should('be.disabled');
+    cy.get('.cvat-action-runner-progress').should('exist').and('be.visible');
+    cy.contains(/Actions? initialization/).should('exist').and('be.visible');
+    cy.contains(/Actions? initialization/).should('not.exist');
 });
 
 Cypress.Commands.add('cancelAnnotationsAction', () => {
@@ -38,14 +40,18 @@ Cypress.Commands.add('selectAnnotationsAction', (name) => {
         .click();
     // Re-query before clicking because Ant Design may re-render the
     // dropdown and detach the option previously yielded by Cypress.
-    getOption().should('be.visible');
+    getOption().should('exist');
+    // Virtual-list options may exist while clipped outside
+    // the viewport, so visibility is not a valid readiness condition.
     getOption().click({ force: true });
+
     cy.get('.cvat-action-runner-list .ant-select-selection-item')
         .should('contain', name);
 });
 
 Cypress.Commands.add('waitAnnotationsAction', () => {
-    cy.get('.cvat-action-runner-progress').should('not.exist'); // wait until action ends
+    cy.get('.cvat-action-runner-progress', { timeout: 30_000 }).should('not.exist');
+    // can take longer on enterprise runners
 });
 
 Cypress.Commands.add('setAnnotationActionParameter', (parameterName, type, value) => {

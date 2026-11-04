@@ -9,8 +9,9 @@ import { AudioIntervalState } from './audio-interval-state';
 import type { AnnotationInjection } from './types';
 import { ScoredMixin } from './scored';
 import { serializeAttributes } from './utils';
+import { PinnableMixin } from './pinnable';
 
-export class AudioInterval extends ScoredMixin(AnnotationBase) {
+export class AudioInterval extends ScoredMixin(PinnableMixin(AnnotationBase)) {
     public start: number;
     public stop: number | null;
 
@@ -91,6 +92,7 @@ export class AudioInterval extends ScoredMixin(AnnotationBase) {
             stop: this.stop,
             color: this.color,
             lock: this.lock,
+            pinned: this.pinned,
             hidden: this.hidden,
             updated: this.updated,
             source: this.source,
@@ -127,6 +129,10 @@ export class AudioInterval extends ScoredMixin(AnnotationBase) {
 
         if (updated.lock) {
             this.saveLock(data.lock, null);
+        }
+
+        if (updated.pinned) {
+            this.savePinned(data.pinned, null);
         }
 
         if (updated.color) {
