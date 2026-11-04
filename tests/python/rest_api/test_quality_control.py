@@ -1204,11 +1204,14 @@ class TestListQualityConflicts(_PermissionTestBase):
         base_requirement = self.enable_base_quality_requirement(admin_user, task["id"])
 
         requirements = [base_requirement]
-        for name, filter_expression in (
-            ("Overlapping rectangles", None),
+        # Calculate children in the reverse ID order to exercise sorting after merging conflicts.
+        for name, filter_expression, sort_order in (
+            ("Overlapping rectangles", None, 2),
+            ("Earlier overlapping rectangles", None, 1),
             (
                 "Filtered out rectangles",
                 json.dumps({"==": [{"var": "shape.label"}, "__no_matching_label__"]}),
+                0,
             ),
         ):
             payload = {
@@ -1216,6 +1219,7 @@ class TestListQualityConflicts(_PermissionTestBase):
                 "parent_requirement": base_requirement["id"],
                 "name": name,
                 "enabled": True,
+                "sort_order": sort_order,
             }
             if filter_expression is not None:
                 payload["filter"] = filter_expression
@@ -1225,7 +1229,7 @@ class TestListQualityConflicts(_PermissionTestBase):
                 requirements.append(response.json())
 
         task_report = create_quality_report(user=admin_user, task_id=task["id"])
-        conflicts = self._test_list_conflicts_200(admin_user, task_report["id"])
+        conflicts = self._test_list_conflicts_200(admin_user, task_report["id"], page_size=1)
         assert conflicts
         expected_requirements = [
             {"id": requirement["id"], "name": requirement["name"]} for requirement in requirements
