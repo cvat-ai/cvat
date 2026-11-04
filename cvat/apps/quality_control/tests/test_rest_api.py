@@ -9,6 +9,7 @@ from rest_framework import status
 
 from cvat.apps.engine.tests.utils import ApiTestBase
 from cvat.apps.iam.models import User
+from cvat.apps.quality_control import models
 
 
 class TestQualityRequirementApiForDeletedAttributes(ApiTestBase):
@@ -214,3 +215,117 @@ class TestQualityRequirementApiForDeletedAttributes(ApiTestBase):
         )
         self.assertEqual(response.status_code, status.HTTP_400_BAD_REQUEST)
         self.assertIn("Unknown attribute spec id(s)", response.content.decode())
+
+
+class TestQualityRequirementSimilarityMetricApi(ApiTestBase):
+    @classmethod
+    def setUpTestData(cls):
+        group_admin, _ = Group.objects.get_or_create(name="admin")
+        cls.admin = User.objects.create_superuser(username="admin", email="", password="admin")
+        cls.admin.groups.add(group_admin)
+
+    def setUp(self):
+        super().setUp()
+
+        response = self._post_request(
+            "/api/tasks",
+            self.admin,
+            data={"name": "similarity metrics", "labels": [{"name": "car", "type": "any"}]},
+        )
+        self.assertEqual(response.status_code, status.HTTP_201_CREATED, response.content)
+
+        response = self._get_request(
+            "/api/quality/settings", self.admin, query_params={"task_id": response.json()["id"]}
+        )
+        self.assertEqual(response.status_code, status.HTTP_200_OK, response.content)
+        self.settings = response.json()["results"][0]
+        self.task_default_base_requirements = {
+            r["annotation_type"]: r for r in self.settings["requirements"] if r["is_base"]
+        }
+
+    def _create_child_requirement(self, name: str, annotation_type: str, **fields):
+        return self._post_request(
+            "/api/quality/settings/requirements",
+            self.admin,
+            data={
+                "name": name,
+                "settings_id": self.settings["id"],
+                "parent_requirement": self.task_default_base_requirements[annotation_type]["id"],
+                **fields,
+            },
+        )
+
+    def test_similarity_metrics_cover_all_base_requirements(self):
+        self.assertEqual(
+            set(self.task_default_base_requirements),
+            set(models.QualityRequirement.get_supported_similarity_metrics()),
+        )
+
+    def test_can_use_all_supported_metrics(self):
+        for (
+            annotation_type,
+            metrics,
+        ) in models.QualityRequirement.get_supported_similarity_metrics().items():
+            for metric in metrics:
+                with self.subTest(annotation_type=annotation_type, metric=metric):
+                    response = self._create_child_requirement(
+                        f"{annotation_type}-{metric}", annotation_type, similarity_metric=metric
+                    )
+                    self.assertEqual(
+                        response.status_code, status.HTTP_201_CREATED, response.content
+                    )
+                    self.assertEqual(response.json()["similarity_metric"], metric)
+
+    def test_cannot_use_unsupported_metrics(self):
+        for (
+            annotation_type,
+            metrics,
+        ) in models.QualityRequirement.get_supported_similarity_metrics().items():
+            for metric in set(models.ShapeSimilarityMetricType).difference(metrics):
+                with self.subTest(annotation_type=annotation_type, metric=metric):
+                    response = self._create_child_requirement(
+                        f"{annotation_type}-{metric}", annotation_type, similarity_metric=metric
+                    )
+                    self.assertEqual(
+                        response.status_code, status.HTTP_400_BAD_REQUEST, response.content
+                    )
+                    self.assertIn("similarity_metric", response.json())
+
+                    response = self._patch_request(
+                        "/api/quality/settings/requirements/"
+                        f"{self.task_default_base_requirements[annotation_type]['id']}",
+                        self.admin,
+                        data={"similarity_metric": metric},
+                    )
+                    self.assertEqual(
+                        response.status_code, status.HTTP_400_BAD_REQUEST, response.content
+                    )
+                    self.assertIn("similarity_metric", response.json())
+
+    def test_base_requirement_cannot_inherit_metric(self):
+        response = self._patch_request(
+            "/api/quality/settings/requirements/"
+            f"{self.task_default_base_requirements['rectangle']['id']}",
+            self.admin,
+            data={"similarity_metric": None},
+        )
+        self.assertEqual(response.status_code, status.HTTP_400_BAD_REQUEST, response.content)
+        self.assertEqual(
+            response.json()["similarity_metric"], ["Root requirements cannot inherit."]
+        )
+
+    def test_cannot_use_unknown_metric(self):
+        response = self._create_child_requirement(
+            "unknown metric", "rectangle", similarity_metric="unknown"
+        )
+        self.assertEqual(response.status_code, status.HTTP_400_BAD_REQUEST, response.content)
+        self.assertEqual(response.json()["similarity_metric"], ['"unknown" is not a valid choice.'])
+
+    def test_child_requirement_inherits_metric(self):
+        response = self._create_child_requirement("inherited metric", "rectangle")
+        self.assertEqual(response.status_code, status.HTTP_201_CREATED, response.content)
+        self.assertIsNone(response.json()["similarity_metric"])
+        self.assertEqual(
+            response.json()["effective"]["similarity_metric"],
+            self.task_default_base_requirements["rectangle"]["similarity_metric"],
+        )
