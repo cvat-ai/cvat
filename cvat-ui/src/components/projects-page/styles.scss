@@ -85,14 +85,15 @@
     justify-content: center;
 }
 
-.ant-menu.cvat-project-actions-menu {
+.ant-dropdown-menu.cvat-project-actions-menu {
     box-shadow: 0 0 17px rgba(0, 0, 0, 20%);
 
-    > li:hover {
+    > li.ant-dropdown-menu-item:hover,
+    > li.ant-dropdown-menu-submenu:hover > .ant-dropdown-menu-submenu-title {
         background-color: $hover-menu-color;
     }
 
-    .ant-menu-submenu-title {
+    .ant-dropdown-menu-submenu-title {
         margin: 0;
         width: 13em;
     }

@@ -6,7 +6,7 @@ import React, { useCallback } from 'react';
 import { useDispatch, useSelector } from 'react-redux';
 import { shallowEqual } from 'utils/redux';
 import { useHistory } from 'react-router';
-import Dropdown from 'antd/lib/dropdown';
+import Dropdown, { DropdownProps } from 'antd/lib/dropdown';
 import Modal from 'antd/lib/modal';
 
 import {
@@ -30,12 +30,13 @@ interface Props {
     projectInstance: Project;
     triggerElement: JSX.Element;
     dropdownTrigger?: ('click' | 'hover' | 'contextMenu')[];
+    dropdownPlacement?: DropdownProps['placement'];
     onUpdateProject?: (project: Project) => Promise<Project>;
 }
 
 function ProjectActionsComponent(props: Readonly<Props>): JSX.Element {
     const {
-        projectInstance, triggerElement, dropdownTrigger, onUpdateProject,
+        projectInstance, triggerElement, dropdownTrigger, dropdownPlacement, onUpdateProject,
     } = props;
 
     const history = useHistory();
@@ -234,6 +235,10 @@ function ProjectActionsComponent(props: Readonly<Props>): JSX.Element {
         <Dropdown
             destroyPopupOnHide
             trigger={dropdownTrigger || ['click']}
+            placement={dropdownPlacement}
+            getPopupContainer={(triggerNode: HTMLElement): HTMLElement => (
+                triggerNode.ownerDocument.body
+            )}
             open={dropdownOpen}
             onOpenChange={onOpenChange}
             menu={{

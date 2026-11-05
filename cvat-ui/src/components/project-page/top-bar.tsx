@@ -40,6 +40,7 @@ export default function ProjectTopBar(props: DetailsComponentProps): JSX.Element
                 <ActionsMenu
                     projectInstance={projectInstance}
                     onUpdateProject={onUpdateProject}
+                    dropdownPlacement='bottomRight'
                     triggerElement={(
                         <Button size='middle' className='cvat-project-page-actions-button'>
                             <Text className='cvat-text-color'>Actions</Text>
