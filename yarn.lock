@@ -6665,7 +6665,6 @@ __metadata:
     dayjs: "npm:^1.11.18"
     dotenv-webpack: "npm:^8.0.1"
     error-stack-parser: "npm:^2.0.6"
-    jsdom: "npm:^19.0.0"
     json-logic-js: "npm:^2.0.2"
     mousetrap: "npm:^1.6.5"
     onnxruntime-web: "npm:1.23.2"

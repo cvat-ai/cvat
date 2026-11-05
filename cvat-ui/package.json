@@ -4,7 +4,6 @@
   "description": "CVAT single-page application",
   "main": "src/index.tsx",
   "scripts": {
-    "test": "node --test --experimental-test-isolation=none tests/*.test.cjs",
     "build": "webpack --config ./webpack.config.js",
     "start": "webpack serve --env API_URL=http://localhost:7000 --config ./webpack.config.js --mode=development",
     "lint": "eslint './src/**/*.{ts,tsx}'",
@@ -18,9 +17,6 @@
   ],
   "author": "CVAT.ai",
   "license": "MIT",
-  "devDependencies": {
-    "jsdom": "^19.0.0"
-  },
   "dependencies": {
     "@ant-design/compatible": "^5.1.2",
     "@ant-design/icons": "^5.5.2",
