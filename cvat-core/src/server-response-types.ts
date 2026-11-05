@@ -373,11 +373,21 @@ export interface SerializedChapter {
     metadata: SerializedChapterMetaData;
 }
 
-export interface SerializedRelatedImageCalibration {
+export interface SerializedFileMetadata {
     name: string;
-    intrinsic_matrix: number[][]; // 3x3 matrix: camera coordinates to pixel coordinates
-    extrinsic_matrix: number[][]; // 3x4 matrix: LiDAR coordinates to camera coordinates
+    type: 'file';
 }
+
+export interface SerializedRelatedImageMetadata {
+    name: string;
+    type: 'related_image';
+    intrinsic_matrix?: number[][]; // 3x3 matrix: camera coordinates to pixel coordinates
+    extrinsic_matrix?: number[][]; // 3x4 matrix: LiDAR coordinates to camera coordinates
+}
+
+export type SerializedRelatedFileMetadata =
+    | SerializedFileMetadata
+    | SerializedRelatedImageMetadata;
 
 export interface SerializedFramesMetaData {
     chunk_size: number;
@@ -391,7 +401,7 @@ export interface SerializedFramesMetaData {
         height?: number;
         name: string;
         related_files: number;
-        related_images?: SerializedRelatedImageCalibration[];
+        related_files_metadata?: SerializedRelatedFileMetadata[];
     }[];
     image_quality: number;
     size: number;

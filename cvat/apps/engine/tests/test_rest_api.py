@@ -543,7 +543,7 @@ class JobDataMetaPartialUpdateAPITestCase(ApiTestBase):
             res2 = self.client.get(f"/api/tasks/{self.task.id}")
             self.assertLess(res.data["updated_date"], res2.data["updated_date"])
 
-    def test_api_v1_jobs_data_meta_contains_calibrated_related_images(self):
+    def test_api_v1_jobs_data_meta_contains_calibrated_related_files_metadata(self):
         task = create_dummy_db_tasks(self)[2]
         job = Job.objects.get(segment__task=task)
         frame = task.data.images.create(
@@ -570,10 +570,11 @@ class JobDataMetaPartialUpdateAPITestCase(ApiTestBase):
         self.assertEqual(response.status_code, status.HTTP_200_OK)
         self.assertEqual(response.data["frames"][0]["related_files"], 2)
         self.assertEqual(
-            response.data["frames"][0]["related_images"],
+            response.data["frames"][0]["related_files_metadata"],
             [
                 {
                     "name": "related_images/frame_0001_pcd/front.jpg",
+                    "type": "related_image",
                     "intrinsic_matrix": [
                         [721.5, 0.0, 609.6],
                         [0.0, 721.5, 172.9],
@@ -584,7 +585,11 @@ class JobDataMetaPartialUpdateAPITestCase(ApiTestBase):
                         [0.0, 1.0, 0.0, 0.0],
                         [0.0, 0.0, 1.0, 1.7],
                     ],
-                }
+                },
+                {
+                    "name": "related_images/frame_0001_pcd/rear.jpg",
+                    "type": "related_image",
+                },
             ],
         )
 

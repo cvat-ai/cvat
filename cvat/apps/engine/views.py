@@ -2840,25 +2840,12 @@ class JobViewSet(
                 ),
                 **(
                     {
-                        "related_images": [
-                            {
-                                "name": related_file.path,
-                                "intrinsic_matrix": [
-                                    related_file.intrinsic_matrix[:3],
-                                    related_file.intrinsic_matrix[3:6],
-                                    related_file.intrinsic_matrix[6:9],
-                                ],
-                                "extrinsic_matrix": [
-                                    related_file.extrinsic_matrix[:4],
-                                    related_file.extrinsic_matrix[4:8],
-                                    related_file.extrinsic_matrix[8:12],
-                                ],
-                            }
+                        "related_files_metadata": [
+                            related_file
                             for related_file in sorted(
                                 item.related_files.all(),
                                 key=lambda related_file: related_file.path,
                             )
-                            if related_file.intrinsic_matrix and related_file.extrinsic_matrix
                         ],
                     }
                     if hasattr(item, "related_files")

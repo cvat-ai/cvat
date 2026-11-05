@@ -11,7 +11,10 @@ import PluginRegistry from './plugins';
 import { MediaType } from './enums';
 import serverProxy, { PREVIEW_DEFAULT, PreviewResponse } from './server-proxy';
 import {
-    SerializedChapterMetaData, SerializedFramesMetaData, SerializedRelatedImageCalibration,
+    SerializedChapterMetaData,
+    SerializedFramesMetaData,
+    SerializedRelatedFileMetadata,
+    SerializedRelatedImageMetadata,
 } from './server-response-types';
 import { ArgumentError } from './exceptions';
 import { FieldUpdateTrigger } from './common';
@@ -117,7 +120,7 @@ export class FramesMetaData {
         height: number;
         name: string;
         related_files: number;
-        related_images?: SerializedRelatedImageCalibration[];
+        related_files_metadata?: SerializedRelatedFileMetadata[];
     }[];
     public imageQuality: number;
     public size: number;
@@ -365,13 +368,21 @@ export class FrameData {
         frameNumber,
         deleted,
         related_files: relatedFiles,
-        related_images: relatedImages = [],
+        related_files_metadata: relatedFilesMetadata = [],
     }) {
-        const calibratedRelatedImages = relatedImages.map((relatedImage) => ({
-            name: relatedImage.name,
-            intrinsicMatrix: relatedImage.intrinsic_matrix,
-            extrinsicMatrix: relatedImage.extrinsic_matrix,
-        }));
+        const calibratedRelatedImages = relatedFilesMetadata
+            .filter(
+                (metadata): metadata is Required<SerializedRelatedImageMetadata> => (
+                    metadata.type === 'related_image' &&
+                    !!metadata.intrinsic_matrix &&
+                    !!metadata.extrinsic_matrix
+                ),
+            )
+            .map((metadata) => ({
+                name: metadata.name,
+                intrinsicMatrix: metadata.intrinsic_matrix,
+                extrinsicMatrix: metadata.extrinsic_matrix,
+            }));
 
         Object.defineProperties(
             this,
@@ -1015,7 +1026,7 @@ export async function getFrame(
         height: frameMeta.height,
         name: frameMeta.name,
         related_files: frameMeta.related_files,
-        related_images: frameMeta.related_images,
+        related_files_metadata: frameMeta.related_files_metadata,
         frameNumber: frame,
         deleted: frame in meta.deletedFrames,
         jobID,

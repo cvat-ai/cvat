@@ -9227,6 +9227,23 @@ components:
       description: |-
         * `REG` - REG
         * `DIR` - DIR
+    FileMetadata:
+      type: object
+      properties:
+        name:
+          type: string
+          maxLength: 1024
+        type:
+          allOf:
+          - $ref: '#/components/schemas/FileMetadataTypeEnum'
+          default: file
+      required:
+      - name
+    FileMetadataTypeEnum:
+      enum:
+      - file
+      type: string
+      description: '* `file` - file'
     FrameMeta:
       type: object
       properties:
@@ -9239,10 +9256,11 @@ components:
           maxLength: 1024
         related_files:
           type: integer
-        related_images:
+        related_files_metadata:
           type: array
           items:
-            $ref: '#/components/schemas/RelatedImageCalibration'
+            $ref: '#/components/schemas/RelatedFileMetadata'
+          description: It is only included in job "meta" responses.
         has_related_context:
           type: boolean
           readOnly: true
@@ -13180,12 +13198,25 @@ components:
       - password1
       - password2
       - username
-    RelatedImageCalibration:
+    RelatedFileMetadata:
+      oneOf:
+      - $ref: '#/components/schemas/FileMetadata'
+      - $ref: '#/components/schemas/RelatedImageMetadata'
+      discriminator:
+        propertyName: type
+        mapping:
+          file: '#/components/schemas/FileMetadata'
+          related_image: '#/components/schemas/RelatedImageMetadata'
+    RelatedImageMetadata:
       type: object
       properties:
         name:
           type: string
           maxLength: 1024
+        type:
+          allOf:
+          - $ref: '#/components/schemas/RelatedImageMetadataTypeEnum'
+          default: related_image
         intrinsic_matrix:
           type: array
           items:
@@ -13209,9 +13240,12 @@ components:
           maxItems: 3
           minItems: 3
       required:
-      - extrinsic_matrix
-      - intrinsic_matrix
       - name
+    RelatedImageMetadataTypeEnum:
+      enum:
+      - related_image
+      type: string
+      description: '* `related_image` - related_image'
     ReplicaJobCreateRequest:
       type: object
       properties:
