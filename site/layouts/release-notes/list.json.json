@@ -1,6 +1,6 @@
 {{- $entries := slice -}}
 {{- $versions := slice -}}
-{{- range .RegularPages.ByDate.Reverse -}}
+{{- range partial "release-notes/pages.html" . -}}
   {{- $version := .Params.version -}}
   {{- if or (not $version) (ne (len (findRE `^[0-9]+\.[0-9]+\.[0-9]+$` $version)) 1) -}}
     {{- errorf "Release note %s must specify a stable version in X.Y.Z format" .File.Path -}}
@@ -9,12 +9,16 @@
   {{- $versions = $versions | append $version -}}
   {{- if .Date.IsZero -}}{{- errorf "Release note %s must specify a publication date" .File.Path -}}{{- end -}}
   {{- $markdown := .OutputFormats.Get "ReleaseMarkdown" -}}
+  {{- $editions := partial "release-notes/editions.html" . -}}
   {{- $entries = $entries | append (dict
     "version" $version
     "title" .Title
     "description" .Description
     "publishedAt" (.Date.Format "2006-01-02T15:04:05Z07:00")
     "announce" (.Params.announce | default false)
+    "editions" $editions
+    "hasEditionSections" (.HasShortcode "release-section")
+    "highlights" (partial "release-notes/highlights.html" .)
     "url" .Permalink
     "markdownURL" $markdown.Permalink
   ) -}}

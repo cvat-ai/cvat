@@ -1,0 +1,9 @@
+{{ define "main" }}
+<article class="td-content container cvat-release-notes-page cvat-release-note">
+  <p><a href="{{ "/announcements/" | absURL }}">← All announcements</a></p>
+  <h1>{{ .Title }}</h1>
+  {{ partial "announcements/availability.html" . }}
+  <p class="text-muted">Published {{ .Date.Format "January 2, 2006" }}</p>
+  {{ .Content }}
+</article>
+{{ end }}

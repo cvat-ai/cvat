@@ -1,0 +1,56 @@
+{{ define "main" }}
+{{ $entries := partial "updates/entries.html" . }}
+<div class="container cvat-release-notes-page cvat-updates-page">
+<div class="cvat-updates-layout">
+<article class="td-content cvat-updates-content">
+  <h1>{{ .Title }}</h1>
+  {{ .Content }}
+  <p class="d-flex flex-wrap gap-3">
+    <a href="{{ "/release-notes/" | absURL }}">All release notes →</a>
+    <a href="{{ "/announcements/" | absURL }}">All announcements →</a>
+  </p>
+  {{ if $entries }}
+  <details class="cvat-updates-mobile-toc">
+    <summary>On this page</summary>
+    {{ partial "updates/toc.html" (dict "Entries" $entries "ID" "UpdatesMobileTableOfContents") }}
+  </details>
+  {{ end }}
+  {{ $month := "" }}
+  {{ range $entries }}
+    {{ $entry := . }}
+    {{ $entryMonth := .Date.Format "2006-01" }}
+    {{ if ne $month $entryMonth }}
+      {{ $month = $entryMonth }}
+      <h2 class="cvat-updates-month" id="updates-{{ $month }}">{{ .Date.Format "January 2006" }}</h2>
+    {{ end }}
+    {{ $anchor := partial "updates/anchor.html" . }}
+    <section class="border-bottom py-4 cvat-updates-entry" id="{{ $anchor }}" aria-labelledby="{{ $anchor }}-title" tabindex="-1">
+      <p class="text-muted mb-2">
+        {{ if eq .Section "release-notes" }}Release notes · v{{ .Params.version }}{{ else }}Announcement{{ end }}
+        · {{ .Date.Format "January 2, 2006" }}
+      </p>
+      <div class="row align-items-center">
+        <div class="{{ if .Params.image }}col-md-8{{ else }}col-12{{ end }}">
+          <h3 id="{{ $anchor }}-title"><a href="{{ .RelPermalink }}">{{ .Title }}</a></h3>
+          {{ if eq .Section "announcements" }}{{ partial "announcements/availability.html" . }}{{ end }}
+          <p>{{ .Description }}</p>
+          <a href="{{ .RelPermalink }}">{{ if eq .Section "release-notes" }}Read release notes{{ else }}Read announcement{{ end }} →</a>
+        </div>
+        {{ with .Params.image }}
+          <div class="col-md-4 mt-3 mt-md-0">
+            <img src="{{ . | absURL }}" alt="{{ $entry.Params.image_alt | default $entry.Title }}" loading="lazy" style="width: 100%; max-height: 180px; object-fit: contain; border-radius: 8px;">
+          </div>
+        {{ end }}
+      </div>
+    </section>
+  {{ end }}
+</article>
+{{ if $entries }}
+<aside class="cvat-updates-toc">
+  <h2>On this page</h2>
+  {{ partial "updates/toc.html" (dict "Entries" $entries "ID" "TableOfContents") }}
+</aside>
+{{ end }}
+</div>
+</div>
+{{ end }}

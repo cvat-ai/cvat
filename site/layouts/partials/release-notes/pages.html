@@ -1,0 +1,8 @@
+{{- $pages := slice -}}
+{{- range .RegularPages.ByDate.Reverse -}}
+  {{/* Hugo's development watcher can retain a cached page after its bundle directory is renamed. */}}
+  {{- if and .File (fileExists .File.Path) -}}
+    {{- $pages = $pages | append . -}}
+  {{- end -}}
+{{- end -}}
+{{- return $pages -}}

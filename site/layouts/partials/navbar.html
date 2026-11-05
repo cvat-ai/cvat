@@ -37,6 +37,14 @@
         {{ $href = "/release-notes/" -}}
         {{ $active = eq $p.Section "release-notes" -}}
       {{ end -}}
+      {{ if eq .Identifier "announcements" -}}
+        {{ $href = "/announcements/" -}}
+        {{ $active = eq $p.Section "announcements" -}}
+      {{ end -}}
+      {{ if eq .Identifier "updates" -}}
+        {{ $href = "/updates/" -}}
+        {{ $active = in (slice "updates" "release-notes" "announcements") $p.Section -}}
+      {{ end -}}
       {{ $isExternal := ne $baseURL.Host (urls.Parse .URL).Host -}}
       {{ $hasChildren := .HasChildren -}}
       {{ $id := or .Identifier (urlize .Name) -}}

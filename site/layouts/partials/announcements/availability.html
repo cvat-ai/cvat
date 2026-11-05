@@ -1,0 +1,10 @@
+{{- /* Reuse the documentation's existing product badges; Online is called saas in the feed. */ -}}
+{{- $products := slice -}}
+{{- range partial "announcements/editions.html" . -}}
+  {{- if eq . "saas" -}}
+    {{- $products = $products | append "online" -}}
+  {{- else -}}
+    {{- $products = $products | append . -}}
+  {{- end -}}
+{{- end -}}
+{{- partial "product-tags.html" (dict "Params" (dict "products" $products)) -}}

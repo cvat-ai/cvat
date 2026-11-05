@@ -11,7 +11,7 @@ theme = ["docsy"]
 enableGitInfo = false
 
 # Language settings
-contentDir = "content/en"
+contentDir = "content"
 defaultContentLanguage = "en"
 defaultContentLanguageInSubdir = false
 # Useful when translating.
@@ -58,11 +58,10 @@ anchor = "smart"
     weight = 40
     url = "/docs/guides/"
 [[menu.main]]
-    identifier = "release-notes"
-    name = "Release Notes"
+    identifier = "updates"
+    name = "What's New"
     weight = 45
-    # Archived docs use older navbar templates: keep their link on the current history.
-    url = "https://docs.cvat.ai/release-notes/"
+    url = "https://docs.cvat.ai/updates/"
 [[menu.main]]
     name = "Sign in"
     weight = 50
@@ -136,14 +135,6 @@ mediaType = "text/markdown"
 baseName = "index"
 isPlainText = true
 notAlternative = true
-
-# Public release notes are also fetched by a local CVAT UI on another port.
-# These headers apply to `hugo server`; production hosting configures its own CORS.
-[[server.headers]]
-for = "/release-notes/**"
-[server.headers.values]
-Access-Control-Allow-Origin = "*"
-Cross-Origin-Resource-Policy = "cross-origin"
 
 [params]
 cvat_ai_terms_of_use = "https://www.cvat.ai/terms-of-use"
@@ -248,3 +239,20 @@ enable = false
 	url = "https://www.youtube.com/@cvat-ai"
 	icon = "fab fa-youtube"
 	desc = "YouTube channel of CVAT.ai"
+
+# Mount update sources without an /en/ folder while preserving existing docs URLs.
+[[module.mounts]]
+source = "content/en"
+target = "content"
+
+[[module.mounts]]
+source = "content/release-notes"
+target = "content/release-notes"
+
+[[module.mounts]]
+source = "content/announcements"
+target = "content/announcements"
+
+[[module.mounts]]
+source = "content/updates"
+target = "content/updates"
