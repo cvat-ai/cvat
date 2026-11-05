@@ -37,10 +37,7 @@ class UserGrowthDataViewSet(
     ordering = "id"
 
     def get_queryset(self):
-        UserGrowthData.objects.get_or_create(
-            user=self.request.user,
-            defaults={"github_prompt_shown_at": self.request.user.date_joined},
-        )
+        UserGrowthData.for_user(self.request.user)
         queryset = UserGrowthData.objects.select_related("user")
 
         if self.action == "list":
