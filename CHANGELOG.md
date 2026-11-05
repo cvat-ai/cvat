@@ -16,6 +16,48 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 <!-- scriv-insert-here -->
 
+<a id='changelog-2.82.0'></a>
+## \[2.82.0\] - 2026-11-05
+
+### Added
+
+- An option to configure a variable IoU threshold that depends on the GT annotation area
+  in annotation quality checks.
+  (<https://github.com/cvat-ai/cvat/pull/11308>)
+
+- Added an option to check object boundaries using the Boundary F1 metric in quality checks.
+  Available for bounding boxes, ellipses, polygons, masks, and polylines.
+  (<https://github.com/cvat-ai/cvat/pull/11366>)
+
+### Changed
+
+- \[Server API\] Quality requirements now allow to select the object similarity metric used.
+  OKS and IoU use different configuration options for the similarity metric threshold:
+  IoU - `iou_threshold`; OKS - `oks_threshold`. The existing IoU thresholds for points are moved.
+  (<https://github.com/cvat-ai/cvat/pull/11366>)
+
+### Fixed
+
+- The image is no longer darkened when a conflict is highlighted with the grid enabled
+  (<https://github.com/cvat-ai/cvat/pull/11368>)
+
+- Skeletons are now compared in the image space when the _Point size base_ quality setting
+  is set to _Image size_, which allows matching skeletons whose bounding boxes don't overlap,
+  e.g. skeletons with a single visible point
+  (<https://github.com/cvat-ai/cvat/pull/11415>)
+
+### Security
+
+- Fixed a permission problem that could allow users who were removed from
+  an organization to still perform auto-annotation on tasks and jobs in
+  that organization
+  (<https://github.com/cvat-ai/cvat/pull/11389>)
+
+- Prevented users with global worker role that were removed from
+  an organization from accessing jobs in that organization to which
+  they were previously assigned
+  (<https://github.com/cvat-ai/cvat/pull/11414>)
+
 <a id='changelog-2.81.0'></a>
 ## \[2.81.0\] - 2026-10-28
 
