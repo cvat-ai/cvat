@@ -8,7 +8,7 @@ import fnmatch
 import itertools
 import os
 import shutil
-from collections.abc import Callable, Iterable, Iterator, Mapping, Sequence
+from collections.abc import Callable, Collection, Iterable, Iterator, Mapping, Sequence
 from contextlib import closing
 from copy import deepcopy
 from datetime import datetime, timedelta, timezone
@@ -99,6 +99,13 @@ class SegmentsParams(NamedTuple):
     segments_count: int
 
 
+def _is_path_excluded(path: PurePath | str, excluded_paths: Collection[str]) -> bool:
+    path = PurePath(path)
+    return os.fspath(path) in excluded_paths or any(
+        f"{parent}/" in excluded_paths for parent in path.parents
+    )
+
+
 def _copy_data_from_share_point(
     server_files: list[str],
     *,
@@ -123,8 +130,7 @@ def _copy_data_from_share_point(
 
         filtered_server_files = list(
             filter(
-                lambda x: x not in server_files_exclude
-                and all([f"{i}/" not in server_files_exclude for i in Path(x).parents]),
+                lambda x: not _is_path_excluded(x, server_files_exclude),
                 filtered_server_files,
             )
         )
@@ -1300,8 +1306,7 @@ def _filter_cloud_storage_files(
     if server_files_exclude := data.get("server_files_exclude"):
         data["server_files"] = list(
             filter(
-                lambda x: x not in server_files_exclude
-                and all([f"{i}/" not in server_files_exclude for i in Path(x).parents]),
+                lambda x: not _is_path_excluded(x, server_files_exclude),
                 data["server_files"],
             )
         )
@@ -1643,13 +1648,29 @@ def _create_image_task_media_descriptors(
     extractor: IMediaReader,
     related_images: dict[str, Sequence[str]],
     related_image_metadata_loaders: dict[str, RelatedImageMetadataLoader],
+    server_files: Collection[str],
+    server_files_exclude: Collection[str],
     job_file_mapping: JobFileMapping | None,
 ) -> tuple[list[models.Image], ImageManifestManager, JobFileMapping | None]:
     db_data = db_task.require_data()
 
     def get_local_openable(path: PurePath):
-        path = upload_dir / path
-        return path if path.is_file() else None
+        local_path = Path(path)
+        if db_data.storage == models.StorageChoice.SHARE:
+            relative_path = local_path.relative_to(upload_dir)
+            is_selected = any(
+                relative_path == selected_path
+                or (
+                    (upload_dir / selected_path).is_dir()
+                    and relative_path.is_relative_to(selected_path)
+                )
+                for selected_path in map(PurePath, server_files)
+            )
+
+            if not is_selected or _is_path_excluded(relative_path, server_files_exclude):
+                return None
+
+        return local_path if local_path.is_file() else None
 
     source_related_image_metadata = _load_related_image_metadata(
         related_image_metadata_loaders,
@@ -2036,22 +2057,22 @@ def initialize_task(
     if extractor is None:
         raise ValidationError("Can't create a task without data")
 
+    server_files = data["server_files"]
+    server_files_exclude = data.get("server_files_exclude", [])
+
     # filter server_files from server_files_exclude when share point is used and files are not copied to CVAT.
     # here we exclude the case when the files are copied to CVAT because files are already filtered out.
     if (
-        (server_files_exclude := data.get("server_files_exclude"))
-        and data["server_files"]
+        server_files_exclude
+        and server_files
         and not is_data_in_cloud
         and not data["copy_data"]
         and isinstance(extractor, MEDIA_TYPES["image"]["extractor"])
     ):
         extractor.filter(
-            lambda x: os.path.relpath(x, upload_dir) not in server_files_exclude
-            and all(
-                [
-                    f"{i}/" not in server_files_exclude
-                    for i in Path(x).relative_to(upload_dir).parents
-                ]
+            lambda x: not _is_path_excluded(
+                os.path.relpath(x, upload_dir),
+                server_files_exclude,
             )
         )
 
@@ -2217,6 +2238,8 @@ def initialize_task(
                 extractor=extractor,
                 related_images=related_images,
                 related_image_metadata_loaders=related_image_metadata_loaders,
+                server_files=server_files,
+                server_files_exclude=server_files_exclude,
                 validation_params=validation_params,
                 job_file_mapping=job_file_mapping,
                 upload_dir=upload_dir,

@@ -4283,6 +4283,16 @@ class TaskDataAPITestCase(ApiTestBase):
 
         cls._share_image_sizes[filename] = image_sizes
 
+        pointcloud_share_files = [
+            "test_pointcloud_pcd/pointcloud/000001.pcd",
+            "test_pointcloud_pcd/related_images/000001_pcd/000001.png",
+            "test_pointcloud_pcd/related_images/000001_pcd/000001.png.json",
+        ]
+        with zipfile.ZipFile(ASSETS_DIR / filename) as zip_file:
+            for pointcloud_share_file in pointcloud_share_files:
+                zip_file.extract(pointcloud_share_file, share_root)
+        cls._share_files.extend(pointcloud_share_files)
+
         filename = "test_rar.rar"
         source_path = ASSETS_DIR / filename
         path = os.path.join(settings.SHARE_ROOT, filename)
@@ -4641,7 +4651,7 @@ class TaskDataAPITestCase(ApiTestBase):
             self.assertEqual(len(images), min(task["data_chunk_size"], len(expected_image_sizes)))
 
             if task["data_original_chunk_type"] == self.ChunkType.IMAGESET:
-                server_files = [img for key, img in data.items() if key.startswith("server_files")]
+                server_files = [img for key, img in data.items() if key.startswith("server_files[")]
                 client_files = [img for key, img in data.items() if key.startswith("client_files")]
 
                 _name_key = lambda x: getattr(x, "name", x)
@@ -4677,6 +4687,9 @@ class TaskDataAPITestCase(ApiTestBase):
                     elif isinstance(f, IOBase) and getattr(f, "name", "").endswith(".pdf"):
                         for i, frame in enumerate(convert_from_bytes(f.getvalue(), fmt="png")):
                             source_images[f"frame_{i}"] = frame
+                    elif isinstance(f, str) and f.endswith(".pcd"):
+                        with open(f, "rb") as pointcloud_file:
+                            source_images[f] = pointcloud_file.read()
                     elif isinstance(f, str) and not f.endswith(".jsonl"):
                         source_images[f] = Image.open(f)
                     elif isinstance(f, IOBase) and not f.name.endswith(".jsonl"):
@@ -6084,6 +6097,31 @@ class TaskDataAPITestCase(ApiTestBase):
         )
         self.assertEqual(response.status_code, status.HTTP_400_BAD_REQUEST)
         assert b"not in canonical form" in response.content
+
+    def test_api_v2_tasks_id_data_does_not_read_excluded_calibration_sidecar_from_share(self):
+        pointcloud_path = "test_pointcloud_pcd/pointcloud/000001.pcd"
+        related_image_path = "test_pointcloud_pcd/related_images/000001_pcd/000001.png"
+        self._test_api_v2_tasks_id_data_spec(
+            self.admin,
+            {"name": "3D task with excluded calibration"},
+            {
+                "server_files[0]": pointcloud_path,
+                "server_files[1]": related_image_path,
+                "copy_data": False,
+                "image_quality": 100,
+            },
+            self.ChunkType.IMAGESET,
+            self.ChunkType.IMAGESET,
+            self._share_image_sizes["test_pointcloud_pcd.zip"],
+            expected_uploaded_data_location=StorageChoice.SHARE,
+            dimension=DimensionType.DIM_3D,
+            expected_related_image_calibrations={
+                related_image_path: {
+                    "intrinsic_matrix": [],
+                    "extrinsic_matrix": [],
+                },
+            },
+        )
 
     @override_settings(MEDIA_CACHE_ALLOW_STATIC_CACHE=False)
     def test_use_cache_false_falls_back_to_cache(self):
