@@ -3900,7 +3900,11 @@ class FrameMetaSerializer(serializers.Serializer):
     height = serializers.IntegerField(required=False)
     name = serializers.CharField(max_length=MAX_FILENAME_LENGTH)
     related_files = serializers.IntegerField()
-    related_images = RelatedImageCalibrationSerializer(many=True, required=False)
+    related_images = RelatedImageCalibrationSerializer(
+        many=True,
+        required=False,
+        help_text="It is only included in job \"meta\" responses.",
+    )
 
     # for compatibility with version 2.3.0
     has_related_context = serializers.SerializerMethodField()
