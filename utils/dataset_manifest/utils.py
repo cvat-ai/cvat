@@ -16,7 +16,7 @@ from enum import Enum
 from functools import partial
 from pathlib import Path, PurePath
 from random import shuffle
-from typing import IO, Literal, Protocol, TypeAlias, TypeVar
+from typing import IO, Any, Literal, Protocol, TypeAlias, TypeVar
 
 import cv2 as cv
 import numpy as np
@@ -264,7 +264,7 @@ def serialize_related_image_metadata(metadata: RelatedImageMetadata) -> dict[str
 
 
 def load_related_image_metadata_from_manifest(
-    metadata: object,
+    metadata: Any,
     *,
     manifest_path: PurePath,
 ) -> RelatedImageMetadata:
@@ -297,10 +297,10 @@ def load_related_image_metadata_from_manifest(
     )
 
 
-def _load_related_image_sidecar(
+def _load_related_image_json_sidecar(
     sidecar_path: PurePath,
     openable_getter: OpenableGetter,
-) -> dict[str, object] | None:
+) -> dict[str, Any] | None:
     try:
         sidecar = openable_getter(sidecar_path)
         if sidecar is None:
@@ -325,7 +325,7 @@ def _load_standard_related_image_metadata(
     sidecar_path: PurePath,
     openable_getter: OpenableGetter,
 ) -> RelatedImageMetadata | None:
-    sidecar = _load_related_image_sidecar(sidecar_path, openable_getter)
+    sidecar = _load_related_image_json_sidecar(sidecar_path, openable_getter)
     if sidecar is None:
         return None
 
@@ -381,7 +381,7 @@ def _load_sly_related_image_metadata(
     sidecar_path: PurePath,
     openable_getter: OpenableGetter,
 ) -> RelatedImageMetadata | None:
-    sidecar = _load_related_image_sidecar(sidecar_path, openable_getter)
+    sidecar = _load_related_image_json_sidecar(sidecar_path, openable_getter)
     if sidecar is None:
         return None
 
@@ -416,7 +416,8 @@ def _load_sly_related_image_metadata(
         sidecar_path=sidecar_path,
     )
 
-    # Supervisely uses W->C. Its point cloud is expressed in W, which is CVAT's L space.
+    # Supervisely uses World->Camera extrinsic matrix. Its point cloud is expressed
+    # as World, which is CVAT's LiDAR space. So matrices map directly.
     return _validate_related_image_metadata(
         intrinsic_matrix,
         extrinsic_matrix,
@@ -450,7 +451,11 @@ def _find_related_images_2D(
     dataset_paths: Sequence[_AnyPath],
     *,
     is_scene_path: Callable[[_AnyPath], bool] | None = None,
-) -> tuple[set[_AnyPath], dict[_AnyPath, list[_AnyPath]]]:
+) -> tuple[
+    set[_AnyPath],
+    dict[_AnyPath, list[_AnyPath]],
+    dict[_AnyPath, RelatedImageMetadataLoader],
+]:
     """
     Expected 2D format is:
 
@@ -480,8 +485,8 @@ def _find_related_images_2D(
     }
 
     # TODO: maybe add logging for unmatched related images
-
-    return regular_images, related_images
+    # TODO: Support metadata for images related to 2D scenes
+    return regular_images, related_images, {}
 
 
 def _find_related_images_3D(
@@ -508,7 +513,7 @@ def _find_related_images_3D(
                 <scene name>.<image ext>
 
     2. Supervisely Point Cloud
-    Homepage: https://docs.sly.com/customization-and-integration/00_ann_format_navi
+    Homepage: https://docs.supervisely.com/customization-and-integration/00_ann_format_navi
     Example: https://github.com/cvat-ai/datumaro/tree/v0.3/tests/assets/sly_pointcloud_dataset/ds0
 
     Layout:
@@ -518,12 +523,14 @@ def _find_related_images_3D(
         related_images/
             <pcd name>_pcd/
                 <any image name>.<image ext>
+                <any image name>.<image ext>.json  # calibration sidecar
 
     3. Custom 1
     Layout:
     dataset/
         <scene name>.pcd
         <scene name>.<image ext>
+        <scene name>.<image ext>.json  # optional calibration sidecar
 
     4. Custom 2
     Layout:
@@ -531,6 +538,7 @@ def _find_related_images_3D(
        <pcd name>/
            <pcd name>.pcd
            <any image name>.<image ext>
+           <any image name>.<image ext>.json  # optional calibration sidecar
     """
     # There's no point in disallowing multiple layouts simultaneously, but mixing is
     # unlikely to be encountered
@@ -698,8 +706,10 @@ def find_related_images(
                 related_image_metadata,
             )
     else:
-        scenes, related_images = _find_related_images_2D(dataset_paths, is_scene_path=is_scene_path)
-        related_image_metadata = {}  # No metadata for images related to 2D scenes yet
+        scenes, related_images, related_image_metadata = _find_related_images_2D(
+            dataset_paths,
+            is_scene_path=is_scene_path,
+        )
 
     return scenes, related_images, related_image_metadata
 
