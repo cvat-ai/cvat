@@ -57,6 +57,7 @@ dayjs.extend(duration);
 
 interface StateToProps {
     pluginsInitialized: boolean;
+    whatsNewEnabled: boolean;
     pluginsFetching: boolean;
     modelsInitialized: boolean;
     modelsFetching: boolean;
@@ -113,6 +114,7 @@ function mapStateToProps(state: CombinedState): StateToProps {
         organizationFetching: organizations.fetching,
         organizationInitialized: organizations.initialized,
         pluginsInitialized: plugins.initialized,
+        whatsNewEnabled: plugins.list.WHATS_NEW,
         pluginsFetching: plugins.fetching,
         modelsInitialized: models.initialized,
         modelsFetching: models.fetching,

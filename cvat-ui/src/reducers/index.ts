@@ -356,6 +356,7 @@ export interface BulkActionsState {
 
 export enum SupportedPlugins {
     ANALYTICS = 'ANALYTICS',
+    WHATS_NEW = 'WHATS_NEW',
 }
 
 export type PluginsList = {
@@ -452,7 +453,6 @@ export interface PluginsState {
             };
         };
         header: {
-            items: PluginComponent[];
             userMenu: {
                 items: PluginComponent[];
             };

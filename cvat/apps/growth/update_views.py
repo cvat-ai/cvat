@@ -2,11 +2,12 @@
 #
 # SPDX-License-Identifier: MIT
 
+from django.conf import settings
 from django.db import transaction
 from drf_spectacular.utils import OpenApiParameter, extend_schema
 from rest_framework import viewsets
 from rest_framework.decorators import action
-from rest_framework.exceptions import ValidationError
+from rest_framework.exceptions import NotFound, ValidationError
 from rest_framework.response import Response
 
 from . import updates as updates_service
@@ -26,6 +27,11 @@ class UpdatesViewSet(viewsets.GenericViewSet):
     iam_permission_class = UpdatesPermission
     serializer_class = UpdatesAcknowledgementSerializer
     pagination_class = None
+
+    def initial(self, request, *args, **kwargs):
+        super().initial(request, *args, **kwargs)
+        if not settings.CVAT_UPDATES_ENABLED:
+            raise NotFound()
 
     def finalize_response(self, request, response, *args, **kwargs):
         response = super().finalize_response(request, response, *args, **kwargs)

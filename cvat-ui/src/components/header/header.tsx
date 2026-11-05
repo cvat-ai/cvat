@@ -44,6 +44,7 @@ import GlobalHotKeys, { KeyMap } from 'utils/mousetrap-react';
 import { ShortcutScope } from 'utils/enums';
 import { subKeyMap } from 'utils/component-subkeymap';
 import SettingsModal from './settings-modal/settings-modal';
+import WhatsNew from '../whats-new/whats-new';
 
 interface StateToProps {
     user: any;
@@ -55,6 +56,7 @@ interface StateToProps {
     changePasswordDialogShown: boolean;
     logoutFetching: boolean;
     isAnalyticsPluginActive: boolean;
+    whatsNewEnabled: boolean;
     organizationFetching: boolean;
     currentOrganization: any | null;
     organizationsList: Organization[];
@@ -121,6 +123,7 @@ function mapStateToProps(state: CombinedState): StateToProps {
         changePasswordDialogShown,
         logoutFetching,
         isAnalyticsPluginActive: list.ANALYTICS,
+        whatsNewEnabled: list.WHATS_NEW,
         organizationFetching,
         currentOrganization,
         organizationsList,
@@ -289,7 +292,6 @@ function HeaderComponent(props: Props): JSX.Element {
     };
 
     const plugins = usePlugins((state: CombinedState) => state.plugins.components.header.userMenu.items, props);
-    const headerPlugins = usePlugins((state: CombinedState) => state.plugins.components.header.items, props);
 
     const menuItems: [NonNullable<MenuProps['items']>[0], number][] = [];
     if (user.isStaff) {
@@ -492,10 +494,16 @@ function HeaderComponent(props: Props): JSX.Element {
                 ) : null}
             </div>
             <div className='cvat-right-header'>
-                {[...headerPlugins].sort((left, right) => left.weight - right.weight)
-                    .map(({ component: Component }, index: number) => (
-                        <Component key={index} targetProps={props} />
-                    ))}
+                {props.whatsNewEnabled && (
+                    <WhatsNew
+                        key={user.id}
+                        user={user}
+                        settingsModalVisible={settingsModalVisible}
+                        shortcutsModalVisible={shortcutsModalVisible}
+                        changePasswordDialogShown={props.changePasswordDialogShown}
+                        extensionsBlocked={props.extensionsBlocked}
+                    />
+                )}
                 <CVATTooltip overlay='Click to open repository'>
                     <Button
                         icon={<GithubOutlined />}

@@ -112,6 +112,7 @@ interface CVATAppProps {
     organizationFetching: boolean;
     organizationInitialized: boolean;
     pluginsInitialized: boolean;
+    whatsNewEnabled: boolean;
     pluginsFetching: boolean;
     modelsInitialized: boolean;
     modelsFetching: boolean;
@@ -155,6 +156,7 @@ class CVATApplication extends React.PureComponent<CVATAppProps & RouteComponentP
 
     public componentDidMount(): void {
         automaticPopups.register('github-star', 10);
+        automaticPopups.register('whats-new', 100);
         const core = getCore();
         const { history, onChangeLocation } = this.props;
         const {
@@ -308,6 +310,7 @@ class CVATApplication extends React.PureComponent<CVATAppProps & RouteComponentP
             aboutInitialized,
             aboutFetching,
             pluginsInitialized,
+            whatsNewEnabled,
             pluginsFetching,
             modelsInitialized,
             modelsFetching,
@@ -399,6 +402,7 @@ class CVATApplication extends React.PureComponent<CVATAppProps & RouteComponentP
         }
 
         if (pluginsInitialized && growth.initialized) {
+            if (!whatsNewEnabled) automaticPopups.offer('whats-new', null);
             automaticPopups.offer('github-star', growth.data?.githubPromptEnabled ? () => {
                 this.setState({ githubStarPromptVisible: true });
                 return true;
