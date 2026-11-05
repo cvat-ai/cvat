@@ -67,7 +67,7 @@ from utils.dataset_manifest.core import (
 )
 from utils.dataset_manifest.errors import InvalidRelatedImageMetadataError
 from utils.dataset_manifest.utils import (
-    RELATED_IMAGE_CALIBRATION_MANIFEST_KEY,
+    RELATED_IMAGE_METADATA_MANIFEST_KEY,
     OpenableGetter,
     RelatedImageMetadata,
     RelatedImageMetadataLoader,
@@ -632,13 +632,11 @@ def _create_task_manifest_based_on_cloud_storage_manifest(
                     for related_image_path in related_images
                 ]
 
-            calibration = metadata.get(RELATED_IMAGE_CALIBRATION_MANIFEST_KEY)
-            if isinstance(calibration, dict):
-                metadata[RELATED_IMAGE_CALIBRATION_MANIFEST_KEY] = {
-                    os.path.join(
-                        cloud_storage_manifest_prefix, related_image_path
-                    ): calibration_metadata
-                    for related_image_path, calibration_metadata in calibration.items()
+            related_image_metadata = metadata.get(RELATED_IMAGE_METADATA_MANIFEST_KEY)
+            if isinstance(related_image_metadata, dict):
+                metadata[RELATED_IMAGE_METADATA_MANIFEST_KEY] = {
+                    os.path.join(cloud_storage_manifest_prefix, related_image_path): metadata_entry
+                    for related_image_path, metadata_entry in related_image_metadata.items()
                 }
 
             properties["meta"] = metadata
@@ -761,7 +759,7 @@ def _build_related_images_manifest_meta(
     manifest_meta = {}
     for scene_path, scene_related_images in related_images.items():
         related_image_paths = [os.fspath(path) for path in scene_related_images]
-        calibration = {
+        related_image_metadata = {
             related_image_path: serialize_related_image_metadata(
                 source_related_image_metadata[related_image]
             )
@@ -769,10 +767,10 @@ def _build_related_images_manifest_meta(
             if related_image in source_related_image_metadata
         }
         manifest_meta[os.fspath(scene_path)] = {"related_images": related_image_paths}
-        if calibration:
+        if related_image_metadata:
             manifest_meta[os.fspath(scene_path)][
-                RELATED_IMAGE_CALIBRATION_MANIFEST_KEY
-            ] = calibration
+                RELATED_IMAGE_METADATA_MANIFEST_KEY
+            ] = related_image_metadata
 
     return manifest_meta
 
@@ -794,26 +792,26 @@ def _load_related_image_metadata_from_manifest(
         if not isinstance(manifest_metadata, dict):
             raise ValidationError("Invalid metadata in manifest: expected an object")
 
-        calibration = manifest_metadata.get(RELATED_IMAGE_CALIBRATION_MANIFEST_KEY)
-        if calibration is None:
+        related_image_metadata = manifest_metadata.get(RELATED_IMAGE_METADATA_MANIFEST_KEY)
+        if related_image_metadata is None:
             continue
-        if not isinstance(calibration, dict):
-            raise ValidationError("Invalid calibration metadata in manifest: expected an object")
+        if not isinstance(related_image_metadata, dict):
+            raise ValidationError("Invalid related image metadata in manifest: expected an object")
 
         for related_image_path in fallback_paths:
-            if related_image_path not in calibration:
+            if related_image_path not in related_image_metadata:
                 continue
 
             try:
                 manifest_related_image_metadata[related_image_path] = (
                     load_related_image_metadata_from_manifest(
-                        calibration[related_image_path],
+                        related_image_metadata[related_image_path],
                         manifest_path=manifest.manifest.path,
                     )
                 )
             except InvalidRelatedImageMetadataError as exc:
                 raise ValidationError(
-                    "Invalid calibration metadata in manifest for related image "
+                    "Invalid related image metadata in manifest for related image "
                     f"'{related_image_path}': {exc.message}"
                 ) from exc
 
@@ -1903,7 +1901,7 @@ def initialize_task(
 
             download_paths = [
                 PurePosixPath(path)
-                for path in itertools.chain.from_iterable((*media.values(), *metadata.values()))
+                for path in itertools.chain((*media.values(), *metadata.values()))
             ]
 
             db_data.cloud_storage.get_client().bulk_download_to_dir(download_paths, upload_dir)

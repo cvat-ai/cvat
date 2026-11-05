@@ -114,7 +114,7 @@ _AnyPath = TypeVar("_AnyPath", bound=PurePath)
 _IMAGE_METADATA_FORMAT = "cvat-image-meta"
 _IMAGE_METADATA_VERSION = 1
 _CAMERA_ROTATION_TOLERANCE = 1e-5
-RELATED_IMAGE_CALIBRATION_MANIFEST_KEY = "related_image_calibration"
+RELATED_IMAGE_METADATA_MANIFEST_KEY = "related_image_metadata"
 
 
 @dataclass(frozen=True)
@@ -270,7 +270,7 @@ def load_related_image_metadata_from_manifest(
 ) -> RelatedImageMetadata:
     if not isinstance(metadata, dict):
         raise InvalidRelatedImageMetadataError(
-            manifest_path, "the calibration entry in the manifest must be an object"
+            manifest_path, "the related image metadata entry in the manifest must be an object"
         )
 
     intrinsic_matrix = _parse_flattened_calibration_matrix(

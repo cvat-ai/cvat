@@ -2265,7 +2265,7 @@ class TaskCloudStorageTestCase(_CloudStorageTestBase):
         manifest = ImageManifestManager(db_data.get_manifest_path())
         manifest_entry = next(iter(manifest))[1]
         self.assertEqual(
-            manifest_entry["meta"]["related_image_calibration"][
+            manifest_entry["meta"]["related_image_metadata"][
                 "test_pointcloud_pcd/related_images/000001_pcd/000001.png"
             ],
             {
@@ -2299,7 +2299,7 @@ class TaskCloudStorageTestCase(_CloudStorageTestBase):
                         "height": 1,
                         "meta": {
                             "related_images": [related_image_path],
-                            "related_image_calibration": {related_image_path: calibration},
+                            "related_image_metadata": {related_image_path: calibration},
                         },
                     },
                 )
