@@ -15,11 +15,11 @@ class Migration(migrations.Migration):
         migrations.AddField(
             model_name="relatedfile",
             name="extrinsic_matrix",
-            field=cvat.apps.engine.models.FloatArrayField(blank=True, default="", null=True),
+            field=cvat.apps.engine.models.FloatArrayField(blank=True, default=""),
         ),
         migrations.AddField(
             model_name="relatedfile",
             name="intrinsic_matrix",
-            field=cvat.apps.engine.models.FloatArrayField(blank=True, default="", null=True),
+            field=cvat.apps.engine.models.FloatArrayField(blank=True, default=""),
         ),
     ]
