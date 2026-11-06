@@ -1921,8 +1921,7 @@ def initialize_task(
             update_status("Downloading input media")
 
             download_paths = [
-                PurePosixPath(path)
-                for path in itertools.chain((*media.values(), *metadata.values()))
+                PurePosixPath(path) for path in itertools.chain(*media.values(), *metadata.values())
             ]
 
             db_data.cloud_storage.get_client().bulk_download_to_dir(download_paths, upload_dir)
