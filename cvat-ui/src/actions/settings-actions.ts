@@ -61,6 +61,7 @@ export enum SettingsActionTypes {
     DISABLE_IMAGE_FILTER = 'DISABLE_IMAGE_FILTER',
     RESET_IMAGE_FILTERS = 'RESET_IMAGE_FILTERS',
     CHANGE_SHAPES_ORIENTATION_VISIBILITY = 'CHANGE_SHAPES_ORIENTATION_VISIBILITY',
+    CHANGE_SHAPES_POINT_CLOUD_SIZE = 'CHANGE_SHAPES_POINT_CLOUD_SIZE',
 }
 
 export function changeShapesOpacity(opacity: number): AnyAction {
@@ -132,6 +133,15 @@ export function changeOrientationVisibility(orientationVisibility: Partial<Orien
         type: SettingsActionTypes.CHANGE_SHAPES_ORIENTATION_VISIBILITY,
         payload: {
             orientationVisibility,
+        },
+    };
+}
+
+export function changePointCloudSize(pointCloudSize: number): AnyAction {
+    return {
+        type: SettingsActionTypes.CHANGE_SHAPES_POINT_CLOUD_SIZE,
+        payload: {
+            pointCloudSize,
         },
     };
 }

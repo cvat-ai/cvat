@@ -27,6 +27,7 @@ const defaultState: SettingsState = {
             y: false,
             z: false,
         },
+        pointCloudSize: 0.05,
     },
     workspace: {
         autoSave: false,
@@ -176,6 +177,15 @@ export default (state = defaultState, action: AnyAction): SettingsState => {
                         ...state.shapes.orientationVisibility,
                         ...action.payload.orientationVisibility,
                     },
+                },
+            };
+        }
+        case SettingsActionTypes.CHANGE_SHAPES_POINT_CLOUD_SIZE: {
+            return {
+                ...state,
+                shapes: {
+                    ...state.shapes,
+                    pointCloudSize: action.payload.pointCloudSize,
                 },
             };
         }

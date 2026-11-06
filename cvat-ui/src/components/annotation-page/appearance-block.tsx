@@ -27,6 +27,7 @@ import {
     changeShowBitmap as changeShowBitmapAction,
     changeShowProjections as changeShowProjectionsAction,
     changeOrientationVisibility as changeOrientationVisibilityAction,
+    changePointCloudSize as changePointCloudSizeAction,
 } from 'actions/settings-actions';
 import { registerComponentShortcuts } from 'actions/shortcuts-actions';
 import GlobalHotKeys, { KeyMap } from 'utils/mousetrap-react';
@@ -60,6 +61,7 @@ interface StateToProps {
     showBitmap: boolean;
     showProjections: boolean;
     orientationVisibility: OrientationVisibility;
+    pointCloudSize: number;
     workspace: Workspace;
     jobInstance: Job;
     keyMap: KeyMap;
@@ -74,6 +76,7 @@ interface DispatchToProps {
     changeShowBitmap(showBitmap: boolean): void;
     changeShowProjections(event: CheckboxChangeEvent): void;
     changeOrientationVisibility(orientationVisibility: Partial<OrientationVisibility>): void;
+    changePointCloudSize(value: number): void;
 }
 
 function mapStateToProps(state: CombinedState): StateToProps {
@@ -86,7 +89,7 @@ function mapStateToProps(state: CombinedState): StateToProps {
         settings: {
             shapes: {
                 colorBy, opacity, selectedOpacity, outlined, outlineColor, showBitmap, showProjections,
-                orientationVisibility,
+                orientationVisibility, pointCloudSize,
             },
         },
         shortcuts: { keyMap },
@@ -103,6 +106,7 @@ function mapStateToProps(state: CombinedState): StateToProps {
         showProjections,
         workspace,
         orientationVisibility,
+        pointCloudSize,
         jobInstance: jobInstance as Job,
         keyMap,
     };
@@ -134,6 +138,9 @@ function mapDispatchToProps(dispatch: Dispatch<AnyAction>): DispatchToProps {
         changeOrientationVisibility(orientationVisibility: Partial<OrientationVisibility>): void {
             dispatch(changeOrientationVisibilityAction(orientationVisibility));
         },
+        changePointCloudSize(value: number): void {
+            dispatch(changePointCloudSizeAction(value));
+        },
     };
 }
 
@@ -150,6 +157,7 @@ function AppearanceBlock(props: Props): JSX.Element {
         showBitmap,
         showProjections,
         orientationVisibility,
+        pointCloudSize,
         collapseAppearance,
         changeShapesColorBy,
         changeShapesOpacity,
@@ -158,6 +166,7 @@ function AppearanceBlock(props: Props): JSX.Element {
         changeShowBitmap,
         changeShowProjections,
         changeOrientationVisibility,
+        changePointCloudSize,
         jobInstance,
         keyMap,
     } = props;
@@ -258,6 +267,19 @@ function AppearanceBlock(props: Props): JSX.Element {
                                     Cuboid orientation
                                 </Checkbox>
                             </div>
+                        )}
+                        {is3D && (
+                            <>
+                                <Text type='secondary'>Point size</Text>
+                                <Slider
+                                    className='cvat-appearance-point-cloud-size-slider'
+                                    onChange={changePointCloudSize}
+                                    value={pointCloudSize}
+                                    min={0.01}
+                                    max={0.5}
+                                    step={0.01}
+                                />
+                            </>
                         )}
                         {is2D && (
                             <Checkbox

@@ -1119,6 +1119,7 @@ export interface ShapesSettingsState {
     showProjections: boolean;
     showGroundTruth: boolean;
     orientationVisibility: OrientationVisibility;
+    pointCloudSize: number;
 }
 
 export interface SettingsState {
