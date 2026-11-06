@@ -23,7 +23,7 @@ def read_rules(name):
             row["limit"] = row["limit"].replace("none", "None")
             found = False
             for col, val in row.items():
-                if col in ["limit", "method", "url", "resource", "strict_privilege"]:
+                if col in ["limit", "method", "url", "resource"]:
                     continue
                 complex_val = [v.strip() for v in val.split(",")]
                 if len(complex_val) > 1:
@@ -101,24 +101,12 @@ def eval_rule(scope, context, ownership, privilege, membership, data):
             rules,
         )
     )
-    rules = list(
-        filter(
-            lambda r: (
-                GROUPS.index(privilege) <= GROUPS.index(r["privilege"])
-                if r["strict_privilege"] == "false"
-                else privilege == r["privilege"]
-            ),
-            rules,
-        )
-    )
+    rules = list(filter(lambda r: GROUPS.index(privilege) <= GROUPS.index(r["privilege"]), rules))
     resource = data["resource"]
     rules = list(
         filter(lambda r: not r["limit"] or eval(r["limit"], {"resource": resource}), rules)
     )
-    if (
-        not is_same_org(data["auth"]["organization"], data["resource"]["organization"])
-        and context != "sandbox"
-    ):
+    if not is_same_org(data["auth"]["organization"], data["resource"]["organization"]):
         return False
 
     return bool(rules)
@@ -150,6 +138,8 @@ def get_data(scope, context, ownership, privilege, membership, resource, same_or
 
         if same_org:
             data["resource"]["organization"]["id"] = org_id
+    elif same_org:
+        data["resource"]["organization"] = None
 
     if ownership == "assignee":
         data["resource"]["assignee"]["id"] = user_id
@@ -198,8 +188,6 @@ def is_valid(scope, context, ownership, privilege, membership, resource, same_or
     if context == "sandbox" and membership:
         return False
     if scope == "list" and ownership != "None":
-        return False
-    if context == "sandbox" and same_org is False:
         return False
 
     return True
