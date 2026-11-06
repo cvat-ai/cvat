@@ -42,7 +42,7 @@ const defaultState: SettingsState = {
         textFontSize: 14,
         controlPointsSize: 5,
         textPosition: 'auto',
-        textContent: 'id,source,label,attributes,descriptions,dimensions',
+        textContent: 'id,source,label,attributes,descriptions,dimensions,area',
         showTagsOnFrame: true,
     },
     player: {

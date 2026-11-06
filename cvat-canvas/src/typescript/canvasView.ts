@@ -34,7 +34,7 @@ import {
     vectorLength, ShapeSizeElement, DrawnState, rotate2DPoints,
     readPointsFromShape, setupSkeletonEdges, makeSVGFromTemplate,
     imageDataToDataURL, RLEToImageData, stringifyPoints, imageDataToRLE,
-    composeShapeDimensions, getRoundedRotation,
+    composeShapeDimensions, computePolygonArea, computeMaskArea, getRoundedRotation,
     clamp, validateUnionResult, processPolygonUnionResult,
     applySnapToShapePoint, isPolygonSelfIntersecting,
 } from './shared';
@@ -3751,7 +3751,7 @@ export class CanvasViewImpl implements CanvasView, Listener {
                 }
             }, () => {
                 if (shapeSizeElement) {
-                    shapeSizeElement.update(shape);
+                    shapeSizeElement.update(shape, this.configuration.textContent);
                 }
                 this.updateSelectedObjectsOverlay();
             }, () => {
@@ -4554,6 +4554,7 @@ export class CanvasViewImpl implements CanvasView, Listener {
         const withSource = content.includes('source');
         const withDescriptions = content.includes('descriptions');
         const withDimensions = content.includes('dimensions');
+        const withArea = content.includes('area');
         const withLayer = content.includes('layer') || content.includes('zOrder');
 
         const textFontSize = this.configuration.textFontSize || 12;
@@ -4603,7 +4604,7 @@ export class CanvasViewImpl implements CanvasView, Listener {
                         .addClass('cvat_canvas_text_layer');
                 }
 
-                if (withDimensions && ['rectangle', 'ellipse'].includes(state.shapeType)) {
+                if ((withDimensions || withArea) && ['rectangle', 'ellipse'].includes(state.shapeType)) {
                     let width = state.points[2] - state.points[0];
                     let height = state.points[3] - state.points[1];
 
@@ -4612,13 +4613,28 @@ export class CanvasViewImpl implements CanvasView, Listener {
                         height *= -2;
                     }
 
-                    block
-                        .tspan(composeShapeDimensions(width, height, state.rotation))
+                    const sizeText = block
+                        .tspan(composeShapeDimensions(width, height, state.rotation, state.shapeType, {
+                            dimensions: withDimensions,
+                            area: withArea,
+                        }))
                         .attr({
                             dy: '1.25em',
                             x: 0,
-                        })
-                        .addClass('cvat_canvas_text_dimensions');
+                        });
+                    if (withDimensions) {
+                        sizeText.addClass('cvat_canvas_text_dimensions');
+                    }
+                    if (withArea) {
+                        sizeText.addClass('cvat_canvas_text_area');
+                    }
+                } else if (withArea && ['polygon', 'mask'].includes(state.shapeType)) {
+                    const area = state.shapeType === 'polygon' ?
+                        computePolygonArea(state.points) : computeMaskArea(state.points);
+                    block
+                        .tspan(`${area.toFixed(1)}px²`)
+                        .attr({ dy: '1.25em', x: 0 })
+                        .addClass('cvat_canvas_text_area');
                 }
                 if (withDescriptions) {
                     descriptions.forEach((desc: string, idx: number) => {
