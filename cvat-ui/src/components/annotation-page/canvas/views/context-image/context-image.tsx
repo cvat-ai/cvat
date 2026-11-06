@@ -3,15 +3,8 @@
 // SPDX-License-Identifier: MIT
 
 import './styles.scss';
-import React, {
-    useEffect,
-    useRef,
-    useState,
-} from 'react';
-import {
-    useDispatch,
-    useSelector,
-} from 'react-redux';
+import React, { useEffect, useRef, useState } from 'react';
+import { useDispatch, useSelector } from 'react-redux';
 import PropTypes from 'prop-types';
 import notification from 'antd/lib/notification';
 import Spin from 'antd/lib/spin';

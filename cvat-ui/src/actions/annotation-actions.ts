@@ -7,8 +7,10 @@ import { AnyAction, Store } from 'redux';
 import { ThunkAction, ThunkDispatch } from 'utils/redux';
 import isAbleToChangeFrame from 'utils/is-able-to-change-frame';
 import getHiddenZLayers from 'utils/get-hidden-z-layers';
-import { getRelatedImageCalibration } from 'utils/related-image-calibrations';
-import { cameraRayFromImagePoint, Canvas3d, CanvasMode as Canvas3DMode } from 'cvat-canvas3d-wrapper';
+import { getRelatedImageMetadata } from 'utils/related-image-calibrations';
+import {
+    cameraRayFromImagePoint, hasCalibration, Canvas3d, CanvasMode as Canvas3DMode,
+} from 'cvat-canvas3d-wrapper';
 import type { CameraRay } from 'cvat-canvas3d-wrapper';
 import {
     RectDrawingMethod, CuboidDrawingMethod, Canvas, CanvasMode as Canvas2DMode, CanvasHistorySource,
@@ -1618,25 +1620,26 @@ export function updateActiveControl(activeControl: ActiveControl): AnyAction {
 }
 
 export function setCameraRayFromContextImagePoint(
-    contextImageName: string,
+    relatedImageName: string,
     pixel: [number, number],
 ): ThunkAction<boolean> {
     return (dispatch: ThunkDispatch, getState: () => CombinedState): boolean => {
         const state = getState();
         const { data: frameData } = state.annotation.player.frame;
-        if (!frameData?.relatedImages) {
+        const relatedImagesMetadata = frameData?.relatedImagesMetadata;
+        if (!relatedImagesMetadata || !relatedImagesMetadata.length) {
             return false;
         }
 
-        const calibration = getRelatedImageCalibration(
-            frameData.relatedImages,
-            contextImageName,
+        const meta = getRelatedImageMetadata(
+            relatedImagesMetadata,
+            relatedImageName,
         );
-        if (!calibration) {
+        if (!meta || !hasCalibration(meta)) {
             return false;
         }
 
-        const cameraRay = cameraRayFromImagePoint(calibration, pixel);
+        const cameraRay = cameraRayFromImagePoint(meta, pixel);
         if (!cameraRay) {
             return false;
         }

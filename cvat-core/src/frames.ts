@@ -19,6 +19,7 @@ import {
 import { ArgumentError } from './exceptions';
 import { FieldUpdateTrigger } from './common';
 import config from './config';
+import { CamelizedV2 } from './type-utils';
 
 // frame storage by job id
 const frameDataCache: Record<string, {
@@ -344,11 +345,7 @@ export class FramesMetaData {
     }
 }
 
-export interface RelatedImageCalibration {
-    name: string;
-    intrinsicMatrix: number[][];
-    extrinsicMatrix: number[][];
-}
+export type RelatedImageMetadata = CamelizedV2<SerializedRelatedImageMetadata>;
 
 export class FrameData {
     public readonly filename: string;
@@ -356,7 +353,7 @@ export class FrameData {
     public readonly height: number;
     public readonly number: number;
     public readonly relatedFiles: number;
-    public readonly relatedImages: RelatedImageCalibration[];
+    public readonly relatedImagesMetadata: RelatedImageMetadata[];
     public readonly deleted: boolean;
     public readonly jobID: number;
 
@@ -370,7 +367,7 @@ export class FrameData {
         related_files: relatedFiles,
         related_files_metadata: relatedFilesMetadata = [],
     }) {
-        const calibratedRelatedImages = relatedFilesMetadata
+        const calibratedRelatedImagesMetadata = relatedFilesMetadata
             .filter(
                 (metadata): metadata is Required<SerializedRelatedImageMetadata> => (
                     metadata.type === 'related_image' &&
@@ -411,8 +408,8 @@ export class FrameData {
                     value: relatedFiles,
                     writable: false,
                 },
-                relatedImages: {
-                    value: calibratedRelatedImages,
+                relatedImagesMetadata: {
+                    value: calibratedRelatedImagesMetadata,
                     writable: false,
                 },
                 deleted: {

@@ -37,10 +37,15 @@ registerComponentShortcuts(componentShortcuts);
 function CameraRayControl(props: Props): JSX.Element {
     const { canvasInstance, activeControl } = props;
     const dispatch = useDispatch<ThunkDispatch>();
-    const keyMap = useSelector((state: CombinedState) => state.shortcuts.keyMap);
-    const normalizedKeyMap = useSelector((state: CombinedState) => state.shortcuts.normalizedKeyMap);
-    const { hasCalibratedRelatedImages, hasCameraRay } = useSelector((state: CombinedState) => ({
-        hasCalibratedRelatedImages: !!state.annotation.player.frame.data?.relatedImages?.length,
+    const {
+        keyMap,
+        normalizedKeyMap,
+        hasCalibratedRelatedImages,
+        hasCameraRay,
+    } = useSelector((state: CombinedState) => ({
+        keyMap: state.shortcuts.keyMap,
+        normalizedKeyMap: state.shortcuts.normalizedKeyMap,
+        hasCalibratedRelatedImages: !!state.annotation.player.frame.data?.relatedImagesMetadata?.length,
         hasCameraRay: state.annotation.canvas.hasCameraRay,
     }), shallowEqual);
     const isDisabled = !hasCalibratedRelatedImages && !hasCameraRay;

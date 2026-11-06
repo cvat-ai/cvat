@@ -9,4 +9,8 @@ export interface CameraCalibration {
     extrinsicMatrix: number[][];
 }
 
+export function hasCalibration(calibration: Partial<CameraCalibration>): calibration is CameraCalibration {
+    return !!calibration.intrinsicMatrix && !!calibration.extrinsicMatrix;
+}
+
 export type CameraRay = Ray;

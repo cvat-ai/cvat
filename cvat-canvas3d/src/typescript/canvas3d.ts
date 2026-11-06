@@ -21,6 +21,7 @@ import {
     Canvas3dView, Canvas3dViewImpl, ViewsDOM, CameraAction,
 } from './canvas3dView';
 import { cameraRayFromImagePoint } from './geometry/camera-projection';
+import { hasCalibration } from './geometry/types';
 import type { CameraCalibration } from './geometry/types';
 import type { Master } from './master';
 
@@ -141,7 +142,8 @@ class Canvas3dImpl implements Canvas3d {
 }
 
 export {
-    cameraRayFromImagePoint, Canvas3dImpl as Canvas3d, ViewType, MouseInteraction, CameraAction, Mode as CanvasMode,
+    cameraRayFromImagePoint, hasCalibration, Canvas3dImpl as Canvas3d,
+    ViewType, MouseInteraction, CameraAction, Mode as CanvasMode,
 };
 
 export type { ViewsDOM, CameraCalibration, CameraRay };
