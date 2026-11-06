@@ -8029,6 +8029,11 @@ components:
           items:
             type: string
           readOnly: true
+        requirements:
+          type: array
+          items:
+            $ref: '#/components/schemas/AnnotationConflictRequirement'
+          readOnly: true
       required:
       - annotation_ids
     AnnotationConflictAnnotationType:
@@ -8041,6 +8046,15 @@ components:
         * `tag` - TAG
         * `shape` - SHAPE
         * `track` - TRACK
+    AnnotationConflictRequirement:
+      type: object
+      properties:
+        id:
+          type: integer
+          readOnly: true
+        name:
+          type: string
+          readOnly: true
     AnnotationConflictSeverity:
       enum:
       - error
