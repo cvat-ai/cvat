@@ -1598,6 +1598,51 @@ class TestTaskBackups:
 
         self._test_can_restore_task_from_backup(task_id)
 
+    @pytest.mark.with_external_services
+    def test_can_export_and_import_backup_task_from_share_with_related_images(self):
+        # https://github.com/cvat-ai/cvat/issues/9978
+        task_spec = {
+            "name": "Task from share with related images",
+            "labels": [{"name": "car"}],
+        }
+        data_spec = {
+            "image_quality": 75,
+            "server_files": [
+                "images/with_related/image_0.png",
+                "images/with_related/image_1.png",
+                "images/with_related/image_2.png",
+                "images/with_related/image_3.png",
+                "images/with_related/related_images/image_0_png/30.png",
+                "images/with_related/related_images/image_0_png/31.png",
+                "images/with_related/related_images/image_0_png/33.png",
+                "images/with_related/related_images/image_1_png/30.png",
+                "images/with_related/related_images/image_2_png/32.png",
+                "images/with_related/related_images/image_2_png/33.png",
+                "images/with_related/related_images/image_2_png/34.png",
+            ],
+        }
+        task_id, _ = create_task(self.user, task_spec, data_spec)
+
+        task = self.client.tasks.retrieve(task_id)
+        filename = self.tmp_dir / f"share_task_{task.id}_related_backup.zip"
+        task.download_backup(filename)
+
+        with zipfile.ZipFile(filename, "r") as zf:
+            files_in_data = {
+                name.removeprefix("data/") for name in zf.namelist() if name.startswith("data/")
+            }
+
+        assert "manifest.jsonl" in files_in_data
+        assert "images/with_related/image_0.png" in files_in_data
+        assert "images/with_related/related_images/image_0_png/30.png" in files_in_data
+        assert "images/with_related/related_images/image_1_png/30.png" in files_in_data
+
+        new_task = self.client.tasks.create_from_backup(filename)
+        with make_api_client(self.user) as api_client:
+            new_meta, _ = api_client.tasks_api.retrieve_data_meta(new_task.id)
+            assert new_meta.frames[0].related_files >= 1
+            assert new_meta.frames[1].related_files >= 1
+
     @pytest.mark.timeout(20)
     @pytest.mark.with_external_services
     @pytest.mark.parametrize("lightweight_backup", [True, False])
