@@ -26,7 +26,8 @@ export function getRelatedImageMetadata(
     relatedImageName: string,
 ): RelatedImageMetadata | null {
     // relatedImageName is taken from the zip layout.
-    // Backend strips common path and extension from all related images for a frame before creating the zip.
+    // Backend strips common path and extension from all related images for a frame before creating the zip:
+    // https://github.com/cvat-ai/cvat/blob/4f1086ea8c8f2ebf788b4714b04c206a155de6e7/cvat/apps/engine/cache.py#L738-L744
     // So for formats that don't have all related images in one folder zip may contain folders
     // and map related images to something like:
     // 0000/000001
