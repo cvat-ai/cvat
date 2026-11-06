@@ -24,6 +24,7 @@ import { Job } from 'cvat-core-wrapper';
 import { CombinedState, Workspace } from 'reducers';
 import { KeyMap } from 'utils/mousetrap-react';
 import { writeLatestFrame } from 'utils/remember-latest-frame';
+import { jobHasUnsavedChanges } from 'utils/annotation';
 
 interface StateToProps {
     jobInstance: Job;
@@ -155,7 +156,7 @@ class AudioTopBarContainer extends React.PureComponent<Props> {
             writeLatestFrame(jobInstance.id, frameNumber);
 
             if (
-                jobInstance.annotations.hasUnsavedChanges() &&
+                jobHasUnsavedChanges(jobInstance) &&
                 location.pathname !== `/tasks/${taskID}/jobs/${jobID}` &&
                 !forceExit
             ) {
@@ -211,7 +212,7 @@ class AudioTopBarContainer extends React.PureComponent<Props> {
         } = this.props;
 
         writeLatestFrame(jobInstance.id, frameNumber);
-        if (jobInstance.annotations.hasUnsavedChanges() && !forceExit) {
+        if (jobHasUnsavedChanges(jobInstance) && !forceExit) {
             const confirmationMessage = 'You have unsaved changes, please confirm leaving this page.';
             // eslint-disable-next-line no-param-reassign
             event.returnValue = confirmationMessage;
