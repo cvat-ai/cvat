@@ -28,6 +28,7 @@ dependencies = [
 [project.optional-dependencies]
 masks = ["numpy>=2"]
 pytorch = ["torch", "torchvision", "scikit-image>=0.24", "cvat_sdk[masks]"]
+video = ["cvat-mp4-h264==2.81.1"]
 
 [project.urls]
 homepage = "https://github.com/cvat-ai/cvat"

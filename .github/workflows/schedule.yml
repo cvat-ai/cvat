@@ -144,7 +144,7 @@ jobs:
 
       - name: Install test requirements
         run: |
-          pip3 install -e ./cvat-sdk -e ./cvat-cli -r ./tests/python/requirements.txt
+          pip3 install -e ./cvat-sdk -e ./cvat-cli -e ./cvat-mp4-h264 -r ./tests/python/requirements.txt
 
       - name: REST API and SDK tests
         run: |
