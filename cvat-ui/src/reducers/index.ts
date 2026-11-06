@@ -865,6 +865,12 @@ export enum ActiveControl {
     PICK_CAMERA_RAY = 'pick_camera_ray',
 }
 
+export interface CameraRayPoint {
+    id: string;
+    relatedImageName: string;
+    pixel: [number, number];
+}
+
 export enum StatesOrdering {
     ID_DESCENT = 'ID - descent',
     ID_ASCENT = 'ID - ascent',
@@ -930,6 +936,7 @@ export interface AnnotationState {
         activeObjectHidden: boolean;
         // 3D only
         hasCameraRay: boolean;
+        cameraRayPoint: CameraRayPoint | null;
     };
     job: {
         openTime: null | number;

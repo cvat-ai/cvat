@@ -9,6 +9,7 @@
     height: 100%;
     display: flex;
     justify-content: center;
+    position: relative;
 
     > .ant-spin {
         position: absolute;
@@ -62,16 +63,42 @@
         }
     }
 
-    > canvas {
-        object-fit: contain;
-        position: relative;
-        top: calc(50% + $grid-unit-size * 2);
-        transform: translateY(-50%);
+    > .cvat-context-image-viewport {
+        position: absolute;
+        top: $grid-unit-size * 4;
         width: 100%;
         height: calc(100% - $grid-unit-size * 4);
+        overflow: hidden;
 
-        &.cvat-context-image-camera-ray-picking {
-            cursor: crosshair;
+        > .cvat-context-image-image-plane {
+            position: absolute;
+            transform-origin: top left;
+
+            > .cvat-context-image-canvas {
+                position: absolute;
+                z-index: 0;
+                width: 100%;
+                height: 100%;
+            }
+
+            > .cvat-context-image-svg-overlay {
+                position: absolute;
+                z-index: 1;
+                width: 100%;
+                height: 100%;
+
+                &.cvat-context-image-camera-ray-picking {
+                    cursor: crosshair;
+                }
+
+                > .cvat-context-image-svg-overlay-hit-area {
+                    fill: transparent;
+                }
+
+                > .cvat-context-image-camera-ray-marker {
+                    cursor: pointer;
+                }
+            }
         }
     }
 

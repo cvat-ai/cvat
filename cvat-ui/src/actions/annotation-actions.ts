@@ -28,6 +28,7 @@ import { sanitizeSelectedObjectIDs } from 'utils/multi-selection';
 
 import {
     ActiveControl,
+    CameraRayPoint,
     CombinedState,
     ContextMenuType,
     FrameSpeed,
@@ -1096,7 +1097,10 @@ export function confirmCanvasReadyAsync(): ThunkAction {
     };
 }
 
-export function updateCameraRay(cameraRay: CameraRay | null): ThunkAction<boolean> {
+export function updateCameraRay(
+    cameraRay: CameraRay | null,
+    cameraRayPoint: CameraRayPoint | null = null,
+): ThunkAction<boolean> {
     return (dispatch: ThunkDispatch, getState: () => CombinedState): boolean => {
         const { instance: canvasInstance } = getState().annotation.canvas;
         if (!(canvasInstance instanceof Canvas3d)) {
@@ -1108,6 +1112,7 @@ export function updateCameraRay(cameraRay: CameraRay | null): ThunkAction<boolea
             type: AnnotationActionTypes.UPDATE_CAMERA_RAY,
             payload: {
                 hasCameraRay: !!cameraRay,
+                cameraRayPoint,
             },
         });
 
@@ -1644,7 +1649,11 @@ export function setCameraRayFromContextImagePoint(
             return false;
         }
 
-        return dispatch(updateCameraRay(cameraRay));
+        return dispatch(updateCameraRay(cameraRay, {
+            id: `camera-ray:${relatedImageName}`,
+            relatedImageName,
+            pixel,
+        }));
     };
 }
 
