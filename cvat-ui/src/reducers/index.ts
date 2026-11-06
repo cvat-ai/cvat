@@ -1110,6 +1110,7 @@ export interface WorkspaceSettingsState {
     controlPointsSize: number;
     textPosition: 'auto' | 'center';
     textContent: string;
+    showConflictRequirements: boolean;
     showTagsOnFrame: boolean;
 }
 

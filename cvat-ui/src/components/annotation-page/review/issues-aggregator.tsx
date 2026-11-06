@@ -64,7 +64,7 @@ export default function IssueAggregatorComponent(): JSX.Element | null {
         qualityConflicts: state.review.frameConflicts,
         objectStates: state.annotation.annotations.states,
         showConflicts: state.settings.shapes.showGroundTruth,
-        showConflictRequirements: state.settings.workspace.textContent.split(',').includes('requirements'),
+        showConflictRequirements: state.settings.workspace.showConflictRequirements,
         highlightedConflict: state.annotation.annotations.highlightedConflict,
         activeControl: state.annotation.canvas.activeControl,
     }), shallowEqual);
