@@ -43,6 +43,7 @@ const defaultState: SettingsState = {
         controlPointsSize: 5,
         textPosition: 'auto',
         textContent: 'id,source,label,attributes,descriptions,dimensions',
+        showConflictRequirements: false,
         showTagsOnFrame: true,
     },
     player: {
@@ -258,6 +259,15 @@ export default (state = defaultState, action: AnyAction): SettingsState => {
                 workspace: {
                     ...state.workspace,
                     textContent,
+                },
+            };
+        }
+        case SettingsActionTypes.SWITCH_SHOWING_CONFLICT_REQUIREMENTS: {
+            return {
+                ...state,
+                workspace: {
+                    ...state.workspace,
+                    showConflictRequirements: action.payload.showConflictRequirements,
                 },
             };
         }

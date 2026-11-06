@@ -34,6 +34,7 @@ const defaultState: PluginsState = {
                 // not used
                 saveAnnotationButton: [],
             },
+            conflictRequirement: [],
         },
         qualityControlPage: {
             task: {

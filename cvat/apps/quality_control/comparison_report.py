@@ -16,7 +16,7 @@ from typing import Any, ClassVar
 
 import json_stream
 import numpy as np
-from attrs import asdict, define, field
+from attrs import asdict, define, evolve, field
 from datumaro.util import dump_json, parse_json
 
 from cvat.apps.engine.models import ShapeType
@@ -192,6 +192,7 @@ class AnnotationConflict(ReportNode):
     annotation_ids: list[AnnotationId]
     severity: AnnotationConflictSeverity = AnnotationConflictSeverity.ERROR
     attribute_names: list[str] = field(factory=list)
+    requirements: list[dict[str, Any]] = field(factory=list)
 
     @staticmethod
     def default_severity_for_type(
@@ -218,6 +219,10 @@ class AnnotationConflict(ReportNode):
                 else cls.default_severity_for_type(conflict_type)
             ),
             attribute_names=sorted(set(d.get("attribute_names") or [])),
+            requirements=sorted(
+                (dict(requirement) for requirement in d.get("requirements", [])),
+                key=lambda requirement: requirement["id"],
+            ),
         )
 
 
@@ -251,11 +256,15 @@ def annotation_conflict_key(
 def merge_annotation_conflicts(
     target: AnnotationConflict, other: AnnotationConflict
 ) -> AnnotationConflict:
-    merged_attribute_names = sorted(set(target.attribute_names) | set(other.attribute_names))
-    if merged_attribute_names != target.attribute_names:
-        target.attribute_names = merged_attribute_names
-
-    return target
+    requirements = {
+        requirement["id"]: requirement
+        for requirement in itertools.chain(target.requirements, other.requirements)
+    }
+    return evolve(
+        target,
+        attribute_names=sorted(set(target.attribute_names) | set(other.attribute_names)),
+        requirements=[requirements[requirement_id] for requirement_id in sorted(requirements)],
+    )
 
 
 def deduplicate_annotation_conflicts(
@@ -273,7 +282,9 @@ def deduplicate_annotation_conflicts(
     for conflict in conflicts:
         key = annotation_conflict_key(conflict)
         if key in deduplicated_conflicts:
-            merge_annotation_conflicts(deduplicated_conflicts[key], conflict)
+            deduplicated_conflicts[key] = merge_annotation_conflicts(
+                deduplicated_conflicts[key], conflict
+            )
         else:
             deduplicated_conflicts[key] = conflict
 
