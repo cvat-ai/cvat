@@ -6,10 +6,12 @@ import os.path as osp
 import shutil
 from collections.abc import Callable
 from glob import glob
+from typing import Dict
 
 from datumaro.components.annotation import AnnotationType
 from datumaro.components.dataset import StreamDataset
 from datumaro.components.dataset_base import DatasetItem
+from datumaro.plugins.data_formats.yolo.exporter import YoloExporter
 
 from cvat.apps.dataset_manager.bindings import (
     CommonData,
@@ -25,6 +27,41 @@ from cvat.apps.dataset_manager.util import make_zip_archive
 
 from .registry import dm_env, exporter, importer
 from .transformations import EllipsesToMasks, SetKeyframeForEveryTrackShape
+
+
+class CvatYoloExporter(YoloExporter):
+    """Classic YOLO exporter with obj.names aligned to remapped class ids.
+
+    Datumaro's stock YoloExporter writes obj.names from a name→raw-index map over
+    all categories (including skeleton sublabels). Repeated keypoint names then
+    collapse the names file while annotations use ``_map_labels_for_save``, so
+    class ids no longer match names (#8090). Ultralytics exporters already write
+    names from the remapped label list; mirror that for YOLO 1.1.
+    """
+
+    def _save_config_files(self, subset_lists: Dict[str, str]):
+        save_dir = self._save_dir
+        label_categories = self._extractor.categories()[AnnotationType.label]
+        names = [label_categories[label_id].name for label_id in self._labels_to_save]
+
+        with open(osp.join(save_dir, "obj.names"), "w", encoding="utf-8") as f:
+            f.writelines("%s\n" % name for name in names)
+
+        with open(osp.join(save_dir, "obj.data"), "w", encoding="utf-8") as f:
+            f.write(f"classes = {len(names)}\n")
+
+            for subset_name, subset_list_name in subset_lists.items():
+                f.write(
+                    "%s = %s\n"
+                    % (subset_name, osp.join(self._prefix, subset_list_name).replace("\\", "/"))
+                )
+
+            f.write("names = %s\n" % osp.join(self._prefix, "obj.names"))
+            f.write("backup = backup/\n")
+
+
+# Override Datumaro's built-in classic YOLO exporter for CVAT exports.
+dm_env.exporters.register("yolo", CvatYoloExporter)
 
 
 def _export_common(
