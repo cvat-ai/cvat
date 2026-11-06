@@ -18,13 +18,12 @@ In addition, `annotations.json` is always saved.
 
 import argparse
 import json
-from datetime import timezone
+from datetime import datetime, timezone
 from http import HTTPStatus
 from pathlib import Path
 from typing import Any
 
 from config import ASSETS_DIR, get_method, get_paginated_collection
-from dateutil.parser import ParserError, parse
 
 
 def clean_list_response(data: dict[str, Any]) -> dict[str, Any]:
@@ -38,8 +37,8 @@ def clean_list_response(data: dict[str, Any]) -> dict[str, Any]:
                 continue
 
             try:
-                parsed_date = parse(v)
-            except ParserError:
+                parsed_date = datetime.fromisoformat(v)
+            except ValueError:
                 continue
 
             parsed_date = parsed_date.replace(

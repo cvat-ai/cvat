@@ -39,7 +39,6 @@ export interface SerializedModel {
     name?: string;
     labels_v2?: MLModelLabel[];
     supported_shape_types?: ShapeType[];
-    version?: number;
     description?: string;
     kind?: ModelKind;
     type?: string;

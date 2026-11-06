@@ -51,7 +51,11 @@ context('Audio annotation. Import transcriptions from a TSV file.', () => {
             cy.confirmUpdate('.cvat-modal-content-load-job-annotation');
             cy.get('.cvat-notification-notice-import-annotation-start').should('be.visible');
             cy.closeNotification('.cvat-notification-notice-import-annotation-start');
-            cy.wait('@uploadAnnotationsGet').its('response.statusCode').should('equal', 200);
+            // Sometimes import doesn't complete within standard 15sec timeout window.
+            // In this case the cleanup happens before the import is finished so
+            // once it's finished it persists stale intervals in the DB causing
+            // subsequent tests to fail (and possibly hang).
+            cy.wait('@uploadAnnotationsGet', { timeout: 60000 }).its('response.statusCode').should('equal', 200);
             cy.contains('Annotations have been loaded').should('be.visible');
             cy.closeNotification('.ant-notification-notice-info');
 

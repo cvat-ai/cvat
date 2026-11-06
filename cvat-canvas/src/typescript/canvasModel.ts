@@ -22,13 +22,6 @@ export interface Position {
     y: number;
 }
 
-export interface CanvasHint {
-    type: 'text' | 'list';
-    content: string | string[];
-    className?: string;
-    icon?: 'info' | 'loading';
-}
-
 export enum CanvasHistorySource {
     MASK = 'mask',
 }
@@ -170,7 +163,10 @@ export interface InteractionData {
         points_type?: 'any' | 'positive' | 'negative'; // default is any
         removalStrategy?: 'any' | 'last'; // default is any
         appendCursorPositionAsPoint?: boolean; // default is false
-        hint?: string;
+        hint?: {
+            markdown: string;
+            topic: string;
+        };
         regionOfInterest?: [number, number, number, number];
     };
 }
@@ -282,6 +278,7 @@ export enum Mode {
 }
 
 export interface CanvasModel {
+    readonly imageID: number | null;
     readonly imageBitmap: boolean;
     readonly imageIsDeleted: boolean;
     readonly image: Image | null;
@@ -884,13 +881,19 @@ export class CanvasModelImpl extends MasterImpl implements CanvasModel {
             throw Error('State must be specified when call edit() editing process');
         }
 
-        if (this.data.editData.enabled && editData.enabled &&
-            editData.state.clientID !== this.data.editData.state.clientID
-        ) {
-            throw Error('State cannot be updated during editing, need to finish current editing first');
-        }
-
         if (editData.enabled) {
+            const isSameObject = this.data.editData.enabled &&
+                editData.state.clientID === this.data.editData.state.clientID;
+            const hasUpdates = 'brushTool' in editData || 'onUpdateConfiguration' in editData || 'pointID' in editData;
+
+            if (isSameObject && !hasUpdates) {
+                return;
+            }
+
+            if (this.data.editData.enabled && !isSameObject) {
+                throw Error('State cannot be updated during editing, need to finish current editing first');
+            }
+
             this.data.editData = { ...editData };
         } else if (disableInternalSVGDrawing(editData, this.data.editData)) {
             this.notify(UpdateReasons.EDIT);
@@ -1178,6 +1181,10 @@ export class CanvasModelImpl extends MasterImpl implements CanvasModel {
 
     public get imageIsDeleted(): boolean {
         return this.data.imageIsDeleted;
+    }
+
+    public get imageID(): number | null {
+        return this.data.imageID;
     }
 
     public get image(): Image | null {

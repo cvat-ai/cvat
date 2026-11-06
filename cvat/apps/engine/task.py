@@ -202,6 +202,21 @@ def _generate_segment_params(
     return SegmentsParams(segments, segment_size, overlap, segments_count)
 
 
+def create_replica_jobs(parent_job: models.Job, count: int) -> list[models.Job]:
+    replica_jobs = []
+    for _ in range(count):
+        # replica jobs use the same segment as the parent job,
+        # thus data not duplicated in backups, exports
+        replica_job = models.Job(
+            segment=parent_job.segment, parent_job=parent_job, type=models.JobType.REPLICA
+        )
+        replica_job.save()
+        replica_job.make_dirs()
+        replica_jobs.append(replica_job)
+
+    return replica_jobs
+
+
 def _create_segments_and_jobs(
     db_task: models.Task,
     *,
@@ -217,7 +232,7 @@ def _create_segments_and_jobs(
     db_task.segment_size = segment_size
     db_task.overlap = overlap
 
-    job_count_total = segments_count * (db_task.consensus_replicas + 1)
+    job_count_total = segments_count * (db_task.initial_replicas + 1)
     if job_count_total > settings.MAX_JOBS_PER_TASK:
         raise ValueError(
             "Too many jobs would be created for the task. "
@@ -240,13 +255,7 @@ def _create_segments_and_jobs(
         db_job.save()
         db_job.make_dirs()
 
-        # consensus jobs use the same `db_segment` as the regular job, thus data not duplicated in backups, exports
-        for _ in range(db_task.consensus_replicas):
-            consensus_db_job = models.Job(
-                segment=db_segment, parent_job_id=db_job.id, type=models.JobType.CONSENSUS_REPLICA
-            )
-            consensus_db_job.save()
-            consensus_db_job.make_dirs()
+        create_replica_jobs(parent_job=db_job, count=db_task.initial_replicas)
 
     db_task.data.save()
     db_task.save()

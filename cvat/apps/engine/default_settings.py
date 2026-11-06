@@ -105,6 +105,8 @@ IMPORT_JOB_RETRY_INTERVALS = _parse_job_retry_intervals(
     env_var="CVAT_IMPORT_JOB_RETRY_INTERVALS", default=[10, 20, 30]
 )
 
+# The maximum number of replica jobs that a single merge request and
+# the deprecated `consensus_replicas` task parameter accept
 MAX_CONSENSUS_REPLICAS = int(os.getenv("CVAT_MAX_CONSENSUS_REPLICAS", 11))
 if MAX_CONSENSUS_REPLICAS < 1:
     raise ImproperlyConfigured(f"MAX_CONSENSUS_REPLICAS must be >= 1, got {MAX_CONSENSUS_REPLICAS}")

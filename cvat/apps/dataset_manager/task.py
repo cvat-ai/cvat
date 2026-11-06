@@ -1029,7 +1029,7 @@ class TaskAnnotation:
         ).get(id=pk)
         self._write_only = write_only
 
-        # TODO: maybe include consensus jobs except for task export
+        # TODO: maybe include replica jobs except for task export
         requested_job_types = [models.JobType.ANNOTATION]
         if self.db_task.data.validation_mode == models.ValidationMode.GT_POOL:
             requested_job_types.append(models.JobType.GROUND_TRUTH)

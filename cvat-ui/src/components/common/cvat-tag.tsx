@@ -7,7 +7,6 @@ import Tag from 'antd/lib/tag';
 
 export enum TagType {
     GROUND_TRUTH = 'ground_truth',
-    CONSENSUS = 'consensus',
     PARENT = 'parent',
     REPLICA = 'replica',
 }
@@ -22,8 +21,6 @@ function CVATTag(props: TagProps): JSX.Element | null {
     switch (type) {
         case TagType.GROUND_TRUTH:
             return <Tag className='cvat-tag-ground-truth' color='#ED9C00'>Ground truth</Tag>;
-        case TagType.CONSENSUS:
-            return <Tag className='cvat-tag-consensus' color='#1890FF'>Consensus</Tag>;
         case TagType.PARENT:
             return <Tag className='cvat-tag-parent' color='#1890FF'>Parent</Tag>;
         case TagType.REPLICA:

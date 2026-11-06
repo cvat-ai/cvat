@@ -166,6 +166,14 @@ export interface JobsState {
             [tid: number]: boolean;
         };
     };
+    addReplicas: {
+        modalVisible: boolean;
+        jobs: Job[];
+    };
+    distributeJobs: {
+        modalVisible: boolean;
+        jobs: Job[];
+    };
 }
 
 export interface TasksState {
@@ -574,11 +582,6 @@ export interface ModelsQuery {
 
 export type OpenCVTool = IntelligentScissors | OpenCVTracker;
 
-export interface ToolsBlockerState {
-    algorithmsLocked?: boolean;
-    buttonVisible?: boolean;
-}
-
 export interface ActiveInference {
     status: RQStatus;
     progress: number;
@@ -632,6 +635,7 @@ export interface BulkOperationsErrorState extends ErrorState {
         items: any[];
         operation: (item: any, idx: number, total: number) => Promise<void>;
         statusMessage: (item: any, idx: number, total: number) => string;
+        onSuccess?: () => void;
     };
 }
 
@@ -1098,7 +1102,6 @@ export interface WorkspaceSettingsState {
     showAllInterpolationTracks: boolean;
     intelligentPolygonCrop: boolean;
     defaultApproxPolyAccuracy: number;
-    toolsBlockerState: ToolsBlockerState;
     textFontSize: number;
     controlPointsSize: number;
     textPosition: 'auto' | 'center';
