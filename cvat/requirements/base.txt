@@ -98,7 +98,7 @@ django-rq==2.10.3
     # via -r cvat/requirements/base.in
 django-sendfile2==0.7.2
     # via -r cvat/requirements/base.in
-djangorestframework==3.17.1
+djangorestframework==3.18.3
     # via
     #   -r cvat/requirements/base.in
     #   dj-rest-auth
