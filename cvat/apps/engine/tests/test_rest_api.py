@@ -4036,12 +4036,17 @@ class TaskImportExportAPITestCase(ExportApiTestBase, ImportApiTestBase):
                         self.assertEqual(response.status_code, status.HTTP_200_OK)
                         self.assertEqual(
                             {
-                                related_image["name"]: {
-                                    "intrinsic_matrix": related_image["intrinsic_matrix"],
-                                    "extrinsic_matrix": related_image["extrinsic_matrix"],
+                                related_file_metadata["name"]: {
+                                    "intrinsic_matrix": related_file_metadata["intrinsic_matrix"],
+                                    "extrinsic_matrix": related_file_metadata["extrinsic_matrix"],
                                 }
                                 for frame in response.data["frames"]
-                                for related_image in frame.get("related_images", [])
+                                for related_file_metadata in frame.get("related_files_metadata", [])
+                                if (
+                                    related_file_metadata["type"] == "related_image"
+                                    and "intrinsic_matrix" in related_file_metadata
+                                    and "extrinsic_matrix" in related_file_metadata
+                                )
                             },
                             expected_job_calibrations,
                         )
