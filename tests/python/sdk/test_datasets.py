@@ -3,11 +3,14 @@
 # SPDX-License-Identifier: MIT
 
 import io
+import math
 import tempfile
 import threading
 from logging import Logger
 from pathlib import Path
 
+import av
+import cvat_mp4_h264
 import cvat_sdk.datasets as cvatds
 import PIL.Image
 import pytest
@@ -18,6 +21,36 @@ from cvat_sdk.core.proxies.tasks import ResourceType
 from shared.utils.helpers import generate_image_files
 
 from .util import restrict_api_requests
+
+
+def _decode_with_ffmpeg(chunk: io.BytesIO) -> list[PIL.Image.Image]:
+    """
+    Decode a video chunk with FFmpeg into RGB images.
+
+    Only the decoding is FFmpeg's: the YUV-to-RGB conversion is cvat_mp4_h264's own, because
+    FFmpeg's chroma upsampling differs from it by up to ~120 levels on sharp colour edges.
+    """
+
+    images = []
+    with av.open(chunk) as container:
+        for frame in container.decode(video=0):
+            yuv = frame.to_ndarray(format="yuv420p")
+            width, height = frame.width, frame.height
+            chroma_size = (height // 2, width // 2)
+            planes = (
+                yuv[:height],
+                yuv[height : height + height // 4].reshape(chroma_size),
+                yuv[height + height // 4 :].reshape(chroma_size),
+            )
+            images.append(
+                cvat_mp4_h264.VideoFrame(
+                    width=width,
+                    height=height,
+                    planes=tuple(PIL.Image.fromarray(plane) for plane in planes),
+                ).to_image()
+            )
+
+    return images
 
 
 @pytest.fixture(autouse=True)
@@ -396,3 +429,44 @@ class TestTaskDataset:
                 )
 
         assert all((chunk_dir / f"{chunk_index}.zip").exists() for chunk_index in range(4))
+
+    @pytest.mark.parametrize(
+        "media_download_policy",
+        [
+            cvatds.MediaDownloadPolicy.PRELOAD_ALL,
+            cvatds.MediaDownloadPolicy.FETCH_CHUNKS_ON_DEMAND,
+        ],
+    )
+    def test_video_task(self, media_download_policy: cvatds.MediaDownloadPolicy):
+        video_task = self.client.tasks.create_from_data(
+            models.TaskWriteRequest(
+                "Dataset layer video task",
+                labels=[models.PatchedLabelRequest(name="car")],
+            ),
+            resource_type=ResourceType.LOCAL,
+            resources=[Path(__file__).parent / "assets" / "video_task" / "video.mp4"],
+            # 7 frames give chunks of 3, 3 and 1 frames
+            data_params={"chunk_size": 3},
+        )
+
+        dataset = cvatds.TaskDataset(
+            self.client,
+            video_task.id,
+            load_annotations=False,
+            media_download_policy=media_download_policy,
+        )
+
+        # The server encodes the chunks itself, and its output is not reproducible across
+        # environments, so the expected frames come from FFmpeg decoding the same chunks.
+        expected_images = []
+        for chunk_index in range(math.ceil(video_task.size / video_task.data_chunk_size)):
+            chunk = io.BytesIO()
+            video_task.download_chunk(chunk_index, chunk, quality="original")
+            chunk.seek(0)
+            expected_images.extend(_decode_with_ffmpeg(chunk=chunk))
+
+        assert len(dataset.samples) == len(expected_images) == video_task.size == 7
+
+        for index, sample in enumerate(dataset.samples):
+            assert sample.frame_index == index
+            assert sample.media.load_image() == expected_images[index]
