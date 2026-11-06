@@ -275,6 +275,7 @@ export interface SerializedQualityConflictData {
     report_id: number;
     severity: string;
     attribute_names: string[];
+    requirements?: { id: number; name: string }[];
 }
 
 export interface SerializedQualityReportData {
