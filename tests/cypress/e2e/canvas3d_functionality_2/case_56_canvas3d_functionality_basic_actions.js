@@ -5,8 +5,6 @@
 
 /// <reference types="cypress" />
 
-/* eslint-disable cypress/no-unnecessary-waiting */
-
 import { taskName } from '../../support/const_canvas3d';
 
 // Firefox does not yet support WebGL in headless mode:
@@ -135,7 +133,7 @@ context('Canvas 3D functionality. Basic actions.', () => {
             cy.get('.cvat-canvas-controls-sidebar')
                 .find('[role="img"]')
                 .then(($controlButtons) => {
-                    expect($controlButtons.length).to.be.equal(6);
+                    expect($controlButtons.length).to.be.equal(7);
                 });
             cy.get('.cvat-canvas-controls-sidebar')
                 .should('exist')

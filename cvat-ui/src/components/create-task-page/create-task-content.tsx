@@ -101,6 +101,7 @@ const defaultState: State = {
 const UploadFileErrorMessages = {
     one: 'Wrong list of files. You can upload an archive with images, a video, a pdf file or multiple images. ',
     multi: 'Wrong list of files. You can upload one or more videos. ',
+    jsonOnly: 'JSON files cannot be the only files in the selection. ',
 };
 
 const UploadFileHints = {
@@ -129,16 +130,20 @@ function checkFiles(files: RemoteFile[], type: SupportedShareTypes, baseError: s
 function validateRemoteFiles(remoteFiles: RemoteFile[], many: boolean): string {
     let uploadFileErrorMessage = '';
     const regFiles = remoteFiles.filter((file) => file.type === 'REG');
-    const excludedManifests = regFiles.filter((file) => !file.key.endsWith('.jsonl'));
-    if (!many && excludedManifests.length > 1) {
+    const nonManifests = regFiles.filter((file) => !file.key.endsWith('.jsonl'));
+    const nonManifestsOrJSONFiles = nonManifests.filter((file) => !file.key.endsWith('.json'));
+
+    if (!nonManifestsOrJSONFiles.length && nonManifests.length) {
+        uploadFileErrorMessage = UploadFileErrorMessages.jsonOnly;
+    } else if (!many && nonManifestsOrJSONFiles.length > 1) {
         uploadFileErrorMessage = checkFiles(
-            excludedManifests,
+            nonManifestsOrJSONFiles,
             SupportedShareTypes.IMAGE,
             UploadFileErrorMessages.one,
         );
     } else if (many) {
         uploadFileErrorMessage = checkFiles(
-            regFiles,
+            nonManifestsOrJSONFiles,
             SupportedShareTypes.VIDEO,
             UploadFileErrorMessages.multi,
         );

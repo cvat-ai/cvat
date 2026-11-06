@@ -6,6 +6,7 @@
 
 import copy
 import itertools
+import json
 import os.path as osp
 import tempfile
 import xml.etree.ElementTree as ET
@@ -171,7 +172,14 @@ class _DbTestBase(ExportApiTestBase, ImportApiTestBase):
         self.assertEqual(response.status_code, status.HTTP_204_NO_CONTENT)
         return response
 
-    def _check_dump_content(self, content, task_data, format_name, related_files=True):
+    def _check_dump_content(
+        self,
+        content,
+        task_data,
+        format_name,
+        related_files=True,
+        expected_related_image_calibrations=None,
+    ):
         def etree_to_dict(t):
             d = {t.tag: {} if t.attrib else None}
             children = list(t)
@@ -241,6 +249,13 @@ class _DbTestBase(ExportApiTestBase, ImportApiTestBase):
                 jsons = glob(osp.join(tmp_dir, "**", "*.json"), recursive=True)
                 self.assertTrue(jsons)
                 self.assertTrue(set(checking_files).issubset(set(jsons)))
+
+                if expected_related_image_calibrations:
+                    for path, calibration in expected_related_image_calibrations.items():
+                        with open(osp.join(tmp_dir, path)) as sidecar_file:
+                            sensors_data = json.load(sidecar_file)["meta"]["sensorsData"]
+
+                        self.assertEqual(sensors_data, calibration)
 
 
 class Task3DTest(_DbTestBase):
@@ -746,6 +761,13 @@ class Task3DTest(_DbTestBase):
 
     def test_api_v2_export_dataset(self):
         with TestDir() as test_dir:
+            calibration = {
+                "intrinsicMatrix": [721.5, 0, 609.6, 0, 721.5, 172.9, 0, 0, 1],
+                "extrinsicMatrix": [1, 0, 0, 0.2, 0, 1, 0, 0, 0, 0, 1, 1.7],
+            }
+            expected_sly_related_image_calibrations = {
+                "ds0/related_images/000001_pcd/000001.png.json": calibration,
+            }
             task_data = self.copy_pcd_file_and_get_task_data(test_dir)
             task = self._create_task(self.task, task_data)
             task_id = task["id"]
@@ -774,6 +796,10 @@ class Task3DTest(_DbTestBase):
                         if bool(user):
                             with open(file_name, "rb") as f:
                                 self._check_dump_content(
-                                    f, task_ann_prev.data, format_name, related_files=False
+                                    f,
+                                    task_ann_prev.data,
+                                    format_name,
+                                    related_files=False,
+                                    expected_related_image_calibrations=expected_sly_related_image_calibrations,
                                 )
                         self.assertEqual(osp.exists(file_name), edata["file_exists"])

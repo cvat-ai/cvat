@@ -94,7 +94,7 @@ def main():
         while re.search(r"[*?\[\]]", os.fspath(abs_root)):
             abs_root = abs_root.parent
 
-        scene_paths, related_images = find_related_images(
+        scene_paths, related_images, _ = find_related_images(
             sources,
             root_path=abs_root,
             # backward compatibility, deprecated in https://github.com/cvat-ai/cvat/pull/9757

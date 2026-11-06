@@ -2838,6 +2838,19 @@ class JobViewSet(
                 "related_files": (
                     item.related_files.count() if hasattr(item, "related_files") else 0
                 ),
+                **(
+                    {
+                        "related_files_metadata": [
+                            related_file
+                            for related_file in sorted(
+                                item.related_files.all(),
+                                key=lambda related_file: related_file.path,
+                            )
+                        ],
+                    }
+                    if hasattr(item, "related_files")
+                    else {}
+                ),
                 **serialize_media_item(item),
             }
             for item in media

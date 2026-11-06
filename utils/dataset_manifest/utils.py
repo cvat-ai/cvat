@@ -4,15 +4,19 @@
 
 import hashlib
 import io
+import json
+import math
 import mimetypes
 import os
 import re
 import struct
 from collections.abc import Callable, Iterable, Sequence
+from dataclasses import dataclass
 from enum import Enum
+from functools import partial
 from pathlib import Path, PurePath
 from random import shuffle
-from typing import IO, Literal, Protocol, TypeVar
+from typing import IO, Any, Literal, Protocol, TypeAlias, TypeVar
 
 import cv2 as cv
 import numpy as np
@@ -20,7 +24,7 @@ from av import VideoFrame
 from natsort import os_sorted
 from PIL import Image
 
-from .errors import InvalidPcdError
+from .errors import InvalidPcdError, InvalidRelatedImageMetadataError
 
 
 class Openable(Protocol):
@@ -107,6 +111,320 @@ def is_point_cloud(media_file: PurePath) -> bool:
 
 
 _AnyPath = TypeVar("_AnyPath", bound=PurePath)
+_IMAGE_METADATA_FORMAT = "cvat-image-meta"
+_IMAGE_METADATA_VERSION = 1
+_CAMERA_ROTATION_TOLERANCE = 1e-5
+RELATED_IMAGE_METADATA_MANIFEST_KEY = "related_image_metadata"
+
+
+@dataclass(frozen=True)
+class RelatedImageMetadata:
+    # A row-major 3x3 camera intrinsic matrix (9 elements).
+    intrinsic_matrix: list[float]
+
+    # A row-major 3x4 camera extrinsic matrix (12 elements).
+    extrinsic_matrix: list[float]
+
+
+OpenableGetter: TypeAlias = Callable[[PurePath], NamedOpenable | None]
+"""
+Maps a path to an openable source.
+
+Must return a ``NamedOpenable`` when the path is available in the selected input data, or ``None`` when
+the optional source is absent.
+"""
+
+RelatedImageMetadataLoader: TypeAlias = Callable[[OpenableGetter], RelatedImageMetadata | None]
+"""
+Loads the native calibration candidate for one related image.
+
+The loader owns the format-specific candidate path and obtains its contents through an
+``OpenableGetter``. It returns ``None`` when the candidate is absent or does not declare
+calibration, and raises ``InvalidRelatedImageMetadataError`` for malformed metadata.
+"""
+
+
+def _parse_calibration_matrix(
+    matrix: object,
+    *,
+    name: str,
+    rows: int,
+    columns: int,
+    sidecar_path: Path,
+) -> list[float]:
+    if not isinstance(matrix, list) or len(matrix) != rows:
+        raise InvalidRelatedImageMetadataError(
+            sidecar_path,
+            f"'{name}' must be a {rows}x{columns} matrix",
+        )
+
+    flattened_matrix: list[float] = []
+    for row in matrix:
+        if not isinstance(row, list) or len(row) != columns:
+            raise InvalidRelatedImageMetadataError(
+                sidecar_path,
+                f"'{name}' must be a {rows}x{columns} matrix",
+            )
+
+        for value in row:
+            if isinstance(value, bool) or not isinstance(value, int | float):
+                raise InvalidRelatedImageMetadataError(
+                    sidecar_path,
+                    f"'{name}' must contain only finite numbers",
+                )
+
+            try:
+                float_value = float(value)
+            except OverflowError:
+                raise InvalidRelatedImageMetadataError(
+                    sidecar_path,
+                    f"'{name}' must contain only finite numbers",
+                )
+
+            if not math.isfinite(float_value):
+                raise InvalidRelatedImageMetadataError(
+                    sidecar_path,
+                    f"'{name}' must contain only finite numbers",
+                )
+
+            flattened_matrix.append(float_value)
+
+    return flattened_matrix
+
+
+def _parse_flattened_calibration_matrix(
+    matrix: object,
+    *,
+    name: str,
+    rows: int,
+    columns: int,
+    sidecar_path: Path,
+) -> list[float]:
+    if not isinstance(matrix, list) or len(matrix) != rows * columns:
+        raise InvalidRelatedImageMetadataError(
+            sidecar_path,
+            f"'{name}' must be a flattened {rows}x{columns} matrix",
+        )
+
+    return _parse_calibration_matrix(
+        [matrix[row * columns : (row + 1) * columns] for row in range(rows)],
+        name=name,
+        rows=rows,
+        columns=columns,
+        sidecar_path=sidecar_path,
+    )
+
+
+def _validate_related_image_metadata(
+    intrinsic_matrix: list[float],
+    extrinsic_matrix: list[float],
+    *,
+    intrinsic_matrix_name: str,
+    extrinsic_matrix_name: str,
+    sidecar_path: Path,
+) -> RelatedImageMetadata:
+    try:
+        np.linalg.inv(np.asarray(intrinsic_matrix).reshape(3, 3))
+    except np.linalg.LinAlgError:
+        raise InvalidRelatedImageMetadataError(
+            sidecar_path,
+            f"'{intrinsic_matrix_name}' must be invertible",
+        )
+
+    rotation = np.asarray(extrinsic_matrix).reshape(3, 4)[:, :3]
+    # check orthogonality
+    if not np.allclose(
+        rotation.T @ rotation,
+        np.identity(3),
+        atol=_CAMERA_ROTATION_TOLERANCE,
+        rtol=0,
+    ) or not np.isclose(  # exclude mirror/reflection matrices
+        np.linalg.det(rotation),
+        1,
+        atol=_CAMERA_ROTATION_TOLERANCE,
+        rtol=0,
+    ):
+        raise InvalidRelatedImageMetadataError(
+            sidecar_path,
+            f"'{extrinsic_matrix_name}' must contain a rigid rotation and translation",
+        )
+    # any finite translation is valid and we already checked it
+
+    return RelatedImageMetadata(
+        intrinsic_matrix=intrinsic_matrix,
+        extrinsic_matrix=extrinsic_matrix,
+    )
+
+
+def serialize_related_image_metadata(metadata: RelatedImageMetadata) -> dict[str, list[float]]:
+    return {
+        "intrinsic_matrix": metadata.intrinsic_matrix,
+        "extrinsic_matrix": metadata.extrinsic_matrix,
+    }
+
+
+def load_related_image_metadata_from_manifest(
+    metadata: Any,
+    *,
+    manifest_path: PurePath,
+) -> RelatedImageMetadata:
+    if not isinstance(metadata, dict):
+        raise InvalidRelatedImageMetadataError(
+            manifest_path, "the related image metadata entry in the manifest must be an object"
+        )
+
+    intrinsic_matrix = _parse_flattened_calibration_matrix(
+        metadata.get("intrinsic_matrix"),
+        name="intrinsic_matrix",
+        rows=3,
+        columns=3,
+        sidecar_path=manifest_path,
+    )
+    extrinsic_matrix = _parse_flattened_calibration_matrix(
+        metadata.get("extrinsic_matrix"),
+        name="extrinsic_matrix",
+        rows=3,
+        columns=4,
+        sidecar_path=manifest_path,
+    )
+
+    return _validate_related_image_metadata(
+        intrinsic_matrix,
+        extrinsic_matrix,
+        intrinsic_matrix_name="intrinsic_matrix",
+        extrinsic_matrix_name="extrinsic_matrix",
+        sidecar_path=manifest_path,
+    )
+
+
+def _load_related_image_json_sidecar(
+    sidecar_path: PurePath,
+    openable_getter: OpenableGetter,
+) -> dict[str, Any] | None:
+    try:
+        sidecar = openable_getter(sidecar_path)
+        if sidecar is None:
+            return None
+
+        with sidecar.open("rb") as sidecar_file:
+            sidecar_data = json.load(sidecar_file)
+    except Exception as exc:
+        # The openable can access a cloud provider. Its exceptions may disclose implementation
+        # details such as a bucket name or request ID, so do not expose their messages to users.
+        raise InvalidRelatedImageMetadataError(
+            sidecar_path, "could not read or parse JSON"
+        ) from exc
+
+    if not isinstance(sidecar_data, dict):
+        raise InvalidRelatedImageMetadataError(sidecar_path, "the root value must be an object")
+
+    return sidecar_data
+
+
+def _load_standard_related_image_metadata(
+    sidecar_path: PurePath,
+    openable_getter: OpenableGetter,
+) -> RelatedImageMetadata | None:
+    sidecar = _load_related_image_json_sidecar(sidecar_path, openable_getter)
+    if sidecar is None:
+        return None
+
+    # replace with jsonschema validation if the schema grows more complex
+    if sidecar.get("format") != _IMAGE_METADATA_FORMAT:
+        raise InvalidRelatedImageMetadataError(
+            sidecar_path,
+            f"Unrecognized format; must be '{_IMAGE_METADATA_FORMAT}'",
+        )
+
+    version = sidecar.get("version")
+    if (
+        isinstance(version, bool)
+        or not isinstance(version, int)
+        or version != _IMAGE_METADATA_VERSION
+    ):
+        raise InvalidRelatedImageMetadataError(
+            sidecar_path,
+            f"Unexpected format version; must be {_IMAGE_METADATA_VERSION}",
+        )
+
+    camera = sidecar.get("camera")
+    if not isinstance(camera, dict):
+        raise InvalidRelatedImageMetadataError(
+            sidecar_path, "Unexpected structure; 'camera' must be an object"
+        )
+
+    intrinsic_matrix = _parse_calibration_matrix(
+        camera.get("intrinsic_matrix"),
+        name="camera.intrinsic_matrix",
+        rows=3,
+        columns=3,
+        sidecar_path=sidecar_path,
+    )
+    extrinsic_matrix = _parse_calibration_matrix(
+        sidecar.get("extrinsic_matrix"),
+        name="extrinsic_matrix",
+        rows=3,
+        columns=4,
+        sidecar_path=sidecar_path,
+    )
+
+    return _validate_related_image_metadata(
+        intrinsic_matrix,
+        extrinsic_matrix,
+        intrinsic_matrix_name="camera.intrinsic_matrix",
+        extrinsic_matrix_name="extrinsic_matrix",
+        sidecar_path=sidecar_path,
+    )
+
+
+def _load_sly_related_image_metadata(
+    sidecar_path: PurePath,
+    openable_getter: OpenableGetter,
+) -> RelatedImageMetadata | None:
+    sidecar = _load_related_image_json_sidecar(sidecar_path, openable_getter)
+    if sidecar is None:
+        return None
+
+    meta = sidecar.get("meta")
+    if meta is None:
+        return None
+    if not isinstance(meta, dict):
+        raise InvalidRelatedImageMetadataError(
+            sidecar_path, "Unexpected structure; 'meta' must be an object"
+        )
+
+    sensors_data = meta.get("sensorsData")
+    if sensors_data is None:
+        return None
+    if not isinstance(sensors_data, dict):
+        raise InvalidRelatedImageMetadataError(
+            sidecar_path, "Unexpected structure; 'meta.sensorsData' must be an object"
+        )
+
+    intrinsic_matrix = _parse_flattened_calibration_matrix(
+        sensors_data.get("intrinsicMatrix"),
+        name="meta.sensorsData.intrinsicMatrix",
+        rows=3,
+        columns=3,
+        sidecar_path=sidecar_path,
+    )
+    extrinsic_matrix = _parse_flattened_calibration_matrix(
+        sensors_data.get("extrinsicMatrix"),
+        name="meta.sensorsData.extrinsicMatrix",
+        rows=3,
+        columns=4,
+        sidecar_path=sidecar_path,
+    )
+
+    # Supervisely uses World->Camera extrinsic matrix. Its point cloud is expressed
+    # as World, which is CVAT's LiDAR space. So matrices map directly.
+    return _validate_related_image_metadata(
+        intrinsic_matrix,
+        extrinsic_matrix,
+        intrinsic_matrix_name="meta.sensorsData.intrinsicMatrix",
+        extrinsic_matrix_name="meta.sensorsData.extrinsicMatrix",
+        sidecar_path=sidecar_path,
+    )
 
 
 def _prepare_context_list(files: Iterable[_AnyPath], base_dir: _AnyPath | None = None):
@@ -115,11 +433,29 @@ def _prepare_context_list(files: Iterable[_AnyPath], base_dir: _AnyPath | None =
     )
 
 
+def _filter_related_image_metadata(
+    related_images: dict[_AnyPath, list[_AnyPath]],
+    related_image_metadata: dict[_AnyPath, RelatedImageMetadataLoader],
+) -> dict[_AnyPath, RelatedImageMetadataLoader]:
+    related_image_paths = {
+        image_path for image_paths in related_images.values() for image_path in image_paths
+    }
+    return {
+        image_path: metadata
+        for image_path, metadata in related_image_metadata.items()
+        if image_path in related_image_paths
+    }
+
+
 def _find_related_images_2D(
     dataset_paths: Sequence[_AnyPath],
     *,
     is_scene_path: Callable[[_AnyPath], bool] | None = None,
-) -> tuple[set[_AnyPath], dict[_AnyPath, list[_AnyPath]]]:
+) -> tuple[
+    set[_AnyPath],
+    dict[_AnyPath, list[_AnyPath]],
+    dict[_AnyPath, RelatedImageMetadataLoader],
+]:
     """
     Expected 2D format is:
 
@@ -149,13 +485,17 @@ def _find_related_images_2D(
     }
 
     # TODO: maybe add logging for unmatched related images
-
-    return regular_images, related_images
+    # TODO: Support metadata for images related to 2D scenes
+    return regular_images, related_images, {}
 
 
 def _find_related_images_3D(
     dataset_paths: Sequence[_AnyPath],
-) -> tuple[set[_AnyPath], dict[_AnyPath, list[_AnyPath]]]:
+) -> tuple[
+    set[_AnyPath],
+    dict[_AnyPath, list[_AnyPath]],
+    dict[_AnyPath, RelatedImageMetadataLoader],
+]:
     """
     Supported 3D formats:
 
@@ -183,12 +523,14 @@ def _find_related_images_3D(
         related_images/
             <pcd name>_pcd/
                 <any image name>.<image ext>
+                <any image name>.<image ext>.json  # calibration sidecar
 
     3. Custom 1
     Layout:
     dataset/
         <scene name>.pcd
         <scene name>.<image ext>
+        <scene name>.<image ext>.json  # optional calibration sidecar
 
     4. Custom 2
     Layout:
@@ -196,6 +538,7 @@ def _find_related_images_3D(
        <pcd name>/
            <pcd name>.pcd
            <any image name>.<image ext>
+           <any image name>.<image ext>.json  # optional calibration sidecar
     """
     # There's no point in disallowing multiple layouts simultaneously, but mixing is
     # unlikely to be encountered
@@ -205,6 +548,7 @@ def _find_related_images_3D(
     }  # { scene name -> scene path }
 
     related_images: dict[_AnyPath, list[_AnyPath]] = {}  # { scene_name -> [related images] }
+    related_image_metadata: dict[_AnyPath, RelatedImageMetadataLoader] = {}
     for image_path in dataset_paths:
         image_name = image_path.with_suffix("")
         if image_path.suffix.lower() in (".pcd", ".bin"):
@@ -213,6 +557,10 @@ def _find_related_images_3D(
         if image_name in scenes:
             # Custom 1
             related_images.setdefault(scenes[image_name], []).append(image_path)
+            related_image_metadata[image_path] = partial(
+                _load_standard_related_image_metadata,
+                image_path.parent / f"{image_path.name}.json",
+            )
             continue
 
         parents = image_path.parents
@@ -224,6 +572,10 @@ def _find_related_images_3D(
         if parents and scene_name in scenes:
             # Custom 2
             related_images.setdefault(scenes[scene_name], []).append(image_path)
+            related_image_metadata[image_path] = partial(
+                _load_standard_related_image_metadata,
+                image_path.parent / f"{image_path.name}.json",
+            )
             continue
 
         scene_stem = parents[0].name.rsplit("_", maxsplit=1)[0]
@@ -235,6 +587,10 @@ def _find_related_images_3D(
         ):
             # Supervisely Point Cloud
             related_images.setdefault(scenes[scene_name], []).append(image_path)
+            related_image_metadata[image_path] = partial(
+                _load_sly_related_image_metadata,
+                image_path.parent / f"{image_path.name}.json",
+            )
             continue
 
         if (
@@ -246,6 +602,7 @@ def _find_related_images_3D(
         ):
             # KITTI RAW
             related_images.setdefault(scenes[scene_name], []).append(image_path)
+            # No calibration data present in the raw format archive
             continue
 
         # TODO: maybe add logging for unmatched related images
@@ -255,8 +612,12 @@ def _find_related_images_3D(
         for scene_path, scene_related in related_images.items()
         if scene_related
     }
+    related_image_metadata = _filter_related_image_metadata(
+        related_images,
+        related_image_metadata,
+    )
 
-    return set(scenes.values()), related_images
+    return set(scenes.values()), related_images, related_image_metadata
 
 
 def find_related_images(
@@ -264,7 +625,11 @@ def find_related_images(
     *,
     root_path: _AnyPath | None = None,
     is_scene_path: Callable[[_AnyPath], bool] | None = None,
-) -> tuple[set[_AnyPath], dict[_AnyPath, list[_AnyPath]]]:
+) -> tuple[
+    set[_AnyPath],
+    dict[_AnyPath, list[_AnyPath]],
+    dict[_AnyPath, RelatedImageMetadataLoader],
+]:
     """
     Finds related images for scenes in the dataset.
 
@@ -273,9 +638,10 @@ def find_related_images(
     :param is_scene_path: Optional. If specified, the results will only include scenes
         matching this function.
 
-    Returns: a 2-tuple (scene paths, related_images)
+    Returns: a 3-tuple (scene paths, related_images, related_image_metadata)
         scene_paths - a list of scene paths found;
         related_images - a dict {scene path -> [related image paths]}
+        related_image_metadata - a dict {related image path -> calibration candidate loader}
     """
 
     if root_path:
@@ -305,7 +671,7 @@ def find_related_images(
 
     if has_pcd:
         # get all found scenes and RIs to avoid complaining about excluded scenes
-        scenes, related_images = _find_related_images_3D(dataset_paths)
+        scenes, related_images, related_image_metadata = _find_related_images_3D(dataset_paths)
 
         unknown_files = set(dataset_paths)
         unknown_files.difference_update(scenes)
@@ -335,10 +701,17 @@ def find_related_images(
             related_images = {
                 scene: scene_ris for scene, scene_ris in related_images.items() if scene in scenes
             }
+            related_image_metadata = _filter_related_image_metadata(
+                related_images,
+                related_image_metadata,
+            )
     else:
-        scenes, related_images = _find_related_images_2D(dataset_paths, is_scene_path=is_scene_path)
+        scenes, related_images, related_image_metadata = _find_related_images_2D(
+            dataset_paths,
+            is_scene_path=is_scene_path,
+        )
 
-    return scenes, related_images
+    return scenes, related_images, related_image_metadata
 
 
 class MediaDimension(str, Enum):
