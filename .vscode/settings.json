@@ -19,6 +19,9 @@
     ],
     "npm.exclude": "**/.env/**",
     "files.trimTrailingWhitespace": true,
+    "[python]": {
+        "editor.rulers": [100]
+    },
     "python.analysis.exclude": [
         // VS Code defaults
         "**/node_modules",
