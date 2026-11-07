@@ -15,3 +15,14 @@ class UserGrowthData(models.Model):
     github_prompt_shown_at = models.DateTimeField(null=True, blank=True)
     github_prompt_support_clicked = models.BooleanField(default=False)
     promotion_notifications_allowed = models.BooleanField(default=True)
+    last_seen_release_notes_version = models.CharField(max_length=64, null=True, blank=True)
+    last_seen_announcements_date = models.DateTimeField(null=True, blank=True)
+
+    @classmethod
+    def for_user(cls, user):
+        """Return shared user state, initializing it for accounts without a record."""
+        growth_data, _ = cls.objects.get_or_create(
+            user=user,
+            defaults={"github_prompt_shown_at": user.date_joined},
+        )
+        return growth_data

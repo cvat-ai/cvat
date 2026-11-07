@@ -1,0 +1,41 @@
+{{- /* One availability declaration drives the docs label and in-app filtering. */ -}}
+{{- $title := .Get "title" -}}
+{{- $raw := .Get "editions" -}}
+{{- if not $title -}}
+  {{- errorf "release-section needs a title: %s" .Position -}}
+{{- end -}}
+{{- if not $raw -}}
+  {{- errorf "release-section needs editions: %s" .Position -}}
+{{- end -}}
+{{- if eq (trim .Inner " \t\r\n") "" -}}
+  {{- errorf "release-section needs content: %s" .Position -}}
+{{- end -}}
+{{- with .Parent -}}
+  {{- if eq .Name "release-section" -}}
+    {{- errorf "release-section blocks cannot be nested: %s" .Position -}}
+  {{- end -}}
+{{- end -}}
+{{- $editions := slice -}}
+{{- $labels := slice -}}
+{{- if eq $raw "all" -}}
+  {{- $editions = slice "community" "enterprise" "saas" -}}
+  {{- $labels = slice "All editions" -}}
+{{- else -}}
+  {{- range split $raw "," -}}
+    {{- $edition := trim . " \t\r\n" -}}
+    {{- if not (in (slice "community" "enterprise" "saas") $edition) -}}
+      {{- errorf "Unknown release-section edition: %s" $edition -}}
+    {{- end -}}
+    {{- if in $editions $edition -}}
+      {{- errorf "Duplicate release-section edition: %s" $edition -}}
+    {{- end -}}
+    {{- $editions = $editions | append $edition -}}
+    {{- $label := index (dict "community" "Community" "enterprise" "Enterprise" "saas" "CVAT Online") $edition -}}
+    {{- $labels = $labels | append $label -}}
+  {{- end -}}
+{{- end -}}
+<section data-cvat-editions="{{ delimit $editions "," }}">
+  <h2>{{ $title }}</h2>
+  <p data-cvat-availability="true"><strong>Available in:</strong> {{ delimit $labels ", " }}</p>
+  {{ .Page.RenderString (dict "display" "block") .Inner }}
+</section>

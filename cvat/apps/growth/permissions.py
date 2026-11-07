@@ -45,3 +45,19 @@ class UserGrowthDataPermission(OpenPolicyAgentPermission):
             }
 
         return None
+
+
+class UpdatesPermission(UserGrowthDataPermission):
+    """Reuse the growth policy for read/write access to the current user's state."""
+
+    @classmethod
+    def _get_scopes(cls, request, view, obj):
+        scopes = {
+            "list": cls.Scopes.VIEW,
+            "content": cls.Scopes.VIEW,
+            "acknowledge": cls.Scopes.UPDATE,
+        }
+        return [scopes[view.action]]
+
+    def get_resource(self):
+        return {"user": {"id": self.user_id}}

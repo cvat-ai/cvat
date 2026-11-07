@@ -4,6 +4,157 @@
 
 @import 'cookie-consent';
 
+.cvat-release-notes-page {
+    max-width: 1080px;
+    padding-top: 2rem;
+    padding-bottom: 3rem;
+
+    @include media-breakpoint-up(md) {
+        padding-top: calc(var(--td-header-height, 4rem) + 2rem);
+    }
+}
+
+.cvat-updates-page {
+    max-width: 1280px;
+}
+
+.cvat-updates-layout {
+    display: grid;
+    grid-template-columns: minmax(0, 1fr) 260px;
+    grid-template-areas: "content toc";
+    align-items: start;
+    gap: 3rem;
+}
+
+.cvat-updates-content {
+    grid-area: content;
+    min-width: 0;
+}
+
+.cvat-updates-month,
+.cvat-updates-entry {
+    scroll-margin-top: calc(var(--td-header-height, 4rem) + 1.5rem);
+}
+
+.cvat-updates-toc {
+    grid-area: toc;
+    position: sticky;
+    top: calc(var(--td-header-height, 4rem) + 1.5rem);
+    max-height: calc(100vh - var(--td-header-height, 4rem) - 3rem);
+    overflow-y: auto;
+    border-left: 1px solid #e1e5eb;
+    padding-left: 1rem;
+    font-size: .875rem;
+
+    h2 {
+        margin: 0 0 1rem;
+        font-size: 1rem;
+        font-weight: 600;
+    }
+}
+
+.cvat-updates-toc-nav {
+    ul {
+        padding: 0;
+        margin: 0;
+        list-style: none;
+    }
+
+    ul ul {
+        padding-left: .75rem;
+    }
+
+    a {
+        display: block;
+        margin: .25rem 0;
+        padding: .35rem .5rem;
+        border-left: 2px solid transparent;
+        color: #43566e;
+        text-decoration: none;
+        overflow-wrap: anywhere;
+
+        &:hover,
+        &:focus-visible,
+        &.active {
+            color: #c25013;
+            border-left-color: #f97526;
+        }
+    }
+
+    .cvat-updates-toc-month {
+        margin-top: .75rem;
+        color: #18283e;
+        font-weight: 600;
+    }
+
+    .cvat-updates-toc-date {
+        display: block;
+        margin-bottom: .15rem;
+        font-size: .75rem;
+    }
+}
+
+.cvat-updates-mobile-toc {
+    display: none;
+    margin: 1.5rem 0;
+    padding: 1rem;
+    border: 1px solid #e1e5eb;
+    border-radius: .5rem;
+
+    summary {
+        cursor: pointer;
+        font-weight: 600;
+    }
+
+    nav {
+        max-height: 45vh;
+        margin-top: .75rem;
+        overflow-y: auto;
+    }
+}
+
+@media (max-width: 991.98px) {
+    .cvat-updates-layout {
+        grid-template-columns: minmax(0, 1fr);
+        grid-template-areas: "content";
+    }
+
+    .cvat-updates-toc {
+        display: none;
+    }
+
+    .cvat-updates-mobile-toc {
+        display: block;
+    }
+}
+
+@media print {
+    .cvat-updates-toc,
+    .cvat-updates-mobile-toc {
+        display: none;
+    }
+
+    .cvat-updates-layout {
+        display: block;
+    }
+}
+
+.cvat-release-note img,
+.cvat-release-note video {
+    display: block;
+    max-width: 100%;
+    max-height: 480px;
+    width: auto;
+    height: auto;
+    margin: 1.5rem auto;
+    object-fit: contain;
+}
+
+.cvat-release-note video {
+    width: 100%;
+    max-width: 800px;
+}
+
 /* === Top navbar recolor (Docsy uses .td-navbar.navbar-dark) === */
 .td-navbar.navbar-dark {
     /* Pick your palette */

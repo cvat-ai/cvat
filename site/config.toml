@@ -11,7 +11,7 @@ theme = ["docsy"]
 enableGitInfo = false
 
 # Language settings
-contentDir = "content/en"
+contentDir = "content"
 defaultContentLanguage = "en"
 defaultContentLanguageInSubdir = false
 # Useful when translating.
@@ -57,6 +57,11 @@ anchor = "smart"
     name = "Guides"
     weight = 40
     url = "/docs/guides/"
+[[menu.main]]
+    identifier = "updates"
+    name = "What's New"
+    weight = 45
+    url = "https://docs.cvat.ai/updates/"
 [[menu.main]]
     name = "Sign in"
     weight = 50
@@ -121,6 +126,15 @@ weight = 1
 # Comment out if you don't want the "print entire section" link enabled.
 [outputs]
 section = ["HTML", "print"]
+
+[mediaTypes."text/markdown"]
+suffixes = ["md"]
+
+[outputFormats.ReleaseMarkdown]
+mediaType = "text/markdown"
+baseName = "index"
+isPlainText = true
+notAlternative = true
 
 [params]
 cvat_ai_terms_of_use = "https://www.cvat.ai/terms-of-use"
@@ -225,3 +239,20 @@ enable = false
 	url = "https://www.youtube.com/@cvat-ai"
 	icon = "fab fa-youtube"
 	desc = "YouTube channel of CVAT.ai"
+
+# Mount update sources without an /en/ folder while preserving existing docs URLs.
+[[module.mounts]]
+source = "content/en"
+target = "content"
+
+[[module.mounts]]
+source = "content/release-notes"
+target = "content/release-notes"
+
+[[module.mounts]]
+source = "content/announcements"
+target = "content/announcements"
+
+[[module.mounts]]
+source = "content/updates"
+target = "content/updates"

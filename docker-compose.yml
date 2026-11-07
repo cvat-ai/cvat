@@ -101,6 +101,13 @@ services:
       CVAT_ANALYTICS: 1
       CVAT_BASE_URL:
       ONE_RUNNING_JOB_IN_QUEUE_PER_USER:
+      CVAT_UPDATES_SOURCE_URL:
+      CVAT_UPDATES_ENABLED:
+      CVAT_UPDATES_PUBLIC_URL:
+      CVAT_UPDATES_CACHE_TTL:
+      CVAT_UPDATES_EDITION:
+      CVAT_UPDATES_WEBFLOW_TOKEN:
+      CVAT_UPDATES_WEBFLOW_COLLECTION:
     command: init run server nginx
     labels:
       traefik.enable: "true"

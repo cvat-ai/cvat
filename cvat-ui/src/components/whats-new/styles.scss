@@ -1,0 +1,472 @@
+// Copyright (C) CVAT.ai Corporation
+//
+// SPDX-License-Identifier: MIT
+
+.cvat-header-button.cvat-release-notes-button {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+
+    .anticon {
+        font-size: 24px;
+        line-height: 24px;
+    }
+}
+
+.cvat-release-notes-modal {
+    max-width: calc(100vw - 32px);
+
+    .ant-modal-content {
+        border-radius: 16px;
+    }
+
+    .ant-modal-title {
+        padding-right: 28px;
+        font-size: 22px;
+        line-height: 1.4;
+    }
+
+    .cvat-updates-title {
+        display: flex;
+        align-items: center;
+        gap: 10px;
+        color: #18283e;
+
+        .anticon {
+            color: #3f6387;
+            font-size: 23px;
+        }
+    }
+
+    .ant-modal-body {
+        max-height: min(68vh, calc(100vh - 300px));
+        overflow-y: auto;
+        overscroll-behavior: contain;
+        padding-right: 4px;
+    }
+
+    .ant-modal-footer {
+        margin-top: 18px;
+    }
+
+    .cvat-updates-overview {
+        display: flex;
+        flex-direction: column;
+        gap: 16px;
+    }
+
+    .cvat-updates-announcements {
+        padding: 22px 22px 10px;
+        background: #f4f7fc;
+        border: 1px solid #edf1f7;
+        border-radius: 12px;
+
+        &:focus-visible {
+            outline: 2px solid #3f6387;
+            outline-offset: 2px;
+        }
+    }
+
+    .cvat-updates-announcement {
+        display: grid;
+        grid-template-columns: minmax(0, 0.92fr) minmax(0, 1.08fr);
+        align-items: center;
+        gap: 24px;
+        min-height: 260px;
+    }
+
+    .cvat-updates-announcement-copy {
+        padding: 6px 0;
+
+        h2 {
+            margin: 10px 0 12px;
+            color: #18283e;
+            font-size: 25px;
+            font-weight: 700;
+            letter-spacing: -0.35px;
+            line-height: 1.22;
+        }
+
+        p {
+            margin: 0 0 18px;
+            color: #43566e;
+            font-size: 14px;
+            line-height: 1.55;
+        }
+    }
+
+    .cvat-updates-eyebrow {
+        display: inline-block;
+        padding: 4px 7px;
+        background: #e1e8f3;
+        border-radius: 5px;
+        color: #345371;
+        font-size: 11px;
+        font-weight: 600;
+        line-height: 1.2;
+    }
+
+    .cvat-updates-announcement-labels {
+        display: flex;
+        flex-wrap: wrap;
+        align-items: center;
+        gap: 8px;
+    }
+
+    .cvat-updates-new-badge {
+        display: inline-block;
+        padding: 3px 8px;
+        background: #dff3e9;
+        border: 1px solid #93cdb0;
+        border-radius: 5px;
+        color: #1b6342;
+        font-size: 11px;
+        font-weight: 700;
+        line-height: 1.2;
+        white-space: nowrap;
+    }
+
+    .cvat-updates-explore-button.ant-btn-primary {
+        height: 36px;
+        background: #3f6387;
+        border-color: #3f6387;
+        border-radius: 7px;
+        box-shadow: none;
+        font-weight: 500;
+
+        &:not(:disabled):hover {
+            background: #315373;
+            border-color: #315373;
+        }
+    }
+
+    .cvat-updates-announcement-media {
+        width: 100%;
+        aspect-ratio: 16 / 10;
+        overflow: hidden;
+        background: #e8eef6;
+        border-radius: 10px;
+
+        img,
+        video {
+            display: block;
+            width: 100%;
+            height: 100%;
+            background: white;
+            object-fit: contain;
+        }
+    }
+
+    .cvat-updates-media-placeholder {
+        display: flex;
+        height: 100%;
+        flex-direction: column;
+        align-items: center;
+        justify-content: center;
+        gap: 12px;
+        color: #7892ae;
+
+        .anticon {
+            font-size: 52px;
+        }
+
+        span:last-child {
+            font-size: 24px;
+            font-weight: 700;
+            letter-spacing: 1px;
+        }
+    }
+
+    .cvat-updates-carousel-navigation {
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        gap: 10px;
+        padding-top: 10px;
+
+        .ant-btn {
+            color: #6f829b;
+        }
+    }
+
+    .cvat-updates-carousel-dots {
+        display: flex;
+        align-items: center;
+        gap: 7px;
+    }
+
+    .cvat-updates-carousel-dot {
+        width: 8px;
+        height: 8px;
+        padding: 0;
+        background: #c7d1df;
+        border: 0;
+        border-radius: 99px;
+        cursor: pointer;
+
+        &.active {
+            width: 20px;
+            background: #3f6387;
+        }
+
+        &.new {
+            outline: 1px solid #28724f;
+            outline-offset: 2px;
+            background: #28724f;
+        }
+
+        &:focus-visible {
+            outline: 2px solid #3f6387;
+            outline-offset: 3px;
+        }
+    }
+
+    .cvat-updates-release-panel {
+        overflow: hidden;
+        border: 1px solid #edf1f7;
+        border-radius: 12px;
+    }
+
+    .cvat-updates-release {
+        display: grid;
+        grid-template-columns: 44px 132px minmax(0, 1fr) 32px;
+        align-items: center;
+        gap: 16px;
+        padding: 20px;
+        background: #f4f7fc;
+    }
+
+    .cvat-updates-release-highlights {
+        margin: 0;
+        padding: 0 8px 0 24px;
+        border-left: 1px solid #d8e2f0;
+        color: #26384f;
+        font-size: 16px;
+        line-height: 1.65;
+
+        li + li {
+            margin-top: 8px;
+        }
+
+        li::marker {
+            color: #456b91;
+        }
+    }
+
+    .cvat-updates-release-icon {
+        display: grid;
+        width: 40px;
+        height: 40px;
+        place-items: center;
+        background: #e3eaf4;
+        border-radius: 9px;
+        color: #3f6387;
+        font-size: 22px;
+    }
+
+    .cvat-updates-release-meta {
+        .cvat-updates-new-badge {
+            margin-top: 5px;
+        }
+
+        h2 {
+            margin: 5px 0;
+            color: #18283e;
+            font-size: 25px;
+            font-weight: 700;
+            line-height: 1.2;
+        }
+
+        time {
+            color: #6f8199;
+            font-size: 12px;
+        }
+    }
+
+    .cvat-updates-release-label {
+        color: #26384f;
+        font-size: 14px;
+        font-weight: 600;
+    }
+
+    .cvat-updates-release-link {
+        color: #3f6387;
+    }
+
+    .cvat-release-notes-star-callout {
+        display: grid;
+        grid-template-columns: 48px minmax(0, 1fr) auto;
+        align-items: center;
+        gap: 18px;
+        margin: 0 0 18px;
+        padding: 18px 20px;
+        background: #244f79;
+        border-radius: 12px;
+        color: white;
+        text-align: left;
+    }
+
+    .cvat-release-notes-star-graphic {
+        display: grid;
+        width: 48px;
+        height: 48px;
+        place-items: center;
+        background: rgba(255, 255, 255, 12%);
+        border-radius: 50%;
+        color: white;
+        font-size: 26px;
+    }
+
+    .cvat-release-notes-star-title {
+        color: white;
+        font-size: 21px;
+        line-height: 1.3;
+    }
+
+    .cvat-release-notes-star-description {
+        margin: 4px 0 0;
+        color: rgba(255, 255, 255, 84%);
+        font-size: 13px;
+        line-height: 1.45;
+    }
+
+    .cvat-release-notes-star-button.ant-btn {
+        display: inline-flex;
+        align-items: center;
+        justify-content: center;
+        gap: 8px;
+        height: 40px;
+        padding: 0 16px;
+        background: white;
+        border-color: white;
+        color: #244f79;
+        font-weight: 600;
+        line-height: 20px;
+
+        > .ant-btn-icon,
+        > .anticon {
+            display: inline-flex;
+            align-items: center;
+            margin-inline: 0;
+            line-height: 1;
+        }
+
+        .anticon {
+            font-size: 16px;
+        }
+
+        &:not(:disabled):hover {
+            background: #edf4fc;
+            border-color: #edf4fc;
+            color: #244f79;
+        }
+    }
+
+    .cvat-release-notes-footer-actions {
+        display: flex;
+        flex-wrap: wrap;
+        align-items: center;
+        justify-content: space-between;
+        gap: 12px;
+
+        > .ant-btn + .ant-btn {
+            margin-inline-start: 0;
+        }
+
+        > .ant-btn-link {
+            padding-left: 0;
+            color: #3f6387;
+            font-weight: 600;
+        }
+    }
+
+    .cvat-release-notes-loading {
+        display: grid;
+        min-height: 300px;
+        place-items: center;
+    }
+
+    .cvat-release-notes-empty {
+        padding: 36px 16px;
+        color: #43566e;
+        text-align: center;
+
+        h2 {
+            color: #18283e;
+            font-size: 20px;
+        }
+    }
+
+    @media (width <= 767px) {
+        .cvat-updates-announcements {
+            padding: 16px 16px 10px;
+        }
+
+        .cvat-updates-announcement {
+            grid-template-columns: minmax(0, 1fr);
+            gap: 16px;
+            min-height: 0;
+        }
+
+        .cvat-updates-announcement-media {
+            max-height: 220px;
+            order: -1;
+        }
+
+        .cvat-updates-announcement-copy h2 {
+            font-size: 23px;
+        }
+
+        .cvat-updates-release {
+            grid-template-columns: 40px minmax(0, 1fr) 32px;
+            gap: 12px;
+            padding: 16px;
+        }
+
+        .cvat-updates-release-highlights {
+            grid-column: 1 / -1;
+            grid-row: 2;
+            padding: 12px 0 0 20px;
+            border-top: 1px solid #d8e2f0;
+            border-left: 0;
+        }
+
+        .cvat-updates-release-link {
+            grid-column: 3;
+            grid-row: 1;
+        }
+    }
+
+    @media (width <= 575px) {
+        max-width: calc(100vw - 24px);
+
+        .ant-modal-body {
+            max-height: min(58vh, calc(100vh - 350px));
+        }
+
+        .cvat-updates-title {
+            font-size: 20px;
+        }
+
+        .cvat-release-notes-star-callout {
+            grid-template-columns: 36px minmax(0, 1fr);
+            gap: 12px;
+            padding: 16px;
+        }
+
+        .cvat-release-notes-star-graphic {
+            width: 36px;
+            height: 36px;
+            font-size: 21px;
+        }
+
+        .cvat-release-notes-star-title {
+            font-size: 19px;
+        }
+
+        .cvat-release-notes-star-button {
+            grid-column: 1 / -1;
+            width: 100%;
+        }
+    }
+}
