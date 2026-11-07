@@ -101,9 +101,6 @@ def _upload_with_tus(
             logger.error("Chunk upload failed", exc_info=e)
             num_errors += 1
 
-        if num_errors >= MAX_TUS_RETRIES:
-            raise CvatSdkException("Too many upload errors")
-
         if new_upload_offset is None:
             response = api_client.rest_client.HEAD(upload_url, headers=common_headers)
             new_upload_offset = int(response.headers["Upload-Offset"])
@@ -113,6 +110,11 @@ def _upload_with_tus(
 
         if not 0 <= new_upload_offset <= upload_length:
             raise CvatSdkException("Server returned invalid upload offset")
+
+        if new_upload_offset > upload_offset:
+            num_errors = 0
+        elif num_errors >= MAX_TUS_RETRIES:
+            raise CvatSdkException("Too many upload errors")
 
         upload_offset = new_upload_offset
 
