@@ -14,7 +14,8 @@ from django.db.models import TextChoices
 from django.utils.text import slugify
 
 from cvat.apps.engine import serializers as engine_serializers
-from cvat.apps.engine.models import Job
+from cvat.apps.engine.media_io.frame_provider import TaskFrameProvider
+from cvat.apps.engine.models import Image, Job, JobType, Task, ValidationMode
 from cvat.apps.iam.models import User
 from cvat.apps.quality_control import models
 from cvat.apps.quality_control.comparison_report import (
@@ -32,6 +33,59 @@ from cvat.apps.quality_control.utils import is_current_report_data
 class QualityReportExportFormat(TextChoices):
     CSV = ("csv", "CSV")
     JSON = ("json", "JSON")
+
+
+def _build_gt_pool_conflict_frame_maps(
+    task_ids: set[int],
+) -> dict[int, dict[int, int]]:
+    """Map honeypot (DS) rel frames to GT-job rel frames for gt_pool tasks.
+
+    Quality conflicts store the annotation-job / honeypot frame_id. GT annotation
+    links must open the corresponding pool frame in the GT job (#8628).
+    Returns: gt_job_id -> {honeypot_rel_frame: gt_rel_frame}.
+    """
+    frame_maps: dict[int, dict[int, int]] = {}
+    if not task_ids:
+        return frame_maps
+
+    tasks = Task.objects.filter(id__in=task_ids).select_related("data")
+    for task in tasks:
+        if task.data.validation_mode != ValidationMode.GT_POOL:
+            continue
+
+        gt_job = Job.objects.filter(
+            segment__task=task, type=JobType.GROUND_TRUTH
+        ).first()
+        if gt_job is None:
+            continue
+
+        task_frame_provider = TaskFrameProvider(task)
+        honeypot_to_gt: dict[int, int] = {}
+        for abs_frame, abs_real_frame in (
+            Image.objects.filter(data=task.data, is_placeholder=True)
+            .values_list("frame", "real_frame")
+            .iterator()
+        ):
+            honeypot_to_gt[task_frame_provider.get_rel_frame_number(abs_frame)] = (
+                task_frame_provider.get_rel_frame_number(abs_real_frame)
+            )
+
+        if honeypot_to_gt:
+            frame_maps[gt_job.id] = honeypot_to_gt
+
+    return frame_maps
+
+
+def resolve_conflict_annotation_frame(
+    *,
+    job_id: int,
+    conflict_frame_id: int,
+    gt_pool_frame_maps: dict[int, dict[int, int]],
+) -> int:
+    "Pick the frame query param for a conflict annotation link."
+    if honeypot_to_gt := gt_pool_frame_maps.get(job_id):
+        return honeypot_to_gt.get(conflict_frame_id, conflict_frame_id)
+    return conflict_frame_id
 
 
 def prepare_json_report_for_downloading(db_report: models.QualityReport, *, host: str) -> IO[bytes]:
@@ -65,6 +119,8 @@ def prepare_json_report_for_downloading(db_report: models.QualityReport, *, host
         jobs_to_tasks[db_report.get_task().gt_job.id] = task_id
     else:
         assert False
+
+    gt_pool_frame_maps = _build_gt_pool_conflict_frame_maps(set(jobs_to_tasks.values()))
 
     # Add ids for the hierarchy objects, don't add empty ids
     def _serialize_assignee(assignee: User | None) -> dict | None:
@@ -102,10 +158,15 @@ def prepare_json_report_for_downloading(db_report: models.QualityReport, *, host
         for frame_result in frame_results.values():
             for conflict in frame_result["conflicts"]:
                 for ann_id in conflict["annotation_ids"]:
-                    task_id = jobs_to_tasks[ann_id["job_id"]]
+                    ann_task_id = jobs_to_tasks[ann_id["job_id"]]
+                    frame = resolve_conflict_annotation_frame(
+                        job_id=ann_id["job_id"],
+                        conflict_frame_id=conflict["frame_id"],
+                        gt_pool_frame_maps=gt_pool_frame_maps,
+                    )
                     ann_id["url"] = (
-                        f"{host}tasks/{task_id}/jobs/{ann_id['job_id']}"
-                        f"?frame={conflict['frame_id']}"
+                        f"{host}tasks/{ann_task_id}/jobs/{ann_id['job_id']}"
+                        f"?frame={frame}"
                         f"&type={ann_id['type']}"
                         f"&serverID={ann_id['obj_id']}"
                     )
