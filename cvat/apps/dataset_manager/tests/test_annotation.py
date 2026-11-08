@@ -230,6 +230,27 @@ class TrackManagerTest(TestCase):
         ]
         self.assertTracksEqual(expected_shapes, interpolated_shapes)
 
+    def test_bbox_interpolation_with_opposite_rotations(self):
+        make_rect = partial(make_shape, shape_type=ShapeType.RECTANGLE)
+
+        shapes = [
+            make_rect(0, base=0, rotation=0 / 8 * 180, outside=False),
+            make_rect(4, base=4, rotation=8 / 8 * 180, outside=True),
+        ]
+        track = make_track(shapes)
+        interpolated_shapes = TrackManager.get_interpolated_shapes(
+            track, 0, 6, dimension=DimensionType.DIM_2D
+        )
+
+        expected_shapes = [
+            dict(make_rect(0, base=0, rotation=0 / 8 * 180, outside=False), keyframe=True),
+            dict(make_rect(1, base=1, rotation=2 / 8 * 180, outside=False), keyframe=False),
+            dict(make_rect(2, base=2, rotation=4 / 8 * 180, outside=False), keyframe=False),
+            dict(make_rect(3, base=3, rotation=6 / 8 * 180, outside=False), keyframe=False),
+            dict(make_rect(4, base=4, rotation=8 / 8 * 180, outside=True), keyframe=True),
+        ]
+        self.assertTracksEqual(expected_shapes, interpolated_shapes)
+
     def test_polygon_interpolation(self):
         make_polygon = partial(make_shape, shape_type=ShapeType.POLYGON)
 
@@ -271,6 +292,29 @@ class TrackManagerTest(TestCase):
             dict(make_cuboid(2, base=2, rotation=0 / 8 * 180, outside=False), keyframe=False),
             dict(make_cuboid(3, base=3, rotation=1 / 8 * 180, outside=False), keyframe=False),
             dict(make_cuboid(4, base=4, rotation=2 / 8 * 180, outside=True), keyframe=True),
+        ]
+        self.assertTracksEqual(expected_shapes, interpolated_shapes)
+
+    def test_cuboid_3d_interpolation_with_opposite_rotations(self):
+        make_cuboid = partial(
+            make_shape, shape_type=ShapeType.CUBOID, dimension=DimensionType.DIM_3D
+        )
+
+        shapes = [
+            make_cuboid(0, base=0, rotation=-4 / 8 * 180, outside=False),
+            make_cuboid(4, base=4, rotation=4 / 8 * 180, outside=True),
+        ]
+        track = make_track(shapes)
+        interpolated_shapes = TrackManager.get_interpolated_shapes(
+            track, 0, 6, dimension=DimensionType.DIM_3D
+        )
+
+        expected_shapes = [
+            dict(make_cuboid(0, base=0, rotation=-4 / 8 * 180, outside=False), keyframe=True),
+            dict(make_cuboid(1, base=1, rotation=-2 / 8 * 180, outside=False), keyframe=False),
+            dict(make_cuboid(2, base=2, rotation=0 / 8 * 180, outside=False), keyframe=False),
+            dict(make_cuboid(3, base=3, rotation=2 / 8 * 180, outside=False), keyframe=False),
+            dict(make_cuboid(4, base=4, rotation=4 / 8 * 180, outside=True), keyframe=True),
         ]
         self.assertTracksEqual(expected_shapes, interpolated_shapes)
 

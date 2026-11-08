@@ -840,10 +840,10 @@ class TrackManager(ObjectManager):
         def find_angle_diff(right_angle, left_angle):
             angle_diff = right_angle - left_angle
             angle_diff = ((angle_diff + 180) % 360) - 180
-            if abs(angle_diff) >= 180:
-                # if the main arc is bigger than 180, go another arc
-                # to find it, just subtract absolute value from 360 and inverse sign
-                angle_diff = 360 - abs(angle_diff) * -1 if angle_diff > 0 else 1
+            if angle_diff == -180:
+                # Python's modulo keeps the result in [-180, 180), so opposite angles
+                # give -180 here. Use +180 instead, as the client does in findAngleDiff().
+                angle_diff = 180
 
             return angle_diff
 
