@@ -8,6 +8,8 @@ import React, { useCallback, useEffect } from 'react';
 import { useHistory } from 'react-router';
 import { useDispatch, useSelector } from 'react-redux';
 import { shallowEqual } from 'utils/redux';
+import _ from 'lodash';
+import jsonLogic from 'json-logic-js';
 import dayjs from 'dayjs';
 import { getModelsAsync } from 'actions/models-actions';
 import { updateHistoryFromQuery } from 'components/resource-sorting-filtering';
@@ -22,12 +24,77 @@ import DeployedModelsList from './deployed-models-list';
 import EmptyListComponent from './empty-list';
 import TopBar from './top-bar';
 
+function filterAndSortModels(models: MLModel[], query: ModelsQuery): MLModel[] {
+    let result = models;
+
+    if (query.search) {
+        const searchLower = query.search.toLowerCase();
+        result = result.filter((model: MLModel) => (
+            model.name.toLowerCase().includes(searchLower) ||
+            model.description?.toLowerCase().includes(searchLower) ||
+            model.owner?.toLowerCase().includes(searchLower) ||
+            String(model.id).includes(searchLower)
+        ));
+    }
+
+    if (query.filter) {
+        try {
+            const filter = JSON.parse(query.filter);
+            const converted = result.map((model: MLModel) => ({
+                id: model.id,
+                name: model.name,
+                owner: model.owner,
+                description: model.description,
+                type: model.displayKind || model.kind,
+                provider: model.provider,
+                updated_date: model.updatedDate,
+                created_date: model.createdDate,
+            }));
+            result = result.filter((item, index) => jsonLogic.apply(filter, converted[index]));
+        } catch {
+            // ignore filter parse errors
+        }
+    }
+
+    if (query.sort) {
+        let sort = query.sort.split(',');
+        const orders: ('asc' | 'desc')[] = sort.map((elem: string) => (elem.startsWith('-') ? 'desc' : 'asc'));
+        sort = sort.map((elem: string) => (elem.startsWith('-') ? elem.substring(1) : elem));
+
+        const iteratees = sort.map((field: string) => {
+            switch (field) {
+                case 'id':
+                    return (m: MLModel) => (typeof m.id === 'number' ? m.id : Number(m.id) || m.id);
+                case 'name':
+                    return (m: MLModel) => m.name.toLowerCase();
+                case 'type':
+                    return (m: MLModel) => (m.displayKind || m.kind || '').toLowerCase();
+                case 'owner':
+                    return (m: MLModel) => (m.owner || '').toLowerCase();
+                case 'description':
+                    return (m: MLModel) => (m.description || '').toLowerCase();
+                case 'created_date':
+                    return (m: MLModel) => (m.createdDate ? dayjs(m.createdDate).valueOf() : 0);
+                case 'updated_date':
+                    return (m: MLModel) => (m.updatedDate ? dayjs(m.updatedDate).valueOf() : 0);
+                default:
+                    return (m: MLModel) => (m as any)[field] ?? '';
+            }
+        });
+
+        result = _.orderBy(result, iteratees, orders);
+    } else {
+        const builtInModels = result.filter((model: MLModel) => model.provider === ModelProviders.CVAT);
+        const externalModels = result.filter((model: MLModel) => model.provider !== ModelProviders.CVAT);
+        externalModels.sort((a, b) => dayjs(a.createdDate).valueOf() - dayjs(b.createdDate).valueOf());
+        result = [...builtInModels, ...externalModels];
+    }
+
+    return result;
+}
+
 function setUpModelsList(models: MLModel[], newPage: number, pageSize: number): MLModel[] {
-    const builtInModels = models.filter((model: MLModel) => model.provider === ModelProviders.CVAT);
-    const externalModels = models.filter((model: MLModel) => model.provider !== ModelProviders.CVAT);
-    externalModels.sort((a, b) => dayjs(a.createdDate).valueOf() - dayjs(b.createdDate).valueOf());
-    const renderModels = [...builtInModels, ...externalModels];
-    return renderModels.slice((newPage - 1) * pageSize, newPage * pageSize);
+    return models.slice((newPage - 1) * pageSize, newPage * pageSize);
 }
 
 function ModelsPageComponent(): JSX.Element {
@@ -41,7 +108,6 @@ function ModelsPageComponent(): JSX.Element {
         detectors,
         trackers,
         reid,
-        totalCount,
         selectedCount,
     } = useSelector((state: CombinedState) => ({
         fetching: state.models.fetching,
@@ -51,15 +117,18 @@ function ModelsPageComponent(): JSX.Element {
         detectors: state.models.detectors,
         trackers: state.models.trackers,
         reid: state.models.reid,
-        totalCount: state.models.totalCount,
         selectedCount: state.models.selected.length,
     }), shallowEqual);
 
     const updatedQuery = useResourceQuery<ModelsQuery>(query, { pageSize: 12 });
 
+    const allModels = [...interactors, ...detectors, ...trackers, ...reid];
+    const filteredModels = filterAndSortModels(allModels, updatedQuery);
+    const totalCount = filteredModels.length;
+
     const { page, pageSize } = updatedQuery;
     const models = setUpModelsList(
-        [...interactors, ...detectors, ...trackers, ...reid],
+        filteredModels,
         page,
         pageSize,
     );
@@ -95,7 +164,6 @@ function ModelsPageComponent(): JSX.Element {
     return (
         <div className='cvat-models-page'>
             <TopBar
-                disabled
                 query={updatedQuery}
                 selectedCount={selectedCount}
                 onSelectAll={onSelectAll}

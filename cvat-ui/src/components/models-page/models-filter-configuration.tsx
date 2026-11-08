@@ -7,14 +7,14 @@ import asyncFetchUsers from 'components/resource-sorting-filtering/request-users
 
 export const config: Partial<Config> = {
     fields: {
-        description: {
-            label: 'Description',
+        name: {
+            label: 'Name',
             type: 'text',
             valueSources: ['value'],
             operators: ['like'],
         },
-        target_url: {
-            label: 'Target URL',
+        description: {
+            label: 'Description',
             type: 'text',
             valueSources: ['value'],
             operators: ['like'],
@@ -30,19 +30,16 @@ export const config: Partial<Config> = {
                 asyncFetch: asyncFetchUsers,
             },
         },
-        updated_date: {
-            label: 'Last updated',
-            type: 'datetime',
-            operators: ['between', 'greater', 'greater_or_equal', 'less', 'less_or_equal'],
-        },
         type: {
             label: 'Type',
             type: 'select',
             valueSources: ['value'],
             fieldSettings: {
                 listValues: [
-                    { value: 'organization', title: 'Organization' },
-                    { value: 'project', title: 'Project' },
+                    { value: 'detector', title: 'Detector' },
+                    { value: 'interactor', title: 'Interactor' },
+                    { value: 'tracker', title: 'Tracker' },
+                    { value: 'reid', title: 'ReID' },
                 ],
             },
         },
@@ -53,9 +50,19 @@ export const config: Partial<Config> = {
             fieldSettings: { min: 0 },
             valueSources: ['value'],
         },
+        created_date: {
+            label: 'Created date',
+            type: 'datetime',
+            operators: ['between', 'greater', 'greater_or_equal', 'less', 'less_or_equal'],
+        },
+        updated_date: {
+            label: 'Last updated',
+            type: 'datetime',
+            operators: ['between', 'greater', 'greater_or_equal', 'less', 'less_or_equal'],
+        },
     },
 };
 
 export const localStorageRecentCapacity = 10;
-export const localStorageRecentKeyword = 'recentlyAppliedWebhooksFilters';
+export const localStorageRecentKeyword = 'recentlyAppliedModelsFilters';
 export const predefinedFilterValues = {};

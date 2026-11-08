@@ -27,14 +27,13 @@ interface VisibleTopBarProps {
     onApplySorting(sorting: string | null): void;
     onApplySearch(search: string | null): void;
     query: ModelsQuery;
-    disabled?: boolean;
     selectedCount: number;
     onSelectAll: () => void;
 }
 
 export default function TopBarComponent(props: Readonly<VisibleTopBarProps>): JSX.Element {
     const {
-        query, onApplyFilter, onApplySorting, onApplySearch, disabled, selectedCount, onSelectAll,
+        query, onApplyFilter, onApplySorting, onApplySearch, selectedCount, onSelectAll,
     } = props;
     const [visibility, setVisibility] = useState(defaultVisibility);
     const plugins = usePlugins((state: CombinedState) => state.plugins.components.modelsPage.topBar.items, props);
@@ -53,7 +52,6 @@ export default function TopBarComponent(props: Readonly<VisibleTopBarProps>): JS
                 <div className='cvat-models-page-filters-wrapper'>
                     <div>
                         <Input.Search
-                            disabled={disabled}
                             enterButton
                             onSearch={(phrase: string) => {
                                 onApplySearch(phrase);
@@ -66,17 +64,15 @@ export default function TopBarComponent(props: Readonly<VisibleTopBarProps>): JS
                     </div>
                     <div>
                         <SortingComponent
-                            disabled={disabled}
                             visible={visibility.sorting}
                             onVisibleChange={(visible: boolean) => (
                                 setVisibility({ ...defaultVisibility, sorting: visible })
                             )}
-                            defaultFields={query.sort?.split(',') || ['-ID']}
-                            sortingFields={['ID', 'Target URL', 'Owner', 'Description', 'Type', 'Updated date']}
+                            defaultFields={query.sort?.split(',') || ['Name']}
+                            sortingFields={['Name', 'ID', 'Type', 'Owner', 'Description', 'Created date', 'Updated date']}
                             onApplySorting={onApplySorting}
                         />
                         <FilteringComponent
-                            disabled={disabled}
                             value={query.filter}
                             predefinedVisible={visibility.predefined}
                             builderVisible={visibility.builder}
