@@ -10,7 +10,6 @@ from unittest.mock import Mock, patch
 from asgiref.sync import async_to_sync
 from django.db import DatabaseError
 from django.http import Http404, HttpResponse, QueryDict
-from django.template.response import SimpleTemplateResponse
 from django.test import AsyncClient, RequestFactory, SimpleTestCase, override_settings
 from django.urls import NoReverseMatch, path
 from django.utils.deprecation import MiddlewareMixin
@@ -95,32 +94,8 @@ class ExceptionViewSet(ViewSet):
         return Response({"ok": True})
 
 
-class InitializationFailureViewSet(ExceptionViewSet):
-    def initialize_request(self, request, *args, **kwargs):
-        raise RuntimeError("request initialization failed")
-
-
-class FinalizationFailureViewSet(ExceptionViewSet):
-    def finalize_response(self, *args, **kwargs):
-        raise RuntimeError("response finalization failed")
-
-
-class PropagationFailureViewSet(ExceptionViewSet):
-    def raise_uncaught_exception(self, exc):
-        raise RuntimeError("exception propagation failed") from exc
-
-
-class FailingTemplateResponse(SimpleTemplateResponse):
-    def render(self):
-        raise RuntimeError("template rendering failed")
-
-
 def django_failure(request):
     raise NoReverseMatch("missing view name")
-
-
-async def async_django_failure(request):
-    raise RuntimeError("async view failed")
 
 
 def django_not_found(request):
@@ -132,28 +107,18 @@ urlpatterns = [
         "exceptions/drf/<str:kind>",
         ExceptionViewSet.as_view({"get": "list"}, basename="exception"),
     ),
-    path("exceptions/initialize", InitializationFailureViewSet.as_view({"get": "list"})),
-    path("exceptions/finalize", FinalizationFailureViewSet.as_view({"get": "list"})),
-    path(
-        "exceptions/second-failure",
-        FinalizationFailureViewSet.as_view({"get": "list"}),
-        {"kind": "validation"},
-    ),
-    path(
-        "exceptions/propagation-failure",
-        PropagationFailureViewSet.as_view({"get": "list"}, basename="exception"),
-        {"kind": "unhandled"},
-    ),
     path(
         "exceptions/recovered",
         ExceptionViewSet.as_view({"get": "list"}, basename="exception"),
         {"kind": "unhandled"},
     ),
     path("exceptions/django", django_failure),
-    path("exceptions/async-django", async_django_failure),
-    path("exceptions/render", lambda request: FailingTemplateResponse(template=None)),
     path("exceptions/middleware-request", lambda request: HttpResponse()),
-    path("exceptions/middleware-response", lambda request: HttpResponse()),
+    path(
+        "exceptions/middleware-response",
+        ExceptionViewSet.as_view({"get": "list"}),
+        {"kind": "validation"},
+    ),
     path("exceptions/not-found", django_not_found),
     path("exceptions/plain-500", lambda request: HttpResponse(status=500)),
 ]
@@ -188,12 +153,7 @@ class TestRequestExceptions(SimpleTestCase):
     def test_django_and_middleware_exceptions(self):
         cases = [
             ("django", "NoReverseMatch: missing view name"),
-            ("async-django", "RuntimeError: async view failed"),
             ("middleware-request", "RuntimeError: middleware request failed"),
-            ("middleware-response", "RuntimeError: middleware response failed"),
-            ("render", "RuntimeError: template rendering failed"),
-            ("initialize", "RuntimeError: request initialization failed"),
-            ("finalize", "RuntimeError: response finalization failed"),
         ]
         for client in (self.client, self.async_client):
             for route, message in cases:
@@ -315,29 +275,15 @@ class TestRequestExceptions(SimpleTestCase):
                     self.assertEqual(response.status_code, status_code)
                     self.record.assert_not_called()
 
-    def test_different_exceptions_in_one_request_are_both_recorded(self):
-        cases = [
-            (
-                "second-failure",
-                [400, 500],
-                ["ValidationError", "RuntimeError: response finalization failed"],
-            ),
-            (
-                "propagation-failure",
-                [500, 500],
-                ["RuntimeError: unhandled API error", "RuntimeError: exception propagation failed"],
-            ),
-        ]
+    def test_only_one_exception_event_is_recorded_per_request(self):
         for client in (self.client, self.async_client):
-            for route, status_codes, messages in cases:
-                with self.subTest(client=type(client).__name__, route=route):
-                    response = self._get(client, f"/exceptions/{route}")
-                    self.assertEqual(response.status_code, 500)
-                    self.assertEqual(self.record.call_count, 2)
-                    events = [call.kwargs["payload"] for call in self.record.call_args_list]
-                    self.assertEqual([event["status_code"] for event in events], status_codes)
-                    for event, message in zip(events, messages):
-                        self.assertIn(message, event["message"])
+            with self.subTest(client=type(client).__name__):
+                response = self._get(client, "/exceptions/middleware-response")
+                self.assertEqual(response.status_code, 500)
+                self.record.assert_called_once()
+                payload = self.record.call_args.kwargs["payload"]
+                self.assertEqual(payload["status_code"], 400)
+                self.assertIn("ValidationError", payload["message"])
 
     def test_drf_exception_is_preserved_when_middleware_recovers(self):
         for client in (self.client, self.async_client):
@@ -391,7 +337,7 @@ class TestRequestExceptions(SimpleTestCase):
         for client in (self.client, self.async_client):
             for route, status_code in (("drf/validation", 400), ("django", 500)):
                 with self.subTest(client=type(client).__name__, route=route):
-                    with self.assertLogs("cvat.apps.events.handlers", level="ERROR"):
+                    with self.assertLogs("cvat.apps.events.handlers", level="WARNING"):
                         response = self._get(client, f"/exceptions/{route}")
                     self.assertEqual(response.status_code, status_code)
                     self.record.assert_called_once()

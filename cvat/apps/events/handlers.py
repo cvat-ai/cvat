@@ -733,8 +733,8 @@ def record_request_exception(
     status_code: int = status.HTTP_500_INTERNAL_SERVER_ERROR,
 ) -> None:
     django_request = request._request if isinstance(request, Request) else request
-    # DRF records an unhandled exception before re-raising it to Django.
-    if getattr(django_request, "_recorded_exception", None) is exc:
+    # Our DRF exception handler records the exception before DRF re-raises it to Django.
+    if getattr(django_request, "_exception_event_recorded", False):
         return
 
     try:
@@ -751,11 +751,6 @@ def record_request_exception(
                 "user_email": getattr(user, "email", None),
             }
 
-        query_params = None
-        with suppress(Exception):
-            # Django's GET contains URL query parameters for every HTTP method.
-            query_params = django_request.GET
-
         tb_strings = traceback.format_exception(type(exc), exc, exc.__traceback__)
 
         payload = {
@@ -763,7 +758,8 @@ def record_request_exception(
             "action": getattr(view, "action", None),
             "request": {
                 "url": request.get_full_path(),
-                "query_params": query_params,
+                # Django's GET contains URL query parameters for every HTTP method.
+                "query_params": django_request.GET,
                 "content_type": request.content_type,
                 "method": request.method,
             },
@@ -781,9 +777,12 @@ def record_request_exception(
             payload=payload,
             **user_info,
         )
-        django_request._recorded_exception = exc
+        django_request._exception_event_recorded = True
     except Exception:
-        logging.getLogger(__name__).exception("Could not record request exception event")
+        # Event serialization or logging may fail; do not raise another exception because of it.
+        logging.getLogger(__name__).warning(
+            "Could not record request exception event", exc_info=True
+        )
 
 
 def handle_client_events_push(request, data: dict):
