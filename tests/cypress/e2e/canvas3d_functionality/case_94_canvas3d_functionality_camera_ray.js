@@ -8,7 +8,7 @@ import { taskName } from '../../support/const_canvas3d';
 
 context('Canvas 3D functionality. Camera ray.', () => {
     const caseId = '94';
-    const screenshotsPath = `cypress/screenshots/${Cypress.spec.name}`;
+    const screenshotsPath = 'cypress/screenshots/canvas3d_functionality/case_94_canvas3d_functionality_camera_ray.js';
     const contextImage = '.cvat-context-image-wrapper';
     const contextImageOverlay = '.cvat-context-image-svg-overlay';
     const contextImageTitle = '.cvat-context-image-title';
