@@ -3,13 +3,16 @@
 //
 // SPDX-License-Identifier: MIT
 
+import type { Ray } from 'three';
+
 import { ObjectState } from '.';
 import { MasterImpl } from './master';
 import consts from './consts';
-import { areCameraRaysEqual } from './geometry/camera-projection';
-import type { CameraRay } from './geometry/types';
 
-export type { CameraRay } from './geometry/types';
+export interface CameraRayData {
+    ray: Ray;
+    color: string;
+}
 
 export interface Size {
     width: number;
@@ -129,7 +132,7 @@ export interface Canvas3dDataModel {
     groupData: GroupData;
     mergeData: MergeData;
     splitData: SplitData;
-    cameraRay: CameraRay | null;
+    cameraRays: CameraRayData[];
     isFrameUpdating: boolean;
     nextSetupRequest: {
         frameData: any;
@@ -157,7 +160,7 @@ export interface Canvas3dModel {
     group(groupData: GroupData): void;
     split(splitData: SplitData): void;
     merge(mergeData: MergeData): void;
-    setCameraRay(cameraRay: CameraRay | null): void;
+    setCameraRays(cameraRays: CameraRayData[]): void;
     destroy(): void;
     updateCanvasObjects(): void;
     unlockFrameUpdating(): void;
@@ -200,7 +203,7 @@ export class Canvas3dModelImpl extends MasterImpl implements Canvas3dModel {
             splitData: {
                 enabled: false,
             },
-            cameraRay: null,
+            cameraRays: [],
             configuration: {
                 colorBy: 'Label',
                 shapeOpacity: 40,
@@ -258,7 +261,7 @@ export class Canvas3dModelImpl extends MasterImpl implements Canvas3dModel {
 
         this.data.isFrameUpdating = true;
         this.data.imageID = frameData.number;
-        this.setCameraRay(null);
+        this.setCameraRays([]);
         frameData
             .data((): void => {
                 this.data.image = null;
@@ -300,15 +303,8 @@ export class Canvas3dModelImpl extends MasterImpl implements Canvas3dModel {
         return [...this.data.objects];
     }
 
-    public setCameraRay(cameraRay: CameraRay | null): void {
-        if (areCameraRaysEqual(this.data.cameraRay, cameraRay)) {
-            return;
-        }
-
-        const nextCameraRay = cameraRay ? cameraRay.clone() : null;
-        nextCameraRay?.direction.normalize();
-
-        this.data.cameraRay = nextCameraRay;
+    public setCameraRays(cameraRays: CameraRayData[]): void {
+        this.data.cameraRays = cameraRays;
         this.notify(UpdateReasons.CAMERA_RAY_CHANGED);
     }
 

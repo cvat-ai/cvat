@@ -10,7 +10,7 @@ import { Canvas3dController } from './canvas3dController';
 import { Listener, Master } from './master';
 import consts from './consts';
 import {
-    CameraRay, Canvas3dModel, DrawData, Mode, Planes, UpdateReasons, ViewType,
+    CameraRayData, Canvas3dModel, DrawData, Mode, Planes, UpdateReasons, ViewType,
 } from './canvas3dModel';
 import {
     createRotationHelper, removeRotationHelper,
@@ -130,7 +130,7 @@ export class Canvas3dViewImpl implements Canvas3dView, Listener {
         cuboid: CuboidModel;
     }>;
     private hoverNeedsUpdate: boolean;
-    private cameraRayHelper: THREE.ArrowHelper | null;
+    private cameraRayHelpers: THREE.ArrowHelper[];
 
     public focusObjectByClientId(clientID: number, animate: boolean = true): void {
         const cuboidModel = this.drawnObjects[clientID];
@@ -216,7 +216,7 @@ export class Canvas3dViewImpl implements Canvas3dView, Listener {
 
         this.isCtrlDown = false;
         this.hoverNeedsUpdate = false;
-        this.cameraRayHelper = null;
+        this.cameraRayHelpers = [];
         this.action = {
             scan: null,
             detected: false,
@@ -1365,7 +1365,7 @@ export class Canvas3dViewImpl implements Canvas3dView, Listener {
             const onPCDLoadSuccess = (points: any): void => {
                 try {
                     this.onSceneImageLoaded(points);
-                    this.updateCameraRayHelper(model.data.cameraRay);
+                    this.updateCameraRayHelpers(model.data.cameraRays);
                     model.updateCanvasObjects();
                     domElement.setAttribute('data-frame-number', String(frameNumber));
                 } finally {
@@ -1527,7 +1527,7 @@ export class Canvas3dViewImpl implements Canvas3dView, Listener {
                 this.updateHelperPointsSize(view);
             });
         } else if (reason === UpdateReasons.CAMERA_RAY_CHANGED) {
-            this.updateCameraRayHelper(model.data.cameraRay);
+            this.updateCameraRayHelpers(model.data.cameraRays);
         } else if (reason === UpdateReasons.SHAPE_ACTIVATED) {
             this.deactivateObject();
             this.activateObject();
@@ -1659,7 +1659,7 @@ export class Canvas3dViewImpl implements Canvas3dView, Listener {
 
         this.drawnObjects = {};
         this.activatedElementID = null;
-        this.cameraRayHelper = null;
+        this.cameraRayHelpers = [];
 
         Object.keys(this.views).forEach((view: string): void => {
             const viewData = this.views[view as keyof Views];
@@ -1667,30 +1667,31 @@ export class Canvas3dViewImpl implements Canvas3dView, Listener {
         });
     }
 
-    private updateCameraRayHelper(cameraRay: CameraRay | null): void {
-        if (this.cameraRayHelper) {
-            this.views.perspective.scene.remove(this.cameraRayHelper);
-            disposeObject3D(this.cameraRayHelper);
-            this.cameraRayHelper = null;
-        }
-
-        if (!cameraRay) {
-            return;
-        }
+    private updateCameraRayHelpers(cameraRays: CameraRayData[]): void {
+        this.cameraRayHelpers.forEach((cameraRayHelper) => {
+            cameraRayHelper.parent?.remove(cameraRayHelper);
+            disposeObject3D(cameraRayHelper);
+        });
+        this.cameraRayHelpers = [];
 
         const rayLength = Math.max(this.sceneBBox.getSize(new THREE.Vector3()).length(), 20);
         const headLength = Math.min(rayLength * 0.1, 2);
         const headWidth = Math.min(rayLength * 0.05, 1);
 
-        this.cameraRayHelper = new THREE.ArrowHelper(
-            cameraRay.direction,
-            cameraRay.origin,
-            rayLength,
-            0x00e5ff,
-            headLength,
-            headWidth,
-        );
-        this.views.perspective.scene.add(this.cameraRayHelper);
+        ALL_VIEWS.forEach((view: ViewType): void => {
+            cameraRays.forEach(({ ray, color }): void => {
+                const cameraRayHelper = new THREE.ArrowHelper(
+                    ray.direction,
+                    ray.origin,
+                    rayLength,
+                    color,
+                    headLength,
+                    headWidth,
+                );
+                this.views[view].scene.add(cameraRayHelper);
+                this.cameraRayHelpers.push(cameraRayHelper);
+            });
+        });
     }
 
     private updateRotationHelperPos(): void {

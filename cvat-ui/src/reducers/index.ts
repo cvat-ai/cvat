@@ -862,13 +862,13 @@ export enum ActiveControl {
     OPENCV_TOOLS = 'opencv_tools',
     AUDIO_REGION_CREATE = 'audio_region_create',
     AUDIO_REGION_RECORD = 'audio_region_record',
-    PICK_CAMERA_RAY = 'pick_camera_ray',
 }
 
 export interface CameraRayPoint {
     id: string;
     relatedImageName: string;
     pixel: [number, number];
+    color: string;
 }
 
 export enum StatesOrdering {
@@ -935,8 +935,7 @@ export interface AnnotationState {
         activeControl: ActiveControl;
         activeObjectHidden: boolean;
         // 3D only
-        hasCameraRay: boolean;
-        cameraRayPoint: CameraRayPoint | null;
+        cameraRays: Record<number, CameraRayPoint[]>;
     };
     job: {
         openTime: null | number;

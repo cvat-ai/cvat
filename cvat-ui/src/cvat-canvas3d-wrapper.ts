@@ -13,11 +13,13 @@ import {
     cameraRayFromImagePoint,
     hasCalibration,
 } from 'cvat-canvas3d/src/typescript/canvas3d';
-import type { CameraRay } from 'cvat-canvas3d/src/typescript/canvas3d';
+import type { CameraRayData } from 'cvat-canvas3d/src/typescript/canvas3d';
 import { OrientationVisibility } from 'cvat-canvas3d/src/typescript/canvas3dModel';
 
 export {
     cameraRayFromImagePoint, hasCalibration, Canvas3d, MouseInteraction, ViewType, CameraAction, CanvasMode,
 };
 
-export type { ViewsDOM, OrientationVisibility, CameraRay };
+export type {
+    ViewsDOM, OrientationVisibility, CameraRayData,
+};

@@ -26,15 +26,18 @@ import {
     getDataFailed,
     canvasErrorOccurred,
     collapseObjectItems,
+    removeFrameCameraRays,
 } from 'actions/annotation-actions';
 import {
-    ActiveControl,
-    ColorBy, CombinedState, ContextMenuType, Workspace,
+    ActiveControl, ColorBy, CombinedState, ContextMenuType,
+    Workspace, CameraRayPoint,
 } from 'reducers';
 import getHiddenZLayers from 'utils/get-hidden-z-layers';
 import { shallowEqual } from 'utils/redux';
 import {
+    cameraRayFromImagePoint, hasCalibration,
     OrientationVisibility, CameraAction, Canvas3d, ViewsDOM,
+    CameraRayData,
 } from 'cvat-canvas3d-wrapper';
 
 import CVATTooltip from 'components/common/cvat-tooltip';
@@ -47,6 +50,7 @@ import { ShortcutScope } from 'utils/enums';
 import { registerComponentShortcuts } from 'actions/shortcuts-actions';
 import { subKeyMap } from 'utils/component-subkeymap';
 import { scrollAndExpandState } from 'utils/objects-sidebar';
+import { getRelatedImageMetadata } from 'utils/related-image-calibrations';
 
 const cvat = getCore();
 
@@ -148,6 +152,7 @@ interface StateToProps {
     activeObjectType: ObjectType;
     workspace: Workspace;
     frame: number;
+    cameraRayPoints: CameraRayPoint[];
     resetZoom: boolean;
 }
 
@@ -167,12 +172,15 @@ interface DispatchToProps {
     onCanvasErrorOccurred(error: Error): void;
 }
 
+const EMPTY_CAMERA_RAY_POINTS: CameraRayPoint[] = [];
+
 function mapStateToProps(state: CombinedState): StateToProps {
     const {
         annotation: {
             canvas: {
                 instance: canvasInstance,
                 contextMenu: { visible: contextMenuVisibility },
+                cameraRays,
             },
             drawing: { activeLabelID, activeObjectType },
             job: { instance: jobInstance },
@@ -208,6 +216,7 @@ function mapStateToProps(state: CombinedState): StateToProps {
         hiddenZLayers: getHiddenZLayers(state),
         frameFetching,
         frame,
+        cameraRayPoints: cameraRays[frame] || EMPTY_CAMERA_RAY_POINTS,
         opacity,
         colorBy,
         selectedOpacity,
@@ -298,6 +307,8 @@ export const PerspectiveViewComponent = React.memo(
             annotations,
             activatedStateID,
             hiddenZLayers,
+            cameraRayCount,
+            frame,
         } = useSelector((state: CombinedState) => ({
             canvas: state.annotation.canvas.instance as Canvas3d,
             canvasIsReady: state.annotation.canvas.ready,
@@ -306,6 +317,8 @@ export const PerspectiveViewComponent = React.memo(
             annotations: state.annotation.annotations.states as ObjectState[],
             activatedStateID: state.annotation.annotations.activatedStateID,
             hiddenZLayers: getHiddenZLayers(state),
+            cameraRayCount: state.annotation.canvas.cameraRays[state.annotation.player.frame.number]?.length || 0,
+            frame: state.annotation.player.frame.number,
         }), shallowEqual);
 
         const screenKeyControl = (code: CameraAction, altKey: boolean, shiftKey: boolean): void => {
@@ -481,6 +494,23 @@ export const PerspectiveViewComponent = React.memo(
             );
         }
 
+        function ToolsGroup(): JSX.Element | null {
+            if (!cameraRayCount) {
+                return null;
+            }
+
+            return (
+                <div className='cvat-canvas3d-perspective-tools-group'>
+                    <Button
+                        size='small'
+                        onClick={() => dispatch(removeFrameCameraRays(frame))}
+                    >
+                        Clear {cameraRayCount} {cameraRayCount === 1 ? 'ray' : 'rays'}
+                    </Button>
+                </div>
+            );
+        }
+
         useEffect(() => {
             if (ref.current) {
                 ref.current.appendChild(canvas.html().perspective);
@@ -495,6 +525,7 @@ export const PerspectiveViewComponent = React.memo(
                     ref={ref}
                 />
                 <GlobalHotKeys handlers={handlers} keyMap={subKeyMap(componentShortcuts, keyMap)} />
+                <ToolsGroup />
                 <ArrowGroup />
                 <ControlGroup />
             </div>
@@ -600,6 +631,7 @@ const Canvas3DWrapperComponent = React.memo((props: Props): null => {
         annotations,
         hiddenZLayers,
         frame,
+        cameraRayPoints,
         jobInstance,
         activeLabelID,
         activatedStateID,
@@ -619,6 +651,7 @@ const Canvas3DWrapperComponent = React.memo((props: Props): null => {
     } = props;
 
     const { canvasInstance } = props as { canvasInstance: Canvas3d };
+    const relatedImagesMetadata = frameData?.relatedImagesMetadata;
 
     const onCanvasSetup = (): void => {
         onSetupCanvas();
@@ -872,7 +905,39 @@ const Canvas3DWrapperComponent = React.memo((props: Props): null => {
             canvasInstanceDOM.perspective.removeEventListener('canvas.splitted', onCanvasTrackSplitted as EventListener);
             canvasInstanceDOM.perspective.removeEventListener('canvas.doubleclicked', onCanvasDoubleClicked as EventListener);
         };
-    }, [frameData, annotations, hiddenZLayers, activeLabelID, contextMenuVisibility, activeObjectType]);
+    }, [
+        frameData,
+        annotations,
+        hiddenZLayers,
+        activeLabelID,
+        contextMenuVisibility,
+        activeObjectType,
+    ]);
+
+    useEffect(() => {
+        if (!relatedImagesMetadata) {
+            canvasInstance.setCameraRays([]);
+            return;
+        }
+
+        const cameraRays = cameraRayPoints.reduce<CameraRayData[]>((rays, cameraRayPoint) => {
+            const metadata = getRelatedImageMetadata(
+                relatedImagesMetadata,
+                cameraRayPoint.relatedImageName,
+            );
+            if (!metadata || !hasCalibration(metadata)) {
+                return rays;
+            }
+
+            const ray = cameraRayFromImagePoint(metadata, cameraRayPoint.pixel);
+            if (ray) {
+                rays.push({ ray, color: cameraRayPoint.color });
+            }
+
+            return rays;
+        }, []);
+        canvasInstance.setCameraRays(cameraRays);
+    }, [cameraRayPoints, relatedImagesMetadata]);
 
     return null;
 });

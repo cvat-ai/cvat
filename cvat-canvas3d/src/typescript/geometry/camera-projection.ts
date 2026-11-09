@@ -4,15 +4,21 @@
 
 import * as THREE from 'three';
 
-import type { CameraCalibration, CameraRay } from './types';
 import { isFiniteMatrix, isFiniteVector } from './utils';
 
-const CAMERA_RAY_EPSILON = 1e-6;
+export interface CameraCalibration {
+    intrinsicMatrix: number[][];
+    extrinsicMatrix: number[][];
+}
+
+export function hasCalibration(calibration: Partial<CameraCalibration>): calibration is CameraCalibration {
+    return !!calibration.intrinsicMatrix && !!calibration.extrinsicMatrix;
+}
 
 export function cameraRayFromImagePoint(
     calibration: CameraCalibration,
     pixel: [number, number],
-): CameraRay | null {
+): THREE.Ray | null {
     const { intrinsicMatrix, extrinsicMatrix } = calibration;
     if (
         !Number.isFinite(pixel[0]) ||
@@ -49,18 +55,4 @@ export function cameraRayFromImagePoint(
     }
 
     return new THREE.Ray(origin, direction);
-}
-
-export function areCameraRaysEqual(ray1: CameraRay | null, ray2: CameraRay | null): boolean {
-    if (ray1 === ray2) {
-        return true;
-    }
-
-    if (!ray1 || !ray2) {
-        return false;
-    }
-
-    const epsilonSquared = CAMERA_RAY_EPSILON ** 2;
-    return ray1.origin.distanceToSquared(ray2.origin) < epsilonSquared &&
-        ray1.direction.distanceToSquared(ray2.direction) < epsilonSquared;
 }

@@ -7,9 +7,10 @@ import React from 'react';
 interface Props {
     point: [number, number];
     scale: number;
+    color: string;
 }
 
-export default function CameraRayMarker({ point, scale }: Props): JSX.Element {
+export default function CameraRayMarker({ point, scale, color }: Props): JSX.Element {
     const [x, y] = point;
     return (
         <g
@@ -20,14 +21,14 @@ export default function CameraRayMarker({ point, scale }: Props): JSX.Element {
             <path
                 d='M -10 0 L -2.5 0 M 10 0 L 2.5 0 M 0 -10 L 0 -2.5 M 0 10 L 0 2.5'
                 fill='none'
-                stroke='#00e5ff'
+                stroke={color}
                 strokeLinecap='round'
                 strokeWidth={2}
             />
             <path
                 d='M -2.5 0 L -6.5 -4 L -6.5 4 Z M 2.5 0 L 6.5 -4 L 6.5 4 Z
                     M 0 -2.5 L -4 -6.5 L 4 -6.5 Z M 0 2.5 L -4 6.5 L 4 6.5 Z'
-                fill='#00e5ff'
+                fill={color}
             />
         </g>
     );

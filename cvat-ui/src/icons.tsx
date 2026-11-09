@@ -85,7 +85,6 @@ import SVGIntervalToolsIcon from './assets/interval-tools-icon.svg';
 import SVGPlayRangeIcon from './assets/play-range-icon.svg';
 import SVGSeekToStartIcon from './assets/seek-to-start-icon.svg';
 import SVGSeekToEndIcon from './assets/seek-to-end-icon.svg';
-import SVGCameraRayIcon from './assets/camera-ray-icon.svg';
 
 export const CVATIcon = React.memo((): JSX.Element => <SVGCVATIcon />);
 export const IssueIcon = React.memo((): JSX.Element => <SVGIssueIcon />);
@@ -167,4 +166,3 @@ export const IntervalToolsIcon = React.memo((): JSX.Element => <SVGIntervalTools
 export const PlayRangeIcon = React.memo((): JSX.Element => <SVGPlayRangeIcon />);
 export const SeekToStartIcon = React.memo((): JSX.Element => <SVGSeekToStartIcon />);
 export const SeekToEndIcon = React.memo((): JSX.Element => <SVGSeekToEndIcon />);
-export const CameraRayIcon = React.memo((): JSX.Element => <SVGCameraRayIcon />);

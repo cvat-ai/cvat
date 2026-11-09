@@ -9,9 +9,8 @@ import isAbleToChangeFrame from 'utils/is-able-to-change-frame';
 import getHiddenZLayers from 'utils/get-hidden-z-layers';
 import { getRelatedImageMetadata } from 'utils/related-image-calibrations';
 import {
-    cameraRayFromImagePoint, hasCalibration, Canvas3d, CanvasMode as Canvas3DMode,
+    cameraRayFromImagePoint, hasCalibration, CanvasMode as Canvas3DMode,
 } from 'cvat-canvas3d-wrapper';
-import type { CameraRay } from 'cvat-canvas3d-wrapper';
 import {
     RectDrawingMethod, CuboidDrawingMethod, Canvas, CanvasMode as Canvas2DMode, CanvasHistorySource,
     finalizePastedShapePoints,
@@ -28,7 +27,6 @@ import { sanitizeSelectedObjectIDs } from 'utils/multi-selection';
 
 import {
     ActiveControl,
-    CameraRayPoint,
     CombinedState,
     ContextMenuType,
     FrameSpeed,
@@ -108,7 +106,7 @@ export enum AnnotationActionTypes {
     UPDATE_CACHED_CHUNKS = 'UPDATE_CACHED_CHUNKS',
 
     UPDATE_ACTIVE_CONTROL = 'UPDATE_ACTIVE_CONTROL',
-    UPDATE_CAMERA_RAY = 'UPDATE_CAMERA_RAY',
+    UPDATE_CAMERA_RAYS = 'UPDATE_CAMERA_RAYS',
 
     COPY_SHAPE = 'COPY_SHAPE',
     PASTE_SHAPE = 'PASTE_SHAPE',
@@ -1097,29 +1095,6 @@ export function confirmCanvasReadyAsync(): ThunkAction {
     };
 }
 
-export function updateCameraRay(
-    cameraRay: CameraRay | null,
-    cameraRayPoint: CameraRayPoint | null = null,
-): ThunkAction<boolean> {
-    return (dispatch: ThunkDispatch, getState: () => CombinedState): boolean => {
-        const { instance: canvasInstance } = getState().annotation.canvas;
-        if (!(canvasInstance instanceof Canvas3d)) {
-            return false;
-        }
-
-        canvasInstance.setCameraRay(cameraRay);
-        dispatch({
-            type: AnnotationActionTypes.UPDATE_CAMERA_RAY,
-            payload: {
-                hasCameraRay: !!cameraRay,
-                cameraRayPoint,
-            },
-        });
-
-        return true;
-    };
-}
-
 export function changeFrameAsync(
     toFrame: number,
     fillBuffer?: boolean,
@@ -1153,7 +1128,6 @@ export function changeFrameAsync(
             }
 
             const data = await job.frames.get(toFrame, fillBuffer, frameStep);
-            dispatch(updateCameraRay(null));
 
             dispatch({
                 type: AnnotationActionTypes.CHANGE_FRAME,
@@ -1624,13 +1598,15 @@ export function updateActiveControl(activeControl: ActiveControl): AnyAction {
     };
 }
 
-export function setCameraRayFromContextImagePoint(
+export function addCameraRayFromContextImagePoint(
     relatedImageName: string,
     pixel: [number, number],
 ): ThunkAction<boolean> {
     return (dispatch: ThunkDispatch, getState: () => CombinedState): boolean => {
         const state = getState();
-        const { data: frameData } = state.annotation.player.frame;
+        const { number: frame, data: frameData } = state.annotation.player.frame;
+        const cameraRays = state.annotation.canvas.cameraRays[frame] || [];
+
         const relatedImagesMetadata = frameData?.relatedImagesMetadata;
         if (!relatedImagesMetadata || !relatedImagesMetadata.length) {
             return false;
@@ -1649,11 +1625,76 @@ export function setCameraRayFromContextImagePoint(
             return false;
         }
 
-        return dispatch(updateCameraRay(cameraRay, {
-            id: `camera-ray:${relatedImageName}`,
-            relatedImageName,
-            pixel,
-        }));
+        const relatedImageIndex = relatedImagesMetadata.indexOf(meta);
+        const color = cvat.enums.colors[relatedImageIndex % cvat.enums.colors.length];
+        dispatch({
+            type: AnnotationActionTypes.UPDATE_CAMERA_RAYS,
+            payload: {
+                frame,
+                cameraRays: [...cameraRays, {
+                    id: `camera-ray:${frame}:${Date.now()}:${Math.random()}`,
+                    color,
+                    relatedImageName,
+                    pixel,
+                }],
+            },
+        });
+
+        return true;
+    };
+}
+
+export function removeCameraRay(id: string): ThunkAction {
+    return async (dispatch: ThunkDispatch, getState: () => CombinedState): Promise<void> => {
+        const state = getState();
+        const { number: frame } = state.annotation.player.frame;
+        const cameraRays = state.annotation.canvas.cameraRays[frame] || [];
+        const remainingCameraRays = cameraRays.filter((cameraRay) => cameraRay.id !== id);
+
+        if (remainingCameraRays.length === cameraRays.length) {
+            return;
+        }
+
+        dispatch({
+            type: AnnotationActionTypes.UPDATE_CAMERA_RAYS,
+            payload: {
+                frame,
+                cameraRays: remainingCameraRays,
+            },
+        });
+    };
+}
+
+export function removeCameraRaysFromContextImage(relatedImageName: string): ThunkAction {
+    return async (dispatch: ThunkDispatch, getState: () => CombinedState): Promise<void> => {
+        const state = getState();
+        const { number: frame } = state.annotation.player.frame;
+        const cameraRays = state.annotation.canvas.cameraRays[frame] || [];
+        const remainingCameraRays = cameraRays.filter((cameraRay) => (
+            cameraRay.relatedImageName !== relatedImageName
+        ));
+
+        if (remainingCameraRays.length === cameraRays.length) {
+            return;
+        }
+
+        dispatch({
+            type: AnnotationActionTypes.UPDATE_CAMERA_RAYS,
+            payload: {
+                frame,
+                cameraRays: remainingCameraRays,
+            },
+        });
+    };
+}
+
+export function removeFrameCameraRays(frame: number): AnyAction {
+    return {
+        type: AnnotationActionTypes.UPDATE_CAMERA_RAYS,
+        payload: {
+            frame,
+            cameraRays: [],
+        },
     };
 }
 

@@ -12,7 +12,6 @@ import React, {
 import { useSelector } from 'react-redux';
 
 import PropTypes from 'prop-types';
-import classNames from 'classnames';
 import notification from 'antd/lib/notification';
 import Spin from 'antd/lib/spin';
 import Text from 'antd/lib/typography/Text';
@@ -110,7 +109,6 @@ function ContextImage(props: Props): JSX.Element {
         viewportElement,
     });
     const {
-        isPickingCameraRay,
         objects: cameraRayObjects,
         onImageClick: onCameraRayImageClick,
         onMarkerClick: onCameraRayMarkerClick,
@@ -123,17 +121,14 @@ function ContextImage(props: Props): JSX.Element {
     const onSVGOverlayBackgroundClick = useCallback((point: [number, number]): void => {
         onCameraRayImageClick(point);
     }, [onCameraRayImageClick]);
-    const onSVGOverlayObjectClick = useCallback((object: SVGObject): void => {
+    const onSVGOverlayObjectClick = useCallback((object: SVGObject, isShiftKeyDown: boolean): void => {
         if (object.type === 'camera-ray') {
-            onCameraRayMarkerClick(object.id);
+            onCameraRayMarkerClick(object.id, isShiftKeyDown);
         }
     }, [onCameraRayMarkerClick]);
 
     // render
     const svgOverlayObjects = cameraRayObjects;
-    const svgOverlayClassName = classNames({
-        'cvat-context-image-camera-ray-picking': isPickingCameraRay,
-    });
     const imagePlaneTransform = imageViewport ?
         `translate(${imageViewport.left}px, ${imageViewport.top}px) ` +
         `scale(${imageViewport.scale})` :
@@ -177,7 +172,6 @@ function ContextImage(props: Props): JSX.Element {
                                 imageSize={contextImage}
                                 scale={imageViewport.scale}
                                 objects={svgOverlayObjects}
-                                className={svgOverlayClassName}
                                 onBackgroundClick={onSVGOverlayBackgroundClick}
                                 onObjectClick={onSVGOverlayObjectClick}
                             />

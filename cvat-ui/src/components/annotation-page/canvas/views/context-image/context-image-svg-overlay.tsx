@@ -23,7 +23,7 @@ interface Props {
     objects: SVGObject[];
     className?: string;
     onBackgroundClick(point: [number, number]): void;
-    onObjectClick(object: SVGObject): void;
+    onObjectClick(object: SVGObject, isShiftKeyDown: boolean): void;
 }
 
 function ContextImageSVGOverlay(props: Props): JSX.Element {
@@ -63,7 +63,7 @@ function ContextImageSVGOverlay(props: Props): JSX.Element {
                     className={object.className}
                     onClick={(event) => {
                         event.stopPropagation();
-                        onObjectClick(object);
+                        onObjectClick(object, event.shiftKey);
                     }}
                 >
                     {object.render(scale)}

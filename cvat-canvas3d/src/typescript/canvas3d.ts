@@ -11,7 +11,7 @@ import {
     DrawData,
     ViewType,
     MouseInteraction,
-    CameraRay,
+    CameraRayData,
     Configuration,
     GroupData,
     SplitData,
@@ -20,9 +20,10 @@ import {
 import {
     Canvas3dView, Canvas3dViewImpl, ViewsDOM, CameraAction,
 } from './canvas3dView';
-import { cameraRayFromImagePoint } from './geometry/camera-projection';
-import { hasCalibration } from './geometry/types';
-import type { CameraCalibration } from './geometry/types';
+import {
+    cameraRayFromImagePoint, hasCalibration,
+} from './geometry/camera-projection';
+import type { CameraCalibration } from './geometry/camera-projection';
 import type { Master } from './master';
 
 interface Canvas3d {
@@ -42,8 +43,7 @@ interface Canvas3d {
     focus(clientID: number): void;
     group(groupData: GroupData): void;
     merge(mergeData: MergeData): void;
-    setCameraRay(cameraRay: CameraRay | null): void;
-    hasCameraRay(): boolean;
+    setCameraRays(cameraRays: CameraRayData[]): void;
     split(splitData: SplitData): void;
     destroy(): void;
 }
@@ -95,12 +95,8 @@ class Canvas3dImpl implements Canvas3d {
         this.model.merge(mergeData);
     }
 
-    public setCameraRay(cameraRay: CameraRay | null): void {
-        this.model.setCameraRay(cameraRay);
-    }
-
-    public hasCameraRay(): boolean {
-        return this.model.data.cameraRay !== null;
+    public setCameraRays(cameraRays: CameraRayData[]): void {
+        this.model.setCameraRays(cameraRays);
     }
 
     public isAbleToChangeFrame(): boolean {
@@ -146,4 +142,6 @@ export {
     ViewType, MouseInteraction, CameraAction, Mode as CanvasMode,
 };
 
-export type { ViewsDOM, CameraCalibration, CameraRay };
+export type {
+    ViewsDOM, CameraCalibration, CameraRayData,
+};

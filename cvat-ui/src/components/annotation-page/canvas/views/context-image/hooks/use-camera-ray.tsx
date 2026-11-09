@@ -6,8 +6,13 @@ import React, { useCallback, useMemo } from 'react';
 import { useDispatch, useSelector } from 'react-redux';
 import notification from 'antd/lib/notification';
 
-import { setCameraRayFromContextImagePoint, updateActiveControl, updateCameraRay } from 'actions/annotation-actions';
-import { ActiveControl, CombinedState } from 'reducers';
+import {
+    addCameraRayFromContextImagePoint,
+    removeCameraRay,
+    removeCameraRaysFromContextImage,
+} from 'actions/annotation-actions';
+import { CombinedState } from 'reducers';
+import type { CameraRayPoint } from 'reducers';
 import { shallowEqual, ThunkDispatch } from 'utils/redux';
 import CameraRayMarker from '../camera-ray-marker';
 import type { SVGObject } from '../context-image-svg-overlay';
@@ -18,63 +23,58 @@ interface Params {
 }
 
 interface CameraRayInteraction {
-    isPickingCameraRay: boolean;
     objects: SVGObject[];
     onImageClick(point: [number, number]): void;
-    onMarkerClick(id: string): void;
+    onMarkerClick(id: string, removeAll: boolean): void;
 }
 
 export default function useCameraRay({ contextImage, contextImageName }: Params): CameraRayInteraction {
     const dispatch = useDispatch<ThunkDispatch>();
-    const { isPickingCameraRay, cameraRayPoint } = useSelector((state: CombinedState) => ({
-        isPickingCameraRay: state.annotation.canvas.activeControl === ActiveControl.PICK_CAMERA_RAY,
-        cameraRayPoint: state.annotation.canvas.cameraRayPoint,
-    }), shallowEqual);
+    const cameraRays = useSelector((state: CombinedState): CameraRayPoint[] => (
+        state.annotation.canvas.cameraRays[state.annotation.player.frame.number] || []
+    ), shallowEqual);
     const objects = useMemo<SVGObject[]>(() => {
-        if (!cameraRayPoint || cameraRayPoint.relatedImageName !== contextImageName) {
+        if (!contextImageName) {
             return [];
         }
 
-        return [{
-            id: cameraRayPoint.id,
+        return cameraRays.filter((cameraRay) => cameraRay.relatedImageName === contextImageName).map((cameraRay) => ({
+            id: cameraRay.id,
             type: 'camera-ray',
             className: 'cvat-context-image-camera-ray-marker',
             render: (scale): JSX.Element => (
                 <CameraRayMarker
-                    point={[cameraRayPoint.pixel[0], cameraRayPoint.pixel[1]]}
+                    point={cameraRay.pixel}
                     scale={scale}
+                    color={cameraRay.color}
                 />
             ),
-        }];
-    }, [cameraRayPoint, contextImageName]);
+        }));
+    }, [cameraRays, contextImageName]);
 
     const onImageClick = useCallback((point: [number, number]): void => {
-        if (!isPickingCameraRay || !contextImage || !contextImageName) {
+        if (!contextImage || !contextImageName) {
             return;
         }
 
-        if (!dispatch(setCameraRayFromContextImagePoint(contextImageName, point))) {
+        if (!dispatch(addCameraRayFromContextImagePoint(contextImageName, point))) {
             notification.warning({
                 message: 'Camera calibration is unavailable',
                 description: 'A 3D camera ray cannot be calculated for this related image.',
             });
+        }
+    }, [contextImage, contextImageName, dispatch]);
+
+    const onMarkerClick = useCallback((id: string, removeAll: boolean): void => {
+        if (removeAll && contextImageName) {
+            dispatch(removeCameraRaysFromContextImage(contextImageName));
             return;
         }
 
-        dispatch(updateActiveControl(ActiveControl.CURSOR));
-    }, [contextImage, contextImageName, dispatch, isPickingCameraRay]);
-
-    const onMarkerClick = useCallback((id: string): void => {
-        if (id !== cameraRayPoint?.id) {
-            return;
-        }
-
-        dispatch(updateActiveControl(ActiveControl.CURSOR));
-        dispatch(updateCameraRay(null));
-    }, [cameraRayPoint, dispatch]);
+        dispatch(removeCameraRay(id));
+    }, [contextImageName, dispatch]);
 
     return {
-        isPickingCameraRay,
         objects,
         onImageClick,
         onMarkerClick,
