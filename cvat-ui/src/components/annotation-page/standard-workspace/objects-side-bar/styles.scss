@@ -228,6 +228,7 @@
         background: rgba(255, 255, 255, 92%);
     }
 
+    > .ant-row .ant-typography,
     p {
         margin-bottom: 0;
     }
@@ -237,9 +238,42 @@
     @extend .cvat-objects-sidebar-issue-item;
 }
 
+.cvat-conflict-requirements {
+    min-width: 0;
+
+    .cvat-conflict-requirement-list {
+        max-height: $grid-unit-size * 30;
+        overflow-y: auto;
+    }
+
+    .cvat-conflict-requirement-name {
+        width: fit-content;
+        max-width: 100%;
+
+        > * {
+            display: block;
+            overflow: hidden;
+            text-overflow: ellipsis;
+            white-space: nowrap;
+        }
+    }
+
+    .cvat-conflict-requirements-toggle {
+        padding: 0;
+    }
+}
+
 .cvat-objects-sidebar-item-active {
     border: 2px solid rgba(0, 0, 0, 66%);
     box-shadow: 0 3px 10px rgba(0, 0, 0, 14%);
+}
+
+.cvat-objects-sidebar-conflict-item.cvat-objects-sidebar-item-active,
+.cvat-objects-sidebar-warning-item.cvat-objects-sidebar-item-active {
+    border: 2px solid rgba(0, 0, 0, 66%);
+    border-left-width: 3px;
+    box-shadow: 0 3px 10px rgba(0, 0, 0, 14%);
+    background: rgba(255, 255, 255, 82%);
 }
 
 .cvat-objects-sidebar-issue-resolved {

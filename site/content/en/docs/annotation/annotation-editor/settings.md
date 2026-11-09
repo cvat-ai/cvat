@@ -51,12 +51,14 @@ In the **Workspace** tab, you can:
   - `Descriptions` - description of attributes.
   - `Dimensions` - width, height and rotation for rectangles and ellipses.
 
-
 - `Position of a text` - text positioning mode selection:
   - `Auto` - the object details will be automatically placed where free space is.
   - `Center` - the object details will be embedded to a corresponding object if possible.
 
 - `Font size of a text` - specifies the text size of the object details.
+
+- `Show requirements in conflict tooltips` - show requirement names in quality conflict tooltips
+  (turned off by default). Requirement names are always available in conflict cards in the right sidebar.
 
 - `Automatic bordering` - enable automatic bordering for polygons and polylines during drawing/editing.
   For more information To find out more, go to the section
