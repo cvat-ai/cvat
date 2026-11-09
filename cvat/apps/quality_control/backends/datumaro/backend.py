@@ -29,8 +29,11 @@ from cvat.apps.quality_control.backends.base import (
     FrameComparisonSample,
     QualityBackend,
 )
-from cvat.apps.quality_control.backends.datumaro.matching import Comparator, DistanceComparator
-from cvat.apps.quality_control.comparison_report import ComparisonParameters
+from cvat.apps.quality_control.backends.datumaro.matching import (
+    Comparator,
+    ComparisonParameters,
+    DistanceComparator,
+)
 from cvat.apps.quality_control.filters import RequirementJsonLogicFilter
 from cvat.apps.quality_control.matching import (
     AnnotationMatches,
@@ -38,7 +41,10 @@ from cvat.apps.quality_control.matching import (
     GroupComparison,
     MatchingResults,
 )
-from cvat.apps.quality_control.models import QualityRequirementAnnotationType
+from cvat.apps.quality_control.models import (
+    QualityRequirementAnnotationType,
+    ShapeSimilarityMetricType,
+)
 from cvat.apps.quality_control.threshold_policy import (
     ConstantThresholdPolicy,
     LinearThresholdPolicy,
@@ -47,7 +53,7 @@ from cvat.apps.quality_control.threshold_policy import (
 )
 
 if TYPE_CHECKING:
-    from cvat.apps.quality_control.datumaro_data_provider import DatumaroJobDataProvider
+    from cvat.apps.quality_control.backends.datumaro.data_provider import DatumaroJobDataProvider
     from cvat.apps.quality_control.quality_handlers import EffectiveQualityRequirement
 
 
@@ -161,9 +167,15 @@ class Datumaro2DBackend(QualityBackend):
 
     @staticmethod
     def _comparison_parameters(requirement: EffectiveQualityRequirement) -> ComparisonParameters:
-        settings = ComparisonParameters()
+        settings = ComparisonParameters(
+            annotation_type=to_datumaro_annotation_type(requirement.comparison_annotation_type),
+            similarity_metric=requirement.similarity_metric,
+        )
         for name in (
+            "boundary_f_tolerance",
+            "boundary_f_threshold",
             "iou_threshold",
+            "oks_threshold",
             "oks_sigma",
             "line_thickness",
             "point_size_base",
@@ -184,12 +196,56 @@ class Datumaro2DBackend(QualityBackend):
         settings.compare_attributes = attribute_comparison_may_compare(
             requirement.attribute_comparison
         )
-        settings.included_annotation_types = [
-            to_datumaro_annotation_type(requirement.comparison_annotation_type)
-        ]
         return settings
 
+    def _configure_matching_threshold(
+        self,
+        requirement: EffectiveQualityRequirement,
+        gt_item: dm.DatasetItem,
+        settings: ComparisonParameters,
+    ):
+        # TODO: remove this function from the backend
+        # variable thresholds are only used with the IoU similarity metric
+        if requirement.similarity_metric != ShapeSimilarityMetricType.IOU:
+            return
+
+        policy = requirement.iou_threshold
+        evaluator = (
+            ThresholdPolicyEvaluator(policy) if isinstance(policy, ThresholdPolicy) else None
+        )
+        if isinstance(policy, ConstantThresholdPolicy):
+            settings.iou_threshold = evaluator()
+        elif isinstance(policy, LinearThresholdPolicy):
+            thresholds = {}
+
+            def evaluate_gt_threshold(gt_annotation_parts: Sequence[dm.Annotation]) -> float:
+                key = tuple(id(ann) for ann in gt_annotation_parts)
+                if key not in thresholds:
+                    try:
+                        area = self.shape_area(
+                            [self._view(ann, self._gt_provider) for ann in gt_annotation_parts]
+                        )
+                        thresholds[key] = evaluator(area)
+                    except (ValueError, TypeError, ArithmeticError, ShapelyError) as error:
+                        raise ValueError(
+                            "Cannot compute linear IoU threshold for requirement "
+                            f"{requirement.name!r} on frame {gt_item.id!r}: "
+                            "invalid ground-truth shape area or geometry."
+                        ) from error
+
+                return thresholds[key]
+
+            settings.iou_threshold = evaluate_gt_threshold
+        elif policy is not None and not isinstance(policy, float | int):
+            raise AssertionError(f"Unsupported IoU threshold policy: {policy!r}")
+
     def shape_area(self, annotations: Sequence[cdm.Annotation2D]) -> float:
+        # FIXME: the area computed here can be different from what's used by IoU during comparisons:
+        # - with panoptic comparison, IoU uses only the visible (not covered) part of the GT object,
+        #   but the area here is computed for the whole shape
+        # - IoU uses the shapes rasterized within the image, but the area here is not limited
+        #   by the image (e.g. for polygons partially outside the image)
+
         native = [cast(DatumaroAnnotationAdapter, ann).native_annotation for ann in annotations]
         if not native:
             raise AssertionError("GT shape area requires at least one annotation")
@@ -245,44 +301,11 @@ class Datumaro2DBackend(QualityBackend):
             ]
         )
         settings = self._comparison_parameters(requirement)
-        policy = requirement.iou_threshold
-        evaluator = (
-            ThresholdPolicyEvaluator(policy) if isinstance(policy, ThresholdPolicy) else None
-        )
-        gt_threshold = None
-        if isinstance(policy, ConstantThresholdPolicy):
-            settings.iou_threshold = evaluator()
-        elif isinstance(policy, LinearThresholdPolicy):
-            thresholds = {}
-
-            def evaluate_gt_threshold(annotations):
-                key = tuple(id(ann) for ann in annotations)
-                if key not in thresholds:
-                    try:
-                        area = self.shape_area(
-                            [self._view(ann, self._gt_provider) for ann in annotations]
-                        )
-                        thresholds[key] = evaluator(area)
-                    except (ValueError, TypeError, ArithmeticError, ShapelyError) as error:
-                        raise ValueError(
-                            "Cannot compute linear IoU threshold for requirement "
-                            f"{requirement.name!r} on frame {gt_item.id!r}: "
-                            "invalid ground-truth shape area or geometry."
-                        ) from error
-                return thresholds[key]
-
-            # Validate every GT shape, including those without any matching candidates.
-            for ann in sample.gt_annotations:
-                evaluate_gt_threshold([cast(DatumaroAnnotationAdapter, ann).native_annotation])
-
-            gt_threshold = evaluate_gt_threshold
-        elif policy is not None and not isinstance(policy, float | int):
-            raise AssertionError(f"Unsupported IoU threshold policy: {policy!r}")
+        self._configure_matching_threshold(requirement, gt_item, settings)
 
         comparator = Comparator(
             self._gt_provider.dataset.native_dataset.categories(),
             settings=settings,
-            gt_threshold=gt_threshold,
             attribute_matcher=lambda a, b: attribute_matcher(
                 self._view(a, self._gt_provider), self._view(b, self._ds_provider)
             ),
