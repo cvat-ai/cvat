@@ -8,20 +8,26 @@ import { taskName } from '../../support/const_canvas3d';
 
 context('Canvas 3D functionality. Camera ray.', () => {
     const caseId = '94';
-    const cameraRayControl = '.cvat-camera-ray-control';
-    const cameraRayClearIndicator = '.cvat-camera-ray-clear-indicator';
-    const contextImage = '.cvat-context-image-wrapper canvas';
+    const screenshotsPath = `cypress/screenshots/${Cypress.spec.name}`;
+    const contextImage = '.cvat-context-image-wrapper';
+    const contextImageOverlay = '.cvat-context-image-svg-overlay';
+    const contextImageTitle = '.cvat-context-image-title';
+    const cameraRayMarker = '.cvat-context-image-camera-ray-marker';
+    const clearCameraRaysButton = '.cvat-canvas3d-perspective-tools-group button';
 
-    function pickCameraRay() {
-        cy.get(cameraRayControl)
-            .should('not.have.class', 'cvat-disabled-canvas-control')
-            .click();
-        cy.get(cameraRayControl).should('have.class', 'cvat-active-canvas-control');
-        cy.get(contextImage)
-            .should('have.class', 'cvat-context-image-camera-ray-picking')
-            .click('center');
-        cy.get(cameraRayControl).should('not.have.class', 'cvat-active-canvas-control');
-        cy.get(cameraRayClearIndicator).should('have.length', 1);
+    function getContextImage(index) {
+        return cy.get(contextImage).eq(index);
+    }
+
+    function getCameraRayMarkers(contextImageIndex) {
+        return getContextImage(contextImageIndex).find(cameraRayMarker);
+    }
+
+    function addCameraRay(contextImageIndex, x, y) {
+        getContextImage(contextImageIndex).find(contextImageOverlay).then(($overlay) => {
+            const { width, height } = $overlay[0].getBoundingClientRect();
+            cy.wrap($overlay).click(Math.round(width * x), Math.round(height * y));
+        });
     }
 
     before(() => {
@@ -29,31 +35,59 @@ context('Canvas 3D functionality. Camera ray.', () => {
         cy.openTaskJob(taskName);
         cy.get('.cvat-player-first-button').click();
         cy.checkFrameNum(0);
-        cy.get(contextImage).should('be.visible');
+        cy.get(contextImage).should('have.length', 2);
+        cy.get(contextImageOverlay).should('have.length', 2).and('be.visible');
+        cy.get(contextImageTitle).eq(0).invoke('text').then((firstContextImageName) => {
+            cy.get(contextImageTitle).eq(1).invoke('text').should('not.equal', firstContextImageName);
+        });
+        cy.customScreenshot('.cvat-canvas3d-perspective', 'canvas3d_perspective_without_camera_rays');
     });
 
     describe(`Testing case "${caseId}"`, () => {
-        it('Creates, clears, and resets a camera ray when the frame changes.', () => {
-            pickCameraRay();
+        it('Creates and removes camera rays from two context images.', () => {
+            addCameraRay(0, 0.25, 0.25);
+            getCameraRayMarkers(0).should('have.length', 1);
+            getCameraRayMarkers(1).should('not.exist');
+            cy.customScreenshot('.cvat-canvas3d-perspective', 'canvas3d_perspective_with_one_camera_ray');
+            cy.compareImagesAndCheckResult(
+                `${screenshotsPath}/canvas3d_perspective_without_camera_rays.png`,
+                `${screenshotsPath}/canvas3d_perspective_with_one_camera_ray.png`,
+            );
 
-            cy.get(cameraRayControl).click();
-            cy.get(cameraRayClearIndicator).should('not.exist');
+            addCameraRay(1, 0.75, 0.75);
+            getCameraRayMarkers(1).should('have.length', 1);
+            cy.contains(clearCameraRaysButton, 'Clear 2 rays').should('be.visible');
+            cy.customScreenshot('.cvat-canvas3d-perspective', 'canvas3d_perspective_with_two_camera_rays');
+            cy.compareImagesAndCheckResult(
+                `${screenshotsPath}/canvas3d_perspective_with_one_camera_ray.png`,
+                `${screenshotsPath}/canvas3d_perspective_with_two_camera_rays.png`,
+            );
 
-            pickCameraRay();
+            getCameraRayMarkers(0).click();
+            getCameraRayMarkers(0).should('not.exist');
+            getCameraRayMarkers(1).should('have.length', 1);
+            cy.contains(clearCameraRaysButton, 'Clear 1 ray').should('be.visible');
+
+            addCameraRay(1, 0.25, 0.25);
+            getCameraRayMarkers(1).should('have.length', 2).first().click({ shiftKey: true });
+            getCameraRayMarkers(1).should('not.exist');
+            cy.get(clearCameraRaysButton).should('not.exist');
+
+            addCameraRay(0, 0.5, 0.5);
+            addCameraRay(1, 0.5, 0.5);
+            cy.contains(clearCameraRaysButton, 'Clear 2 rays').click();
+            getCameraRayMarkers(0).should('not.exist');
+            getCameraRayMarkers(1).should('not.exist');
+            cy.get(clearCameraRaysButton).should('not.exist');
+
             cy.get('.cvat-player-next-button').click();
             cy.checkFrameNum(1);
-            cy.get(contextImage).should('be.visible');
-            cy.get(cameraRayClearIndicator).should('not.exist');
+            getContextImage(0).find(contextImageOverlay).should('be.visible');
 
-            cy.get(cameraRayControl)
-                .should('have.class', 'cvat-disabled-canvas-control')
-                .and('not.have.class', 'cvat-active-canvas-control');
-            cy.get('body').type('{shift}b');
-            cy.get(cameraRayControl).should('not.have.class', 'cvat-active-canvas-control');
-            cy.get(contextImage).should('not.have.class', 'cvat-context-image-camera-ray-picking');
-
-            cy.get('.cvat-player-first-button').click();
-            cy.checkFrameNum(0);
+            addCameraRay(0, 0.5, 0.5);
+            cy.contains('.ant-notification-notice-message', 'Camera calibration is unavailable').should('be.visible');
+            cy.get(cameraRayMarker).should('not.exist');
+            cy.get(clearCameraRaysButton).should('not.exist');
         });
     });
 });
