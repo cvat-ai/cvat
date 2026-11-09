@@ -733,6 +733,52 @@ class TestGetCloudStorageContent:
         )["content"]
         assert not len(content)
 
+    @pytest.mark.parametrize("cloud_storage_id", [2])
+    @pytest.mark.parametrize(
+        "keys, prefix, expected_new_content",
+        [
+            # key="/file", prefix="" -> directory="/" -> name=""
+            (["/empty_segment_file.jpg"], None, []),
+            # key="dir//file", prefix="dir/" -> directory="dir//" -> name=""
+            (
+                ["empty_segment_dir//file.jpg", "empty_segment_dir/valid.jpg"],
+                "empty_segment_dir/",
+                [("valid.jpg", "REG")],
+            ),
+        ],
+    )
+    def test_can_get_storage_content_with_empty_path_segments(
+        self,
+        cloud_storage_id: int,
+        keys: list[str],
+        prefix: str | None,
+        expected_new_content: list[tuple[str, str]],
+        request,
+        cloud_storages,
+    ):
+        # Regression test for https://github.com/cvat-ai/cvat/pull/11201
+        initial_content = self._test_get_cloud_storage_content(cloud_storage_id, prefix=prefix)[
+            "content"
+        ]
+        cs_name = cloud_storages[cloud_storage_id]["resource"]
+        s3_client = make_s3_client(bucket=cs_name)
+
+        for key in keys:
+            s3_client.create_file(filename=key)
+            request.addfinalizer(partial(s3_client.remove_file, filename=key))
+
+        with make_api_client(self.USER) as api_client:
+            data, response = api_client.cloudstorages_api.retrieve_content_v2(
+                cloud_storage_id, **({"prefix": prefix} if prefix else {})
+            )
+        assert response.status == HTTPStatus.OK
+
+        content = [(x["name"], str(x["type"])) for x in data["content"]]
+        assert all(name for name, _ in content)
+        assert sorted(content) == sorted(
+            [(x["name"], str(x["type"])) for x in initial_content] + expected_new_content
+        )
+
 
 @pytest.mark.usefixtures("restore_db_per_class")
 class TestListCloudStorages:
