@@ -172,6 +172,7 @@ function AllocationTable(props: Readonly<Props>): JSX.Element | null {
 
     return (
         <CVATTable
+            stateKey={`allocation-task-${task.id}`}
             tableTitle='Frames'
             searchDataIndex={['name']}
             csvExport={{ filename: `allocation-table-task_${task.id}.csv` }}
