@@ -474,8 +474,9 @@ analytics:
   clickhouseDb: cvat
   clickhouseUser: user
   clickhousePassword: user
-#  clickhouseHost: "{{ .Release.Name }}-clickhouse"
-  clickhouseHost: "clickhouse-{{ .Release.Name }}-clickhouse"
+  clickhouseHost: "{{ .Release.Name }}-clickhouse"
+## This value is used for Altinity chart
+#  clickhouseHost: "clickhouse-{{ .Release.Name }}-clickhouse"
   clickhousePort: 8123
 
 vector:
