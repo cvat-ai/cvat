@@ -39,13 +39,19 @@ ENV FFMPEG_VERSION=8.0 \
     OPENH264_VERSION=2.6.0
 
 WORKDIR /tmp/openh264
-RUN curl -sL https://github.com/cisco/openh264/archive/v${OPENH264_VERSION}.tar.gz --output - | \
-    tar -zx --strip-components=1 && \
+RUN curl --fail --location --retry 5 --retry-all-errors --show-error --silent \
+        https://github.com/cisco/openh264/archive/v${OPENH264_VERSION}.tar.gz \
+        --output /tmp/openh264.tar.gz && \
+    tar -zxf /tmp/openh264.tar.gz --strip-components=1 && \
+    rm /tmp/openh264.tar.gz && \
     make -j5 && make install-shared PREFIX=${PREFIX} && make clean
 
 WORKDIR /tmp/ffmpeg
-RUN curl -sL https://ffmpeg.org/releases/ffmpeg-${FFMPEG_VERSION}.tar.gz --output - | \
-    tar -zx --strip-components=1 && \
+RUN curl --fail --location --retry 5 --retry-all-errors --show-error --silent \
+        https://ffmpeg.org/releases/ffmpeg-${FFMPEG_VERSION}.tar.gz \
+        --output /tmp/ffmpeg.tar.gz && \
+    tar -zxf /tmp/ffmpeg.tar.gz --strip-components=1 && \
+    rm /tmp/ffmpeg.tar.gz && \
     ./configure --disable-nonfree --disable-gpl --enable-libopenh264 --enable-libmp3lame \
         --enable-shared --disable-static --disable-doc --disable-programs --prefix="${PREFIX}" && \
     make -j5 && make install && make clean
