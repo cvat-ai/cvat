@@ -4,6 +4,7 @@
 
 from __future__ import annotations
 
+import contextlib
 import logging
 from collections.abc import Callable, Mapping, Sequence
 from typing import TypeAlias, cast
@@ -13,6 +14,7 @@ import attrs
 import cvat_sdk.models as models
 from cvat_sdk.core import Client
 from cvat_sdk.core.progress import NullProgressReporter, ProgressReporter
+from cvat_sdk.datasets.common import MediaDownloadPolicy
 from cvat_sdk.datasets.task_dataset import TaskDataset
 
 from ..attributes import attribute_value_validator
@@ -534,7 +536,8 @@ def annotate_task(
     Downloads data for the task with the given ID, applies the given function to it
     and uploads the resulting annotations back to the task.
 
-    Only tasks with 2D image (not video) data are supported at the moment.
+    Tasks with 2D image or video data are supported. Video tasks require a compatible
+    OpenH264 shared library.
 
     client is used to make all requests to the CVAT server.
 
@@ -577,7 +580,18 @@ def annotate_task(
     if conf_threshold is not None and not 0 <= conf_threshold <= 1:
         raise ValueError("conf_threshold must be None or a number between 0 and 1")
 
-    dataset = TaskDataset(client, task_id, load_annotations=False)
+    task = client.tasks.retrieve(task_id)
+    is_video = task.data_original_chunk_type == "video"
+    dataset = TaskDataset(
+        client,
+        task_id,
+        load_annotations=False,
+        media_download_policy=(
+            MediaDownloadPolicy.FETCH_CHUNKS_ON_DEMAND
+            if is_video
+            else MediaDownloadPolicy.PRELOAD_ALL
+        ),
+    )
 
     assert isinstance(function.spec, DetectionFunctionSpec)
 
@@ -592,23 +606,29 @@ def annotate_task(
     tags = []
     shapes = []
 
+    samples_context = (
+        dataset.iter_samples(temporary_chunks=True)
+        if is_video
+        else contextlib.nullcontext(iter(dataset.samples))
+    )
     with pbar.task(total=len(dataset.samples), unit="samples"):
-        for sample in pbar.iter(dataset.samples):
-            frame_annotations = function.detect(
-                # https://github.com/pylint-dev/pylint/issues/9013
-                # pylint: disable-next=abstract-class-instantiated
-                _DetectionFunctionContextImpl(
-                    frame_name=sample.frame_name,
-                    conf_threshold=conf_threshold,
-                    conv_mask_to_poly=conv_mask_to_poly,
-                ),
-                sample.media.load_image(),
-            )
-            frame_tags, frame_shapes = mapper.validate_and_remap(
-                frame_annotations, sample.frame_index
-            )
-            tags.extend(frame_tags)
-            shapes.extend(frame_shapes)
+        with samples_context as samples:
+            for sample in pbar.iter(samples):
+                frame_annotations = function.detect(
+                    # https://github.com/pylint-dev/pylint/issues/9013
+                    # pylint: disable-next=abstract-class-instantiated
+                    _DetectionFunctionContextImpl(
+                        frame_name=sample.frame_name,
+                        conf_threshold=conf_threshold,
+                        conv_mask_to_poly=conv_mask_to_poly,
+                    ),
+                    sample.media.load_image(),
+                )
+                frame_tags, frame_shapes = mapper.validate_and_remap(
+                    frame_annotations, sample.frame_index
+                )
+                tags.extend(frame_tags)
+                shapes.extend(frame_shapes)
 
     client.logger.info("Uploading annotations to task %d...", task_id)
 
