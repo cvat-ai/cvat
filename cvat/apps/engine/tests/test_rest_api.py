@@ -2178,7 +2178,7 @@ class CloudStorageTestCase(_CloudStorageTestBase):
             self.assertIn(b"'..' segment", response.content)
 
 
-class TaskCloudStorageTestCase(_CloudStorageTestBase):
+class TaskCloudStorageTestCase(_CloudStorageTestBase, ExportApiTestBase, ImportApiTestBase):
     @classmethod
     def setUpTestData(cls):
         create_db_users(cls)
@@ -2287,6 +2287,61 @@ class TaskCloudStorageTestCase(_CloudStorageTestBase):
                 "extrinsic_matrix": [1, 0, 0, 0.2, 0, 1, 0, 0, 0, 0, 1, 1.7],
             },
         )
+
+    def test_import_cloud_3d_task_backup_with_calibration(self):
+        self._upload_pointcloud_pcd_dataset()
+        cloud_storage_id = self._create_cloud_storage()
+        sidecar_path = "test_pointcloud_pcd/related_images/000001_pcd/000001.png.json"
+        related_image_path = sidecar_path.removesuffix(".json")
+        manifest_intrinsic_matrix = [1, 0, 0, 0, 1, 0, 0, 0, 1]
+
+        for lightweight in (True, False):
+            with self.subTest(lightweight=lightweight):
+                task = self._create_task(
+                    {"name": "Cached 3D task with calibration"},
+                    {
+                        "server_files[0]": "test_pointcloud_pcd/",
+                        "image_quality": 100,
+                        "cloud_storage_id": cloud_storage_id,
+                        "use_cache": True,
+                    },
+                )
+                db_data = Task.objects.get(pk=task["id"]).require_data()
+                source_related_file = RelatedFile.objects.get(data=db_data, path=related_image_path)
+                manifest = ImageManifestManager(db_data.get_manifest_path())
+                manifest_entries = [dict(entry) for _, entry in manifest]
+                manifest_entries[0]["meta"]["related_image_metadata"][related_image_path][
+                    "intrinsic_matrix"
+                ] = manifest_intrinsic_matrix
+                manifest.create(manifest_entries)
+
+                response = self._export_task_backup(
+                    self.owner,
+                    task["id"],
+                    query_params={"lightweight": lightweight},
+                )
+                backup_file = io.BytesIO(b"".join(response.streaming_content))
+                with zipfile.ZipFile(backup_file) as backup_zip:
+                    self.assertEqual(
+                        f"data/{sidecar_path}" in backup_zip.namelist(),
+                        not lightweight,
+                    )
+                backup_file.seek(0)
+                backup_file.name = "task-backup.zip"
+                restored_task_id = self._import_task_backup(self.owner, backup_file)
+
+                restored_related_file = RelatedFile.objects.get(
+                    data=Task.objects.get(pk=restored_task_id).require_data(),
+                    path=related_image_path,
+                )
+                self.assertEqual(
+                    restored_related_file.intrinsic_matrix,
+                    (
+                        manifest_intrinsic_matrix
+                        if lightweight
+                        else source_related_file.intrinsic_matrix
+                    ),
+                )
 
     @override_settings(MEDIA_CACHE_ALLOW_STATIC_CACHE=True)
     def test_create_3d_task_with_calibration_referenced_by_manifest(self):

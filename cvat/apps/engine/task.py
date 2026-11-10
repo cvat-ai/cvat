@@ -1716,6 +1716,11 @@ def _create_image_task_media_descriptors(
         source_path = Path(path)
 
         if is_data_in_cloud:
+            if is_backup_restore:
+                # This is a lightweight cloud backup. It has no source files
+                # or cloud storage connection to open at the moment of restore.
+                return False
+
             relative_path = source_path.relative_to(upload_dir).as_posix()
             return relative_path in selected_cloud_paths
 

@@ -481,7 +481,9 @@ class TaskExporter(_ExporterBase, _TaskBackupBase):
             target_dir=target_dir,
         )
 
-    def _write_filtered_media_manifest(self, zip_object: ZipFile, target_dir: str) -> None:
+    def _write_filtered_media_manifest(
+        self, zip_object: ZipFile, target_dir: str
+    ) -> list[PurePath]:
         # When making a heavyweight backup of a task with images, we only include those frames
         # that match the task's frame range. This function filters the manifest so that it also
         # includes only those frames. That way, we don't have a manifest referencing nonexistent
@@ -491,7 +493,7 @@ class TaskExporter(_ExporterBase, _TaskBackupBase):
 
         match (self._db_task.media_type, self._db_task.mode):
             case (models.MediaType.AUDIO, models.TaskMode.INTERPOLATION):
-                return  # there are no audio manifests
+                return []  # there are no audio manifests
             case (models.MediaType.IMAGE, models.TaskMode.INTERPOLATION):
                 # No filtering necessary; just use the original manifest.
                 self._write_files(
@@ -500,7 +502,7 @@ class TaskExporter(_ExporterBase, _TaskBackupBase):
                     files=[self._db_data.get_manifest_path()],
                     target_dir=target_data_dir,
                 )
-                return
+                return []
             case (
                 models.MediaType.IMAGE | models.MediaType.POINT_CLOUD,
                 models.TaskMode.ANNOTATION,
@@ -514,17 +516,31 @@ class TaskExporter(_ExporterBase, _TaskBackupBase):
                 # so that start_frame and other fields are adjusted properly later.
                 if imm_original.exists:
                     present_frame_nums = {im.frame for im in self._db_data.images.all()}
+                    auxiliary_files: dict[PurePath, None] = {}
+
+                    def filter_manifest_entries():
+                        for frame_num, entry in imm_original:
+                            if frame_num not in present_frame_nums:
+                                continue
+
+                            metadata = entry.get("meta", {})
+                            if isinstance(metadata, dict):
+                                manifest_auxiliary_files = metadata.get(
+                                    AUXILIARY_FILES_MANIFEST_KEY, []
+                                )
+                                if isinstance(manifest_auxiliary_files, list):
+                                    auxiliary_files.update(
+                                        (PurePath(path), None) for path in manifest_auxiliary_files
+                                    )
+
+                            yield entry
 
                     with TmpDirManager.get_tmp_directory() as tmp_dir:
                         filtered_manifest_path = Path(tmp_dir, self.MEDIA_MANIFEST_FILENAME)
                         imm_filtered = ImageManifestManager(
                             filtered_manifest_path, create_index=False
                         )
-                        imm_filtered.create(
-                            entry
-                            for frame_num, entry in imm_original
-                            if frame_num in present_frame_nums
-                        )
+                        imm_filtered.create(filter_manifest_entries())
 
                         self._write_files(
                             source_dir=tmp_dir,
@@ -532,8 +548,11 @@ class TaskExporter(_ExporterBase, _TaskBackupBase):
                             files=[filtered_manifest_path],
                             target_dir=target_data_dir,
                         )
+                else:
+                    auxiliary_files = {}
 
                 self._manifest_was_filtered = True
+                return list(auxiliary_files)
             case (media_type, mode):
                 assert False, f"Unknown media type '{media_type}' with mode '{mode}'"
 
@@ -541,11 +560,13 @@ class TaskExporter(_ExporterBase, _TaskBackupBase):
         target_data_dir = os.path.join(target_dir, self.DATA_DIRNAME)
         data_dir = self._db_data.get_upload_dirname()
 
-        self._write_filtered_media_manifest(zip_object=zip_object, target_dir=target_dir)
-
+        auxiliary_files = self._write_filtered_media_manifest(
+            zip_object=zip_object,
+            target_dir=target_dir,
+        )
         files_for_local_copy = []
 
-        media_files_to_download: list[PurePath] = []
+        files_to_download: list[PurePath] = []
         for media_file in itertools.chain(
             self._db_data.related_files.all(),
             [self._db_data.video] if hasattr(self._db_data, "video") else [],
@@ -556,7 +577,14 @@ class TaskExporter(_ExporterBase, _TaskBackupBase):
             if os.path.exists(local_path):
                 files_for_local_copy.append(local_path)
             else:
-                media_files_to_download.append(media_path)
+                files_to_download.append(media_path)
+
+        for auxiliary_path in auxiliary_files:
+            local_path = os.path.join(data_dir, auxiliary_path)
+            if os.path.exists(local_path):
+                files_for_local_copy.append(local_path)
+            else:
+                files_to_download.append(auxiliary_path)
 
         frame_ids_to_download = []
         frame_names_to_download = []
@@ -570,17 +598,17 @@ class TaskExporter(_ExporterBase, _TaskBackupBase):
                 frame_ids_to_download.append(media_file.frame)
                 frame_names_to_download.append(media_file.path)
 
-        if media_files_to_download:
+        if files_to_download:
             storage_client = self._db_data.get_cloud_storage_client()
             with TmpDirManager.get_tmp_directory() as tmp_dir:
                 storage_client.bulk_download_to_dir(
-                    files=media_files_to_download, upload_dir=Path(tmp_dir)
+                    files=files_to_download, upload_dir=Path(tmp_dir)
                 )
 
                 self._write_files(
                     source_dir=tmp_dir,
                     zip_object=zip_object,
-                    files=[os.path.join(tmp_dir, file) for file in media_files_to_download],
+                    files=[os.path.join(tmp_dir, file) for file in files_to_download],
                     target_dir=target_data_dir,
                 )
 
@@ -1184,7 +1212,8 @@ class TaskImporter(_ImporterBase, _TaskBackupBase):
                 metadata = manifest_entry.get("meta", {})
                 if isinstance(metadata, dict):
                     data["server_files"].extend(metadata.get(RELATED_IMAGES_MANIFEST_KEY, []))
-                    data["server_files"].extend(metadata.get(AUXILIARY_FILES_MANIFEST_KEY, []))
+                    # Do not try to restore auxiliary files for lightweight backups as files themselves
+                    # are not available during restore.
 
             for server_file in data["server_files"]:
                 if problem := problem_with_untrusted_path(server_file):
