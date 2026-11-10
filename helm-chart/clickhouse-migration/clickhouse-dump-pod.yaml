@@ -28,7 +28,7 @@ spec:
         - name: CLICKHOUSE_SOURCE_HOST
           value: cvat-clickhouse
         - name: CLICKHOUSE_TARGET_HOST
-          value: cvat-clickhouse-service
+          value: clickhouse-cvat-clickhouse
         - name: CLICKHOUSE_NATIVE_PORT
           value: "9000"
         - name: CLICKHOUSE_DB
