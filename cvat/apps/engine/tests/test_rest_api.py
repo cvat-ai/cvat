@@ -26,7 +26,7 @@ from itertools import product
 from pathlib import Path, PurePath
 from pprint import pformat
 from time import sleep
-from typing import BinaryIO
+from typing import BinaryIO, NamedTuple
 from unittest import mock
 
 import av
@@ -2186,12 +2186,25 @@ class TaskCloudStorageTestCase(_CloudStorageTestBase):
         cls.mock_aws.create_file("a/test.jpg", generate_image_file("test.jpg", (8, 8)).read())
         cls.mock_aws.create_file("a/../evil.jpg", generate_image_file("evil.jpg", (8, 8)).read())
 
-    @override_settings(MEDIA_CACHE_ALLOW_STATIC_CACHE=True)
-    def test_create_local_3d_task_with_calibrated_related_image(self):
+    def _upload_pointcloud_pcd_dataset(
+        self,
+        prefix: str = "",
+        *,
+        include_auxiliary_file: bool = True,
+    ):
         with zipfile.ZipFile(ASSETS_DIR / "test_pointcloud_pcd.zip") as archive:
             for entry in archive.infolist():
-                if not entry.is_dir():
-                    self.mock_aws.create_file(entry.filename, archive.read(entry))
+                if entry.is_dir() or (
+                    not include_auxiliary_file and entry.filename.endswith(".json")
+                ):
+                    continue
+
+                path = f"{prefix}/{entry.filename}" if prefix else entry.filename
+                self.mock_aws.create_file(path, archive.read(entry))
+
+    @override_settings(MEDIA_CACHE_ALLOW_STATIC_CACHE=True)
+    def test_create_local_3d_task_with_calibrated_related_image(self):
+        self._upload_pointcloud_pcd_dataset()
 
         cloud_storage_id = self._create_cloud_storage()
         task = self._create_task(
@@ -2226,10 +2239,7 @@ class TaskCloudStorageTestCase(_CloudStorageTestBase):
         )
 
     def test_create_cached_3d_task_with_calibrated_related_image(self):
-        with zipfile.ZipFile(ASSETS_DIR / "test_pointcloud_pcd.zip") as archive:
-            for entry in archive.infolist():
-                if not entry.is_dir():
-                    self.mock_aws.create_file(entry.filename, archive.read(entry))
+        self._upload_pointcloud_pcd_dataset()
 
         cloud_storage_id = self._create_cloud_storage()
         task = self._create_task(
@@ -2265,6 +2275,10 @@ class TaskCloudStorageTestCase(_CloudStorageTestBase):
         manifest = ImageManifestManager(db_data.get_manifest_path())
         manifest_entry = next(iter(manifest))[1]
         self.assertEqual(
+            manifest_entry["meta"]["auxiliary_files"],
+            ["test_pointcloud_pcd/related_images/000001_pcd/000001.png.json"],
+        )
+        self.assertEqual(
             manifest_entry["meta"]["related_image_metadata"][
                 "test_pointcloud_pcd/related_images/000001_pcd/000001.png"
             ],
@@ -2274,57 +2288,174 @@ class TaskCloudStorageTestCase(_CloudStorageTestBase):
             },
         )
 
-    def test_create_cached_3d_task_with_calibration_from_manifest(self):
-        with zipfile.ZipFile(ASSETS_DIR / "test_pointcloud_pcd.zip") as archive:
-            for entry in archive.infolist():
-                if not entry.is_dir() and not entry.filename.endswith(".json"):
-                    self.mock_aws.create_file(entry.filename, archive.read(entry))
+    @override_settings(MEDIA_CACHE_ALLOW_STATIC_CACHE=True)
+    def test_create_3d_task_with_calibration_referenced_by_manifest(self):
+        class ManifestCase(NamedTuple):
+            name: str
+            prefix: str
+            include_calibration: bool
+            include_auxiliary_file: bool
+            selection: str
+            use_cache: bool
 
-        related_image_path = "test_pointcloud_pcd/related_images/000001_pcd/000001.png"
         calibration = {
             "intrinsic_matrix": [721.5, 0, 609.6, 0, 721.5, 172.9, 0, 0, 1],
             "extrinsic_matrix": [1, 0, 0, 0.2, 0, 1, 0, 0, 0, 0, 1, 1.7],
         }
-        self.mock_aws.create_file(
-            "manifest.jsonl",
-            "\n".join(
-                json.dumps(entry, separators=(",", ":"))
-                for entry in (
-                    {"version": "1.1"},
-                    {"type": "images"},
-                    {
-                        "name": "test_pointcloud_pcd/pointcloud/000001",
-                        "extension": ".pcd",
-                        "width": 100,
-                        "height": 1,
-                        "meta": {
-                            "related_images": [related_image_path],
-                            "related_image_metadata": {related_image_path: calibration},
+
+        def upload_dataset(
+            prefix: str,
+            *,
+            include_calibration: bool,
+            include_auxiliary_file: bool,
+        ) -> tuple[str, str]:
+            self._upload_pointcloud_pcd_dataset(
+                prefix,
+                include_auxiliary_file=include_auxiliary_file,
+            )
+
+            related_image_path = "test_pointcloud_pcd/related_images/000001_pcd/000001.png"
+            auxiliary_file_path = f"{related_image_path}.json"
+            metadata = {
+                "related_images": [related_image_path],
+            }
+            if include_auxiliary_file:
+                metadata["auxiliary_files"] = [auxiliary_file_path]
+            if include_calibration:
+                metadata["related_image_metadata"] = {related_image_path: calibration}
+
+            self.mock_aws.create_file(
+                f"{prefix}/manifest.jsonl" if prefix else "manifest.jsonl",
+                "\n".join(
+                    json.dumps(entry, separators=(",", ":"))
+                    for entry in (
+                        {"version": "1.1"},
+                        {"type": "images"},
+                        {
+                            "name": "test_pointcloud_pcd/pointcloud/000001",
+                            "extension": ".pcd",
+                            "width": 100,
+                            "height": 1,
+                            "meta": metadata,
                         },
-                    },
-                )
-            ).encode(),
-        )
+                    )
+                ).encode(),
+            )
+
+            return related_image_path, auxiliary_file_path
 
         cloud_storage_id = self._create_cloud_storage()
-        task = self._create_task(
-            {"name": "Cached 3D task with manifest calibration"},
-            {
-                "server_files[0]": "manifest.jsonl",
-                "image_quality": 100,
-                "cloud_storage_id": cloud_storage_id,
-                "use_cache": True,
-            },
+        cases = (
+            ManifestCase("cached root manifest calibration", "", True, False, "manifest", True),
+            ManifestCase(
+                "static manifest calibration in a subdirectory",
+                "static-manifest-calibration",
+                True,
+                False,
+                "directory",
+                False,
+            ),
+            ManifestCase(
+                "static manifest sidecar",
+                "static-manifest-sidecar",
+                False,
+                True,
+                "directory",
+                False,
+            ),
+            ManifestCase(
+                "cached manifest sidecar in a directory",
+                "cached-manifest-sidecar-directory",
+                False,
+                True,
+                "directory",
+                True,
+            ),
+            ManifestCase(
+                "cached manifest sidecar selected explicitly",
+                "cached-manifest-sidecar-explicit",
+                False,
+                True,
+                "explicit",
+                True,
+            ),
         )
 
-        db_data = Task.objects.get(pk=task["id"]).require_data()
-        self.assertEqual(db_data.storage_method, StorageMethodChoice.CACHE)
-        related_file = RelatedFile.objects.get(
-            data=db_data,
-            path=related_image_path,
-        )
-        self.assertEqual(related_file.intrinsic_matrix, calibration["intrinsic_matrix"])
-        self.assertEqual(related_file.extrinsic_matrix, calibration["extrinsic_matrix"])
+        for case in cases:
+            with self.subTest(case.name):
+                related_image_path, auxiliary_file_path = upload_dataset(
+                    case.prefix,
+                    include_calibration=case.include_calibration,
+                    include_auxiliary_file=case.include_auxiliary_file,
+                )
+                prefix = case.prefix
+                manifest_path = f"{prefix}/manifest.jsonl" if prefix else "manifest.jsonl"
+                server_files = [manifest_path]
+                if case.selection == "directory":
+                    server_files.append(f"{prefix}/")
+                elif case.selection == "explicit":
+                    server_files.extend(
+                        [
+                            f"{prefix}/test_pointcloud_pcd/pointcloud/000001.pcd",
+                            f"{prefix}/{related_image_path}",
+                            f"{prefix}/{auxiliary_file_path}",
+                        ]
+                    )
+                image_data = {
+                    f"server_files[{index}]": server_file
+                    for index, server_file in enumerate(server_files)
+                }
+                image_data.update(
+                    {
+                        "image_quality": 100,
+                        "cloud_storage_id": cloud_storage_id,
+                    }
+                )
+                if case.use_cache:
+                    image_data["use_cache"] = True
+
+                task = self._create_task({"name": case.name}, image_data)
+                db_data = Task.objects.get(pk=task["id"]).require_data()
+                expected_related_image_path = (
+                    f"{prefix}/{related_image_path}" if prefix else related_image_path
+                )
+                expected_auxiliary_file_path = (
+                    f"{prefix}/{auxiliary_file_path}" if prefix else auxiliary_file_path
+                )
+
+                self.assertEqual(
+                    db_data.storage_method,
+                    (
+                        StorageMethodChoice.CACHE
+                        if case.use_cache
+                        else StorageMethodChoice.FILE_SYSTEM
+                    ),
+                )
+                related_file = RelatedFile.objects.get(
+                    data=db_data, path=expected_related_image_path
+                )
+                self.assertEqual(related_file.intrinsic_matrix, calibration["intrinsic_matrix"])
+                self.assertEqual(related_file.extrinsic_matrix, calibration["extrinsic_matrix"])
+
+                manifest_entry = next(iter(ImageManifestManager(db_data.get_manifest_path())))[1]
+                if case.include_auxiliary_file:
+                    self.assertEqual(
+                        manifest_entry["meta"]["auxiliary_files"],
+                        [expected_auxiliary_file_path],
+                    )
+                if case.include_calibration:
+                    self.assertEqual(
+                        manifest_entry["meta"]["related_image_metadata"],
+                        {expected_related_image_path: calibration},
+                    )
+                if case.use_cache:
+                    self.assertFalse(
+                        (db_data.get_upload_dirname() / expected_auxiliary_file_path).exists()
+                    )
+                elif case.include_auxiliary_file:
+                    self.assertTrue(
+                        (db_data.get_upload_dirname() / expected_auxiliary_file_path).is_file()
+                    )
 
     def test_unsafe_paths_in_directory(self):
         cloud_storage_id = self._create_cloud_storage()
@@ -4179,7 +4310,7 @@ def generate_manifest_file(
     else:
         assert root_dir
 
-        scenes, related_images, _ = find_related_images(sources, root_path=root_dir)
+        scenes, related_images, _, _ = find_related_images(sources, root_path=root_dir)
 
         manifest = ImageManifestManager(manifest_path, create_index=False)
         manifest.link(

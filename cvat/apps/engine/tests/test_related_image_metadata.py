@@ -27,7 +27,7 @@ class TestRelatedImageMetadata(unittest.TestCase):
         else:
             raise ValueError(f"Unsupported sidecar format: {sidecar_format}")
 
-        _, _, loaders = find_related_images(dataset_paths)
+        _, _, loaders, _ = find_related_images(dataset_paths)
         return loaders[related_image_path]
 
     def _load_metadata(self, sidecar_format, sidecar):
@@ -172,3 +172,12 @@ class TestRelatedImageMetadata(unittest.TestCase):
 
     def test_sly_sidecar_without_sensors_data_is_uncalibrated(self):
         self.assertIsNone(self._load_metadata("sly", {"meta": {}}))
+
+    def test_finds_auxiliary_files_defined_by_the_layout(self):
+        scene_path = PurePath("pointcloud/scene.pcd")
+        related_image_path = PurePath("related_images/scene_pcd/camera.png")
+        sidecar_path = PurePath("related_images/scene_pcd/camera.png.json")
+
+        _, _, _, auxiliary_files = find_related_images([scene_path, related_image_path])
+
+        self.assertEqual(auxiliary_files, {scene_path: [sidecar_path]})

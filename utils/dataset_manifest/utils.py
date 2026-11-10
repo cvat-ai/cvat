@@ -114,7 +114,9 @@ _AnyPath = TypeVar("_AnyPath", bound=PurePath)
 _IMAGE_METADATA_FORMAT = "cvat-image-meta"
 _IMAGE_METADATA_VERSION = 1
 _CAMERA_ROTATION_TOLERANCE = 1e-5
+RELATED_IMAGES_MANIFEST_KEY = "related_images"
 RELATED_IMAGE_METADATA_MANIFEST_KEY = "related_image_metadata"
+AUXILIARY_FILES_MANIFEST_KEY = "auxiliary_files"
 
 
 @dataclass(frozen=True)
@@ -455,6 +457,7 @@ def _find_related_images_2D(
     set[_AnyPath],
     dict[_AnyPath, list[_AnyPath]],
     dict[_AnyPath, RelatedImageMetadataLoader],
+    dict[_AnyPath, list[_AnyPath]],
 ]:
     """
     Expected 2D format is:
@@ -486,7 +489,7 @@ def _find_related_images_2D(
 
     # TODO: maybe add logging for unmatched related images
     # TODO: Support metadata for images related to 2D scenes
-    return regular_images, related_images, {}
+    return regular_images, related_images, {}, {}
 
 
 def _find_related_images_3D(
@@ -495,6 +498,7 @@ def _find_related_images_3D(
     set[_AnyPath],
     dict[_AnyPath, list[_AnyPath]],
     dict[_AnyPath, RelatedImageMetadataLoader],
+    dict[_AnyPath, list[_AnyPath]],
 ]:
     """
     Supported 3D formats:
@@ -549,6 +553,7 @@ def _find_related_images_3D(
 
     related_images: dict[_AnyPath, list[_AnyPath]] = {}  # { scene_name -> [related images] }
     related_image_metadata: dict[_AnyPath, RelatedImageMetadataLoader] = {}
+    related_image_auxiliary_files: dict[_AnyPath, list[_AnyPath]] = {}
     for image_path in dataset_paths:
         image_name = image_path.with_suffix("")
         if image_path.suffix.lower() in (".pcd", ".bin"):
@@ -557,10 +562,12 @@ def _find_related_images_3D(
         if image_name in scenes:
             # Custom 1
             related_images.setdefault(scenes[image_name], []).append(image_path)
+            sidecar_path = image_path.parent / f"{image_path.name}.json"
             related_image_metadata[image_path] = partial(
                 _load_standard_related_image_metadata,
-                image_path.parent / f"{image_path.name}.json",
+                sidecar_path,
             )
+            related_image_auxiliary_files.setdefault(scenes[image_name], []).append(sidecar_path)
             continue
 
         parents = image_path.parents
@@ -572,10 +579,12 @@ def _find_related_images_3D(
         if parents and scene_name in scenes:
             # Custom 2
             related_images.setdefault(scenes[scene_name], []).append(image_path)
+            sidecar_path = image_path.parent / f"{image_path.name}.json"
             related_image_metadata[image_path] = partial(
                 _load_standard_related_image_metadata,
-                image_path.parent / f"{image_path.name}.json",
+                sidecar_path,
             )
+            related_image_auxiliary_files.setdefault(scenes[scene_name], []).append(sidecar_path)
             continue
 
         scene_stem = parents[0].name.rsplit("_", maxsplit=1)[0]
@@ -587,10 +596,12 @@ def _find_related_images_3D(
         ):
             # Supervisely Point Cloud
             related_images.setdefault(scenes[scene_name], []).append(image_path)
+            sidecar_path = image_path.parent / f"{image_path.name}.json"
             related_image_metadata[image_path] = partial(
                 _load_sly_related_image_metadata,
-                image_path.parent / f"{image_path.name}.json",
+                sidecar_path,
             )
+            related_image_auxiliary_files.setdefault(scenes[scene_name], []).append(sidecar_path)
             continue
 
         if (
@@ -616,8 +627,18 @@ def _find_related_images_3D(
         related_images,
         related_image_metadata,
     )
+    related_image_auxiliary_files = {
+        scene_path: auxiliary_files
+        for scene_path, auxiliary_files in related_image_auxiliary_files.items()
+        if scene_path in related_images
+    }
 
-    return set(scenes.values()), related_images, related_image_metadata
+    return (
+        set(scenes.values()),
+        related_images,
+        related_image_metadata,
+        related_image_auxiliary_files,
+    )
 
 
 def find_related_images(
@@ -629,6 +650,7 @@ def find_related_images(
     set[_AnyPath],
     dict[_AnyPath, list[_AnyPath]],
     dict[_AnyPath, RelatedImageMetadataLoader],
+    dict[_AnyPath, list[_AnyPath]],
 ]:
     """
     Finds related images for scenes in the dataset.
@@ -637,11 +659,12 @@ def find_related_images(
     :param root_path: Optional. If specified, the resulting paths will be relative to this path
     :param is_scene_path: Optional. If specified, the results will only include scenes
         matching this function.
-
-    Returns: a 3-tuple (scene paths, related_images, related_image_metadata)
+    Returns: a 4-tuple (scene paths, related_images, related_image_metadata,
+        related_image_auxiliary_files)
         scene_paths - a list of scene paths found;
         related_images - a dict {scene path -> [related image paths]}
         related_image_metadata - a dict {related image path -> calibration candidate loader}
+        related_image_auxiliary_files - a dict {scene path -> [auxiliary file candidates]}
     """
 
     if root_path:
@@ -671,7 +694,12 @@ def find_related_images(
 
     if has_pcd:
         # get all found scenes and RIs to avoid complaining about excluded scenes
-        scenes, related_images, related_image_metadata = _find_related_images_3D(dataset_paths)
+        (
+            scenes,
+            related_images,
+            related_image_metadata,
+            related_image_auxiliary_files,
+        ) = _find_related_images_3D(dataset_paths)
 
         unknown_files = set(dataset_paths)
         unknown_files.difference_update(scenes)
@@ -705,13 +733,20 @@ def find_related_images(
                 related_images,
                 related_image_metadata,
             )
+            related_image_auxiliary_files = {
+                scene: auxiliary_files
+                for scene, auxiliary_files in related_image_auxiliary_files.items()
+                if scene in scenes
+            }
     else:
-        scenes, related_images, related_image_metadata = _find_related_images_2D(
-            dataset_paths,
-            is_scene_path=is_scene_path,
+        scenes, related_images, related_image_metadata, related_image_auxiliary_files = (
+            _find_related_images_2D(
+                dataset_paths,
+                is_scene_path=is_scene_path,
+            )
         )
 
-    return scenes, related_images, related_image_metadata
+    return scenes, related_images, related_image_metadata, related_image_auxiliary_files
 
 
 class MediaDimension(str, Enum):

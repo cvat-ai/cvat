@@ -69,6 +69,7 @@ from cvat.apps.engine.utils import av_scan_paths
 from cvat.utils import django_database as db_utils
 from cvat.utils.paths import join_untrusted_path, problem_with_untrusted_path
 from utils.dataset_manifest import ImageManifestManager
+from utils.dataset_manifest.utils import AUXILIARY_FILES_MANIFEST_KEY, RELATED_IMAGES_MANIFEST_KEY
 
 slogger = ServerLogManager(__name__)
 
@@ -1180,9 +1181,10 @@ class TaskImporter(_ImporterBase, _TaskBackupBase):
             data["server_files"] = []
             for _, manifest_entry in manifest:
                 data["server_files"].append(manifest_entry.full_name)
-                data["server_files"].extend(
-                    manifest_entry.get("meta", {}).get("related_images", [])
-                )
+                metadata = manifest_entry.get("meta", {})
+                if isinstance(metadata, dict):
+                    data["server_files"].extend(metadata.get(RELATED_IMAGES_MANIFEST_KEY, []))
+                    data["server_files"].extend(metadata.get(AUXILIARY_FILES_MANIFEST_KEY, []))
 
             for server_file in data["server_files"]:
                 if problem := problem_with_untrusted_path(server_file):

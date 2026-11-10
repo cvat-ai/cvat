@@ -67,7 +67,9 @@ from utils.dataset_manifest.core import (
 )
 from utils.dataset_manifest.errors import InvalidRelatedImageMetadataError
 from utils.dataset_manifest.utils import (
+    AUXILIARY_FILES_MANIFEST_KEY,
     RELATED_IMAGE_METADATA_MANIFEST_KEY,
+    RELATED_IMAGES_MANIFEST_KEY,
     OpenableGetter,
     RelatedImageMetadata,
     RelatedImageMetadataLoader,
@@ -631,11 +633,18 @@ def _create_task_manifest_based_on_cloud_storage_manifest(
                 return properties
 
             metadata = dict(metadata)
-            related_images = metadata.get("related_images")
+            related_images = metadata.get(RELATED_IMAGES_MANIFEST_KEY)
             if isinstance(related_images, list):
-                metadata["related_images"] = [
+                metadata[RELATED_IMAGES_MANIFEST_KEY] = [
                     os.path.join(cloud_storage_manifest_prefix, related_image_path)
                     for related_image_path in related_images
+                ]
+
+            auxiliary_files = metadata.get(AUXILIARY_FILES_MANIFEST_KEY)
+            if isinstance(auxiliary_files, list):
+                metadata[AUXILIARY_FILES_MANIFEST_KEY] = [
+                    os.path.join(cloud_storage_manifest_prefix, auxiliary_file)
+                    for auxiliary_file in auxiliary_files
                 ]
 
             related_image_metadata = metadata.get(RELATED_IMAGE_METADATA_MANIFEST_KEY)
@@ -688,12 +697,17 @@ def _load_related_image_metadata(
 def _create_task_manifest_from_cloud_data(
     db_storage: models.CloudStorage,
     sorted_media: Sequence[PurePath],
-    metadata_paths: set[str],
+    selected_paths: set[str],
     manifest: ImageManifestManager,
 ) -> None:
     dimension = ValidateDimension().detect_dimension_for_paths(sorted_media)
 
-    regular_images, related_images, related_image_metadata_loaders = find_related_images(
+    (
+        regular_images,
+        related_images,
+        related_image_metadata_loaders,
+        related_image_auxiliary_files,
+    ) = find_related_images(
         sorted_media,
         # backward compatibility, deprecated in https://github.com/cvat-ai/cvat/pull/9757
         is_scene_path=(lambda p: not "related_images" in p.parts),
@@ -703,16 +717,27 @@ def _create_task_manifest_from_cloud_data(
     storage_client = db_storage.get_client()
 
     def get_cloud_storage_openable(path: PurePath):
-        path = os.fspath(path)
-        if path not in metadata_paths:
+        cloud_path = os.fspath(path)
+        if cloud_path not in selected_paths:
             return None
 
-        return storage_client.get_openable(path)
+        return storage_client.get_openable(cloud_path)
 
     source_related_image_metadata = _load_related_image_metadata(
         related_image_metadata_loaders,
         get_cloud_storage_openable,
     )
+    auxiliary_files = {
+        scene_path: selected_auxiliary_files
+        for scene_path, candidate_auxiliary_files in related_image_auxiliary_files.items()
+        if (
+            selected_auxiliary_files := [
+                auxiliary_file
+                for auxiliary_file in candidate_auxiliary_files
+                if os.fspath(auxiliary_file) in selected_paths
+            ]
+        )
+    }
 
     content_generator = storage_client.bulk_download_to_memory(
         list(map(os.fspath, sorted_media)),
@@ -723,7 +748,11 @@ def _create_task_manifest_from_cloud_data(
 
     manifest.link(
         sources=content_generator,
-        meta=_build_related_images_manifest_meta(related_images, source_related_image_metadata),
+        meta=_build_related_images_manifest_meta(
+            related_images,
+            source_related_image_metadata,
+            auxiliary_files,
+        ),
         DIM_3D=(dimension == models.DimensionType.DIM_3D),
         stop=len(sorted_media) - 1,
         data_dir=".",
@@ -735,8 +764,17 @@ def _find_and_filter_related_images(
     extractor: ImageListReader,
     *,
     upload_dir: Path,
-) -> tuple[dict[str, list[str]], dict[str, RelatedImageMetadataLoader]]:
-    regular_images, related_images, related_image_metadata_loaders = find_related_images(
+) -> tuple[
+    dict[str, list[str]],
+    dict[str, RelatedImageMetadataLoader],
+    dict[str, list[str]],
+]:
+    (
+        regular_images,
+        related_images,
+        related_image_metadata_loaders,
+        related_image_auxiliary_files,
+    ) = find_related_images(
         extractor.absolute_source_paths,
         # backward compatibility
         is_scene_path=(lambda p: "related_images" not in p.parts),
@@ -755,12 +793,19 @@ def _find_and_filter_related_images(
             os.path.relpath(image_path, upload_dir): metadata_loader
             for image_path, metadata_loader in related_image_metadata_loaders.items()
         },
+        {
+            os.path.relpath(scene_path, upload_dir): [
+                os.path.relpath(auxiliary_file, upload_dir) for auxiliary_file in auxiliary_files
+            ]
+            for scene_path, auxiliary_files in related_image_auxiliary_files.items()
+        },
     )
 
 
 def _build_related_images_manifest_meta(
     related_images: Mapping[Any, Sequence[Any]],
     source_related_image_metadata: Mapping[Any, RelatedImageMetadata],
+    auxiliary_files: Mapping[Any, Sequence[Any]] | None = None,
 ) -> dict[str, dict[str, object]]:
     manifest_meta = {}
     for scene_path, scene_related_images in related_images.items():
@@ -772,7 +817,11 @@ def _build_related_images_manifest_meta(
             for related_image, related_image_path in zip(scene_related_images, related_image_paths)
             if related_image in source_related_image_metadata
         }
-        manifest_meta[os.fspath(scene_path)] = {"related_images": related_image_paths}
+        manifest_meta[os.fspath(scene_path)] = {RELATED_IMAGES_MANIFEST_KEY: related_image_paths}
+        if auxiliary_files and (scene_auxiliary_files := auxiliary_files.get(scene_path)):
+            manifest_meta[os.fspath(scene_path)][AUXILIARY_FILES_MANIFEST_KEY] = [
+                os.fspath(auxiliary_file) for auxiliary_file in scene_auxiliary_files
+            ]
         if related_image_metadata:
             manifest_meta[os.fspath(scene_path)][
                 RELATED_IMAGE_METADATA_MANIFEST_KEY
@@ -1234,9 +1283,13 @@ def _get_dataset_files_from_manifest(
                 dataset_files.append(image.full_name)
                 metadata = image.get("meta", {})
                 if isinstance(metadata, dict):
-                    related_images = metadata.get("related_images", [])
+                    related_images = metadata.get(RELATED_IMAGES_MANIFEST_KEY, [])
                     if isinstance(related_images, list):
                         dataset_files.extend(related_images)
+
+                    auxiliary_files = metadata.get(AUXILIARY_FILES_MANIFEST_KEY, [])
+                    if isinstance(auxiliary_files, list):
+                        dataset_files.extend(auxiliary_files)
 
             return list(dict.fromkeys(dataset_files))
         case _:
@@ -1566,9 +1619,11 @@ def _collect_image_dataset_descriptors(
     is_data_in_cloud: bool,
     related_images: dict[str, list[str]],
     source_related_image_metadata: dict[str, RelatedImageMetadata],
+    auxiliary_files: dict[str, list[str]],
 ) -> tuple[list[models.Image], ImageManifestManager, dict[str, RelatedImageMetadata]]:
     db_data = db_task.require_data()
 
+    # Source metadata is read from task input and takes precedence over metadata in the manifest.
     manifest = ImageManifestManager(db_data.get_manifest_path())
     if not manifest.exists:
         # TODO: Try to avoid adding manifest entries for images that are not in
@@ -1580,6 +1635,7 @@ def _collect_image_dataset_descriptors(
             meta=_build_related_images_manifest_meta(
                 related_images,
                 source_related_image_metadata,
+                auxiliary_files,
             ),
             data_dir=upload_dir,
             DIM_3D=(db_task.dimension == models.DimensionType.DIM_3D),
@@ -1648,16 +1704,23 @@ def _create_image_task_media_descriptors(
     extractor: IMediaReader,
     related_images: dict[str, Sequence[str]],
     related_image_metadata_loaders: dict[str, RelatedImageMetadataLoader],
+    auxiliary_files: dict[str, list[str]],
     server_files: Collection[str],
     server_files_exclude: Collection[str],
     job_file_mapping: JobFileMapping | None,
 ) -> tuple[list[models.Image], ImageManifestManager, JobFileMapping | None]:
     db_data = db_task.require_data()
+    selected_cloud_paths = set(server_files)
 
-    def get_local_openable(path: PurePath):
-        local_path = Path(path)
+    def is_source_file_available(path: PurePath) -> bool:
+        source_path = Path(path)
+
+        if is_data_in_cloud:
+            relative_path = source_path.relative_to(upload_dir).as_posix()
+            return relative_path in selected_cloud_paths
+
         if db_data.storage == models.StorageChoice.SHARE:
-            relative_path = local_path.relative_to(upload_dir)
+            relative_path = source_path.relative_to(upload_dir)
             is_selected = any(
                 relative_path == selected_path
                 or (
@@ -1668,19 +1731,42 @@ def _create_image_task_media_descriptors(
             )
 
             if not is_selected or _is_path_excluded(relative_path, server_files_exclude):
-                return None
+                return False
 
-        return local_path if local_path.is_file() else None
+        return source_path.is_file()
+
+    def get_source_openable(path: PurePath):
+        source_path = Path(path)
+        if not is_source_file_available(source_path):
+            return None
+
+        if is_data_in_cloud:
+            relative_path = source_path.relative_to(upload_dir).as_posix()
+            return db_data.get_openable(relative_path)
+
+        return source_path
 
     source_related_image_metadata = _load_related_image_metadata(
         related_image_metadata_loaders,
-        get_local_openable,
+        get_source_openable,
     )
+    auxiliary_files = {
+        scene_path: available_auxiliary_files
+        for scene_path, candidate_auxiliary_files in auxiliary_files.items()
+        if (
+            available_auxiliary_files := [
+                auxiliary_file
+                for auxiliary_file in candidate_auxiliary_files
+                if is_source_file_available(upload_dir / auxiliary_file)
+            ]
+        )
+    }
 
     images, manifest, effective_related_image_metadata = _collect_image_dataset_descriptors(
         extractor=extractor,
         related_images=related_images,
         source_related_image_metadata=source_related_image_metadata,
+        auxiliary_files=auxiliary_files,
         upload_dir=upload_dir,
         db_task=db_task,
         is_data_in_cloud=is_data_in_cloud,
@@ -1909,8 +1995,37 @@ def initialize_task(
         db_data.storage_method = models.StorageMethodChoice.CACHE
 
     manifest = None
+    sorted_media = []
     if is_data_in_cloud:
         is_packed_media = any(v for k, v in media.items() if k != "image")
+        if not is_packed_media:
+            if job_file_mapping is not None:
+                sorted_media = list(itertools.chain.from_iterable(job_file_mapping))
+            else:
+                sorted_media = sort(media["image"], data["sorting_method"])
+                media["image"] = sorted_media
+
+            sorted_media = [PurePosixPath(path) for path in sorted_media]
+            is_media_sorted = True
+
+            # Create a task manifest for cached cloud data and for static data whose manifest is
+            # in a subdirectory, so manifest paths include the cloud source prefix.
+            if (
+                manifest_file
+                and not is_backup_restore
+                and (
+                    db_data.storage_method != models.StorageMethodChoice.FILE_SYSTEM
+                    or cloud_storage_manifest_prefix
+                )
+            ):
+                manifest = ImageManifestManager(db_data.get_manifest_path())
+                _create_task_manifest_based_on_cloud_storage_manifest(
+                    sorted_media=sorted_media,
+                    cloud_storage_manifest_prefix=cloud_storage_manifest_prefix,
+                    cloud_storage_manifest=cloud_storage_manifest,
+                    manifest=manifest,
+                )
+
         if (
             # Download remote data if local storage is requested
             # TODO: maybe move into cache building to fail faster on invalid task configurations
@@ -1929,7 +2044,7 @@ def initialize_task(
             is_data_in_cloud = False
             if is_packed_media:
                 db_data.storage = models.StorageChoice.LOCAL
-        else:
+        elif manifest is None:
             manifest = ImageManifestManager(db_data.get_manifest_path())
 
     if data["server_files"]:
@@ -1944,31 +2059,12 @@ def initialize_task(
             )
             manifest_root = upload_dir
         elif is_data_in_cloud:
-            # we should sort media before sorting in the extractor because the manifest structure should match to the sorted media
-            if job_file_mapping is not None:
-                sorted_media = list(itertools.chain.from_iterable(job_file_mapping))
-            else:
-                sorted_media = sort(media["image"], data["sorting_method"])
-                media["image"] = sorted_media
-
-            sorted_media = [PurePosixPath(f) for f in sorted_media]
-            is_media_sorted = True
-
-            if manifest_file:
-                if not is_backup_restore:
-                    # Define task manifest content based on cloud storage manifest content and uploaded files
-                    _create_task_manifest_based_on_cloud_storage_manifest(
-                        sorted_media=sorted_media,
-                        cloud_storage_manifest_prefix=cloud_storage_manifest_prefix,
-                        cloud_storage_manifest=cloud_storage_manifest,
-                        manifest=manifest,
-                    )
-            else:  # without manifest file but with use_cache option
+            if not manifest_file:  # without manifest file but with use_cache option
                 # Define task manifest content based on list with uploaded files
                 _create_task_manifest_from_cloud_data(
                     db_storage=db_data.cloud_storage,
                     sorted_media=sorted_media,
-                    metadata_paths=set(itertools.chain.from_iterable(metadata.values())),
+                    selected_paths=set(data["server_files"]),
                     manifest=manifest,
                 )
 
@@ -2105,8 +2201,13 @@ def initialize_task(
 
     related_images = {}
     related_image_metadata_loaders = {}
+    auxiliary_files = {}
     if isinstance(extractor, MEDIA_TYPES["image"]["extractor"]):
-        related_images, related_image_metadata_loaders = _find_and_filter_related_images(
+        (
+            related_images,
+            related_image_metadata_loaders,
+            auxiliary_files,
+        ) = _find_and_filter_related_images(
             extractor,
             upload_dir=upload_dir,
         )
@@ -2237,6 +2338,7 @@ def initialize_task(
                 extractor=extractor,
                 related_images=related_images,
                 related_image_metadata_loaders=related_image_metadata_loaders,
+                auxiliary_files=auxiliary_files,
                 server_files=server_files,
                 server_files_exclude=server_files_exclude,
                 validation_params=validation_params,
