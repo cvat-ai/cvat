@@ -6,13 +6,16 @@ import './styles.scss';
 import React, {
     useEffect, useMemo, useRef, useState,
 } from 'react';
-import { ExportOutlined, NotificationOutlined } from '@ant-design/icons';
+import { useSelector } from 'react-redux';
+import { ArrowUpOutlined, NotificationOutlined } from '@ant-design/icons';
 import Alert from 'antd/lib/alert';
 import Badge from 'antd/lib/badge';
 import Button from 'antd/lib/button';
+import ConfigProvider from 'antd/lib/config-provider';
 import Modal from 'antd/lib/modal';
 import Spin from 'antd/lib/spin';
 import automaticPopups from 'utils/automatic-popup';
+import { CombinedState } from 'reducers';
 
 import {
     ReleaseNote, SeenState, Updates, compareVersions, contentURL, isNewVersion,
@@ -22,6 +25,7 @@ import { acknowledge, fetchUpdates } from './server';
 import AnnouncementCarousel from './announcement-carousel';
 import ReleaseSummary from './release-summary';
 import StarRepositoryCallout from './star-repository-callout';
+import { WHATS_NEW_STYLE, WHATS_NEW_THEME } from './theme';
 
 interface Props {
     user: { id: number };
@@ -61,6 +65,12 @@ export default function WhatsNew(props: Props): JSX.Element {
     const offered = useRef(false);
     const manuallyOpened = useRef(false);
     const ackRequests = useRef(new Set<string>());
+    const profilePromotionsAllowed = useSelector((state: CombinedState) => (
+        state.growth.data?.owner.id === props.user.id ? state.growth.data.promotionNotificationsAllowed : undefined
+    ));
+    const promotionsAllowed = profilePromotionsAllowed ?? seen?.promotion_notifications_allowed ?? false;
+    const promotionsAllowedRef = useRef(promotionsAllowed);
+    promotionsAllowedRef.current = promotionsAllowed;
     const blocked = props.extensionsBlocked || props.settingsModalVisible ||
         props.shortcutsModalVisible || props.changePasswordDialogShown;
     const blockedRef = useRef(blocked);
@@ -111,7 +121,10 @@ export default function WhatsNew(props: Props): JSX.Element {
         return () => controller.abort();
     }, [retry]);
 
-    useEffect(() => { automaticPopups.refresh(); }, [blocked]);
+    useEffect(() => {
+        if (!promotionsAllowed && offered.current) automaticPopups.offer('whats-new', null);
+        automaticPopups.refresh();
+    }, [blocked, promotionsAllowed]);
     useEffect(() => () => { automaticPopups.offer('whats-new', null); }, []);
 
     // Capture before acknowledging; highlights remain stable until this popup closes.
@@ -123,26 +136,31 @@ export default function WhatsNew(props: Props): JSX.Element {
     useEffect(() => {
         if (loading || offered.current) return;
         offered.current = true;
-        if (!updates || loadError || manuallyOpened.current) {
+        if (!updates || loadError || manuallyOpened.current || !promotionsAllowed) {
             automaticPopups.offer('whats-new', null);
             return;
         }
         const release = updates.releases.find((item) => item.announce &&
             isNewVersion(item.version, updates.state.last_seen_release_notes_version));
-        const promoteAnnouncements = updates.state.promotion_notifications_allowed &&
-            unseenAnnouncements(announcements, updates.state.last_seen_announcements_date).some((item) => item.popup);
+        const promoteAnnouncements = unseenAnnouncements(
+            announcements, updates.state.last_seen_announcements_date,
+        ).some((item) => item.popup);
         if (!release && !promoteAnnouncements) {
             automaticPopups.offer('whats-new', null);
             return;
         }
         automaticPopups.offer('whats-new', () => {
+            if (!promotionsAllowedRef.current) {
+                automaticPopups.offer('whats-new', null);
+                return false;
+            }
             if (blockedRef.current) return false;
             setOpeningSeen(seenRef.current || updates.state);
             setSelectedRelease(release || updates.releases.find((item) => item.announce) || null);
             setOpen(true);
             return true;
         });
-    }, [updates, loading, loadError, announcements]);
+    }, [updates, loading, loadError, announcements, promotionsAllowed]);
 
     useEffect(() => {
         if (!open || !ready || !openingSeen) return undefined;
@@ -187,7 +205,7 @@ export default function WhatsNew(props: Props): JSX.Element {
     };
     return (
         <>
-            <Badge dot={unreadRelease || unreadAnnouncements} offset={[-6, 6]}>
+            <Badge dot={unreadRelease || unreadAnnouncements} color='blue' offset={[-6, 6]}>
                 <Button
                     className='cvat-header-button cvat-release-notes-button'
                     type='link'
@@ -204,82 +222,89 @@ export default function WhatsNew(props: Props): JSX.Element {
                     }}
                 />
             </Badge>
-            <Modal
-                className='cvat-release-notes-modal cvat-updates-overview-modal'
-                title={<span className='cvat-updates-title'><NotificationOutlined /> What’s New in CVAT</span>}
-                open={open}
-                centered
-                width={1040}
-                onCancel={close}
-                destroyOnClose
-                footer={(
-                    <>
-                        <StarRepositoryCallout
-                            open={open}
-                            active={ready && hasContent}
-                            userId={props.user.id}
-                        />
-                        <div className='cvat-release-notes-footer-actions'>
-                            <Button
-                                type='link'
-                                href={historyURL}
-                                target='_blank'
-                                rel='noopener noreferrer'
-                                disabled={!historyURL}
-                            >
-                                View all updates <ExportOutlined />
-                            </Button>
-                            <Button type='primary' onClick={close}>Close</Button>
-                        </div>
-                    </>
-                )}
-            >
-                {loading && <div className='cvat-release-notes-loading'><Spin /></div>}
-                {!loading && loadError && (
-                    <Alert
-                        type='warning'
-                        showIcon
-                        message='Updates are temporarily unavailable'
-                        action={<Button onClick={() => setRetry((value) => value + 1)}>Retry loading</Button>}
-                    />
-                )}
-                {!loading && !loadError && (
-                    <div className='cvat-updates-overview'>
-                        {ackError && (
-                            <Alert
-                                type='warning'
-                                showIcon
-                                message='Could not save your seen status. These updates may appear again.'
-                                action={<Button onClick={() => setAckRetry((value) => value + 1)}>Retry saving</Button>}
+            <ConfigProvider theme={WHATS_NEW_THEME}>
+                <Modal
+                    className='cvat-release-notes-modal cvat-updates-overview-modal'
+                    style={WHATS_NEW_STYLE}
+                    title={<span className='cvat-updates-title'><NotificationOutlined /> What’s New in CVAT</span>}
+                    open={open}
+                    centered
+                    width={1040}
+                    onCancel={close}
+                    destroyOnClose
+                    footer={(
+                        <>
+                            <StarRepositoryCallout
+                                open={open}
+                                active={ready && hasContent}
+                                userId={props.user.id}
                             />
-                        )}
-                        <AnnouncementCarousel items={announcements} newKeys={newAnnouncementKeys} />
-                        {selectedRelease && (
-                            <ReleaseSummary
-                                key={selectedRelease.version}
-                                release={selectedRelease}
-                                isNew={newRelease}
-                            />
-                        )}
-                        {!hasContent && !updates?.errors.length && (
-                            <div className='cvat-release-notes-empty'>
-                                <h2>You’re up to date</h2>
-                                <p>New announcements and release notes will appear here.</p>
+                            <div className='cvat-release-notes-footer-actions'>
+                                <Button
+                                    className='cvat-updates-action cvat-updates-action-outline'
+                                    href={historyURL}
+                                    target='_blank'
+                                    rel='noopener noreferrer'
+                                    disabled={!historyURL}
+                                >
+                                    View all updates <ArrowUpOutlined rotate={45} />
+                                </Button>
+                                <Button className='cvat-updates-action' onClick={close}>Close</Button>
                             </div>
-                        )}
-                        {!!updates?.errors.length && (
-                            <Alert
-                                type='warning'
-                                showIcon
-                                message='Some updates are temporarily unavailable'
-                                description={!canAcknowledgeAnnouncements ?
-                                    'Updates may appear again. Retry loading to save seen status.' : undefined}
-                                action={<Button onClick={() => setRetry((value) => value + 1)}>Retry loading</Button>}
-                            />
-                        )}
-                    </div>
-                )}
-            </Modal>
+                        </>
+                    )}
+                >
+                    {loading && <div className='cvat-release-notes-loading'><Spin /></div>}
+                    {!loading && loadError && (
+                        <Alert
+                            type='warning'
+                            showIcon
+                            message='Updates are temporarily unavailable'
+                            action={<Button onClick={() => setRetry((value) => value + 1)}>Retry loading</Button>}
+                        />
+                    )}
+                    {!loading && !loadError && (
+                        <div className='cvat-updates-overview'>
+                            {ackError && (
+                                <Alert
+                                    type='warning'
+                                    showIcon
+                                    message='Could not save your seen status. These updates may appear again.'
+                                    action={(
+                                        <Button onClick={() => setAckRetry((value) => value + 1)}>Retry saving</Button>
+                                    )}
+                                />
+                            )}
+                            <AnnouncementCarousel items={announcements} newKeys={newAnnouncementKeys} />
+                            {selectedRelease && (
+                                <ReleaseSummary
+                                    key={selectedRelease.version}
+                                    release={selectedRelease}
+                                    isNew={newRelease}
+                                />
+                            )}
+                            {!hasContent && !updates?.errors.length && (
+                                <div className='cvat-release-notes-empty'>
+                                    <h2>You’re up to date</h2>
+                                    <p>New announcements and release notes will appear here.</p>
+                                </div>
+                            )}
+                            {!!updates?.errors.length && (
+                                <Alert
+                                    type='warning'
+                                    showIcon
+                                    message='Some updates are temporarily unavailable'
+                                    description={!canAcknowledgeAnnouncements ?
+                                        'Updates may appear again. Retry loading to save seen status.' : undefined}
+                                    action={(
+                                        <Button onClick={() => setRetry((value) => value + 1)}>Retry loading</Button>
+                                    )}
+                                />
+                            )}
+                        </div>
+                    )}
+                </Modal>
+            </ConfigProvider>
         </>
     );
 }

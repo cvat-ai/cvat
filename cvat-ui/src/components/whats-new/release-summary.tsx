@@ -3,7 +3,7 @@
 // SPDX-License-Identifier: MIT
 
 import React from 'react';
-import { ExportOutlined, UnorderedListOutlined } from '@ant-design/icons';
+import { ArrowUpOutlined, UnorderedListOutlined } from '@ant-design/icons';
 import Button from 'antd/lib/button';
 import { ReleaseNote } from './feed';
 
@@ -27,16 +27,24 @@ export default function ReleaseSummary({ release, isNew = false }: {
                         })}
                     </time>
                 </div>
-                <ul className='cvat-updates-release-highlights'>
-                    {highlights.slice(0, 3).map((highlight, index) => (
-                        <li key={`${index}:${highlight}`}>{highlight}</li>
-                    ))}
-                </ul>
+                <div
+                    className='cvat-updates-release-highlights'
+                    role='region'
+                    aria-label='Release highlights'
+                    // eslint-disable-next-line jsx-a11y/no-noninteractive-tabindex -- Enable keyboard scrolling.
+                    tabIndex={0}
+                >
+                    <ul>
+                        {highlights.slice(0, 5).map((highlight, index) => (
+                            <li key={`${index}:${highlight}`}>{highlight}</li>
+                        ))}
+                    </ul>
+                </div>
                 <Button
                     type='text'
                     shape='circle'
                     className='cvat-updates-release-link'
-                    icon={<ExportOutlined />}
+                    icon={<ArrowUpOutlined rotate={45} />}
                     href={release.url}
                     target='_blank'
                     rel='noopener noreferrer'

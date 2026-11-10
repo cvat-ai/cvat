@@ -6,7 +6,7 @@ import React, {
     useCallback, useEffect, useRef, useState,
 } from 'react';
 import { useDispatch, useSelector, useStore } from 'react-redux';
-import { GithubOutlined, StarFilled } from '@ant-design/icons';
+import { ArrowUpOutlined, GithubOutlined } from '@ant-design/icons';
 import Button from 'antd/lib/button';
 import Typography from 'antd/lib/typography';
 import { updateGrowthDataAsync } from 'actions/growth-actions';
@@ -20,7 +20,9 @@ interface Props {
     userId: number;
 }
 
-export default function StarRepositoryCallout({ open, active, userId }: Props): JSX.Element | null {
+export default function StarRepositoryCallout({
+    open, active, userId,
+}: Props): JSX.Element | null {
     const growth = useSelector((state: CombinedState) => state.growth);
     const dispatch = useDispatch<ThunkDispatch>();
     const store = useStore<CombinedState>();
@@ -72,7 +74,6 @@ export default function StarRepositoryCallout({ open, active, userId }: Props): 
 
     return (
         <aside className='cvat-release-notes-star-callout' aria-label='Support CVAT' ref={container}>
-            <div className='cvat-release-notes-star-graphic' aria-hidden='true'><StarFilled /></div>
             <div className='cvat-release-notes-star-copy'>
                 <Typography.Text strong className='cvat-release-notes-star-title'>Enjoying CVAT?</Typography.Text>
                 <Typography.Paragraph type='secondary' className='cvat-release-notes-star-description'>
@@ -80,7 +81,8 @@ export default function StarRepositoryCallout({ open, active, userId }: Props): 
                 </Typography.Paragraph>
             </div>
             <Button
-                className='cvat-release-notes-star-button'
+                className='cvat-updates-action cvat-release-notes-star-button'
+                type='primary'
                 icon={<GithubOutlined />}
                 href={appConfig.GITHUB_URL}
                 target='_blank'
@@ -99,6 +101,7 @@ export default function StarRepositoryCallout({ open, active, userId }: Props): 
                 }}
             >
                 Star CVAT on GitHub
+                <ArrowUpOutlined rotate={45} />
             </Button>
         </aside>
     );

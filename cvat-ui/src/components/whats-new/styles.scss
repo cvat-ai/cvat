@@ -17,6 +17,8 @@
     max-width: calc(100vw - 32px);
 
     .ant-modal-content {
+        background: var(--cvat-updates-white);
+        border: 1px solid var(--cvat-updates-border);
         border-radius: 16px;
     }
 
@@ -30,10 +32,10 @@
         display: flex;
         align-items: center;
         gap: 10px;
-        color: #18283e;
+        color: var(--cvat-updates-ink);
 
         .anticon {
-            color: #3f6387;
+            color: var(--cvat-updates-orange);
             font-size: 23px;
         }
     }
@@ -56,13 +58,16 @@
     }
 
     .cvat-updates-announcements {
+        box-sizing: border-box;
+        height: 340px;
+        flex-shrink: 0;
         padding: 22px 22px 10px;
-        background: #f4f7fc;
-        border: 1px solid #edf1f7;
+        background: var(--cvat-updates-surface);
+        border: 1px solid var(--cvat-updates-border);
         border-radius: 12px;
 
         &:focus-visible {
-            outline: 2px solid #3f6387;
+            outline: 2px solid var(--cvat-updates-deep-red);
             outline-offset: 2px;
         }
     }
@@ -72,15 +77,27 @@
         grid-template-columns: minmax(0, 0.92fr) minmax(0, 1.08fr);
         align-items: center;
         gap: 24px;
-        min-height: 260px;
+        height: 278px;
+        min-height: 0;
     }
 
     .cvat-updates-announcement-copy {
+        box-sizing: border-box;
+        min-height: 0;
+        max-height: 100%;
+        overflow-y: auto;
+        overscroll-behavior: contain;
         padding: 6px 0;
+        overflow-wrap: anywhere;
+
+        &:focus-visible {
+            outline: 2px solid var(--cvat-updates-deep-red);
+            outline-offset: -2px;
+        }
 
         h2 {
             margin: 10px 0 12px;
-            color: #18283e;
+            color: var(--cvat-updates-ink);
             font-size: 25px;
             font-weight: 700;
             letter-spacing: -0.35px;
@@ -89,7 +106,7 @@
 
         p {
             margin: 0 0 18px;
-            color: #43566e;
+            color: var(--cvat-updates-muted);
             font-size: 14px;
             line-height: 1.55;
         }
@@ -98,9 +115,9 @@
     .cvat-updates-eyebrow {
         display: inline-block;
         padding: 4px 7px;
-        background: #e1e8f3;
+        background: var(--cvat-updates-neutral-badge);
         border-radius: 5px;
-        color: #345371;
+        color: var(--cvat-updates-muted);
         font-size: 11px;
         font-weight: 600;
         line-height: 1.2;
@@ -116,230 +133,27 @@
     .cvat-updates-new-badge {
         display: inline-block;
         padding: 3px 8px;
-        background: #dff3e9;
-        border: 1px solid #93cdb0;
+        background: var(--cvat-updates-badge-bg);
+        border: 1px solid var(--cvat-updates-amber);
         border-radius: 5px;
-        color: #1b6342;
+        color: var(--cvat-updates-ink);
         font-size: 11px;
         font-weight: 700;
         line-height: 1.2;
         white-space: nowrap;
     }
 
-    .cvat-updates-explore-button.ant-btn-primary {
-        height: 36px;
-        background: #3f6387;
-        border-color: #3f6387;
-        border-radius: 7px;
-        box-shadow: none;
-        font-weight: 500;
-
-        &:not(:disabled):hover {
-            background: #315373;
-            border-color: #315373;
-        }
-    }
-
-    .cvat-updates-announcement-media {
-        width: 100%;
-        aspect-ratio: 16 / 10;
-        overflow: hidden;
-        background: #e8eef6;
-        border-radius: 10px;
-
-        img,
-        video {
-            display: block;
-            width: 100%;
-            height: 100%;
-            background: white;
-            object-fit: contain;
-        }
-    }
-
-    .cvat-updates-media-placeholder {
-        display: flex;
-        height: 100%;
-        flex-direction: column;
-        align-items: center;
-        justify-content: center;
-        gap: 12px;
-        color: #7892ae;
-
-        .anticon {
-            font-size: 52px;
-        }
-
-        span:last-child {
-            font-size: 24px;
-            font-weight: 700;
-            letter-spacing: 1px;
-        }
-    }
-
-    .cvat-updates-carousel-navigation {
-        display: flex;
-        align-items: center;
-        justify-content: center;
-        gap: 10px;
-        padding-top: 10px;
-
-        .ant-btn {
-            color: #6f829b;
-        }
-    }
-
-    .cvat-updates-carousel-dots {
-        display: flex;
-        align-items: center;
-        gap: 7px;
-    }
-
-    .cvat-updates-carousel-dot {
-        width: 8px;
-        height: 8px;
-        padding: 0;
-        background: #c7d1df;
-        border: 0;
-        border-radius: 99px;
-        cursor: pointer;
-
-        &.active {
-            width: 20px;
-            background: #3f6387;
-        }
-
-        &.new {
-            outline: 1px solid #28724f;
-            outline-offset: 2px;
-            background: #28724f;
-        }
-
-        &:focus-visible {
-            outline: 2px solid #3f6387;
-            outline-offset: 3px;
-        }
-    }
-
-    .cvat-updates-release-panel {
-        overflow: hidden;
-        border: 1px solid #edf1f7;
-        border-radius: 12px;
-    }
-
-    .cvat-updates-release {
-        display: grid;
-        grid-template-columns: 44px 132px minmax(0, 1fr) 32px;
-        align-items: center;
-        gap: 16px;
-        padding: 20px;
-        background: #f4f7fc;
-    }
-
-    .cvat-updates-release-highlights {
-        margin: 0;
-        padding: 0 8px 0 24px;
-        border-left: 1px solid #d8e2f0;
-        color: #26384f;
-        font-size: 16px;
-        line-height: 1.65;
-
-        li + li {
-            margin-top: 8px;
-        }
-
-        li::marker {
-            color: #456b91;
-        }
-    }
-
-    .cvat-updates-release-icon {
-        display: grid;
-        width: 40px;
-        height: 40px;
-        place-items: center;
-        background: #e3eaf4;
-        border-radius: 9px;
-        color: #3f6387;
-        font-size: 22px;
-    }
-
-    .cvat-updates-release-meta {
-        .cvat-updates-new-badge {
-            margin-top: 5px;
-        }
-
-        h2 {
-            margin: 5px 0;
-            color: #18283e;
-            font-size: 25px;
-            font-weight: 700;
-            line-height: 1.2;
-        }
-
-        time {
-            color: #6f8199;
-            font-size: 12px;
-        }
-    }
-
-    .cvat-updates-release-label {
-        color: #26384f;
-        font-size: 14px;
-        font-weight: 600;
-    }
-
-    .cvat-updates-release-link {
-        color: #3f6387;
-    }
-
-    .cvat-release-notes-star-callout {
-        display: grid;
-        grid-template-columns: 48px minmax(0, 1fr) auto;
-        align-items: center;
-        gap: 18px;
-        margin: 0 0 18px;
-        padding: 18px 20px;
-        background: #244f79;
-        border-radius: 12px;
-        color: white;
-        text-align: left;
-    }
-
-    .cvat-release-notes-star-graphic {
-        display: grid;
-        width: 48px;
-        height: 48px;
-        place-items: center;
-        background: rgba(255, 255, 255, 12%);
-        border-radius: 50%;
-        color: white;
-        font-size: 26px;
-    }
-
-    .cvat-release-notes-star-title {
-        color: white;
-        font-size: 21px;
-        line-height: 1.3;
-    }
-
-    .cvat-release-notes-star-description {
-        margin: 4px 0 0;
-        color: rgba(255, 255, 255, 84%);
-        font-size: 13px;
-        line-height: 1.45;
-    }
-
-    .cvat-release-notes-star-button.ant-btn {
+    .cvat-updates-action.ant-btn {
         display: inline-flex;
         align-items: center;
         justify-content: center;
-        gap: 8px;
-        height: 40px;
-        padding: 0 16px;
-        background: white;
-        border-color: white;
-        color: #244f79;
+        gap: 10px;
+        min-height: 42px;
+        height: auto;
+        padding: 10px 18px;
+        border-radius: 8px;
+        box-shadow: none;
+        font-size: 15px;
         font-weight: 600;
         line-height: 20px;
 
@@ -351,15 +165,266 @@
             line-height: 1;
         }
 
-        .anticon {
-            font-size: 16px;
+        > .anticon {
+            font-size: 18px;
         }
 
-        &:not(:disabled):hover {
-            background: #edf4fc;
-            border-color: #edf4fc;
-            color: #244f79;
+        &:focus-visible {
+            outline: 2px solid var(--cvat-updates-deep-red);
+            outline-offset: 3px;
         }
+    }
+
+    .cvat-updates-action-outline.ant-btn {
+        background: var(--cvat-updates-white);
+        border-color: var(--cvat-updates-orange);
+        color: var(--cvat-updates-action-orange);
+
+        &:not(:disabled):hover {
+            background: var(--cvat-updates-badge-bg);
+            border-color: var(--cvat-updates-action-orange);
+            color: var(--cvat-updates-action-orange-hover);
+        }
+    }
+
+    .cvat-updates-announcement-media {
+        width: 100%;
+        height: 260px;
+        overflow: hidden;
+        background: var(--cvat-updates-media-bg);
+        border-radius: 10px;
+
+        img,
+        video {
+            display: block;
+            width: 100%;
+            height: 100%;
+            background: var(--cvat-updates-white);
+            object-fit: contain;
+        }
+    }
+
+    .cvat-updates-media-placeholder {
+        display: flex;
+        height: 100%;
+        flex-direction: column;
+        align-items: center;
+        justify-content: center;
+        gap: 12px;
+        color: var(--cvat-updates-muted-icon);
+
+        .anticon {
+            color: var(--cvat-updates-orange);
+            font-size: 52px;
+        }
+
+        span:last-child {
+            font-size: 24px;
+            font-weight: 700;
+            letter-spacing: 1px;
+        }
+    }
+
+    .cvat-updates-carousel {
+        min-width: 0;
+
+        .slick-list {
+            margin-inline: 12px;
+        }
+
+        .slick-prev,
+        .slick-next {
+            top: calc(50% - 14px);
+            width: 24px;
+            height: 24px;
+            color: var(--cvat-updates-muted);
+            opacity: 1;
+
+            &::after {
+                top: 8px;
+                inset-inline-start: 8px;
+                width: 8px;
+                height: 8px;
+            }
+
+            &:focus-visible {
+                outline: 2px solid var(--cvat-updates-deep-red);
+                outline-offset: 2px;
+            }
+        }
+
+        .slick-prev {
+            inset-inline-start: -18px;
+        }
+
+        .slick-next {
+            inset-inline-end: -18px;
+        }
+
+        .slick-dots.cvat-updates-carousel-dots {
+            position: static;
+            align-items: center;
+            height: 14px;
+            margin: 14px 0 0;
+
+            li {
+                width: 8px;
+                height: 8px;
+                margin-inline: 4px;
+            }
+
+            li.slick-active {
+                width: 20px;
+
+                button {
+                    background: var(--cvat-updates-orange);
+                    border-color: var(--cvat-updates-deep-red);
+                }
+            }
+
+            button {
+                height: 8px;
+                background: var(--cvat-updates-muted-icon);
+                border: 1px solid transparent;
+                border-radius: 99px;
+                opacity: 1;
+
+                &.new {
+                    outline: 1px solid var(--cvat-updates-orange);
+                    outline-offset: 2px;
+                }
+
+                &:focus-visible {
+                    outline: 2px solid var(--cvat-updates-deep-red);
+                    outline-offset: 3px;
+                }
+            }
+        }
+    }
+
+    .cvat-updates-release-panel {
+        box-sizing: border-box;
+        height: 260px;
+        flex-shrink: 0;
+        overflow: hidden;
+        border: 1px solid var(--cvat-updates-border);
+        border-radius: 12px;
+    }
+
+    .cvat-updates-release {
+        box-sizing: border-box;
+        display: grid;
+        height: 100%;
+        min-height: 0;
+        grid-template-columns: 44px 132px minmax(0, 1fr) 32px;
+        align-items: center;
+        gap: 16px;
+        padding: 20px;
+        background: var(--cvat-updates-surface);
+    }
+
+    .cvat-updates-release-highlights {
+        min-height: 0;
+        max-height: 100%;
+        margin: 0;
+        overflow-y: auto;
+        overscroll-behavior: contain;
+        padding: 0 8px 0 12px;
+        border-left: 1px solid var(--cvat-updates-border);
+        color: var(--cvat-updates-ink);
+        font-size: 16px;
+        line-height: 1.65;
+        overflow-wrap: anywhere;
+
+        ul {
+            margin: 0;
+            padding-left: 20px;
+        }
+
+        &:focus-visible {
+            outline: 2px solid var(--cvat-updates-deep-red);
+            outline-offset: -2px;
+        }
+
+        li + li {
+            margin-top: 8px;
+        }
+
+        li::marker {
+            color: var(--cvat-updates-orange);
+        }
+    }
+
+    .cvat-updates-release-icon {
+        display: grid;
+        width: 40px;
+        height: 40px;
+        place-items: center;
+        background: var(--cvat-updates-neutral-badge);
+        border-radius: 9px;
+        color: var(--cvat-updates-orange);
+        font-size: 22px;
+    }
+
+    .cvat-updates-release-meta {
+        .cvat-updates-new-badge {
+            margin-top: 5px;
+        }
+
+        h2 {
+            margin: 5px 0;
+            color: var(--cvat-updates-ink);
+            font-size: 25px;
+            font-weight: 700;
+            line-height: 1.2;
+        }
+
+        time {
+            color: var(--cvat-updates-muted);
+            font-size: 12px;
+        }
+    }
+
+    .cvat-updates-release-label {
+        color: var(--cvat-updates-ink);
+        font-size: 14px;
+        font-weight: 600;
+    }
+
+    .cvat-updates-release-link {
+        color: var(--cvat-updates-ink);
+
+        &:hover {
+            color: var(--cvat-updates-deep-red);
+        }
+    }
+
+    .cvat-release-notes-star-callout {
+        display: grid;
+        grid-template-columns: minmax(0, 1fr) auto;
+        align-items: center;
+        gap: 20px;
+        margin: 0 0 18px;
+        padding: 18px 20px;
+        background: var(--cvat-updates-support-surface);
+        border: 1px solid var(--cvat-updates-support-border);
+        border-radius: 12px;
+        color: var(--cvat-updates-ink);
+        text-align: left;
+    }
+
+    .cvat-release-notes-star-title {
+        display: block;
+        color: var(--cvat-updates-ink);
+        font-size: 19px;
+        line-height: 1.3;
+    }
+
+    .cvat-release-notes-star-callout .cvat-release-notes-star-description {
+        margin: 4px 0 0;
+        color: var(--cvat-updates-muted);
+        font-size: 13px;
+        line-height: 1.45;
     }
 
     .cvat-release-notes-footer-actions {
@@ -372,12 +437,6 @@
         > .ant-btn + .ant-btn {
             margin-inline-start: 0;
         }
-
-        > .ant-btn-link {
-            padding-left: 0;
-            color: #3f6387;
-            font-weight: 600;
-        }
     }
 
     .cvat-release-notes-loading {
@@ -388,28 +447,30 @@
 
     .cvat-release-notes-empty {
         padding: 36px 16px;
-        color: #43566e;
+        color: var(--cvat-updates-muted);
         text-align: center;
 
         h2 {
-            color: #18283e;
+            color: var(--cvat-updates-ink);
             font-size: 20px;
         }
     }
 
     @media (width <= 767px) {
         .cvat-updates-announcements {
+            height: 480px;
             padding: 16px 16px 10px;
         }
 
         .cvat-updates-announcement {
             grid-template-columns: minmax(0, 1fr);
+            grid-template-rows: 164px minmax(0, 1fr);
             gap: 16px;
-            min-height: 0;
+            height: 424px;
         }
 
         .cvat-updates-announcement-media {
-            max-height: 220px;
+            height: 164px;
             order: -1;
         }
 
@@ -417,8 +478,13 @@
             font-size: 23px;
         }
 
+        .cvat-updates-release-panel {
+            height: 340px;
+        }
+
         .cvat-updates-release {
             grid-template-columns: 40px minmax(0, 1fr) 32px;
+            grid-template-rows: auto minmax(0, 1fr);
             gap: 12px;
             padding: 16px;
         }
@@ -426,14 +492,24 @@
         .cvat-updates-release-highlights {
             grid-column: 1 / -1;
             grid-row: 2;
-            padding: 12px 0 0 20px;
-            border-top: 1px solid #d8e2f0;
+            padding: 12px 0 0;
+            border-top: 1px solid var(--cvat-updates-border);
             border-left: 0;
         }
 
         .cvat-updates-release-link {
             grid-column: 3;
             grid-row: 1;
+        }
+
+        .cvat-release-notes-star-callout {
+            grid-template-columns: minmax(0, 1fr);
+            gap: 14px;
+            padding: 16px;
+        }
+
+        .cvat-release-notes-star-button {
+            justify-self: start;
         }
     }
 
@@ -448,24 +524,7 @@
             font-size: 20px;
         }
 
-        .cvat-release-notes-star-callout {
-            grid-template-columns: 36px minmax(0, 1fr);
-            gap: 12px;
-            padding: 16px;
-        }
-
-        .cvat-release-notes-star-graphic {
-            width: 36px;
-            height: 36px;
-            font-size: 21px;
-        }
-
-        .cvat-release-notes-star-title {
-            font-size: 19px;
-        }
-
         .cvat-release-notes-star-button {
-            grid-column: 1 / -1;
             width: 100%;
         }
     }
