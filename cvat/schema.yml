@@ -8253,7 +8253,8 @@ components:
         editions:
           type: array
           items:
-            $ref: '#/components/schemas/UpdatesEdition'
+            type: string
+            pattern: ^[a-z][a-z0-9-]*$
         url:
           type: string
           format: uri
@@ -13336,7 +13337,8 @@ components:
         editions:
           type: array
           items:
-            $ref: '#/components/schemas/UpdatesEdition'
+            type: string
+            pattern: ^[a-z][a-z0-9-]*$
         url:
           type: string
           format: uri
@@ -14246,21 +14248,12 @@ components:
       required:
       - baseURL
       - body
-    UpdatesEdition:
-      enum:
-      - community
-      - enterprise
-      - saas
-      type: string
-      description: |-
-        * `community` - community
-        * `enterprise` - enterprise
-        * `saas` - saas
     UpdatesIndex:
       type: object
       properties:
         edition:
-          $ref: '#/components/schemas/UpdatesEdition'
+          type: string
+          pattern: ^[a-z][a-z0-9-]*$
         state:
           $ref: '#/components/schemas/UpdatesState'
         releases:

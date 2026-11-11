@@ -4,11 +4,12 @@
 
 """Filter Hugo-rendered release sections without interpreting Markdown syntax."""
 
+import re
 from html import escape
 
 from lxml import etree, html
 
-from .types import EDITIONS, Edition
+from .types import EDITION_PATTERN
 
 
 def _parse(body: str) -> tuple[html.HtmlElement, list[html.HtmlElement]]:
@@ -25,7 +26,7 @@ def _parse(body: str) -> tuple[html.HtmlElement, list[html.HtmlElement]]:
         editions = section.get("data-cvat-editions").split(",")
         if (
             not editions
-            or any(value not in EDITIONS for value in editions)
+            or any(not re.fullmatch(EDITION_PATTERN, value) for value in editions)
             or len(set(editions)) != len(editions)
         ):
             raise ValueError("Invalid release section audience")
@@ -39,7 +40,7 @@ def validate(body: str) -> str:
     return body
 
 
-def for_edition(body: str, edition: Edition) -> str | None:
+def for_edition(body: str, edition: str) -> str | None:
     root, sections = _parse(body)
     matching = False
     for section in sections:

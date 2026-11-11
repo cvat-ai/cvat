@@ -7,12 +7,6 @@ from enum import StrEnum
 from typing import NotRequired, Protocol, TypedDict
 
 
-class Edition(StrEnum):
-    COMMUNITY = "community"
-    ENTERPRISE = "enterprise"
-    SAAS = "saas"
-
-
 class ContentKind(StrEnum):
     RELEASE_NOTES = "release-notes"
     ANNOUNCEMENTS = "announcements"
@@ -29,7 +23,7 @@ class AnnouncementSource(StrEnum):
     EXTERNAL = "external"
 
 
-EDITIONS = tuple(Edition)
+EDITION_PATTERN = r"^[a-z][a-z0-9-]*$"
 RELEASE_VERSION_PATTERN = r"^[0-9]+\.[0-9]+\.[0-9]+$"
 OnStale = Callable[[], None]
 
@@ -40,7 +34,7 @@ class AnnouncementPreview(TypedDict):
     description: str
     publishedAt: str
     url: str
-    editions: list[Edition]
+    editions: list[str]
     popup: bool
     imageURL: NotRequired[str]
     videoURL: NotRequired[str]
@@ -53,7 +47,7 @@ class AnnouncementPreview(TypedDict):
 
 class AnnouncementProvider(Protocol):
     def __call__(
-        self, *, edition: Edition, limit: int, on_stale: OnStale | None = None
+        self, *, edition: str, limit: int, on_stale: OnStale | None = None
     ) -> list[AnnouncementPreview]:
         """Return published edition-matching previews, newest first, up to limit.
 

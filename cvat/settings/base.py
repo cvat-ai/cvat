@@ -735,7 +735,6 @@ SPECTACULAR_SETTINGS = {
     # Required for correct file upload type (bytes)
     "COMPONENT_SPLIT_REQUEST": True,
     "ENUM_NAME_OVERRIDES": {
-        "UpdatesEdition": "cvat.apps.growth.types.EDITIONS",
         "LabelType": "cvat.apps.engine.models.LabelType",
         "ShapeType": "cvat.apps.engine.models.ShapeType",
         "OperationStatus": "cvat.apps.engine.models.StateChoice",

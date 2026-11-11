@@ -30,13 +30,12 @@ from . import release_sections
 from .models import UserGrowthData
 from .sources import HTTP_TIMEOUT, STALE_TTL, read_response_text
 from .types import (
-    EDITIONS,
+    EDITION_PATTERN,
     RELEASE_VERSION_PATTERN,
     AnnouncementPreview,
     AnnouncementProvider,
     AnnouncementSource,
     ContentKind,
-    Edition,
     OnStale,
     UpdateSource,
 )
@@ -68,12 +67,11 @@ def publication_date(value: Any) -> datetime:
     return parsed
 
 
-def edition() -> Edition:
-    try:
-        return Edition(settings.CVAT_UPDATES_EDITION)
-    except ValueError:
-        choices = ", ".join(EDITIONS)
-        raise UpdatesUnavailable(f"CVAT_UPDATES_EDITION must be one of: {choices}.") from None
+def edition() -> str:
+    value = settings.CVAT_UPDATES_EDITION
+    if not isinstance(value, str) or not re.fullmatch(EDITION_PATTERN, value):
+        raise UpdatesUnavailable("CVAT_UPDATES_EDITION must be a lowercase edition identifier.")
+    return value
 
 
 def _base_url(public: bool = False) -> str:
@@ -213,15 +211,17 @@ def _preview_media(value: Any) -> str:
     return urlunsplit(parsed)
 
 
-def _editions(value: Any) -> list[Edition]:
+def _editions(value: Any) -> list[str]:
     if (
         not isinstance(value, list)
         or not value
-        or any(not isinstance(item, str) or item not in EDITIONS for item in value)
+        or any(
+            not isinstance(item, str) or not re.fullmatch(EDITION_PATTERN, item) for item in value
+        )
         or len(set(value)) != len(value)
     ):
         raise ValueError("Expected a non-empty list of unique content editions")
-    return [Edition(item) for item in value]
+    return value
 
 
 def _release_fields(raw: dict[str, Any]) -> dict[str, Any]:

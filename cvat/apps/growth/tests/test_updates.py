@@ -10,25 +10,26 @@ from typing import Any
 from unittest.mock import MagicMock, patch
 
 import requests
+from django.conf import settings
 from django.test import override_settings
 
 from cvat import VERSION
 from cvat.apps.engine.tests.utils import ApiTestBase
 from cvat.apps.growth.models import UserGrowthData
-from cvat.apps.growth.types import AnnouncementPreview, Edition, OnStale
+from cvat.apps.growth.types import AnnouncementPreview, OnStale
 from cvat.apps.growth.updates import UpdatesUnavailable
 from cvat.apps.iam.models import User
 
 
 def sample_provider(
-    *, edition: Edition, limit: int, on_stale: OnStale | None = None
+    *, edition: str, limit: int, on_stale: OnStale | None = None
 ) -> list[AnnouncementPreview]:
     return []
 
 
 @override_settings(
     CVAT_UPDATES_ENABLED=True,
-    CVAT_UPDATES_EDITION=Edition.SAAS,
+    CVAT_UPDATES_EDITION="community",
     CVAT_UPDATES_SOURCE_URL="https://docs.example.com/",
     CVAT_UPDATES_PUBLIC_URL="https://docs.example.com/",
     CVAT_UPDATES_CACHE_TTL=900,
@@ -39,17 +40,18 @@ class UpdatesApiTestBase(ApiTestBase):
         super().setUp()
         self.user = User.objects.create_user(username="updates-user", password="password")
         self.client.force_authenticate(user=self.user)
+        self.edition = settings.CVAT_UPDATES_EDITION
         self.release = {
             "version": "2.0.0",
             "title": "Release",
             "description": "Release overview",
             "publishedAt": "2000-01-01T00:00:00Z",
             "announce": True,
-            "editions": ["community", "enterprise", "saas"],
+            "editions": [self.edition, "other-edition"],
             "hasEditionSections": True,
             "highlights": [
-                {"text": "Shared change", "editions": ["community", "enterprise", "saas"]},
-                {"text": "Enterprise change", "editions": ["enterprise"]},
+                {"text": "Shared change", "editions": [self.edition, "other-edition"]},
+                {"text": "Other edition change", "editions": ["other-edition"]},
             ],
             "markdownURL": "https://docs.example.com/release-notes/2.0.0/index.md",
         }
@@ -59,7 +61,7 @@ class UpdatesApiTestBase(ApiTestBase):
             "description": "Guide preview",
             "publishedAt": "2000-01-02T00:00:00Z",
             "popup": True,
-            "editions": ["enterprise", "saas"],
+            "editions": [self.edition, "other-edition"],
             "url": "https://docs.example.com/announcements/guide/",
             "markdownURL": "https://docs.example.com/announcements/guide/index.md",
         }
@@ -102,7 +104,7 @@ class UpdatesApiTestCase(UpdatesApiTestBase):
         entries.extend(
             [
                 {**self.release, "version": "9999.0.0"},
-                {**self.release, "version": "1.0.0", "editions": ["enterprise"]},
+                {**self.release, "version": "1.0.0", "editions": ["other-edition"]},
             ]
         )
 
@@ -112,6 +114,48 @@ class UpdatesApiTestCase(UpdatesApiTestBase):
         self.assertEqual([item["version"] for item in response.data["releases"]], ["2.0.0"])
         self.assertEqual(response.data["releases"][0]["highlights"], ["Shared change"])
         self.assertEqual(response["Cache-Control"], "private, no-store")
+
+    def test_deployment_can_supply_its_own_edition_identifier(self) -> None:
+        custom_edition = "custom-edition"
+        self.release["editions"] = [custom_edition]
+        self.release["highlights"][0]["editions"] = [custom_edition]
+        self.announcement["editions"] = [custom_edition]
+        self.documents[self.release["markdownURL"]] = (
+            f'<section data-cvat-editions="{custom_edition}"><h2>Matching change</h2></section>'
+            '<section data-cvat-editions="other-edition"><h2>Other change</h2></section>'
+        )
+
+        with self.settings(CVAT_UPDATES_EDITION=custom_edition):
+            response = self.client.get("/api/updates")
+            content = self.client.get(
+                "/api/updates/content", {"kind": "release-notes", "id": "2.0.0"}
+            )
+
+        self.assertEqual(response.status_code, HTTPStatus.OK)
+        self.assertEqual(response.data["edition"], custom_edition)
+        self.assertEqual(response.data["errors"], [])
+        self.assertEqual(response.data["releases"][0]["highlights"], ["Shared change"])
+        self.assertEqual(response.data["announcements"][0]["id"], "guide")
+        self.assertEqual(content.status_code, HTTPStatus.OK)
+        self.assertIn("Matching change", content.data["body"])
+        self.assertNotIn("Other change", content.data["body"])
+
+    @override_settings(CVAT_UPDATES_EDITION="invalid/edition")
+    def test_invalid_edition_configuration_does_not_fetch_content(self) -> None:
+        response = self.client.get("/api/updates")
+
+        self.assertEqual(response.status_code, HTTPStatus.SERVICE_UNAVAILABLE)
+        self.session.get.assert_not_called()
+
+    def test_invalid_content_edition_keeps_announcement_state_unread(self) -> None:
+        self.announcement["editions"] = ["invalid/edition"]
+
+        response = self.client.get("/api/updates")
+
+        self.assertEqual(response.status_code, HTTPStatus.OK)
+        self.assertIn("announcements", response.data["errors"])
+        self.assertFalse(response.data["canAcknowledgeAnnouncements"])
+        self.assertIsNone(response.data["state"]["last_seen_announcements_date"])
 
     @override_settings(CVAT_UPDATES_ENABLED=False)
     def test_disabled_feature_does_not_fetch_content(self) -> None:
@@ -139,16 +183,16 @@ class UpdatesApiTestCase(UpdatesApiTestBase):
 
     def test_can_read_only_matching_release_sections(self) -> None:
         self.documents[self.release["markdownURL"]] = (
-            '<section data-cvat-editions="saas"><h2>Online change</h2>'
-            '<p data-cvat-availability="true">Available in: Online</p><p>Details</p></section>'
-            '<section data-cvat-editions="enterprise"><h2>Enterprise change</h2></section>'
+            f'<section data-cvat-editions="{self.edition}"><h2>Current edition change</h2>'
+            '<p data-cvat-availability="true">Available in: Current edition</p><p>Details</p></section>'
+            '<section data-cvat-editions="other-edition"><h2>Other edition change</h2></section>'
         )
 
         response = self.client.get("/api/updates/content", {"kind": "release-notes", "id": "2.0.0"})
 
         self.assertEqual(response.status_code, HTTPStatus.OK)
-        self.assertIn("Online change", response.data["body"])
-        self.assertNotIn("Enterprise change", response.data["body"])
+        self.assertIn("Current edition change", response.data["body"])
+        self.assertNotIn("Other edition change", response.data["body"])
         self.assertNotIn("Available in", response.data["body"])
 
     def test_can_reuse_cached_source_documents(self) -> None:

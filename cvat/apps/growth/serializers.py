@@ -12,7 +12,13 @@ from cvat.apps.engine.serializers import BasicUserSerializer
 
 from .models import UserGrowthData
 from .policies import is_github_prompt_enabled, is_github_prompt_on_cooldown
-from .types import EDITIONS, RELEASE_VERSION_PATTERN, AnnouncementSource, ContentKind, UpdateSource
+from .types import (
+    EDITION_PATTERN,
+    RELEASE_VERSION_PATTERN,
+    AnnouncementSource,
+    ContentKind,
+    UpdateSource,
+)
 
 
 class UserGrowthDataSerializer(serializers.ModelSerializer):
@@ -106,7 +112,7 @@ class ReleaseNoteSerializer(serializers.Serializer):
     description = serializers.CharField(allow_blank=True)
     publishedAt = serializers.DateTimeField()
     announce = serializers.BooleanField()
-    editions = serializers.ListField(child=serializers.ChoiceField(choices=EDITIONS))
+    editions = serializers.ListField(child=serializers.RegexField(EDITION_PATTERN))
     url = serializers.URLField()
     markdownURL = serializers.URLField()
     hasEditionSections = serializers.BooleanField()
@@ -119,7 +125,7 @@ class AnnouncementPreviewSerializer(serializers.Serializer):
     description = serializers.CharField(allow_blank=True)
     publishedAt = serializers.DateTimeField()
     popup = serializers.BooleanField()
-    editions = serializers.ListField(child=serializers.ChoiceField(choices=EDITIONS))
+    editions = serializers.ListField(child=serializers.RegexField(EDITION_PATTERN))
     url = serializers.URLField()
     source = serializers.ChoiceField(choices=AnnouncementSource)
     imageURL = serializers.URLField(required=False, allow_blank=True)
@@ -132,7 +138,7 @@ class AnnouncementPreviewSerializer(serializers.Serializer):
 
 @extend_schema_serializer(many=False)
 class UpdatesIndexSerializer(serializers.Serializer):
-    edition = serializers.ChoiceField(choices=EDITIONS)
+    edition = serializers.RegexField(EDITION_PATTERN)
     state = UpdatesStateSerializer()
     releases = ReleaseNoteSerializer(many=True)
     announcements = AnnouncementPreviewSerializer(many=True)

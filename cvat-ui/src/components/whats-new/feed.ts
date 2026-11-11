@@ -10,7 +10,7 @@ export interface ReleaseNote {
     announce: boolean;
     url: string;
     markdownURL: string;
-    editions: Edition[];
+    editions: string[];
     hasEditionSections: boolean;
     highlights: string[];
 }
@@ -50,14 +50,6 @@ export function isNewVersion(version: string, shown: string | null): boolean {
     return !shown || compareVersions(version, shown) > 0;
 }
 
-export type Edition = 'community' | 'enterprise' | 'saas';
-
-export const EDITION_LABELS: Record<Edition, string> = {
-    community: 'Community',
-    enterprise: 'Enterprise',
-    saas: 'CVAT Online',
-};
-
 export interface PostPreview {
     id: string;
     title: string;
@@ -72,7 +64,7 @@ export interface PostPreview {
 }
 
 export interface Announcement extends PostPreview {
-    editions: Edition[];
+    editions: string[];
     popup: boolean;
     source: 'hugo' | 'external';
     markdownURL?: string;
@@ -85,7 +77,7 @@ export interface SeenState {
 }
 
 export interface Updates {
-    edition: Edition;
+    edition: string;
     releases: ReleaseNote[];
     announcements: Announcement[];
     canAcknowledgeAnnouncements: boolean;
