@@ -65,6 +65,7 @@ from cvat.apps.engine.serializers import (
     ValidationParamsSerializer,
 )
 from cvat.apps.engine.task import (
+    MEDIA_MANIFEST_INDEX_FILENAME,
     JobFileMapping,
     create_replica_jobs,
     get_manifest_auxiliary_files,
@@ -223,7 +224,7 @@ class _BackupBase:
 class _TaskBackupBase(_BackupBase):
     MANIFEST_FILENAME = "task.json"
     MEDIA_MANIFEST_FILENAME = "manifest.jsonl"
-    MEDIA_MANIFEST_INDEX_FILENAME = "index.json"
+    MEDIA_MANIFEST_INDEX_FILENAME = MEDIA_MANIFEST_INDEX_FILENAME
     ANNOTATIONS_FILENAME = "annotations.json"
     DATA_DIRNAME = "data"
 

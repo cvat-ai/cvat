@@ -85,6 +85,7 @@ slogger = ServerLogManager(__name__)
 JobFileMapping: TypeAlias = list[list[str]]
 
 MAX_AUDIO_DURATION = timedelta(hours=4)
+MEDIA_MANIFEST_INDEX_FILENAME = "index.json"
 
 
 class SegmentParams(NamedTuple):
@@ -483,7 +484,11 @@ def get_manifest_auxiliary_files(metadata: object) -> list[PurePosixPath]:
                 f"Unsupported auxiliary file type in manifest: '{auxiliary_file}'"
             )
 
-        validated_auxiliary_files.append(PurePosixPath(auxiliary_file))
+        auxiliary_file_path = PurePosixPath(auxiliary_file)
+        if auxiliary_file_path.name == MEDIA_MANIFEST_INDEX_FILENAME:
+            continue
+
+        validated_auxiliary_files.append(auxiliary_file_path)
 
     return validated_auxiliary_files
 
