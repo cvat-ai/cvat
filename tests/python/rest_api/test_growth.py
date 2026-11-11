@@ -5,6 +5,7 @@
 from http import HTTPStatus
 
 import pytest
+
 from shared.utils.config import get_method, patch_method
 
 

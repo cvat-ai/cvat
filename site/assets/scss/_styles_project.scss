@@ -113,7 +113,7 @@
     }
 }
 
-@media (max-width: 991.98px) {
+@media (width <= 991.98px) {
     .cvat-updates-layout {
         grid-template-columns: minmax(0, 1fr);
         grid-template-areas: "content";
