@@ -21,5 +21,9 @@ class BackgroundRequestException(CvatSdkException):
     """
 
 
+class ChunkReaderUnavailableException(CvatSdkException):
+    """Indicates that task chunks of some type cannot be read in the current environment"""
+
+
 class AuthStoreError(CvatSdkException):
     """Raised when auth store operations fail."""
