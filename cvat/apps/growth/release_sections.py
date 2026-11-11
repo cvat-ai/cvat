@@ -8,10 +8,10 @@ from html import escape
 
 from lxml import etree, html
 
-EDITIONS = ("community", "enterprise", "saas")
+from .types import EDITIONS, Edition
 
 
-def _parse(body):
+def _parse(body: str) -> tuple[html.HtmlElement, list[html.HtmlElement]]:
     try:
         root = html.fragment_fromstring(
             body, create_parent="div", parser=html.HTMLParser(no_network=True)
@@ -34,12 +34,12 @@ def _parse(body):
     return root, sections
 
 
-def validate(body):
+def validate(body: str) -> str:
     _parse(body)
     return body
 
 
-def for_edition(body, edition):
+def for_edition(body: str, edition: Edition) -> str | None:
     root, sections = _parse(body)
     matching = False
     for section in sections:

@@ -2,12 +2,15 @@
 #
 # SPDX-License-Identifier: MIT
 
+from typing import Any
+
 from django.conf import settings
 from django.db import transaction
-from drf_spectacular.utils import OpenApiParameter, extend_schema
+from drf_spectacular.utils import extend_schema
 from rest_framework import viewsets
 from rest_framework.decorators import action
 from rest_framework.exceptions import NotFound, ValidationError
+from rest_framework.request import Request
 from rest_framework.response import Response
 
 from . import updates as updates_service
@@ -15,10 +18,12 @@ from .models import UserGrowthData
 from .permissions import UpdatesPermission
 from .serializers import (
     UpdatesAcknowledgementSerializer,
+    UpdatesContentQuerySerializer,
     UpdatesContentSerializer,
     UpdatesIndexSerializer,
     UpdatesStateSerializer,
 )
+from .types import ContentKind
 
 
 @extend_schema(tags=["updates"])
@@ -28,12 +33,14 @@ class UpdatesViewSet(viewsets.GenericViewSet):
     serializer_class = UpdatesAcknowledgementSerializer
     pagination_class = None
 
-    def initial(self, request, *args, **kwargs):
+    def initial(self, request: Request, *args: Any, **kwargs: Any) -> None:
         super().initial(request, *args, **kwargs)
         if not settings.CVAT_UPDATES_ENABLED:
             raise NotFound()
 
-    def finalize_response(self, request, response, *args, **kwargs):
+    def finalize_response(
+        self, request: Request, response: Response, *args: Any, **kwargs: Any
+    ) -> Response:
         response = super().finalize_response(request, response, *args, **kwargs)
         response["Cache-Control"] = "private, no-store"
         return response
@@ -42,22 +49,21 @@ class UpdatesViewSet(viewsets.GenericViewSet):
         summary="Get release notes, announcements and the current user's seen state",
         responses={200: UpdatesIndexSerializer},
     )
-    def list(self, request):
+    def list(self, request: Request) -> Response:
         return Response(updates_service.index(UserGrowthData.for_user(request.user)))
 
     @extend_schema(
         summary="Get a published release note or announcement body",
-        parameters=[
-            OpenApiParameter("kind", str, enum=["release-notes", "announcements"], required=True),
-            OpenApiParameter("id", str, required=True),
-        ],
+        parameters=[UpdatesContentQuerySerializer],
         responses={200: UpdatesContentSerializer},
     )
     @action(detail=False, methods=["GET"])
-    def content(self, request):
+    def content(self, request: Request) -> Response:
+        query = UpdatesContentQuerySerializer(data=request.query_params)
+        query.is_valid(raise_exception=True)
         return Response(
             updates_service.content(
-                request.query_params.get("kind"), request.query_params.get("id")
+                ContentKind(query.validated_data["kind"]), query.validated_data["id"]
             )
         )
 
@@ -67,17 +73,16 @@ class UpdatesViewSet(viewsets.GenericViewSet):
         responses={200: UpdatesStateSerializer},
     )
     @action(detail=False, methods=["POST"])
-    def acknowledge(self, request):
+    def acknowledge(self, request: Request) -> Response:
         serializer = UpdatesAcknowledgementSerializer(data=request.data)
         serializer.is_valid(raise_exception=True)
         values = serializer.validated_data
         version = values.get("release_version")
         seen_at = values.get("announcements_seen_at")
         if version is not None and not any(
-            item["version"] == version for item in updates_service.entries("release-notes")
+            item["version"] == version
+            for item in updates_service.entries(ContentKind.RELEASE_NOTES)
         ):
-            # The overview acknowledges the displayed preview, not a full article.
-            # Availability still excludes releases without matching sections.
             raise ValidationError(
                 {
                     "release_version": "This release is not available for the current edition.",

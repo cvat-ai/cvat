@@ -2,6 +2,8 @@
 #
 # SPDX-License-Identifier: MIT
 
+from typing import Any
+
 from django.utils.timezone import now
 from drf_spectacular.utils import extend_schema_serializer
 from rest_framework import serializers
@@ -10,6 +12,7 @@ from cvat.apps.engine.serializers import BasicUserSerializer
 
 from .models import UserGrowthData
 from .policies import is_github_prompt_enabled, is_github_prompt_on_cooldown
+from .types import EDITIONS, RELEASE_VERSION_PATTERN, AnnouncementSource, ContentKind, UpdateSource
 
 
 class UserGrowthDataSerializer(serializers.ModelSerializer):
@@ -75,12 +78,10 @@ class UserGrowthDataSerializer(serializers.ModelSerializer):
 
 
 class UpdatesAcknowledgementSerializer(serializers.Serializer):
-    release_version = serializers.RegexField(
-        r"^[0-9]+\.[0-9]+\.[0-9]+$", required=False, max_length=64
-    )
+    release_version = serializers.RegexField(RELEASE_VERSION_PATTERN, required=False, max_length=64)
     announcements_seen_at = serializers.DateTimeField(required=False)
 
-    def validate(self, attrs):
+    def validate(self, attrs: dict[str, Any]) -> dict[str, Any]:
         if not attrs:
             raise serializers.ValidationError(
                 "Specify a release version or announcements timestamp."
@@ -94,14 +95,49 @@ class UpdatesStateSerializer(serializers.Serializer):
     promotion_notifications_allowed = serializers.BooleanField()
 
 
+class UpdatesContentQuerySerializer(serializers.Serializer):
+    kind = serializers.ChoiceField(choices=ContentKind)
+    id = serializers.CharField(max_length=128)
+
+
+class ReleaseNoteSerializer(serializers.Serializer):
+    version = serializers.CharField()
+    title = serializers.CharField()
+    description = serializers.CharField(allow_blank=True)
+    publishedAt = serializers.DateTimeField()
+    announce = serializers.BooleanField()
+    editions = serializers.ListField(child=serializers.ChoiceField(choices=EDITIONS))
+    url = serializers.URLField()
+    markdownURL = serializers.URLField()
+    hasEditionSections = serializers.BooleanField()
+    highlights = serializers.ListField(child=serializers.CharField())
+
+
+class AnnouncementPreviewSerializer(serializers.Serializer):
+    id = serializers.CharField()
+    title = serializers.CharField()
+    description = serializers.CharField(allow_blank=True)
+    publishedAt = serializers.DateTimeField()
+    popup = serializers.BooleanField()
+    editions = serializers.ListField(child=serializers.ChoiceField(choices=EDITIONS))
+    url = serializers.URLField()
+    source = serializers.ChoiceField(choices=AnnouncementSource)
+    imageURL = serializers.URLField(required=False, allow_blank=True)
+    videoURL = serializers.URLField(required=False, allow_blank=True)
+    imageAlt = serializers.CharField(required=False, allow_blank=True)
+    cta = serializers.CharField(required=False)
+    label = serializers.CharField(required=False)
+    markdownURL = serializers.URLField(required=False)
+
+
 @extend_schema_serializer(many=False)
 class UpdatesIndexSerializer(serializers.Serializer):
-    edition = serializers.ChoiceField(choices=("community", "enterprise", "saas"))
+    edition = serializers.ChoiceField(choices=EDITIONS)
     state = UpdatesStateSerializer()
-    releases = serializers.ListField(child=serializers.DictField())
-    announcements = serializers.ListField(child=serializers.DictField())
+    releases = ReleaseNoteSerializer(many=True)
+    announcements = AnnouncementPreviewSerializer(many=True)
     canAcknowledgeAnnouncements = serializers.BooleanField()
-    errors = serializers.ListField(child=serializers.CharField())
+    errors = serializers.ListField(child=serializers.ChoiceField(choices=UpdateSource))
     releaseHistoryURL = serializers.URLField()
     announcementHistoryURL = serializers.URLField()
     updatesHistoryURL = serializers.URLField()

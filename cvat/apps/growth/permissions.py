@@ -3,8 +3,11 @@
 # SPDX-License-Identifier: MIT
 
 from enum import StrEnum
+from typing import Any
 
 from django.conf import settings
+from rest_framework.request import Request
+from rest_framework.viewsets import ViewSetMixin
 
 from cvat.apps.iam.permissions import OpenPolicyAgentPermission
 
@@ -51,7 +54,9 @@ class UpdatesPermission(UserGrowthDataPermission):
     """Reuse the growth policy for read/write access to the current user's state."""
 
     @classmethod
-    def _get_scopes(cls, request, view, obj):
+    def _get_scopes(
+        cls, request: Request, view: ViewSetMixin, obj: Any
+    ) -> list[UserGrowthDataPermission.Scopes]:
         scopes = {
             "list": cls.Scopes.VIEW,
             "content": cls.Scopes.VIEW,
@@ -59,5 +64,5 @@ class UpdatesPermission(UserGrowthDataPermission):
         }
         return [scopes[view.action]]
 
-    def get_resource(self):
+    def get_resource(self) -> dict[str, dict[str, int]]:
         return {"user": {"id": self.user_id}}

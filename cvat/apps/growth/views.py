@@ -2,6 +2,7 @@
 #
 # SPDX-License-Identifier: MIT
 
+from django.db.models import QuerySet
 from drf_spectacular.utils import extend_schema, extend_schema_view
 from rest_framework import mixins, viewsets
 
@@ -36,7 +37,10 @@ class UserGrowthDataViewSet(
     ordering_fields = ("id",)
     ordering = "id"
 
-    def get_queryset(self):
+    def get_queryset(self) -> QuerySet[UserGrowthData]:
+        if getattr(self, "swagger_fake_view", False):
+            return UserGrowthData.objects.none()
+
         UserGrowthData.for_user(self.request.user)
         queryset = UserGrowthData.objects.select_related("user")
 

@@ -9,7 +9,10 @@ import json
 import logging
 import re
 import time
-from datetime import timezone
+from collections.abc import Callable
+from datetime import datetime, timezone
+from http import HTTPStatus
+from typing import Any, TypeVar, cast
 from urllib.parse import urljoin, urlsplit, urlunsplit
 
 import requests
@@ -24,41 +27,56 @@ from cvat import VERSION
 from cvat.utils.http import make_requests_session
 
 from . import release_sections
+from .models import UserGrowthData
+from .sources import HTTP_TIMEOUT, STALE_TTL, read_response_text
+from .types import (
+    EDITIONS,
+    RELEASE_VERSION_PATTERN,
+    AnnouncementPreview,
+    AnnouncementProvider,
+    AnnouncementSource,
+    ContentKind,
+    Edition,
+    OnStale,
+    UpdateSource,
+)
 
 logger = logging.getLogger(__name__)
-MAX_DOCUMENT_SIZE = 2 * 1024 * 1024
-STALE_TTL = 7 * 24 * 60 * 60
-KINDS = ("release-notes", "announcements")
-EDITIONS = release_sections.EDITIONS
 ANNOUNCEMENT_LIMIT = 5
+REFRESH_LOCK_TTL = 20
+RETRY_DELAY = 30
+FEED_SCHEMA_VERSION = 1
+MAX_CTA_LENGTH = 80
+DocumentT = TypeVar("DocumentT")
 
 
 class UpdatesUnavailable(APIException):
-    status_code = 503
+    status_code = HTTPStatus.SERVICE_UNAVAILABLE
     default_detail = "What's New is temporarily unavailable."
 
 
-def version_parts(value):
-    if not isinstance(value, str) or not re.fullmatch(r"[0-9]+\.[0-9]+\.[0-9]+", value):
+def version_parts(value: Any) -> tuple[int, ...]:
+    if not isinstance(value, str) or not re.fullmatch(RELEASE_VERSION_PATTERN, value):
         raise ValueError("Expected a release version in X.Y.Z format")
     return tuple(int(part) for part in value.split("."))
 
 
-def publication_date(value):
+def publication_date(value: Any) -> datetime:
     parsed = parse_datetime(value) if isinstance(value, str) else None
     if parsed is None or parsed.tzinfo is None:
         raise ValueError("Expected a publication timestamp with a timezone")
     return parsed
 
 
-def edition():
-    value = settings.CVAT_UPDATES_EDITION
-    if value not in EDITIONS:
-        raise UpdatesUnavailable("The What's New edition is not configured correctly.")
-    return value
+def edition() -> Edition:
+    try:
+        return Edition(settings.CVAT_UPDATES_EDITION)
+    except ValueError:
+        choices = ", ".join(EDITIONS)
+        raise UpdatesUnavailable(f"CVAT_UPDATES_EDITION must be one of: {choices}.") from None
 
 
-def _base_url(public=False):
+def _base_url(public: bool = False) -> str:
     value = settings.CVAT_UPDATES_PUBLIC_URL if public else settings.CVAT_UPDATES_SOURCE_URL
     parsed = urlsplit(value)
     if (
@@ -71,24 +89,25 @@ def _base_url(public=False):
     return value.rstrip("/") + "/"
 
 
-def _public_url(path):
+def _public_url(path: str) -> str:
     return urljoin(_base_url(public=True), path)
 
 
-def _document(path, decode, *, on_stale=None):
+def _document(
+    path: str, decode: Callable[[str], DocumentT], *, on_stale: OnStale | None = None
+) -> DocumentT:
     """Retain the last valid copy beyond its freshness window and revalidate it."""
     url = urljoin(_base_url(), path)
-    # v5 derives release highlights from article headings rather than authored summaries.
-    key = "cvat:updates:v5:" + hashlib.sha256((url + _base_url(public=True)).encode()).hexdigest()
+    key = "cvat:updates:" + hashlib.sha256((url + _base_url(public=True)).encode()).hexdigest()
     saved = cache.get(key)
     if saved and time.time() - saved["checked_at"] < max(0, settings.CVAT_UPDATES_CACHE_TTL):
         if saved.get("stale") and on_stale:
             on_stale()
         return saved["data"]
 
-    # Redis cache.add prevents a burst of page loads from fetching the same file.
+    # Concurrent readers can use the last valid copy while another worker refreshes it.
     lock_key = key + ":refresh"
-    if not cache.add(lock_key, True, timeout=20):
+    if not cache.add(lock_key, True, timeout=REFRESH_LOCK_TTL):
         if saved:
             if on_stale:
                 on_stale()
@@ -105,22 +124,16 @@ def _document(path, decode, *, on_stale=None):
         with make_requests_session() as session:
             # Only configured sources are contacted. Redirects must not escape them.
             with session.get(
-                url, headers=headers, timeout=(3, 5), stream=True, allow_redirects=False
+                url, headers=headers, timeout=HTTP_TIMEOUT, stream=True, allow_redirects=False
             ) as response:
-                if response.status_code == 304 and saved:
+                if response.status_code == HTTPStatus.NOT_MODIFIED and saved:
                     saved["checked_at"] = time.time()
                     saved.pop("stale", None)
                     cache.set(key, saved, timeout=STALE_TTL)
                     return saved["data"]
-                if response.status_code != 200:
-                    raise ValueError("Unexpected documentation response")
-                chunks, size = [], 0
-                for chunk in response.iter_content(64 * 1024):
-                    size += len(chunk)
-                    if size > MAX_DOCUMENT_SIZE:
-                        raise ValueError("Documentation file is too large")
-                    chunks.append(chunk)
-                data = decode(b"".join(chunks).decode("utf-8"))
+                if response.status_code != HTTPStatus.OK:
+                    raise ValueError(f"Documentation source returned HTTP {response.status_code}")
+                data = decode(read_response_text(response))
                 cache.set(
                     key,
                     {
@@ -132,11 +145,14 @@ def _document(path, decode, *, on_stale=None):
                     timeout=STALE_TTL,
                 )
                 return data
-    except (requests.RequestException, ValueError, TypeError, KeyError):
-        logger.warning("Could not refresh What's New document: %s", path)
+    except (requests.RequestException, ValueError, TypeError, KeyError) as exc:
+        reason = type(exc).__name__ if isinstance(exc, requests.RequestException) else str(exc)
+        logger.warning("Could not refresh What's New document %s: %s", path, reason)
         if saved:
             # Back off briefly without discarding the last valid document.
-            saved["checked_at"] = time.time() - max(0, settings.CVAT_UPDATES_CACHE_TTL) + 30
+            saved["checked_at"] = (
+                time.time() - max(0, settings.CVAT_UPDATES_CACHE_TTL) + RETRY_DELAY
+            )
             saved["stale"] = True
             cache.set(key, saved, timeout=STALE_TTL)
             if on_stale:
@@ -147,7 +163,7 @@ def _document(path, decode, *, on_stale=None):
         cache.delete(lock_key)
 
 
-def _content_path(value, kind):
+def _content_path(value: Any, kind: ContentKind) -> str:
     """Map a published URL to a path below the configured documentation source."""
     if not isinstance(value, str):
         raise ValueError("Missing Markdown URL")
@@ -172,8 +188,8 @@ def _content_path(value, kind):
     return path
 
 
-def _preview_media(value):
-    if not value:
+def _preview_media(value: Any) -> str:
+    if value == "":
         return ""
     if not isinstance(value, str):
         raise ValueError("Invalid preview media URL")
@@ -197,114 +213,120 @@ def _preview_media(value):
     return urlunsplit(parsed)
 
 
-def _index(body, kind):
+def _editions(value: Any) -> list[Edition]:
+    if (
+        not isinstance(value, list)
+        or not value
+        or any(not isinstance(item, str) or item not in EDITIONS for item in value)
+        or len(set(value)) != len(value)
+    ):
+        raise ValueError("Expected a non-empty list of unique content editions")
+    return [Edition(item) for item in value]
+
+
+def _release_fields(raw: dict[str, Any]) -> dict[str, Any]:
+    sections = raw["hasEditionSections"]
+    if not isinstance(sections, bool):
+        raise ValueError("Invalid release section metadata")
+    highlights = raw["highlights"]
+    if not isinstance(highlights, list):
+        raise ValueError("Expected a list of release highlights")
+    for highlight in highlights:
+        if (
+            not isinstance(highlight, dict)
+            or not isinstance(highlight.get("text"), str)
+            or not highlight["text"].strip()
+        ):
+            raise ValueError("Invalid release highlight")
+        highlight["editions"] = _editions(highlight.get("editions"))
+    return {
+        "version": raw["version"],
+        "hasEditionSections": sections,
+        "highlights": highlights,
+    }
+
+
+def _announcement_fields(raw: dict[str, Any]) -> dict[str, str]:
+    cta = raw.get("cta", "Read announcement")
+    image_alt = raw.get("imageAlt", raw["title"])
+    if (
+        not isinstance(cta, str)
+        or not cta.strip()
+        or len(cta) > MAX_CTA_LENGTH
+        or not isinstance(image_alt, str)
+    ):
+        raise ValueError("Invalid announcement preview")
+    return {
+        "id": raw["id"],
+        "imageURL": _preview_media(raw.get("imageURL", "")),
+        "videoURL": _preview_media(raw.get("videoURL", "")),
+        "imageAlt": image_alt,
+        "cta": cta,
+    }
+
+
+def _index(body: str, kind: ContentKind) -> list[dict[str, Any]]:
     feed = json.loads(body)
     if (
         not isinstance(feed, dict)
-        or feed.get("schemaVersion") != 1
+        or feed.get("schemaVersion") != FEED_SCHEMA_VERSION
         or not isinstance(feed.get("entries"), list)
     ):
-        raise ValueError("Invalid index")
-    entries, ids = [], set()
+        raise ValueError("Invalid updates index")
+    entries = []
+    identifiers = set()
     for raw in feed["entries"]:
         if not isinstance(raw, dict):
-            raise ValueError("Invalid entry")
-        identifier = raw.get("version") if kind == "release-notes" else raw.get("id")
-        if kind == "release-notes":
-            version_parts(identifier)
-        elif not isinstance(identifier, str) or not re.fullmatch(
-            r"[a-z0-9][a-z0-9_-]{0,127}", identifier
-        ):
-            raise ValueError("Invalid announcement ID")
-        if identifier in ids:
+            raise ValueError("Invalid updates entry")
+        match kind:
+            case ContentKind.RELEASE_NOTES:
+                identifier = raw["version"]
+                version_parts(identifier)
+                flag = "announce"
+                fields = _release_fields(raw)
+            case ContentKind.ANNOUNCEMENTS:
+                identifier = raw["id"]
+                if not isinstance(identifier, str) or not re.fullmatch(
+                    r"[a-z0-9][a-z0-9_-]{0,127}", identifier
+                ):
+                    raise ValueError("Invalid announcement ID")
+                flag = "popup"
+                fields = _announcement_fields(raw)
+            case _:
+                raise AssertionError(f"Unexpected content kind: {kind}")
+        if identifier in identifiers:
             raise ValueError("Duplicate content ID")
-        ids.add(identifier)
+        identifiers.add(identifier)
         for field in ("title", "description"):
             if not isinstance(raw.get(field), str) or (field == "title" and not raw[field].strip()):
                 raise ValueError("Invalid content metadata")
-        published = publication_date(raw.get("publishedAt"))
-        flag = "announce" if kind == "release-notes" else "popup"
         if not isinstance(raw.get(flag), bool):
             raise ValueError("Invalid presentation flag")
         path = _content_path(raw.get("markdownURL"), kind)
-        entry = {
-            "title": raw["title"],
-            "description": raw["description"],
-            "publishedAt": published.astimezone(timezone.utc).isoformat(),
-            "markdownURL": _public_url(path),
-            "contentPath": path,
-            flag: raw[flag],
-        }
-        if kind == "release-notes":
-            audiences = raw.get("editions", list(EDITIONS))
-            sections = raw.get("hasEditionSections", False)
-            if not isinstance(sections, bool):
-                raise ValueError("Invalid release section metadata")
-            highlights = raw.get("highlights", [])
-            if not isinstance(highlights, list):
-                raise ValueError("Invalid release highlights")
-            for highlight in highlights:
-                if (
-                    not isinstance(highlight, dict)
-                    or not isinstance(highlight.get("text"), str)
-                    or not highlight["text"].strip()
-                    or not isinstance(highlight.get("editions"), list)
-                    or not highlight["editions"]
-                    or any(value not in EDITIONS for value in highlight["editions"])
-                ):
-                    raise ValueError("Invalid release highlight")
-            entry.update(
-                version=identifier,
-                url=_public_url(path.removesuffix("index.md")),
-                editions=audiences,
-                hasEditionSections=sections,
-                highlights=highlights,
-            )
-        else:
-            audiences = raw.get("editions")
-            article = urlsplit(raw.get("url", ""))
-            if (
-                article.scheme not in ("https", "http")
-                or not article.netloc
-                or article.username
-                or article.password
-            ):
-                raise ValueError("Invalid article URL")
-            entry.update(id=identifier, url=article.geturl(), editions=audiences)
-            cta = raw.get("cta", "Read announcement")
-            image_alt = raw.get("imageAlt", raw["title"])
-            if (
-                not isinstance(cta, str)
-                or not cta.strip()
-                or len(cta) > 80
-                or not isinstance(image_alt, str)
-            ):
-                raise ValueError("Invalid announcement preview")
-            entry.update(
-                imageURL=_preview_media(raw.get("imageURL", "")),
-                videoURL=_preview_media(raw.get("videoURL", "")),
-                imageAlt=image_alt,
-                cta=cta,
-            )
-        if (
-            not isinstance(audiences, list)
-            or not audiences
-            or any(not isinstance(value, str) or value not in EDITIONS for value in audiences)
-            or len(set(audiences)) != len(audiences)
-        ):
-            raise ValueError("Expected a non-empty list of content editions")
-        entries.append(entry)
+        entries.append(
+            {
+                "title": raw["title"],
+                "description": raw["description"],
+                "publishedAt": publication_date(raw.get("publishedAt"))
+                .astimezone(timezone.utc)
+                .isoformat(),
+                "markdownURL": _public_url(path),
+                "url": _public_url(path.removesuffix("index.md")),
+                "contentPath": path,
+                "editions": _editions(raw["editions"]),
+                flag: raw[flag],
+                **fields,
+            }
+        )
     return entries
 
 
-def entries(kind, *, on_stale=None):
-    if kind not in KINDS:
-        raise NotFound()
+def entries(kind: ContentKind, *, on_stale: OnStale | None = None) -> list[dict[str, Any]]:
     data = _document(f"{kind}/index.json", lambda body: _index(body, kind), on_stale=on_stale)
     published = [item.copy() for item in data if publication_date(item["publishedAt"]) <= now()]
     current_edition = edition()
     published = [item for item in published if current_edition in item["editions"]]
-    if kind == "release-notes":
+    if kind == ContentKind.RELEASE_NOTES:
         published = [item for item in published if version_parts(item["version"]) <= VERSION[:3]]
         for item in published:
             item["highlights"] = [
@@ -313,40 +335,46 @@ def entries(kind, *, on_stale=None):
                 if current_edition in highlight["editions"]
             ] or [item["description"]]
         return sorted(published, key=lambda item: version_parts(item["version"]), reverse=True)
-    return sorted(published, key=lambda item: publication_date(item["publishedAt"]), reverse=True)
+    match kind:
+        case ContentKind.ANNOUNCEMENTS:
+            return sorted(
+                published, key=lambda item: publication_date(item["publishedAt"]), reverse=True
+            )
+        case _:
+            raise AssertionError(f"Unexpected content kind: {kind}")
 
 
-def _article_key(value):
+def _article_key(value: str) -> tuple[str, str]:
     parsed = urlsplit(value)
     # Tracking parameters, fragments, and a trailing slash do not make a new post.
     return parsed.netloc.lower(), parsed.path.rstrip("/")
 
 
-def external_announcements(*, on_stale=None):
+def external_announcements(*, on_stale: OnStale | None = None) -> list[AnnouncementPreview]:
     """Load optional previews using the same fields as Hugo announcements.
 
-    Providers receive the edition, preview limit, and a callback to report stale
-    or incomplete data. They raise UpdatesUnavailable when no usable feed exists.
-    IDs and timezone-aware publication timestamps must remain stable across edits.
+    The callable must implement AnnouncementProvider. An unconfigured provider
+    contributes no previews; an unavailable provider raises UpdatesUnavailable.
     """
     provider = settings.CVAT_UPDATES_ANNOUNCEMENT_PROVIDER
     if provider is None:
         return []
     try:
-        load = import_string(provider)
+        load = cast(AnnouncementProvider, import_string(provider))
     except (ImportError, AttributeError):
         logger.error("Could not load the configured announcement provider")
         raise UpdatesUnavailable() from None
     return load(edition=edition(), limit=ANNOUNCEMENT_LIMIT, on_stale=on_stale)
 
 
-def announcement_feed():
+def announcement_feed() -> tuple[list[AnnouncementPreview], list[UpdateSource]]:
     """One edition-filtered batch and one watermark for all announcement sources."""
 
-    merged, errors = {}, set()
+    merged: dict[tuple[str, str], AnnouncementPreview] = {}
+    errors: set[UpdateSource] = set()
     for source, load in (
-        ("external-announcements", external_announcements),
-        ("announcements", lambda **kwargs: entries("announcements", **kwargs)),
+        (UpdateSource.EXTERNAL_ANNOUNCEMENTS, external_announcements),
+        (UpdateSource.ANNOUNCEMENTS, lambda **kwargs: entries(ContentKind.ANNOUNCEMENTS, **kwargs)),
     ):
         try:
             items = load(on_stale=lambda: errors.add(source))
@@ -355,7 +383,11 @@ def announcement_feed():
             continue
         for item in items:
             item = {key: value for key, value in item.items() if key != "contentPath"}
-            item["source"] = "hugo" if source == "announcements" else "external"
+            item["source"] = (
+                AnnouncementSource.HUGO
+                if source == UpdateSource.ANNOUNCEMENTS
+                else AnnouncementSource.EXTERNAL
+            )
             key = _article_key(item["url"])
             previous = merged.get(key)
             if previous:
@@ -375,7 +407,7 @@ def announcement_feed():
     return items, sorted(errors)
 
 
-def state(growth_data):
+def state(growth_data: UserGrowthData) -> dict[str, Any]:
     return {
         "last_seen_release_notes_version": growth_data.last_seen_release_notes_version,
         "last_seen_announcements_date": growth_data.last_seen_announcements_date,
@@ -383,7 +415,7 @@ def state(growth_data):
     }
 
 
-def index(growth_data):
+def index(growth_data: UserGrowthData) -> dict[str, Any]:
     result = {
         "edition": edition(),
         "state": state(growth_data),
@@ -394,10 +426,10 @@ def index(growth_data):
     try:
         result["releases"] = [
             {key: value for key, value in item.items() if key != "contentPath"}
-            for item in entries("release-notes")
+            for item in entries(ContentKind.RELEASE_NOTES)
         ]
     except UpdatesUnavailable:
-        result["errors"].append("release-notes")
+        result["errors"].append(UpdateSource.RELEASE_NOTES)
     result["announcements"], announcement_errors = announcement_feed()
     result["errors"].extend(announcement_errors)
     # A partial feed must not advance a shared watermark past missing content.
@@ -408,8 +440,14 @@ def index(growth_data):
     return result
 
 
-def content(kind, identifier):
-    key = "version" if kind == "release-notes" else "id"
+def content(kind: ContentKind, identifier: str) -> dict[str, str]:
+    match kind:
+        case ContentKind.RELEASE_NOTES:
+            key = "version"
+        case ContentKind.ANNOUNCEMENTS:
+            key = "id"
+        case _:
+            raise AssertionError(f"Unexpected content kind: {kind}")
     entry = next((entry for entry in entries(kind) if entry[key] == identifier), None)
     if not entry:
         raise NotFound("This content is not available.")
@@ -417,13 +455,13 @@ def content(kind, identifier):
     def decode(body):
         if not body.strip() or re.search(r"<!doctype\s+html|<html[\s>]", body, re.IGNORECASE):
             raise ValueError("Expected Markdown")
-        if kind == "release-notes" and entry["hasEditionSections"]:
+        if kind == ContentKind.RELEASE_NOTES and entry["hasEditionSections"]:
             release_sections.validate(body)
         return body
 
     # Keep the shared source intact in the cache; filter only the response body.
     body = _document(entry["contentPath"], decode)
-    if kind == "release-notes" and entry["hasEditionSections"]:
+    if kind == ContentKind.RELEASE_NOTES and entry["hasEditionSections"]:
         body = release_sections.for_edition(body, edition())
         if body is None:
             raise NotFound("This release has no sections for the current edition.")

@@ -5,6 +5,8 @@
 from django.conf import settings
 from django.db import models
 
+from cvat.apps.iam.models import User
+
 
 class UserGrowthData(models.Model):
     user = models.OneToOneField(
@@ -19,7 +21,7 @@ class UserGrowthData(models.Model):
     last_seen_announcements_date = models.DateTimeField(null=True, blank=True)
 
     @classmethod
-    def for_user(cls, user):
+    def for_user(cls, user: User) -> "UserGrowthData":
         """Return shared user state, initializing it for accounts without a record."""
         growth_data, _ = cls.objects.get_or_create(
             user=user,
