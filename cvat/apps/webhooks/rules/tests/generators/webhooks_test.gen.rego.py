@@ -169,8 +169,10 @@ def get_data(scope, context, ownership, privilege, membership, resource, same_or
         org_id = data["auth"]["organization"]["id"]
         if data["auth"]["organization"]["user"]["role"] == "owner":
             data["auth"]["organization"]["owner"]["id"] = user_id
-        if same_org and resource is not None:
+        if same_org:
             data["resource"]["organization"]["id"] = org_id
+    elif same_org:
+        data["resource"]["organization"] = None
 
     if ownership == "owner":
         data["resource"]["owner"]["id"] = user_id
@@ -208,7 +210,7 @@ def get_name(scope, context, ownership, privilege, membership, resource, same_or
 def is_valid(scope, context, ownership, privilege, membership, resource, same_org):
     if context == "sandbox" and membership:
         return False
-    if scope == "list" and ownership != "none":
+    if scope == "list" and (same_org or ownership != "none"):
         return False
     if scope.startswith("create") and ownership != "none":
         return False

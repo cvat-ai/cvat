@@ -48,7 +48,6 @@ AttributeMatchingFunction: TypeAlias = Callable[
 @define(frozen=True)
 class PairwiseComparison:
     geometry_similarity: float
-    base_geometry_similarity: float
     conflicting_attribute_names: tuple[str, ...] = ()
     direction_mismatch: bool = False
 
