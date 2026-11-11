@@ -462,6 +462,32 @@ def _validate_validation_params(
     return params
 
 
+def get_manifest_auxiliary_files(metadata: object) -> list[PurePosixPath]:
+    if not isinstance(metadata, dict):
+        return []
+
+    auxiliary_files = metadata.get(AUXILIARY_FILES_MANIFEST_KEY)
+    if auxiliary_files is None:
+        return []
+    if not isinstance(auxiliary_files, list):
+        raise ValidationError("Invalid auxiliary files in manifest: expected a list")
+
+    validated_auxiliary_files = []
+    for auxiliary_file in auxiliary_files:
+        if not isinstance(auxiliary_file, str):
+            raise ValidationError("Invalid auxiliary file in manifest: expected a path string")
+        if problem := problem_with_untrusted_path(auxiliary_file):
+            raise ValidationError(f"Unsafe auxiliary file path in manifest: {problem}")
+        if get_metadata_type(auxiliary_file) not in METADATA_TYPES:
+            raise ValidationError(
+                f"Unsupported auxiliary file type in manifest: '{auxiliary_file}'"
+            )
+
+        validated_auxiliary_files.append(PurePosixPath(auxiliary_file))
+
+    return validated_auxiliary_files
+
+
 def _validate_manifest(
     manifests: list[str],
     root_dir: Path,
@@ -489,6 +515,11 @@ def _validate_manifest(
 
     if not is_manifest(full_manifest_path):
         raise ValidationError("Invalid manifest was uploaded")
+
+    if is_dataset_manifest(full_manifest_path):
+        manifest = ImageManifestManager(full_manifest_path)
+        for _, entry in manifest:
+            get_manifest_auxiliary_files(entry.get("meta"))
 
     return manifest_file
 
@@ -640,8 +671,8 @@ def _create_task_manifest_based_on_cloud_storage_manifest(
                     for related_image_path in related_images
                 ]
 
-            auxiliary_files = metadata.get(AUXILIARY_FILES_MANIFEST_KEY)
-            if isinstance(auxiliary_files, list):
+            auxiliary_files = get_manifest_auxiliary_files(metadata)
+            if auxiliary_files:
                 metadata[AUXILIARY_FILES_MANIFEST_KEY] = [
                     os.path.join(cloud_storage_manifest_prefix, auxiliary_file)
                     for auxiliary_file in auxiliary_files
@@ -1287,9 +1318,10 @@ def _get_dataset_files_from_manifest(
                     if isinstance(related_images, list):
                         dataset_files.extend(related_images)
 
-                    auxiliary_files = metadata.get(AUXILIARY_FILES_MANIFEST_KEY, [])
-                    if isinstance(auxiliary_files, list):
-                        dataset_files.extend(auxiliary_files)
+                    dataset_files.extend(
+                        os.fspath(auxiliary_file)
+                        for auxiliary_file in get_manifest_auxiliary_files(metadata)
+                    )
 
             return list(dict.fromkeys(dataset_files))
         case _:

@@ -64,12 +64,17 @@ from cvat.apps.engine.serializers import (
     TaskReadSerializer,
     ValidationParamsSerializer,
 )
-from cvat.apps.engine.task import JobFileMapping, create_replica_jobs, initialize_task
+from cvat.apps.engine.task import (
+    JobFileMapping,
+    create_replica_jobs,
+    get_manifest_auxiliary_files,
+    initialize_task,
+)
 from cvat.apps.engine.utils import av_scan_paths
 from cvat.utils import django_database as db_utils
 from cvat.utils.paths import join_untrusted_path, problem_with_untrusted_path
 from utils.dataset_manifest import ImageManifestManager
-from utils.dataset_manifest.utils import AUXILIARY_FILES_MANIFEST_KEY, RELATED_IMAGES_MANIFEST_KEY
+from utils.dataset_manifest.utils import RELATED_IMAGES_MANIFEST_KEY
 
 slogger = ServerLogManager(__name__)
 
@@ -524,14 +529,10 @@ class TaskExporter(_ExporterBase, _TaskBackupBase):
                                 continue
 
                             metadata = entry.get("meta", {})
-                            if isinstance(metadata, dict):
-                                manifest_auxiliary_files = metadata.get(
-                                    AUXILIARY_FILES_MANIFEST_KEY, []
-                                )
-                                if isinstance(manifest_auxiliary_files, list):
-                                    auxiliary_files.update(
-                                        (PurePath(path), None) for path in manifest_auxiliary_files
-                                    )
+                            auxiliary_files.update(
+                                (auxiliary_file, None)
+                                for auxiliary_file in get_manifest_auxiliary_files(metadata)
+                            )
 
                             yield entry
 
