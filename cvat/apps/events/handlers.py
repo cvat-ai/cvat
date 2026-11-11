@@ -733,7 +733,7 @@ def record_request_exception(
     status_code: int = status.HTTP_500_INTERNAL_SERVER_ERROR,
 ) -> None:
     django_request = request._request if isinstance(request, Request) else request
-    # Our DRF exception handler records the exception before DRF re-raises it to Django.
+    # DRF exception handler may have already recorded an event and set this flag.
     if getattr(django_request, "_exception_event_recorded", False):
         return
 
