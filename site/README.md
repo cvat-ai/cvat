@@ -1,30 +1,5 @@
 ## Basic manual
 
-### How to edit or add documentation pages online
-
-To edit and/or add documentation, you need to have a [GitHub](https://github.com/login) account.
-To change documentation files or add a documentation page,
-simply click `Edit this page` on the page you would like to edit.
-If you need to add a child page, click `Create child page`.
-
-If you need to edit the text that has the markup [markdown](https://github.com/adam-p/markdown-here/wiki/Markdown-Cheatsheet),
-click on the `Fork this repository` button.
-
-Read how to edit files for github ([GitHub docs](https://docs.github.com/en/github/managing-files-in-a-repository/editing-files-in-another-users-repository)).
-
-Please note that files have a markup for correct display on the site: the title, the title of the link,
-the weight (affects the order of files displayed on the sidebar) and description (optional):
-
-```
----
-title: "Title"
-linkTitle: "Link Title"
-weight: 1
-description: >
-    Description
----
-```
-
 ### How to mark a page as product-specific
 
 CVAT has three products: **Community** (free, self-hosted), **Online** (managed cloud,
@@ -71,6 +46,98 @@ with a short inline note near that section instead.
 Before tagging, check the actual restriction rather than guessing from folder location
 or a legacy URL alias — verify what the page's text says, and if there's no explicit
 statement, confirm with the team before adding a tag.
+
+### Writing release notes and announcements
+
+Create an `index.md` in one of these folders, with any images or videos alongside it:
+
+- Release notes: `site/content/release-notes/<version>/index.md`
+- Announcements: `site/content/announcements/<slug>/index.md`
+
+These paths do not include `en/`. Keep authoring guides outside `site/content/`;
+Markdown files there are published as content.
+
+#### Release notes
+
+```markdown
+---
+title: "CVAT 2.81: annotation improvements"
+description: "A short overview of the release."
+date: 2026-11-10T12:00:00Z
+version: "2.81.0"
+announce: true
+---
+
+{{< release-section title="Faster annotation review" editions="all" >}}
+Explain the change and how to use it.
+
+![Annotation review](review.png)
+{{< /release-section >}}
+
+{{< release-section title="Enterprise deployment improvements" editions="enterprise" >}}
+Describe the Enterprise-specific change.
+{{< /release-section >}}
+```
+
+- Use a unique version in `X.Y.Z` format.
+- `announce: true` makes the release eligible for automatic notification.
+  `false` keeps it available without triggering the popup.
+- Put changes inside `release-section` blocks. Use `all`, `community`, `enterprise`,
+  `saas`, or comma-separated editions such as `enterprise,saas`. Do not nest blocks.
+- The popup shows the first **five matching headings**, extracted automatically from
+  the article; no separate summary list is needed. Keep headings descriptive and concise.
+- The public docs show all sections and their availability labels. The app filters
+  sections by its edition and excludes releases newer than its installed CVAT version.
+
+#### Announcements
+
+```markdown
+---
+id: "annotation-workflow-guide"
+title: "Explore the new annotation workflow"
+description: "One or two sentences for the popup preview."
+date: 2026-11-10T12:01:00Z
+editions: [saas, enterprise]
+popup: true
+image: /announcements/annotation-workflow-guide/preview.png
+image_alt: "Annotation editor showing the new workflow"
+cta: "Read the guide"
+---
+
+Write the full announcement here using Markdown.
+```
+
+- Use a unique, permanent `id`: lowercase letters, numbers, hyphens, or underscores.
+- Give each announcement a unique publication timestamp with a timezone.
+- `editions` is required; use `community`, `enterprise`, and/or `saas` (CVAT Online).
+- `popup: true` allows automatic notification. `false` keeps the announcement
+  available without triggering the popup.
+- `image`, `image_alt`, `video`, and `cta` are optional. For a preview video, set
+  `video: /announcements/<slug>/demo.mp4`. The CTA links to the announcement's own docs page.
+- The popup displays the latest five eligible announcements. SaaS can include posts
+  from an additional website provider; those posts do not need a duplicate Hugo article.
+
+#### Media and publishing
+
+Use relative image links in the article body, such as `![Description](preview.png)`.
+Videos can use standard HTML:
+
+```html
+<video controls preload="none" poster="preview.png">
+  <source src="demo.mp4" type="video/mp4">
+</video>
+```
+
+Preview locally using the instructions below, then submit a PR to `develop`.
+After merge, the docs pipeline publishes the pages and generates the JSON feeds
+automatically; do not edit generated JSON. No CVAT application deployment is required.
+The app gets new content on a subsequent page load after the backend cache refreshes,
+subject to notification preferences and the user's last-seen state.
+
+Keep IDs, versions, and publication timestamps unchanged when correcting existing
+articles. Publish new announcements with a new ID and a current timestamp; backdated
+entries can be missed by users who have already seen newer content. No `draft` field is
+needed: review happens through the PR.
 
 ### How to start the site locally
 
