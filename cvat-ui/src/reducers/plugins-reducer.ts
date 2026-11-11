@@ -50,6 +50,11 @@ const defaultState: PluginsState = {
         },
     },
     components: {
+        signingLayout: {
+            footer: {
+                items: [],
+            },
+        },
         profilePage: {
             privacyConsent: {
                 items: [],

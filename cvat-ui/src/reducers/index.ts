@@ -450,6 +450,11 @@ export interface PluginsState {
         };
     },
     components: {
+        signingLayout: {
+            footer: {
+                items: PluginComponent[];
+            };
+        };
         profilePage: {
             privacyConsent: {
                 items: PluginComponent[];
