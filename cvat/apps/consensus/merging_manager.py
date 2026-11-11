@@ -24,8 +24,7 @@ from cvat.apps.engine.models import (
 )
 from cvat.apps.iam.models import User
 from cvat.apps.profiler import silk_profile
-from cvat.apps.quality_control.comparison_report import ComparisonParameters
-from cvat.apps.quality_control.datumaro_data_provider import DatumaroJobDataProvider
+from cvat.apps.quality_control.backends.datumaro.data_provider import DatumaroJobDataProvider
 from cvat.apps.redis_handler.background import AbstractRequestManager
 
 
@@ -121,13 +120,9 @@ class _TaskMerger:
             for replica_job_data_provider in replica_job_data_providers
         ]
 
-        comparison_parameters = ComparisonParameters()
         merger = IntersectMerge(
             conf=IntersectMerge.Conf(
                 pairwise_dist=self._settings.iou_threshold,
-                sigma=comparison_parameters.oks_sigma,
-                torso_r=comparison_parameters.line_thickness,
-                included_annotation_types=comparison_parameters.included_annotation_types,
             )
         )
         merged_dataset = merger(*replica_datasets)

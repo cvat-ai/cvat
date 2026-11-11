@@ -6,6 +6,22 @@ from drf_spectacular.extensions import OpenApiSerializerFieldExtension
 from drf_spectacular.plumbing import force_instance
 
 
+class IoUThresholdFieldExtension(OpenApiSerializerFieldExtension):
+    target_class = "cvat.apps.quality_control.serializers.IoUThresholdField"
+
+    def map_serializer_field(self, auto_schema, direction):
+        from cvat.apps.quality_control.serializers import SimilarityThresholdPolicySerializer
+
+        return {
+            "oneOf": [
+                {"type": "number", "minimum": 0, "maximum": 1},
+                auto_schema.resolve_serializer(
+                    SimilarityThresholdPolicySerializer(), direction
+                ).ref,
+            ]
+        }
+
+
 class QualityReportTargetExtension(OpenApiSerializerFieldExtension):
     # Make a separate class in API schema,
     # otherwise it gets merged with AnalyticsTarget enum

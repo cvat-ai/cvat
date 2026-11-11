@@ -20,13 +20,16 @@ interface Props {
     severity: ConflictSeverity;
     conflict: QualityConflict;
     tooltipVisible: boolean;
+    showRequirements: boolean;
     onEnter: (conflict: QualityConflict) => void;
     onLeave: (conflict: QualityConflict) => void;
 }
 
+const MAX_TOOLTIP_REQUIREMENTS = 3;
+
 export default function ConflictLabel(props: Props): ReactPortal {
     const {
-        top, left, angle, scale, text, severity, darken, conflict, onEnter, onLeave, tooltipVisible,
+        top, left, angle, scale, text, severity, darken, conflict, onEnter, onLeave, tooltipVisible, showRequirements,
     } = props;
 
     const conflictColor = severity === ConflictSeverity.ERROR ? 'cvat-conflict-error' : 'cvat-conflict-warning';
@@ -34,7 +37,28 @@ export default function ConflictLabel(props: Props): ReactPortal {
 
     return ReactDOM.createPortal(
         <CVATTooltip
-            title={text}
+            title={(
+                <>
+                    <div>{text}</div>
+                    {showRequirements && !!conflict.requirements.length && (
+                        <div className='cvat-conflict-tooltip-requirements'>
+                            <div>Requirements:</div>
+                            {conflict.requirements.slice(0, MAX_TOOLTIP_REQUIREMENTS).map((requirement) => (
+                                <div
+                                    key={requirement.id}
+                                    title={requirement.name}
+                                    className='cvat-conflict-tooltip-requirement-name'
+                                >
+                                    {requirement.name}
+                                </div>
+                            ))}
+                            {conflict.requirements.length > MAX_TOOLTIP_REQUIREMENTS && (
+                                <div>{`${conflict.requirements.length - MAX_TOOLTIP_REQUIREMENTS} more in Issues`}</div>
+                            )}
+                        </div>
+                    )}
+                </>
+            )}
             open={tooltipVisible}
         >
             <Tag

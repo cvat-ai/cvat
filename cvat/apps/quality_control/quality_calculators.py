@@ -362,6 +362,7 @@ class TaskQualityCalculator:
                     frame=conflict["frame_id"],
                     severity=conflict["severity"],
                     attribute_names=conflict.get("attribute_names", []),
+                    requirements=conflict.get("requirements", []),
                 )
                 db_conflicts.append(db_conflict)
 

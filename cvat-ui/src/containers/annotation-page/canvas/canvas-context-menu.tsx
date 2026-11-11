@@ -123,6 +123,7 @@ interface State {
 
 class CanvasContextMenuContainer extends React.PureComponent<Props, State> {
     private initialized: HTMLDivElement | null;
+    private resizeObserver: ResizeObserver;
     private dragging: boolean;
     private dragInitPosX: number;
     private dragInitPosY: number;
@@ -134,6 +135,7 @@ class CanvasContextMenuContainer extends React.PureComponent<Props, State> {
         this.dragging = false;
         this.dragInitPosX = 0;
         this.dragInitPosY = 0;
+        this.resizeObserver = new ResizeObserver(() => this.updatePositionIfOutOfScreen());
         this.state = {
             latestLeft: 0,
             latestTop: 0,
@@ -159,6 +161,8 @@ class CanvasContextMenuContainer extends React.PureComponent<Props, State> {
     public componentDidMount(): void {
         const { canvasInstance } = this.props;
         this.updatePositionIfOutOfScreen();
+        const [element] = window.document.getElementsByClassName('cvat-canvas-context-menu');
+        if (element) this.resizeObserver.observe(element);
 
         window.addEventListener('mousemove', this.moveContextMenu);
         if (canvasInstance) {
@@ -189,7 +193,9 @@ class CanvasContextMenuContainer extends React.PureComponent<Props, State> {
         }
 
         if (element && (!this.initialized || this.initialized !== element)) {
+            this.resizeObserver.disconnect();
             this.initialized = element as HTMLDivElement;
+            this.resizeObserver.observe(this.initialized);
 
             this.initialized.addEventListener('mousedown', (e: MouseEvent): any => {
                 this.dragging = true;
@@ -200,11 +206,15 @@ class CanvasContextMenuContainer extends React.PureComponent<Props, State> {
             this.initialized.addEventListener('mouseup', () => {
                 this.dragging = false;
             });
+        } else if (!element) {
+            this.resizeObserver.disconnect();
+            this.initialized = null;
         }
     }
 
     public componentWillUnmount(): void {
         const { canvasInstance } = this.props;
+        this.resizeObserver.disconnect();
         window.removeEventListener('mousemove', this.moveContextMenu);
         if (canvasInstance) {
             canvasInstance.html().removeEventListener('mousedown', this.onMouseDownCanvas);
