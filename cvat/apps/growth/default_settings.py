@@ -15,6 +15,5 @@ CVAT_UPDATES_PUBLIC_URL = os.getenv("CVAT_UPDATES_PUBLIC_URL", CVAT_UPDATES_SOUR
 CVAT_UPDATES_CACHE_TTL = int(os.getenv("CVAT_UPDATES_CACHE_TTL", "900"))
 # Commercial settings provide their own default; administrators can override it.
 CVAT_UPDATES_EDITION = os.getenv("CVAT_UPDATES_EDITION", "community")
-# Optional website previews. Credentials are used only by the API server.
-CVAT_UPDATES_WEBFLOW_TOKEN = os.getenv("CVAT_UPDATES_WEBFLOW_TOKEN", "")
-CVAT_UPDATES_WEBFLOW_COLLECTION = os.getenv("CVAT_UPDATES_WEBFLOW_COLLECTION", "")
+# Optional callable returning normalized previews from an additional source.
+CVAT_UPDATES_ANNOUNCEMENT_PROVIDER = None

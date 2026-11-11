@@ -16,6 +16,7 @@ import requests
 from django.conf import settings
 from django.core.cache import cache
 from django.utils.dateparse import parse_datetime
+from django.utils.module_loading import import_string
 from django.utils.timezone import now
 from rest_framework.exceptions import APIException, NotFound
 
@@ -321,13 +322,30 @@ def _article_key(value):
     return parsed.netloc.lower(), parsed.path.rstrip("/")
 
 
+def external_announcements(*, on_stale=None):
+    """Load optional previews using the same fields as Hugo announcements.
+
+    Providers receive the edition, preview limit, and a callback to report stale
+    or incomplete data. They raise UpdatesUnavailable when no usable feed exists.
+    IDs and timezone-aware publication timestamps must remain stable across edits.
+    """
+    provider = settings.CVAT_UPDATES_ANNOUNCEMENT_PROVIDER
+    if provider is None:
+        return []
+    try:
+        load = import_string(provider)
+    except (ImportError, AttributeError):
+        logger.error("Could not load the configured announcement provider")
+        raise UpdatesUnavailable() from None
+    return load(edition=edition(), limit=ANNOUNCEMENT_LIMIT, on_stale=on_stale)
+
+
 def announcement_feed():
-    """One edition-filtered batch and one watermark for Hugo and Webflow."""
-    from .webflow import previews
+    """One edition-filtered batch and one watermark for all announcement sources."""
 
     merged, errors = {}, set()
     for source, load in (
-        ("webflow", previews),
+        ("external-announcements", external_announcements),
         ("announcements", lambda **kwargs: entries("announcements", **kwargs)),
     ):
         try:
@@ -337,7 +355,7 @@ def announcement_feed():
             continue
         for item in items:
             item = {key: value for key, value in item.items() if key != "contentPath"}
-            item["source"] = "hugo" if source == "announcements" else source
+            item["source"] = "hugo" if source == "announcements" else "external"
             key = _article_key(item["url"])
             previous = merged.get(key)
             if previous:

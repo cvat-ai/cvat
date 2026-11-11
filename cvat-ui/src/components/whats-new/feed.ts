@@ -74,7 +74,7 @@ export interface PostPreview {
 export interface Announcement extends PostPreview {
     editions: Edition[];
     popup: boolean;
-    source: 'hugo' | 'webflow';
+    source: 'hugo' | 'external';
     markdownURL?: string;
 }
 
@@ -90,7 +90,7 @@ export interface Updates {
     announcements: Announcement[];
     canAcknowledgeAnnouncements: boolean;
     state: SeenState;
-    errors: ('release-notes' | 'announcements' | 'webflow')[];
+    errors: ('release-notes' | 'announcements' | 'external-announcements')[];
     releaseHistoryURL: string;
     announcementHistoryURL: string;
     updatesHistoryURL: string;

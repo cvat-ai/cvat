@@ -106,8 +106,6 @@ services:
       CVAT_UPDATES_PUBLIC_URL:
       CVAT_UPDATES_CACHE_TTL:
       CVAT_UPDATES_EDITION:
-      CVAT_UPDATES_WEBFLOW_TOKEN:
-      CVAT_UPDATES_WEBFLOW_COLLECTION:
     command: init run server nginx
     labels:
       traefik.enable: "true"
