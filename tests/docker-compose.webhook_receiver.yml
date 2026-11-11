@@ -1,6 +1,4 @@
 x-allow-webhook-receiver: &allow-webhook-receiver
-  depends_on:
-    - webhook_receiver
   volumes:
     - ./tests/allow_webhooks_receiver.sh:/etc/cvat/init.d/allow_webhooks_receiver.sh:ro
 
