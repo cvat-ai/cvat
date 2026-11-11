@@ -1438,6 +1438,22 @@ def _filter_cloud_storage_files(
             filter(lambda x: x.startswith(storage_client.prefix), data["server_files"])
         )
 
+    if isinstance(cloud_storage_manifest, ImageManifestManager):
+        auxiliary_files = {
+            (
+                os.path.join(cloud_storage_manifest_prefix, os.fspath(auxiliary_file))
+                if cloud_storage_manifest_prefix
+                else os.fspath(auxiliary_file)
+            )
+            for _, manifest_entry in cloud_storage_manifest
+            for auxiliary_file in get_manifest_auxiliary_files(manifest_entry.get("meta"))
+        }
+        data["server_files"] = [
+            path
+            for path in data["server_files"]
+            if get_metadata_type(path) not in METADATA_TYPES or path in auxiliary_files
+        ]
+
     if job_file_mapping is not None:
         # We only need to process the files specified in job_file_mapping
         filtered_files = []

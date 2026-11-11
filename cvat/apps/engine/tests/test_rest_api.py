@@ -2363,7 +2363,7 @@ class TaskCloudStorageTestCase(_CloudStorageTestBase, ExportApiTestBase, ImportA
             *,
             include_calibration: bool,
             include_auxiliary_file: bool,
-        ) -> tuple[str, str]:
+        ) -> tuple[str, str, str]:
             self._upload_pointcloud_pcd_dataset(
                 prefix,
                 include_auxiliary_file=include_auxiliary_file,
@@ -2371,6 +2371,7 @@ class TaskCloudStorageTestCase(_CloudStorageTestBase, ExportApiTestBase, ImportA
 
             related_image_path = "test_pointcloud_pcd/related_images/000001_pcd/000001.png"
             auxiliary_file_path = f"{related_image_path}.json"
+            unrelated_json_path = "test_pointcloud_pcd/unrelated.json"
             metadata = {
                 "related_images": [related_image_path],
             }
@@ -2396,8 +2397,12 @@ class TaskCloudStorageTestCase(_CloudStorageTestBase, ExportApiTestBase, ImportA
                     )
                 ).encode(),
             )
+            self.mock_aws.create_file(
+                f"{prefix}/{unrelated_json_path}" if prefix else unrelated_json_path,
+                b"{}",
+            )
 
-            return related_image_path, auxiliary_file_path
+            return related_image_path, auxiliary_file_path, unrelated_json_path
 
         cloud_storage_id = self._create_cloud_storage()
         cases = (
@@ -2434,11 +2439,19 @@ class TaskCloudStorageTestCase(_CloudStorageTestBase, ExportApiTestBase, ImportA
                 "explicit",
                 True,
             ),
+            ManifestCase(
+                "static manifest skips unrelated explicitly selected JSON",
+                "static-manifest-unrelated-json",
+                False,
+                True,
+                "explicit-unrelated-json",
+                False,
+            ),
         )
 
         for case in cases:
             with self.subTest(case.name):
-                related_image_path, auxiliary_file_path = upload_dataset(
+                related_image_path, auxiliary_file_path, unrelated_json_path = upload_dataset(
                     case.prefix,
                     include_calibration=case.include_calibration,
                     include_auxiliary_file=case.include_auxiliary_file,
@@ -2448,7 +2461,7 @@ class TaskCloudStorageTestCase(_CloudStorageTestBase, ExportApiTestBase, ImportA
                 server_files = [manifest_path]
                 if case.selection == "directory":
                     server_files.append(f"{prefix}/")
-                elif case.selection == "explicit":
+                elif case.selection.startswith("explicit"):
                     server_files.extend(
                         [
                             f"{prefix}/test_pointcloud_pcd/pointcloud/000001.pcd",
@@ -2456,6 +2469,8 @@ class TaskCloudStorageTestCase(_CloudStorageTestBase, ExportApiTestBase, ImportA
                             f"{prefix}/{auxiliary_file_path}",
                         ]
                     )
+                    if case.selection == "explicit-unrelated-json":
+                        server_files.append(f"{prefix}/{unrelated_json_path}")
                 image_data = {
                     f"server_files[{index}]": server_file
                     for index, server_file in enumerate(server_files)
@@ -2510,6 +2525,13 @@ class TaskCloudStorageTestCase(_CloudStorageTestBase, ExportApiTestBase, ImportA
                 elif case.include_auxiliary_file:
                     self.assertTrue(
                         (db_data.get_upload_dirname() / expected_auxiliary_file_path).is_file()
+                    )
+                if not case.use_cache:
+                    expected_unrelated_json_path = (
+                        f"{prefix}/{unrelated_json_path}" if prefix else unrelated_json_path
+                    )
+                    self.assertFalse(
+                        (db_data.get_upload_dirname() / expected_unrelated_json_path).exists()
                     )
 
     def test_unsafe_paths_in_directory(self):
