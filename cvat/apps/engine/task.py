@@ -516,11 +516,6 @@ def _validate_manifest(
     if not is_manifest(full_manifest_path):
         raise ValidationError("Invalid manifest was uploaded")
 
-    if is_dataset_manifest(full_manifest_path):
-        manifest = ImageManifestManager(full_manifest_path)
-        for _, entry in manifest:
-            get_manifest_auxiliary_files(entry.get("meta"))
-
     return manifest_file
 
 
