@@ -24,7 +24,6 @@ import {
 import { acknowledge, fetchUpdates } from './server';
 import AnnouncementCarousel from './announcement-carousel';
 import ReleaseSummary from './release-summary';
-import StarRepositoryCallout from './star-repository-callout';
 import { WHATS_NEW_STYLE, WHATS_NEW_THEME } from './theme';
 
 interface Props {
@@ -233,25 +232,18 @@ export default function WhatsNew(props: Props): JSX.Element {
                     onCancel={close}
                     destroyOnClose
                     footer={(
-                        <>
-                            <StarRepositoryCallout
-                                open={open}
-                                active={ready && hasContent}
-                                userId={props.user.id}
-                            />
-                            <div className='cvat-release-notes-footer-actions'>
-                                <Button
-                                    className='cvat-updates-action cvat-updates-action-outline'
-                                    href={historyURL}
-                                    target='_blank'
-                                    rel='noopener noreferrer'
-                                    disabled={!historyURL}
-                                >
-                                    View all updates <ArrowUpOutlined rotate={45} />
-                                </Button>
-                                <Button className='cvat-updates-action' onClick={close}>Close</Button>
-                            </div>
-                        </>
+                        <div className='cvat-release-notes-footer-actions'>
+                            <Button
+                                className='cvat-updates-action cvat-updates-action-outline'
+                                href={historyURL}
+                                target='_blank'
+                                rel='noopener noreferrer'
+                                disabled={!historyURL}
+                            >
+                                View all updates <ArrowUpOutlined rotate={45} />
+                            </Button>
+                            <Button className='cvat-updates-action' onClick={close}>Close</Button>
+                        </div>
                     )}
                 >
                     {loading && <div className='cvat-release-notes-loading'><Spin /></div>}

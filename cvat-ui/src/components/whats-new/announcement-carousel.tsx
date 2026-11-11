@@ -116,7 +116,7 @@ export default function AnnouncementCarousel({ items, newKeys }: {
                                 aria-live={index === activeIndex ? 'polite' : undefined}
                                 tabIndex={index === activeIndex ? 0 : -1}
                             >
-                                <div className='cvat-updates-announcement-labels'>
+                                <div className='cvat-updates-labels'>
                                     <span className='cvat-updates-eyebrow'>{item.label || 'Announcement'}</span>
                                     {newKeys.has(announcementKey(item)) && (
                                         <span className='cvat-updates-new-badge'>New</span>

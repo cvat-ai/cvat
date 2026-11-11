@@ -22,8 +22,6 @@ const colors = {
     'neutral-badge': '#eeeeee',
     'media-bg': '#f3f3f3',
     'muted-icon': '#8c8c8c',
-    'support-surface': '#fff5e8',
-    'support-border': '#f1cfaa',
 };
 
 export const WHATS_NEW_THEME: ThemeConfig = {

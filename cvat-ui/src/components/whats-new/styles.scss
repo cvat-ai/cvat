@@ -14,7 +14,22 @@
 }
 
 .cvat-release-notes-modal {
+    --cvat-updates-heading-size: 24px;
+
     max-width: calc(100vw - 32px);
+
+    .ant-modal-title,
+    .cvat-updates-title,
+    .cvat-updates-announcement-copy h2,
+    .cvat-updates-release-meta h2,
+    .cvat-release-notes-empty h2 {
+        color: var(--cvat-updates-ink);
+        font-family: inherit;
+        font-size: var(--cvat-updates-heading-size);
+        font-weight: 700;
+        letter-spacing: -0.35px;
+        line-height: 1.3;
+    }
 
     .ant-modal-content {
         background: var(--cvat-updates-white);
@@ -24,19 +39,16 @@
 
     .ant-modal-title {
         padding-right: 28px;
-        font-size: 22px;
-        line-height: 1.4;
     }
 
     .cvat-updates-title {
         display: flex;
         align-items: center;
         gap: 10px;
-        color: var(--cvat-updates-ink);
 
         .anticon {
             color: var(--cvat-updates-orange);
-            font-size: 23px;
+            font-size: 1em;
         }
     }
 
@@ -97,11 +109,6 @@
 
         h2 {
             margin: 10px 0 12px;
-            color: var(--cvat-updates-ink);
-            font-size: 25px;
-            font-weight: 700;
-            letter-spacing: -0.35px;
-            line-height: 1.22;
         }
 
         p {
@@ -123,7 +130,7 @@
         line-height: 1.2;
     }
 
-    .cvat-updates-announcement-labels {
+    .cvat-updates-labels {
         display: flex;
         flex-wrap: wrap;
         align-items: center;
@@ -316,11 +323,29 @@
         display: grid;
         height: 100%;
         min-height: 0;
-        grid-template-columns: 44px 132px minmax(0, 1fr) 32px;
+        grid-template-columns: 196px minmax(0, 1fr) 32px;
         align-items: center;
         gap: 16px;
         padding: 20px;
         background: var(--cvat-updates-surface);
+        color: var(--cvat-updates-ink);
+        text-decoration: none;
+        cursor: pointer;
+        user-select: text;
+
+        &:hover {
+            background: var(--cvat-updates-badge-bg);
+            text-decoration: none;
+
+            .cvat-updates-release-link {
+                color: var(--cvat-updates-action-orange);
+            }
+        }
+
+        &:focus-visible {
+            outline: 2px solid var(--cvat-updates-deep-red);
+            outline-offset: -3px;
+        }
     }
 
     .cvat-updates-release-highlights {
@@ -341,11 +366,6 @@
             padding-left: 20px;
         }
 
-        &:focus-visible {
-            outline: 2px solid var(--cvat-updates-deep-red);
-            outline-offset: -2px;
-        }
-
         li + li {
             margin-top: 8px;
         }
@@ -355,28 +375,10 @@
         }
     }
 
-    .cvat-updates-release-icon {
-        display: grid;
-        width: 40px;
-        height: 40px;
-        place-items: center;
-        background: var(--cvat-updates-neutral-badge);
-        border-radius: 9px;
-        color: var(--cvat-updates-orange);
-        font-size: 22px;
-    }
-
     .cvat-updates-release-meta {
-        .cvat-updates-new-badge {
-            margin-top: 5px;
-        }
-
         h2 {
             margin: 5px 0;
-            color: var(--cvat-updates-ink);
-            font-size: 25px;
-            font-weight: 700;
-            line-height: 1.2;
+            overflow-wrap: anywhere;
         }
 
         time {
@@ -385,46 +387,13 @@
         }
     }
 
-    .cvat-updates-release-label {
-        color: var(--cvat-updates-ink);
-        font-size: 14px;
-        font-weight: 600;
-    }
-
     .cvat-updates-release-link {
-        color: var(--cvat-updates-ink);
-
-        &:hover {
-            color: var(--cvat-updates-deep-red);
-        }
-    }
-
-    .cvat-release-notes-star-callout {
         display: grid;
-        grid-template-columns: minmax(0, 1fr) auto;
-        align-items: center;
-        gap: 20px;
-        margin: 0 0 18px;
-        padding: 18px 20px;
-        background: var(--cvat-updates-support-surface);
-        border: 1px solid var(--cvat-updates-support-border);
-        border-radius: 12px;
+        width: 32px;
+        height: 32px;
+        place-items: center;
         color: var(--cvat-updates-ink);
-        text-align: left;
-    }
-
-    .cvat-release-notes-star-title {
-        display: block;
-        color: var(--cvat-updates-ink);
-        font-size: 19px;
-        line-height: 1.3;
-    }
-
-    .cvat-release-notes-star-callout .cvat-release-notes-star-description {
-        margin: 4px 0 0;
-        color: var(--cvat-updates-muted);
-        font-size: 13px;
-        line-height: 1.45;
+        font-size: 18px;
     }
 
     .cvat-release-notes-footer-actions {
@@ -449,14 +418,11 @@
         padding: 36px 16px;
         color: var(--cvat-updates-muted);
         text-align: center;
-
-        h2 {
-            color: var(--cvat-updates-ink);
-            font-size: 20px;
-        }
     }
 
     @media (width <= 767px) {
+        --cvat-updates-heading-size: 22px;
+
         .cvat-updates-announcements {
             height: 480px;
             padding: 16px 16px 10px;
@@ -474,16 +440,12 @@
             order: -1;
         }
 
-        .cvat-updates-announcement-copy h2 {
-            font-size: 23px;
-        }
-
         .cvat-updates-release-panel {
             height: 340px;
         }
 
         .cvat-updates-release {
-            grid-template-columns: 40px minmax(0, 1fr) 32px;
+            grid-template-columns: minmax(0, 1fr) 32px;
             grid-template-rows: auto minmax(0, 1fr);
             gap: 12px;
             padding: 16px;
@@ -498,18 +460,8 @@
         }
 
         .cvat-updates-release-link {
-            grid-column: 3;
+            grid-column: 2;
             grid-row: 1;
-        }
-
-        .cvat-release-notes-star-callout {
-            grid-template-columns: minmax(0, 1fr);
-            gap: 14px;
-            padding: 16px;
-        }
-
-        .cvat-release-notes-star-button {
-            justify-self: start;
         }
     }
 
@@ -518,14 +470,6 @@
 
         .ant-modal-body {
             max-height: min(58vh, calc(100vh - 350px));
-        }
-
-        .cvat-updates-title {
-            font-size: 20px;
-        }
-
-        .cvat-release-notes-star-button {
-            width: 100%;
         }
     }
 }
