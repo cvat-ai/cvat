@@ -57,7 +57,7 @@ request the `pytorch` extra:
 pip install "cvat-sdk[pytorch]"
 ```
 
-To read frames of tasks whose chunks are stored as video
+To read frames of tasks whose chunks are stored as video files
 (for example, through the dataset API or auto-annotation), request the `video` extra:
 
 ```bash
