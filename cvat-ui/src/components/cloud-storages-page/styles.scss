@@ -98,11 +98,30 @@
         object-fit: cover;
     }
 
-    .cvat-cloud-storage-description-icon {
+    .cvat-cloud-storage-media-meta {
         position: absolute;
         top: $grid-unit-size;
-        width: auto;
         right: $grid-unit-size;
+        display: flex;
+        align-items: center;
+        gap: $grid-unit-size;
         pointer-events: auto;
+    }
+
+    .cvat-cloud-storage-description-icon {
+        width: auto;
+        font-size: $grid-unit-size * 2;
+        filter: drop-shadow(0 0 2px $background-color-1);
+    }
+
+    .cvat-cloud-storage-status-indicator {
+        display: flex;
+        align-items: center;
+
+        .ant-badge-status-dot {
+            width: $grid-unit-size * 1.5;
+            height: $grid-unit-size * 1.5;
+            box-shadow: 0 0 0 2px $background-color-1, 0 1px 4px rgba(0, 0, 0, 35%);
+        }
     }
 }

@@ -10,6 +10,7 @@ import dayjs from 'dayjs';
 import { QuestionCircleOutlined, MoreOutlined } from '@ant-design/icons';
 import Paragraph from 'antd/lib/typography/Paragraph';
 import Text from 'antd/lib/typography/Text';
+import Descriptions from 'antd/lib/descriptions';
 import Button from 'antd/lib/button';
 import Modal from 'antd/lib/modal';
 
@@ -41,13 +42,10 @@ export default function CloudStorageItemComponent(props: Readonly<Props>): JSX.E
         displayName,
         providerType,
         owner,
-        createdDate,
         updatedDate,
         description,
     } = cloudStorage;
-    const created = owner ?
-        `Created by ${owner.username} on ${dayjs(createdDate).format('MMMM Do YYYY')}` :
-        `Created on ${dayjs(createdDate).format('MMMM Do YYYY')}`;
+    const ownerName = owner?.username;
 
     const {
         deletes,
@@ -105,27 +103,29 @@ export default function CloudStorageItemComponent(props: Readonly<Props>): JSX.E
                 />
             )}
             tags={[{ key: 'provider', content: providerType }]}
-            mediaOverlay={description ? (
-                <CVATTooltip overlay={description}>
-                    <QuestionCircleOutlined className='cvat-cloud-storage-description-icon' />
-                </CVATTooltip>
-            ) : undefined}
+            mediaOverlay={(
+                <div className='cvat-cloud-storage-media-meta'>
+                    {description && (
+                        <CVATTooltip overlay={description}>
+                            <QuestionCircleOutlined className='cvat-cloud-storage-description-icon' />
+                        </CVATTooltip>
+                    )}
+                    <Status cloudStorage={cloudStorage} />
+                </div>
+            )}
             title={<Paragraph ellipsis={{ tooltip: displayName }}>{displayName}</Paragraph>}
             description={(
-                <>
-                    <Text
-                        type='secondary'
-                        ellipsis={{ tooltip: created }}
-                        className='cvat-resource-card-line'
-                    >
-                        {created}
-                    </Text>
-                    <Paragraph>
-                        <Text type='secondary'>Last updated </Text>
-                        <Text type='secondary'>{dayjs(updatedDate).fromNow()}</Text>
-                    </Paragraph>
-                    <Status cloudStorage={cloudStorage} />
-                </>
+                <Descriptions className='cvat-resource-card-properties' column={1} size='small'>
+                    <Descriptions.Item label='Owner'>
+                        <Text
+                            ellipsis={{ tooltip: ownerName }}
+                            className='cvat-resource-card-line'
+                        >
+                            {ownerName}
+                        </Text>
+                    </Descriptions.Item>
+                    <Descriptions.Item label='Updated'>{dayjs(updatedDate).fromNow()}</Descriptions.Item>
+                </Descriptions>
             )}
             menu={(
                 <Button
