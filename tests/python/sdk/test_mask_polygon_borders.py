@@ -21,9 +21,7 @@ def _polygons(mask):
     height, width = mask.shape[-2:]
     context = _DetectionFunctionContextImpl(frame_name="frame.png", conv_mask_to_poly=True)
     return list(
-        _generate_shapes(
-            context, torch.tensor([0, 0, width, height]), mask, torch.tensor(7)
-        )
+        _generate_shapes(context, torch.tensor([0, 0, width, height]), mask, torch.tensor(7))
     )
 
 
@@ -94,9 +92,7 @@ def test_interior_outer_contour_keeps_existing_hole_filtering_and_simplification
 def test_rle_output_is_unchanged(foreground):
     mask = torch.full((1, 12, 18), foreground)
     context = _DetectionFunctionContextImpl(frame_name="frame.png", conv_mask_to_poly=False)
-    shapes = list(
-        _generate_shapes(context, torch.tensor([0, 0, 18, 12]), mask, torch.tensor(7))
-    )
+    shapes = list(_generate_shapes(context, torch.tensor([0, 0, 18, 12]), mask, torch.tensor(7)))
     assert len(shapes) == 1
     assert shapes[0].type.value == "mask"
     assert shapes[0].points == encode_mask(mask[0] >= 0.5, [0, 0, 18, 12])
