@@ -68,7 +68,7 @@ def image():
 def test_detection_preserves_predictions_without_saved_backward_tensors(
     function, image, grad_enabled
 ):
-    context = _DetectionFunctionContextImpl("example.png", conf_threshold=0)
+    context = _DetectionFunctionContextImpl(frame_name="example.png", conf_threshold=0)
     with torch.no_grad():
         reference = function.detect(context, image)
     assert reference
@@ -95,7 +95,7 @@ def test_detection_preserves_predictions_without_saved_backward_tensors(
 
 
 def test_detection_does_not_disable_subsequent_training_gradients(function, image):
-    context = _DetectionFunctionContextImpl("example.png", conf_threshold=1)
+    context = _DetectionFunctionContextImpl(frame_name="example.png", conf_threshold=1)
     with torch.enable_grad():
         assert function.detect(context, image) == []
         parameter = torch.nn.Parameter(torch.tensor(3.0))
@@ -104,7 +104,7 @@ def test_detection_does_not_disable_subsequent_training_gradients(function, imag
 
 
 def test_failed_transform_preserves_the_callers_grad_mode(function):
-    context = _DetectionFunctionContextImpl("example.png")
+    context = _DetectionFunctionContextImpl(frame_name="example.png")
     with torch.enable_grad():
         with pytest.raises(TypeError):
             function.detect(context, object())
