@@ -23,6 +23,9 @@ on:
 jobs:
   analyze:
     name: Analyze
+    if: >
+      vars.SKIP_DEPENDABOT_CI != 'true' ||
+      github.event.pull_request.user.login != 'dependabot[bot]'
     runs-on: ubuntu-latest
     permissions:
       actions: read
