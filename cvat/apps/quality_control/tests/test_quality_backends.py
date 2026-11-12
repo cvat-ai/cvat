@@ -75,6 +75,7 @@ def make_requirement(annotation_type="rectangle", **kwargs):
         target_metric=models.QualityTargetMetricType.parse("accuracy"),
         target_metric_threshold=0.8,
         **{
+            "source_requirement_id": 1,
             "similarity_metric": models.DefaultComparisonSettings.get_default_similarity_metric(
                 annotation_type
             ),

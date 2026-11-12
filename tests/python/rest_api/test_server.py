@@ -68,3 +68,25 @@ class TestPageSize:
         response = get_method(admin_user, "quality/conflicts", page_size=page_size)
         assert response.status_code == HTTPStatus.BAD_REQUEST
         assert "page_size" in response.json()
+
+
+@pytest.mark.usefixtures("restore_db_per_class")
+class TestServerShare:
+    @pytest.mark.parametrize("search", ["image", "test_"])
+    def test_can_filter_share_by_name_prefix(self, admin_user: str, search: str):
+        with make_api_client(admin_user) as api_client:
+            all_entries, _ = api_client.server_api.list_share()
+            found_entries, response = api_client.server_api.list_share(search=search)
+
+        assert response.status == HTTPStatus.OK
+
+        expected = [e.to_dict() for e in all_entries if e.name.startswith(search)]
+        assert expected, f"test data has no share entries starting with {search!r}"
+        assert [e.to_dict() for e in found_entries] == expected
+
+    def test_share_search_without_matches_returns_empty_list(self, admin_user: str):
+        with make_api_client(admin_user) as api_client:
+            found_entries, response = api_client.server_api.list_share(search="no_such_prefix_")
+
+        assert response.status == HTTPStatus.OK
+        assert found_entries == []

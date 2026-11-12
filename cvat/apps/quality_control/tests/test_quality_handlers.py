@@ -31,6 +31,7 @@ from cvat.apps.quality_control.comparison_report import (
     ConfusionMatrix,
     compute_quality_metric_summary,
     compute_target_metric,
+    deduplicate_annotation_conflicts,
 )
 from cvat.apps.quality_control.export import prepare_requirement_confusion_matrix_json
 from cvat.apps.quality_control.quality_handlers import (
@@ -43,6 +44,51 @@ from cvat.apps.quality_control.quality_handlers import (
     resolve_effective_requirements,
     select_requirement_calculation,
 )
+
+
+class TestConflictRequirements(unittest.TestCase):
+    def test_deduplication_sorts_requirements_without_changing_source_conflicts(self) -> None:
+        first = AnnotationConflict(
+            frame_id=0,
+            type=models.AnnotationConflictType.EXTRA_ANNOTATION,
+            annotation_ids=[],
+            attribute_names=["second"],
+            requirements=[{"id": 2, "name": "same name"}],
+        )
+        second = AnnotationConflict(
+            frame_id=0,
+            type=models.AnnotationConflictType.EXTRA_ANNOTATION,
+            annotation_ids=[],
+            attribute_names=["first"],
+            requirements=[{"id": 1, "name": "same name"}],
+        )
+        original_first = first.to_dict()
+        original_second = second.to_dict()
+        expected = [{"id": 1, "name": "same name"}, {"id": 2, "name": "same name"}]
+
+        for conflicts in ([first, second, first], [second, first, second]):
+            with self.subTest(conflicts=conflicts):
+                merged = deduplicate_annotation_conflicts(conflicts)
+                self.assertEqual(len(merged), 1)
+                self.assertEqual(merged[0].requirements, expected)
+                self.assertEqual(merged[0].to_dict()["requirements"], expected)
+                self.assertEqual(merged[0].attribute_names, ["first", "second"])
+                self.assertEqual(first.to_dict(), original_first)
+                self.assertEqual(second.to_dict(), original_second)
+
+    def test_deserialization_sorts_snapshots_and_supports_legacy_conflicts(self) -> None:
+        data = {
+            "frame_id": 0,
+            "type": "extra_annotation",
+            "annotation_ids": [],
+            "requirements": [{"id": 2, "name": "deleted"}, {"id": 1, "name": "renamed"}],
+        }
+        conflict = AnnotationConflict.from_dict(data)
+        self.assertEqual(conflict.requirements, list(reversed(data["requirements"])))
+        self.assertIsNot(conflict.requirements[0], data["requirements"][1])
+
+        del data["requirements"]
+        self.assertEqual(AnnotationConflict.from_dict(data).requirements, [])
 
 
 class TestShapeRequirementHandler(unittest.TestCase):
@@ -260,6 +306,10 @@ class TestEffectiveQualityRequirements(unittest.TestCase):
             **overrides,
         }
         return models.QualityRequirement(**values)
+
+    def test_requirement_must_have_a_source_id(self) -> None:
+        with self.assertRaisesRegex(TypeError, "source_requirement_id"):
+            resolve_effective_requirement(self._make_root(id=None))
 
     def test_model_does_not_fill_inherited_fields_for_child(self) -> None:
         root = self._make_root()

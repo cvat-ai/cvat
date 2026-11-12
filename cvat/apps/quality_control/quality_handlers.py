@@ -84,7 +84,7 @@ class EffectiveQualityRequirement:
     annotation_type: str
     target_metric: models.QualityTargetMetricType
     target_metric_threshold: float
-    source_requirement_id: int | None = None
+    source_requirement_id: int = attrs.field(validator=attrs.validators.instance_of(int))
     parent_requirement: int | None = None
     sort_order: int = 0
     similarity_metric: models.ShapeSimilarityMetricType | None = None
@@ -782,6 +782,9 @@ class RequirementHandler(ABC):
             annotation_ids=annotation_ids,
             severity=AnnotationConflictSeverity.ERROR,
             attribute_names=sorted(set(attribute_names or [])),
+            requirements=[
+                {"id": self.requirement.source_requirement_id, "name": self.requirement.name}
+            ],
         )
 
     def _make_frame_summary(

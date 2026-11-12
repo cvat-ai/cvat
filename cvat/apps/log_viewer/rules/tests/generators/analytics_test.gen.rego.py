@@ -133,7 +133,7 @@ def get_name(scope, context, ownership, privilege, membership, resource, has_ana
 def is_valid(scope, context, ownership, privilege, membership, resource):
     if context == "sandbox" and membership:
         return False
-    if scope == "list" and ownership != "None":
+    if scope == "list" and ownership != "none":
         return False
 
     return True

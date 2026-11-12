@@ -1,7 +1,7 @@
 openapi: 3.0.3
 info:
   title: CVAT REST API
-  version: 2.82.0
+  version: 2.83.0
   description: REST API for Computer Vision Annotation Tool (CVAT)
   termsOfService: https://www.google.com/policies/terms/
   contact:
@@ -8029,6 +8029,11 @@ components:
           items:
             type: string
           readOnly: true
+        requirements:
+          type: array
+          items:
+            $ref: '#/components/schemas/AnnotationConflictRequirement'
+          readOnly: true
       required:
       - annotation_ids
     AnnotationConflictAnnotationType:
@@ -8041,6 +8046,15 @@ components:
         * `tag` - TAG
         * `shape` - SHAPE
         * `track` - TRACK
+    AnnotationConflictRequirement:
+      type: object
+      properties:
+        id:
+          type: integer
+          readOnly: true
+        name:
+          type: string
+          readOnly: true
     AnnotationConflictSeverity:
       enum:
       - error
