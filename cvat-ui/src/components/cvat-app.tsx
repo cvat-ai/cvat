@@ -74,7 +74,7 @@ import showPlatformNotification, {
 import '../styles.scss';
 import appConfig from 'config';
 import EventRecorder from 'utils/event-recorder';
-import automaticPopups from 'utils/automatic-popup';
+import automaticPopupController from 'utils/automatic-popup-controller';
 import { authQuery } from 'utils/auth-query';
 import CVATMarkdown from './common/cvat-markdown';
 import EmailConfirmationPage from './email-confirmation-pages/email-confirmed';
@@ -155,8 +155,8 @@ class CVATApplication extends React.PureComponent<CVATAppProps & RouteComponentP
     }
 
     public componentDidMount(): void {
-        automaticPopups.register('github-star', 10);
-        automaticPopups.register('whats-new', 100);
+        automaticPopupController.register('github-star', 10);
+        automaticPopupController.register('whats-new', 100);
         const core = getCore();
         const { history, onChangeLocation } = this.props;
         const {
@@ -175,7 +175,7 @@ class CVATApplication extends React.PureComponent<CVATAppProps & RouteComponentP
 
         let listenerRegistered = false;
         const visibilityChangeListener = (): void => {
-            automaticPopups.refresh();
+            automaticPopupController.refresh();
             if (!window.document.hidden) {
                 if (!listenerRegistered) {
                     window.addEventListener('keydown', listener, { capture: true });
@@ -345,7 +345,7 @@ class CVATApplication extends React.PureComponent<CVATAppProps & RouteComponentP
         }
 
         if (user !== prevProps.user) {
-            automaticPopups.setUser(user?.id ?? null);
+            automaticPopupController.setUser(user?.id ?? null);
             if (user) {
                 EventRecorder.initSave();
             } else {
@@ -402,8 +402,8 @@ class CVATApplication extends React.PureComponent<CVATAppProps & RouteComponentP
         }
 
         if (pluginsInitialized && growth.initialized) {
-            if (!whatsNewEnabled) automaticPopups.offer('whats-new', null);
-            automaticPopups.offer('github-star', growth.data?.githubPromptEnabled ? () => {
+            if (!whatsNewEnabled) automaticPopupController.offer('whats-new', null);
+            automaticPopupController.offer('github-star', growth.data?.githubPromptEnabled ? () => {
                 this.setState({ githubStarPromptVisible: true });
                 return true;
             } : null);

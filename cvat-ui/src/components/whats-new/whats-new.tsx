@@ -14,7 +14,7 @@ import Button from 'antd/lib/button';
 import ConfigProvider from 'antd/lib/config-provider';
 import Modal from 'antd/lib/modal';
 import Spin from 'antd/lib/spin';
-import automaticPopups from 'utils/automatic-popup';
+import automaticPopupController from 'utils/automatic-popup-controller';
 import { CombinedState } from 'reducers';
 
 import {
@@ -121,10 +121,10 @@ export default function WhatsNew(props: Props): JSX.Element {
     }, [retry]);
 
     useEffect(() => {
-        if (!promotionsAllowed && offered.current) automaticPopups.offer('whats-new', null);
-        automaticPopups.refresh();
+        if (!promotionsAllowed && offered.current) automaticPopupController.offer('whats-new', null);
+        automaticPopupController.refresh();
     }, [blocked, promotionsAllowed]);
-    useEffect(() => () => { automaticPopups.offer('whats-new', null); }, []);
+    useEffect(() => () => { automaticPopupController.offer('whats-new', null); }, []);
 
     // Capture before acknowledging; highlights remain stable until this popup closes.
     // Manual opening while metadata is loading captures when it becomes available.
@@ -136,7 +136,7 @@ export default function WhatsNew(props: Props): JSX.Element {
         if (loading || offered.current) return;
         offered.current = true;
         if (!updates || loadError || manuallyOpened.current || !promotionsAllowed) {
-            automaticPopups.offer('whats-new', null);
+            automaticPopupController.offer('whats-new', null);
             return;
         }
         const release = updates.releases.find((item) => item.announce &&
@@ -145,12 +145,12 @@ export default function WhatsNew(props: Props): JSX.Element {
             announcements, updates.state.last_seen_announcements_date,
         ).some((item) => item.announce);
         if (!release && !promoteAnnouncements) {
-            automaticPopups.offer('whats-new', null);
+            automaticPopupController.offer('whats-new', null);
             return;
         }
-        automaticPopups.offer('whats-new', () => {
+        automaticPopupController.offer('whats-new', () => {
             if (!promotionsAllowedRef.current) {
-                automaticPopups.offer('whats-new', null);
+                automaticPopupController.offer('whats-new', null);
                 return false;
             }
             if (blockedRef.current) return false;
@@ -214,7 +214,7 @@ export default function WhatsNew(props: Props): JSX.Element {
                     title="What's new"
                     onClick={() => {
                         manuallyOpened.current = true;
-                        automaticPopups.consume();
+                        automaticPopupController.consume();
                         setOpeningSeen(seen || updates?.state || null);
                         setSelectedRelease(updates?.releases[0] || null);
                         setOpen(true);

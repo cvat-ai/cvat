@@ -10,7 +10,7 @@ interface Source {
 
 // Shared by the star prompt and optional UI plugins. A higher-priority source
 // can finish loading before a lower-priority prompt is allowed to open.
-class AutomaticPopups {
+class AutomaticPopupController {
     private sources = new Map<string, Source>();
     private userId: number | null = null;
     private consumed = false;
@@ -60,4 +60,4 @@ class AutomaticPopups {
     }
 }
 
-export default new AutomaticPopups();
+export default new AutomaticPopupController();
