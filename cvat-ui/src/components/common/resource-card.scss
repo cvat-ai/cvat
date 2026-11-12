@@ -60,6 +60,19 @@
     padding-left: $grid-unit-size;
 }
 
+.cvat-resource-card-list-row {
+    width: 100%;
+    margin-bottom: $grid-unit-size;
+
+    > .cvat-resource-card-list-column {
+        display: flex;
+
+        &:not(:first-child) {
+            padding-left: $grid-unit-size;
+        }
+    }
+}
+
 .cvat-resource-card-preview,
 .cvat-resource-card-preview > * {
     width: 100%;

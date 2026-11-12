@@ -26,15 +26,6 @@
     overflow-y: auto;
     padding-top: $grid-unit-size;
     padding-bottom: $grid-unit-size;
-
-    .cvat-models-list-row {
-        width: 100%;
-        margin: 0 !important;
-    }
-
-    .cvat-models-list-column {
-        display: flex;
-    }
 }
 
 .cvat-models-item-card-removed {

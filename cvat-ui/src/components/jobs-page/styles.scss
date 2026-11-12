@@ -70,15 +70,6 @@
         display: flex;
         flex-wrap: wrap;
         overflow-y: auto;
-
-        .cvat-jobs-list-row {
-            width: 100%;
-            margin-bottom: $grid-unit-size;
-
-            > div:not(:first-child) {
-                padding-left: $grid-unit-size;
-            }
-        }
     }
 
 }

@@ -48,7 +48,11 @@ export default function TopBarComponent(props: Readonly<VisibleTopBarProps>): JS
     }
 
     return (
-        <Row className='cvat-models-page-top-bar cvat-resource-card-top-bar' justify='center' align='middle'>
+        <Row
+            className='cvat-models-page-top-bar cvat-resource-top-bar-wrapper cvat-resource-card-top-bar'
+            justify='center'
+            align='middle'
+        >
             <Col {...dimensions}>
                 <div className='cvat-models-page-filters-wrapper'>
                     <div>

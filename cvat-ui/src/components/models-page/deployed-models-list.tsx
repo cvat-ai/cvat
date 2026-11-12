@@ -29,6 +29,14 @@ export default function DeployedModelsListComponent(props: Readonly<Props>): JSX
     const selectableModels = models.filter((model) => model.provider !== ModelProviders.CVAT);
     const modelIdToIndex = new Map<string | number, number>();
     selectableModels.forEach((model, index) => modelIdToIndex.set(model.id, index));
+    const groupedModels = models.reduce<MLModel[][]>((groups, model, index) => {
+        if (index % 4) {
+            groups[groups.length - 1].push(model);
+        } else {
+            groups.push([model]);
+        }
+        return groups;
+    }, []);
 
     return (
         <>
@@ -38,18 +46,18 @@ export default function DeployedModelsListComponent(props: Readonly<Props>): JSX
                         currentResourceIds={selectableModels.map((model) => model.id)}
                         resourceType={SelectedResourceType.MODELS}
                     >
-                        {(selectProps) => (
-                            <Row gutter={[16, 16]} className='cvat-models-list-row'>
-                                {models.map((model: MLModel) => {
+                        {(selectProps) => groupedModels.map((modelInstances) => (
+                            <Row
+                                key={modelInstances[0].id}
+                                className='cvat-models-list-row cvat-resource-card-list-row'
+                            >
+                                {modelInstances.map((model: MLModel) => {
                                     const globalIdx = modelIdToIndex.get(model.id) ?? 0;
                                     return (
                                         <Col
-                                            xs={24}
-                                            sm={12}
-                                            lg={8}
-                                            xl={6}
+                                            span={6}
                                             key={model.id}
-                                            className='cvat-models-list-column'
+                                            className='cvat-models-list-column cvat-resource-card-list-column'
                                         >
                                             <DeployedModelItem
                                                 model={model}
@@ -59,7 +67,7 @@ export default function DeployedModelsListComponent(props: Readonly<Props>): JSX
                                     );
                                 })}
                             </Row>
-                        )}
+                        ))}
                     </BulkWrapper>
                 </Col>
             </Row>

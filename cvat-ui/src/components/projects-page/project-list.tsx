@@ -70,7 +70,10 @@ export default function ProjectListComponent(): JSX.Element {
                             const defaultProps = { selected: false, onClick: () => false };
 
                             const renderProjectRow = (projectInstances: Project[]): JSX.Element => (
-                                <Row key={projectInstances[0].id} className='cvat-projects-list-row'>
+                                <Row
+                                    key={projectInstances[0].id}
+                                    className='cvat-projects-list-row cvat-resource-card-list-row'
+                                >
                                     {projectInstances.map((project: Project) => {
                                         const isDeleting = project.id in deletingProjects;
                                         const selectableIndex = isDeleting ?
@@ -83,7 +86,7 @@ export default function ProjectListComponent(): JSX.Element {
                                             defaultProps;
 
                                         return (
-                                            <Col span={6} key={project.id}>
+                                            <Col span={6} key={project.id} className='cvat-resource-card-list-column'>
                                                 <ProjectItem
                                                     key={project.id}
                                                     projectInstance={project}

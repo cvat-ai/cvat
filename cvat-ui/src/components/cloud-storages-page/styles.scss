@@ -54,15 +54,6 @@
     display: flex;
     flex-wrap: wrap;
     overflow-y: auto;
-
-    .cvat-cloud-storages-list-row {
-        width: 100%;
-        margin-bottom: $grid-unit-size;
-
-        > div:not(:first-child) {
-            padding-left: $grid-unit-size;
-        }
-    }
 }
 
 .cvat-empty-cloud-storages-list {
