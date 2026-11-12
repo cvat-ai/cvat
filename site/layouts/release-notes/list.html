@@ -1,14 +1,3 @@
 {{ define "main" }}
-<article class="td-content container cvat-release-notes-page">
-  <h1>{{ .Title }}</h1>
-  {{ .Content }}
-  {{ range partial "release-notes/pages.html" . }}
-  <section class="border-bottom py-4">
-    <h2><a href="{{ .RelPermalink }}">{{ .Title }}</a></h2>
-    <p class="text-muted">Published {{ .Date.Format "January 2, 2006" }}</p>
-    <p>{{ .Description }}</p>
-    <a href="{{ .RelPermalink }}">Read release notes →</a>
-  </section>
-  {{ end }}
-</article>
+{{ partial "updates/list.html" (dict "Page" . "Entries" (partial "release-notes/pages.html" .)) }}
 {{ end }}

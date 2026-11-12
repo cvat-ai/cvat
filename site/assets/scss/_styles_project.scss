@@ -113,7 +113,7 @@
     }
 }
 
-@media (width <= 991.98px) {
+@include media-breakpoint-down(lg) {
     .cvat-updates-layout {
         grid-template-columns: minmax(0, 1fr);
         grid-template-areas: "content";
