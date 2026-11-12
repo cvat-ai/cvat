@@ -17,7 +17,6 @@ const defaultState: ModelsState = {
     creatingStatus: '',
     interactors: [],
     detectors: [],
-    glms: [],
     trackers: [],
     reid: [],
     modelRunnerIsVisible: false,
@@ -55,7 +54,6 @@ export default function (
         case ModelsActionTypes.GET_MODELS_SUCCESS: {
             return {
                 ...state,
-                glms: action.payload.models.filter((model: MLModel) => model.kind === ModelKind.GLM),
                 interactors: action.payload.models.filter((model: MLModel) => (
                     model.kind === ModelKind.INTERACTOR
                 )),
@@ -206,7 +204,6 @@ export default function (
                 const selectableIDs = new Set([
                     ...state.interactors,
                     ...state.detectors,
-                    ...state.glms,
                     ...state.trackers,
                     ...state.reid,
                 ].filter((model) => model.provider !== ModelProviders.CVAT).map((model) => model.id));

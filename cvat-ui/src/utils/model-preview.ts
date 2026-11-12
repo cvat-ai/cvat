@@ -17,8 +17,9 @@ import textPromptSegmentationPreview from 'assets/models-previews/text-prompt-se
 
 export default function resolveModelPreviewFallback(model: MLModel): string | null {
     if (model.kind === ModelKind.INTERACTOR) {
-        const supportsTextPrompt = /label name|text prompt/i.test(model.tip.message || '');
-        return supportsTextPrompt ? textPromptSegmentationPreview : interactiveSegmentationPreview;
+        // TODO: Expose text-prompt support in the model interface. Checking the SAM3 ID is a temporary workaround.
+        return model.id === 'pth-facebookresearch-sam3-v2' ?
+            textPromptSegmentationPreview : interactiveSegmentationPreview;
     }
 
     if (model.kind === ModelKind.TRACKER) {
