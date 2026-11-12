@@ -56,10 +56,8 @@ export default function ProjectListComponent(): JSX.Element {
         [],
     );
 
-    const projectIdToIndex = new Map<number, number>();
-    projects.forEach((p, idx) => projectIdToIndex.set(p.id, idx));
-
-    const selectableProjectIds = projects.map((p) => p.id).filter((id) => !deletingProjects[id]);
+    const selectableProjectIds = projects.map((project) => project.id)
+        .filter((id) => !(id in deletingProjects));
     const selectableProjectIdToIndex = new Map<number, number>();
     selectableProjectIds.forEach((id, idx) => selectableProjectIdToIndex.set(id, idx));
 
@@ -74,7 +72,7 @@ export default function ProjectListComponent(): JSX.Element {
                             const renderProjectRow = (projectInstances: Project[]): JSX.Element => (
                                 <Row key={projectInstances[0].id} className='cvat-projects-list-row'>
                                     {projectInstances.map((project: Project) => {
-                                        const isDeleting = deletingProjects[project.id];
+                                        const isDeleting = project.id in deletingProjects;
                                         const selectableIndex = isDeleting ?
                                             -1 :
                                             selectableProjectIdToIndex.get(project.id) ?? -1;

@@ -30,7 +30,6 @@ function ModelsPageComponent(): JSX.Element {
         bulkFetching,
         interactors,
         detectors,
-        glms,
         trackers,
         reid,
         selectedCount,
@@ -40,7 +39,6 @@ function ModelsPageComponent(): JSX.Element {
         bulkFetching: state.bulkActions.fetching,
         interactors: state.models.interactors,
         detectors: state.models.detectors,
-        glms: state.models.glms,
         trackers: state.models.trackers,
         reid: state.models.reid,
         selectedCount: state.models.selected.length,
@@ -48,7 +46,7 @@ function ModelsPageComponent(): JSX.Element {
 
     const updatedQuery = useResourceQuery<ModelsQuery>(query, { pageSize: 12 });
 
-    const allModels = [...interactors, ...detectors, ...trackers, ...reid, ...glms];
+    const allModels = [...interactors, ...detectors, ...trackers, ...reid];
     const filteredModels = filterModels(allModels, updatedQuery);
     const models = filteredModels.slice(
         (updatedQuery.page - 1) * updatedQuery.pageSize,

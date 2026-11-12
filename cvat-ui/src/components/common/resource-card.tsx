@@ -26,7 +26,7 @@ interface Props {
     menu?: React.ReactNode;
     mediaOverlay?: React.ReactNode;
     selected?: boolean;
-    disabled?: boolean;
+    isDisabled?: boolean;
     className?: string;
     style?: React.CSSProperties;
     onClick?: React.MouseEventHandler<HTMLDivElement>;
@@ -48,7 +48,7 @@ function ResourceCard(props: Readonly<Props>): JSX.Element {
         menu,
         mediaOverlay,
         selected = false,
-        disabled = false,
+        isDisabled = false,
         className = '',
         style,
         onClick,
@@ -56,13 +56,20 @@ function ResourceCard(props: Readonly<Props>): JSX.Element {
         onContextMenu,
         onContextMenuCapture,
     } = props;
+
     const classes = [
         'cvat-resource-card',
         style?.height ? 'cvat-resource-card-fixed-height' : '',
         selected ? 'cvat-item-selected' : '',
-        disabled ? 'cvat-resource-card-disabled' : '',
+        isDisabled ? 'cvat-resource-card-disabled' : '',
         className,
     ].filter(Boolean).join(' ');
+
+    const cardStyle: React.CSSProperties = isDisabled ? {
+        ...style,
+        pointerEvents: 'none',
+        opacity: 0.5,
+    } : style || {};
 
     const hasSelectedText = (event: React.MouseEvent<HTMLDivElement>): boolean => {
         const selection = window.getSelection();
@@ -99,28 +106,29 @@ function ResourceCard(props: Readonly<Props>): JSX.Element {
                 </div>
             )}
             size='small'
-            style={style}
+            style={cardStyle}
             className={classes}
             hoverable
-            onClick={(event) => {
+            aria-disabled={isDisabled}
+            onClick={isDisabled ? undefined : (event) => {
                 const target = event.target as Element;
                 if (!target.closest('.cvat-resource-card-menu') && !hasSelectedText(event)) {
                     onClick?.(event);
                 }
             }}
-            onMouseDown={(event) => {
+            onMouseDown={isDisabled ? undefined : (event) => {
                 if (event.button === 1 && onOpenInNewTab) {
                     event.preventDefault();
                 }
             }}
-            onAuxClick={(event) => {
+            onAuxClick={isDisabled ? undefined : (event) => {
                 const target = event.target as Element;
                 if (event.button === 1 && !target.closest('.cvat-resource-card-menu')) {
                     onOpenInNewTab?.();
                 }
             }}
-            onContextMenu={onContextMenu}
-            onContextMenuCapture={onContextMenuCapture}
+            onContextMenu={isDisabled ? undefined : onContextMenu}
+            onContextMenuCapture={isDisabled ? undefined : onContextMenuCapture}
         >
             {(title || description || menu) && (
                 <div className={`cvat-resource-card-content ${contentClassName}`.trim()}>

@@ -136,7 +136,7 @@ export default function CloudStorageItemComponent(props: Readonly<Props>): JSX.E
                 />
             )}
             selected={selected}
-            disabled={deleted}
+            isDisabled={deleted}
             className='cvat-cloud-storage-item'
             onClick={onClick}
             onContextMenuCapture={handleContextMenuCapture}

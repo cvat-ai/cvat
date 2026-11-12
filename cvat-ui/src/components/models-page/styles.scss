@@ -283,12 +283,10 @@
 }
 
 .cvat-models-item-card-summary {
-    display: -webkit-box;
     min-height: 40px;
+    max-height: 40px;
     margin-top: $grid-unit-size * 0.75;
     overflow: hidden;
     line-height: 20px;
     white-space: normal;
-    -webkit-box-orient: vertical;
-    -webkit-line-clamp: 2;
 }

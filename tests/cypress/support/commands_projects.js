@@ -120,7 +120,10 @@ Cypress.Commands.add('deleteProject', (projectName, projectId, expectedResult = 
         cy.wait(`@${interceptorName}`).then((interception) => {
             expect(interception.response.statusCode).to.be.equal(204);
         });
-        cy.get('.cvat-projects-project-item-card').should('have.css', 'opacity', '0.5');
+        cy.get('.cvat-projects-project-item-card')
+            .should('have.css', 'opacity', '0.5')
+            .and('have.css', 'pointer-events', 'none')
+            .and('have.attr', 'aria-disabled', 'true');
     } else if (expectedResult === 'fail') {
         cy.get('.cvat-projects-project-item-card').should('not.have.css', 'opacity', '0.5');
     }

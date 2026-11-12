@@ -32,9 +32,9 @@ function modelData(model: MLModel): ModelData {
         provider: model.provider,
         kind: model.displayKind,
         owner: model.owner,
-        description: model.description || '',
-        created_date: model.createdDate || '',
-        updated_date: model.updatedDate || '',
+        description: model.description ?? '',
+        created_date: model.createdDate ?? '',
+        updated_date: model.updatedDate ?? '',
         labels: model.labels.map((label) => label.name).join(' '),
     };
 }

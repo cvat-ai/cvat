@@ -117,7 +117,7 @@ function JobCardComponent(props: Readonly<Props>): JSX.Element {
                 />
             )}
             selected={selected}
-            disabled={deleted}
+            isDisabled={deleted}
             className='cvat-job-page-list-item'
             style={{ height }}
             onClick={handleCardClick}

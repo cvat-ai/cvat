@@ -48,7 +48,7 @@ export default function ProjectItemComponent(props: Props): JSX.Element {
     const ownerName = instance.owner?.username;
     const updated = dayjs(instance.updatedDate).fromNow();
     const deletes = useSelector((state: CombinedState) => state.projects.activities.deletes);
-    const deleted = instance.id in deletes ? deletes[instance.id] : false;
+    const deletingOrDeleted = instance.id in deletes;
     const projectURL = `/projects/${instance.id}`;
 
     const onOpenProject = useCallback((event: React.MouseEvent): void => {
@@ -103,7 +103,7 @@ export default function ProjectItemComponent(props: Props): JSX.Element {
                 />
             )}
             selected={selected}
-            disabled={deleted}
+            isDisabled={deletingOrDeleted}
             className='cvat-projects-project-item-card'
             style={{ height }}
             onClick={onOpenProject}
