@@ -1,4 +1,7 @@
-{{- $editions := .Params.editions -}}
+{{- $editions := slice "community" "enterprise" "saas" -}}
+{{- if isset .Params "editions" -}}
+  {{- $editions = .Params.editions -}}
+{{- end -}}
 {{- if not (reflect.IsSlice $editions) -}}
   {{- errorf "Announcement %s must specify editions as a list" .File.Path -}}
   {{- $editions = slice -}}
