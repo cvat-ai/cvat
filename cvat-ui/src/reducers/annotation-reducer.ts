@@ -89,6 +89,7 @@ const defaultState: AnnotationState = {
         instance: null,
         ready: false,
         activeControl: ActiveControl.CURSOR,
+        cameraRays: {},
         activeObjectHidden: false,
     },
     job: {
@@ -324,6 +325,7 @@ export default (state = defaultState, action: AnyAction): AnnotationState => {
                 canvas: {
                     ...state.canvas,
                     instance: canvas,
+                    cameraRays: {},
                 },
                 colors,
                 workspace: isReview && job.dimension === DimensionType.DIMENSION_2D ?
@@ -645,6 +647,78 @@ export default (state = defaultState, action: AnyAction): AnnotationState => {
                     contextMenu: {
                         ...defaultState.canvas.contextMenu,
                     },
+                },
+            };
+        }
+        case AnnotationActionTypes.UPDATE_CAMERA_RAYS: {
+            return {
+                ...state,
+                canvas: {
+                    ...state.canvas,
+                    cameraRays: {
+                        ...state.canvas.cameraRays,
+                        [action.payload.frame]: action.payload.cameraRays,
+                    },
+                },
+            };
+        }
+        case AnnotationActionTypes.REMOVE_CAMERA_RAY: {
+            const { number: frame } = state.player.frame;
+            const cameraRays = state.canvas.cameraRays[frame] || [];
+            const remainingCameraRays = cameraRays.filter((cameraRay) => cameraRay.id !== action.payload.id);
+
+            if (remainingCameraRays.length === cameraRays.length) {
+                return state;
+            }
+
+            return {
+                ...state,
+                canvas: {
+                    ...state.canvas,
+                    cameraRays: {
+                        ...state.canvas.cameraRays,
+                        [frame]: remainingCameraRays,
+                    },
+                },
+            };
+        }
+        case AnnotationActionTypes.CLEAR_CONTEXT_IMAGE_CAMERA_RAYS: {
+            const { number: frame } = state.player.frame;
+            const cameraRays = state.canvas.cameraRays[frame] || [];
+            const remainingCameraRays = cameraRays.filter((cameraRay) => (
+                cameraRay.relatedImageName !== action.payload.relatedImageName
+            ));
+
+            if (remainingCameraRays.length === cameraRays.length) {
+                return state;
+            }
+
+            return {
+                ...state,
+                canvas: {
+                    ...state.canvas,
+                    cameraRays: {
+                        ...state.canvas.cameraRays,
+                        [frame]: remainingCameraRays,
+                    },
+                },
+            };
+        }
+        case AnnotationActionTypes.CLEAR_CURRENT_FRAME_CAMERA_RAYS: {
+            const { number: frame } = state.player.frame;
+            const { cameraRays } = state.canvas;
+            if (!(frame in cameraRays)) {
+                return state;
+            }
+
+            const updatedCameraRays = { ...cameraRays };
+            delete updatedCameraRays[frame];
+
+            return {
+                ...state,
+                canvas: {
+                    ...state.canvas,
+                    cameraRays: updatedCameraRays,
                 },
             };
         }

@@ -28,7 +28,14 @@ import re
 from pathlib import Path
 
 from dataset_manifest.core import ImageManifestManager, VideoManifestManager
-from dataset_manifest.utils import SortingMethod, find_related_images, is_image, is_video
+from dataset_manifest.utils import (
+    AUXILIARY_FILES_MANIFEST_KEY,
+    RELATED_IMAGES_MANIFEST_KEY,
+    SortingMethod,
+    find_related_images,
+    is_image,
+    is_video,
+)
 from tqdm import tqdm
 
 
@@ -94,17 +101,26 @@ def main():
         while re.search(r"[*?\[\]]", os.fspath(abs_root)):
             abs_root = abs_root.parent
 
-        scene_paths, related_images = find_related_images(
+        scene_paths, related_images, _, related_image_auxiliary_files = find_related_images(
             sources,
             root_path=abs_root,
             # backward compatibility, deprecated in https://github.com/cvat-ai/cvat/pull/9757
             is_scene_path=(lambda p: not "related_images" in p.parts),
         )
         sources = [p for p in sources if p.relative_to(abs_root) in scene_paths]
-        meta = {
-            os.fspath(k): {"related_images": [ri.as_posix() for ri in related_images[k]]}
-            for k in related_images
-        }
+        meta = {}
+        for scene_path, scene_related_images in related_images.items():
+            related_image_paths = [
+                related_image.as_posix() for related_image in scene_related_images
+            ]
+            auxiliary_files = [
+                auxiliary_file.as_posix()
+                for auxiliary_file in related_image_auxiliary_files.get(scene_path, [])
+                if (abs_root / auxiliary_file).is_file()
+            ]
+            meta[os.fspath(scene_path)] = {RELATED_IMAGES_MANIFEST_KEY: related_image_paths}
+            if auxiliary_files:
+                meta[os.fspath(scene_path)][AUXILIARY_FILES_MANIFEST_KEY] = auxiliary_files
         try:
             assert len(sources), "A images was not found"
             manifest = ImageManifestManager(manifest_path=manifest_directory)

@@ -325,23 +325,19 @@ function CanvasLayout({ type }: { type?: DimensionType }): JSX.Element {
                                 key={key}
                             >
                                 <DragOutlined className='cvat-grid-item-drag-handler' />
-                                <CloseOutlined
-                                    className='cvat-grid-item-close-button'
-                                    style={{
-                                        pointerEvents: viewType !== ViewType.RELATED_IMAGE ? 'none' : undefined,
-                                        opacity: viewType !== ViewType.RELATED_IMAGE ? 0.2 : undefined,
-                                    }}
-                                    onClick={() => {
-                                        if (viewType === ViewType.RELATED_IMAGE) {
+                                { viewType === ViewType.RELATED_IMAGE && (
+                                    <CloseOutlined
+                                        className='cvat-grid-item-close-button'
+                                        onClick={() => {
                                             setLayoutConfig(
                                                 layoutConfig
                                                     .filter((item: ItemLayout) => !(
                                                         item.viewType === viewType && item.viewIndex === viewIndex
                                                     )),
                                             );
-                                        }
-                                    }}
-                                />
+                                        }}
+                                    />
+                                )}
                                 {fullscreenKey === key ? (
                                     <FullscreenExitOutlined
                                         className='cvat-grid-item-fullscreen-handler'

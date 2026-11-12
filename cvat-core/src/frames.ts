@@ -10,10 +10,16 @@ import {
 import PluginRegistry from './plugins';
 import { MediaType } from './enums';
 import serverProxy, { PREVIEW_DEFAULT, PreviewResponse } from './server-proxy';
-import { SerializedChapterMetaData, SerializedFramesMetaData } from './server-response-types';
+import {
+    SerializedChapterMetaData,
+    SerializedFramesMetaData,
+    SerializedRelatedFileMetadata,
+    SerializedRelatedImageMetadata,
+} from './server-response-types';
 import { ArgumentError } from './exceptions';
 import { FieldUpdateTrigger } from './common';
 import config from './config';
+import { CamelizedV2 } from './type-utils';
 
 // frame storage by job id
 const frameDataCache: Record<string, {
@@ -115,6 +121,7 @@ export class FramesMetaData {
         height: number;
         name: string;
         related_files: number;
+        related_files_metadata?: SerializedRelatedFileMetadata[];
     }[];
     public imageQuality: number;
     public size: number;
@@ -338,12 +345,15 @@ export class FramesMetaData {
     }
 }
 
+export type CalibratedRelatedImageMetadata = Required<CamelizedV2<SerializedRelatedImageMetadata>>;
+
 export class FrameData {
     public readonly filename: string;
     public readonly width: number;
     public readonly height: number;
     public readonly number: number;
     public readonly relatedFiles: number;
+    public readonly calibratedRelatedImagesMetadata: CalibratedRelatedImageMetadata[];
     public readonly deleted: boolean;
     public readonly jobID: number;
 
@@ -355,7 +365,23 @@ export class FrameData {
         frameNumber,
         deleted,
         related_files: relatedFiles,
+        related_files_metadata: relatedFilesMetadata = [],
     }) {
+        const calibratedRelatedImagesMetadata: CalibratedRelatedImageMetadata[] = relatedFilesMetadata
+            .filter(
+                (metadata): metadata is Required<SerializedRelatedImageMetadata> => (
+                    metadata.type === 'related_image' &&
+                    !!metadata.intrinsic_matrix &&
+                    !!metadata.extrinsic_matrix
+                ),
+            )
+            .map((metadata) => ({
+                name: metadata.name,
+                type: metadata.type,
+                intrinsicMatrix: metadata.intrinsic_matrix,
+                extrinsicMatrix: metadata.extrinsic_matrix,
+            }));
+
         Object.defineProperties(
             this,
             Object.freeze({
@@ -381,6 +407,10 @@ export class FrameData {
                 },
                 relatedFiles: {
                     value: relatedFiles,
+                    writable: false,
+                },
+                calibratedRelatedImagesMetadata: {
+                    value: calibratedRelatedImagesMetadata,
                     writable: false,
                 },
                 deleted: {
@@ -994,6 +1024,7 @@ export async function getFrame(
         height: frameMeta.height,
         name: frameMeta.name,
         related_files: frameMeta.related_files,
+        related_files_metadata: frameMeta.related_files_metadata,
         frameNumber: frame,
         deleted: frame in meta.deletedFrames,
         jobID,

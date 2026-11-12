@@ -52,6 +52,13 @@
     width: $grid-unit-size * 4;
 }
 
+.cvat-canvas3d-perspective-tools-group {
+    position: absolute;
+    top: $grid-unit-size;
+    right: $grid-unit-size;
+    z-index: 1;
+}
+
 .cvat-canvas3d-orthographic-view {
     width: 100%;
     height: 100%;

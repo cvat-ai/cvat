@@ -7,7 +7,8 @@ import { AnyAction, Store } from 'redux';
 import { ThunkAction, ThunkDispatch } from 'utils/redux';
 import isAbleToChangeFrame from 'utils/is-able-to-change-frame';
 import getHiddenZLayers from 'utils/get-hidden-z-layers';
-import { CanvasMode as Canvas3DMode } from 'cvat-canvas3d-wrapper';
+import { getRelatedImageMetadata } from 'utils/related-image-calibrations';
+import { cameraRayFromImagePoint, CanvasMode as Canvas3DMode } from 'cvat-canvas3d-wrapper';
 import {
     RectDrawingMethod, CuboidDrawingMethod, Canvas, CanvasMode as Canvas2DMode, CanvasHistorySource,
     finalizePastedShapePoints,
@@ -103,6 +104,10 @@ export enum AnnotationActionTypes {
     UPDATE_CACHED_CHUNKS = 'UPDATE_CACHED_CHUNKS',
 
     UPDATE_ACTIVE_CONTROL = 'UPDATE_ACTIVE_CONTROL',
+    UPDATE_CAMERA_RAYS = 'UPDATE_CAMERA_RAYS',
+    REMOVE_CAMERA_RAY = 'REMOVE_CAMERA_RAY',
+    CLEAR_CONTEXT_IMAGE_CAMERA_RAYS = 'CLEAR_CONTEXT_IMAGE_CAMERA_RAYS',
+    CLEAR_CURRENT_FRAME_CAMERA_RAYS = 'CLEAR_CURRENT_FRAME_CAMERA_RAYS',
 
     COPY_SHAPE = 'COPY_SHAPE',
     PASTE_SHAPE = 'PASTE_SHAPE',
@@ -1591,6 +1596,76 @@ export function updateActiveControl(activeControl: ActiveControl): AnyAction {
         payload: {
             activeControl,
         },
+    };
+}
+
+export function addCameraRayFromContextImagePoint(
+    relatedImageName: string,
+    pixel: [number, number],
+): ThunkAction<boolean> {
+    return (dispatch: ThunkDispatch, getState: () => CombinedState): boolean => {
+        const state = getState();
+        const { number: frame, data: frameData } = state.annotation.player.frame;
+        const cameraRays = state.annotation.canvas.cameraRays[frame] || [];
+
+        const calibratedRelatedImagesMetadata = frameData?.calibratedRelatedImagesMetadata;
+        if (!calibratedRelatedImagesMetadata || !calibratedRelatedImagesMetadata.length) {
+            return false;
+        }
+
+        const meta = getRelatedImageMetadata(
+            calibratedRelatedImagesMetadata,
+            relatedImageName,
+        );
+        if (!meta) {
+            return false;
+        }
+
+        const cameraRay = cameraRayFromImagePoint(meta, pixel);
+        if (!cameraRay) {
+            return false;
+        }
+
+        const relatedImageIndex = calibratedRelatedImagesMetadata.indexOf(meta);
+        const color = cvat.enums.colors[relatedImageIndex % cvat.enums.colors.length];
+        dispatch({
+            type: AnnotationActionTypes.UPDATE_CAMERA_RAYS,
+            payload: {
+                frame,
+                cameraRays: [...cameraRays, {
+                    id: `camera-ray:${crypto.randomUUID()}`,
+                    color,
+                    relatedImageName,
+                    pixel,
+                }],
+            },
+        });
+
+        return true;
+    };
+}
+
+export function removeCameraRay(id: string): AnyAction {
+    return {
+        type: AnnotationActionTypes.REMOVE_CAMERA_RAY,
+        payload: {
+            id,
+        },
+    };
+}
+
+export function clearContextImageCameraRays(relatedImageName: string): AnyAction {
+    return {
+        type: AnnotationActionTypes.CLEAR_CONTEXT_IMAGE_CAMERA_RAYS,
+        payload: {
+            relatedImageName,
+        },
+    };
+}
+
+export function clearCurrentFrameCameraRays(): AnyAction {
+    return {
+        type: AnnotationActionTypes.CLEAR_CURRENT_FRAME_CAMERA_RAYS,
     };
 }
 
