@@ -16,7 +16,7 @@ type: application
 # This is the chart version. This version number should be incremented each time you make changes
 # to the chart and its templates, including the app version.
 # Versions are expected to follow Semantic Versioning (https://semver.org/)
-version: 2.82.1
+version: 2.83.1
 
 # This is the version number of the application being deployed. This version number should be
 # incremented each time you make changes to the application. Versions are not expected to
@@ -51,6 +51,18 @@ dependencies:
     version: "4.1.*"
     repository: https://charts.bitnami.com/bitnami
     condition: clickhouse.enabled
+
+## Altinity clickhouse
+#  - name: clickhouse
+#    version: "0.3.13"
+#    repository: https://helm.altinity.com
+#    condition: clickhouse.enabled
+#
+#  - name: altinity-clickhouse-operator
+#    alias: clickhouse-operator
+#    version: "0.27.4"
+#    repository: https://helm.altinity.com
+#    condition: clickhouse-operator.enabled
 
   - name: grafana
     version: "6.60.*"
