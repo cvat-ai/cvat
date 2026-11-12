@@ -91,41 +91,6 @@
         box-shadow: 0 0 0 2px rgba($validation-progress-color, 15%), 0 10px 28px rgba(0, 0, 0, 10%);
     }
 
-    .cvat-models-item-card-preview-wrapper {
-        display: flex;
-        justify-content: center;
-        align-items: center;
-        height: 100%;
-        width: 100%;
-        overflow: hidden;
-    }
-
-    .cvat-models-item-card-preview {
-        width: 100%;
-        height: 100%;
-        object-fit: cover;
-    }
-
-    .cvat-model-item-loading-preview,
-    .cvat-model-item-empty-preview {
-        width: 100%;
-        height: 100%;
-        color: #bfbfbf;
-        background: linear-gradient(135deg, #fafafa, #f0f0f0);
-    }
-}
-
-.cvat-model-item-loading-preview,
-.cvat-model-item-empty-preview {
-    @extend .cvat-base-preview;
-
-    &:hover {
-        cursor: pointer;
-    }
-}
-
-.cvat-model-item-loading-preview {
-    padding: 0;
 }
 
 .cvat-model-info-modal {

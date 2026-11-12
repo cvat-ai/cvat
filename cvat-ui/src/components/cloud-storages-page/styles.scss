@@ -79,39 +79,30 @@
         margin-bottom: 0;
     }
 
-    .cvat-cloud-storage-item-loading-preview,
-    .cvat-cloud-storage-item-empty-preview {
-        @extend .cvat-base-preview;
-
-        width: 100%;
-        height: 100%;
-
-        svg {
-            width: 40%;
-            height: 40%;
-        }
-    }
-
-    .cvat-cloud-storage-item-preview {
-        width: 100%;
-        height: 100%;
-        object-fit: cover;
-    }
-
-    .cvat-cloud-storage-media-meta {
+    .cvat-cloud-storage-status {
         position: absolute;
         top: $grid-unit-size;
         right: $grid-unit-size;
-        display: flex;
-        align-items: center;
-        gap: $grid-unit-size;
         pointer-events: auto;
     }
 
+    .cvat-cloud-storage-title {
+        display: flex;
+        align-items: center;
+        gap: $grid-unit-size;
+        min-width: 0;
+
+        .ant-typography {
+            flex: 0 1 auto;
+            min-width: 0;
+        }
+    }
+
     .cvat-cloud-storage-description-icon {
+        flex: none;
         width: auto;
         font-size: $grid-unit-size * 2;
-        filter: drop-shadow(0 0 2px $background-color-1);
+        color: $text-color-secondary;
     }
 
     .cvat-cloud-storage-status-indicator {

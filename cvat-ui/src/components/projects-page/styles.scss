@@ -101,33 +101,6 @@
 .cvat-project-list-content {
     .ant-ribbon-wrapper {
         .cvat-projects-project-item-card {
-            .cvat-projects-project-item-card-preview-wrapper {
-                height: 100%;
-
-                .cvat-projects-project-item-card-preview {
-                    height: 100%;
-                    width: 100%;
-                    display: flex;
-                    align-items: center;
-                    justify-content: space-around;
-                    object-fit: cover;
-                    cursor: pointer;
-                }
-            }
-
-            .cvat-project-item-loading-preview,
-            .cvat-project-item-empty-preview {
-                @extend .cvat-base-preview;
-
-                &:hover {
-                    cursor: pointer;
-                }
-            }
-
-            .cvat-project-item-loading-preview {
-                padding: 0;
-            }
-
             .cvat-projects-project-item-title {
                 width: 100%;
                 cursor: pointer;

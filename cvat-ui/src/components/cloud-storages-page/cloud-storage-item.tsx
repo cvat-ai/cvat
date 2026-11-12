@@ -104,16 +104,20 @@ export default function CloudStorageItemComponent(props: Readonly<Props>): JSX.E
             )}
             tags={[{ key: 'provider', content: providerType }]}
             mediaOverlay={(
-                <div className='cvat-cloud-storage-media-meta'>
+                <div className='cvat-cloud-storage-status'>
+                    <Status cloudStorage={cloudStorage} />
+                </div>
+            )}
+            title={(
+                <div className='cvat-cloud-storage-title'>
+                    <Paragraph ellipsis={{ tooltip: displayName }}>{displayName}</Paragraph>
                     {description && (
                         <CVATTooltip overlay={description}>
                             <QuestionCircleOutlined className='cvat-cloud-storage-description-icon' />
                         </CVATTooltip>
                     )}
-                    <Status cloudStorage={cloudStorage} />
                 </div>
             )}
-            title={<Paragraph ellipsis={{ tooltip: displayName }}>{displayName}</Paragraph>}
             description={(
                 <Descriptions className='cvat-resource-card-properties' column={1} size='small'>
                     <Descriptions.Item label='Owner'>
