@@ -48,7 +48,7 @@
     .cvat-job-page-list-item {
         .cvat-job-page-list-item-status {
             position: absolute;
-            bottom: $grid-unit-size;
+            top: $grid-unit-size;
             right: $grid-unit-size;
             max-width: calc(100% - #{$grid-unit-size * 2});
             pointer-events: none;
