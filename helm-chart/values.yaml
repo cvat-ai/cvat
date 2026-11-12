@@ -65,6 +65,8 @@ cvat:
         periodSeconds: 15
         failureThreshold: 5
         initialDelaySeconds: 60
+      nginx:
+        resources: {}
     worker:
       livenessProbe:
         enabled: true
