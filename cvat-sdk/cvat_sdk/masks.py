@@ -88,10 +88,11 @@ def decode_mask(
     if not (0 <= x1 < x2 <= image_width and 0 <= y1 < y2 <= image_height):
         raise ValueError("invalid encoded bounding box")
 
+    if sum(run_lengths) != (y2 - y1) * (x2 - x1):
+        raise ValueError("encoded bitmap does not match encoded bounding box")
+
     alternating_bools = (np.arange(len(run_lengths)) & 1) != 0
     mask = np.repeat(alternating_bools, run_lengths)
-    if mask.size != (y2 - y1) * (x2 - x1):
-        raise ValueError("encoded bitmap does not match encoded bounding box")
 
     full_mask = np.zeros((image_height, image_width), dtype=bool)
     full_mask[y1:y2, x1:x2] = mask.reshape((y2 - y1, x2 - x1))
