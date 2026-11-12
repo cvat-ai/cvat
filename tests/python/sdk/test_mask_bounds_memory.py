@@ -7,6 +7,7 @@ import tracemalloc
 
 import numpy as np
 import pytest
+
 from cvat_sdk.masks import decode_mask, encode_mask
 
 
