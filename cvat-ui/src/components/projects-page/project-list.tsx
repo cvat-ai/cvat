@@ -66,7 +66,7 @@ export default function ProjectListComponent(): JSX.Element {
     return (
         <>
             <Row justify='center' align='middle' className='cvat-resource-list-wrapper cvat-project-list-content'>
-                <Col className='cvat-projects-list' {...dimensions}>
+                <Col className='cvat-projects-list cvat-resource-card-list' {...dimensions}>
                     <BulkWrapper currentResourceIds={selectableProjectIds} resourceType={SelectedResourceType.PROJECTS}>
                         {(selectProps) => {
                             const defaultProps = { selected: false, onClick: () => false };

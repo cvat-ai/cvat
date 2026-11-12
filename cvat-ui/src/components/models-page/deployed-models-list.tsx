@@ -6,9 +6,7 @@
 import React from 'react';
 import { Row, Col } from 'antd/lib/grid';
 import Pagination from 'antd/lib/pagination';
-import { useDispatch } from 'react-redux';
 import { MLModel } from 'cvat-core-wrapper';
-import { getModelsAsync } from 'actions/models-actions';
 import dimensions from 'utils/dimensions';
 import BulkWrapper from 'components/bulk-wrapper';
 import { ModelsQuery, SelectedResourceType } from 'reducers';
@@ -19,24 +17,14 @@ interface Props {
     query: ModelsQuery;
     models: MLModel[];
     totalCount: number;
+    onChangePage: (page: number, pageSize: number) => void;
 }
 
 export default function DeployedModelsListComponent(props: Readonly<Props>): JSX.Element {
-    const dispatch = useDispatch();
-    const { query, models, totalCount } = props;
+    const {
+        query, models, totalCount, onChangePage,
+    } = props;
     const { page, pageSize } = query;
-
-    const groupedModels = models.reduce(
-        (acc: MLModel[][], storage: MLModel, index: number): MLModel[][] => {
-            if (index && index % 4) {
-                acc[acc.length - 1].push(storage);
-            } else {
-                acc.push([storage]);
-            }
-            return acc;
-        },
-        [],
-    );
 
     const modelIdToIndex = new Map<string | number, number>();
     models.forEach((m, idx) => modelIdToIndex.set(m.id, idx));
@@ -44,42 +32,40 @@ export default function DeployedModelsListComponent(props: Readonly<Props>): JSX
     return (
         <>
             <Row justify='center' align='top' className='cvat-resource-list-wrapper'>
-                <Col {...dimensions} className='cvat-models-list'>
+                <Col {...dimensions} className='cvat-models-list cvat-resource-card-list'>
                     <BulkWrapper
                         currentResourceIds={models.map((m) => m.id)}
                         resourceType={SelectedResourceType.MODELS}
                     >
-                        {(selectProps) => {
-                            const renderModelRow = (instances: MLModel[]): JSX.Element => (
-                                <Row key={instances[0].id} className='cvat-models-list-row'>
-                                    {instances.map((model: MLModel) => {
-                                        const globalIdx = modelIdToIndex.get(model.id) ?? 0;
-                                        return (
-                                            <Col span={6} key={model.id}>
-                                                <DeployedModelItem
-                                                    model={model}
-                                                    {...selectProps(model.id, globalIdx)}
-                                                />
-                                            </Col>
-                                        );
-                                    })}
-                                </Row>
-                            );
-                            return groupedModels.map(renderModelRow);
-                        }}
+                        {(selectProps) => (
+                            <Row gutter={[16, 16]} className='cvat-models-list-row'>
+                                {models.map((model: MLModel) => {
+                                    const globalIdx = modelIdToIndex.get(model.id) ?? 0;
+                                    return (
+                                        <Col
+                                            xs={24}
+                                            sm={12}
+                                            lg={8}
+                                            xl={6}
+                                            key={model.id}
+                                            className='cvat-models-list-column'
+                                        >
+                                            <DeployedModelItem
+                                                model={model}
+                                                {...selectProps(model.id, globalIdx)}
+                                            />
+                                        </Col>
+                                    );
+                                })}
+                            </Row>
+                        )}
                     </BulkWrapper>
                 </Col>
             </Row>
             <Row justify='center' align='middle' className='cvat-resource-pagination-wrapper'>
                 <Pagination
                     className='cvat-models-pagination'
-                    onChange={(newPage: number, newPageSize: number) => {
-                        dispatch(getModelsAsync({
-                            ...query,
-                            page: newPage,
-                            pageSize: newPageSize,
-                        }));
-                    }}
+                    onChange={onChangePage}
                     total={totalCount}
                     current={page}
                     pageSize={pageSize}

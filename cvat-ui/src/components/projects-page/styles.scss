@@ -125,7 +125,7 @@
             }
 
             .cvat-project-item-loading-preview {
-                padding-top: $grid-unit-size * 3;
+                padding: 0;
             }
 
             .cvat-projects-project-item-title {
@@ -133,30 +133,6 @@
                 cursor: pointer;
             }
 
-            .cvat-projects-project-item-description {
-                display: flex;
-                justify-content: space-between;
-
-                // actions button
-                > div:nth-child(2) {
-                    display: flex;
-                    align-self: flex-end;
-                    justify-content: center;
-
-                    > button {
-                        color: $text-color;
-                        width: inherit;
-                    }
-                }
-            }
-
-            .ant-card-cover {
-                flex: 1;
-                height: 0;
-            }
-
-            display: flex;
-            flex-direction: column;
         }
 
         &:nth-child(4n) {

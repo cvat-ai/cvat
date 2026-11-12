@@ -17,6 +17,7 @@ const defaultState: ModelsState = {
     creatingStatus: '',
     interactors: [],
     detectors: [],
+    glms: [],
     trackers: [],
     reid: [],
     modelRunnerIsVisible: false,
@@ -54,6 +55,7 @@ export default function (
         case ModelsActionTypes.GET_MODELS_SUCCESS: {
             return {
                 ...state,
+                glms: action.payload.models.filter((model: MLModel) => model.kind === ModelKind.GLM),
                 interactors: action.payload.models.filter((model: MLModel) => (
                     model.kind === ModelKind.INTERACTOR
                 )),
@@ -203,7 +205,7 @@ export default function (
             if (action.payload.resourceType === SelectedResourceType.MODELS) {
                 return {
                     ...state,
-                    selected: Array.from(new Set([...state.selected, ...action.payload.resourceIds as number[]])),
+                    selected: Array.from(new Set([...state.selected, ...action.payload.resourceIds])),
                 };
             }
             return state;

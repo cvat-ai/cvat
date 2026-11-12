@@ -38,7 +38,7 @@ function JobsContentComponent(props: Readonly<Props>): JSX.Element {
 
     return (
         <Row justify='center' align='middle' className='cvat-resource-list-wrapper'>
-            <Col className='cvat-jobs-page-list' {...dimensions}>
+            <Col className='cvat-jobs-page-list cvat-resource-card-list' {...dimensions}>
                 <BulkWrapper currentResourceIds={jobs.map((j) => j.id)} resourceType={SelectedResourceType.JOBS}>
                     {(selectProps) => {
                         const renderJobRow = (jobInstances: Job[]): JSX.Element => (

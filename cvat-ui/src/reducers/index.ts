@@ -493,11 +493,6 @@ export interface PluginsState {
                 menu: {
                     items: PluginComponent[];
                 };
-                topBar:{
-                    menu: {
-                        items: PluginComponent[];
-                    };
-                };
             };
         };
         projectActions: {
@@ -600,6 +595,7 @@ export interface ModelsState {
     creatingStatus: string;
     interactors: MLModel[];
     detectors: MLModel[];
+    glms: MLModel[];
     trackers: MLModel[];
     reid: MLModel[];
     totalCount: number;

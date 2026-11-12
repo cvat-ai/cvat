@@ -10,6 +10,7 @@ import {
 import {
     getCore, MLModel, RQStatus,
 } from 'cvat-core-wrapper';
+import resolveModelPreviewFallback from 'utils/model-preview';
 
 export enum ModelsActionTypes {
     GET_MODELS = 'GET_MODELS',
@@ -233,10 +234,15 @@ export function cancelInferenceAsync(taskID: number): ThunkAction {
 
 export const getModelPreviewAsync = (model: MLModel): ThunkAction => async (dispatch) => {
     dispatch(modelsActions.getModelPreview(model.id));
+    const fallback = resolveModelPreviewFallback(model);
     try {
         const result = await model.preview();
-        dispatch(modelsActions.getModelPreviewSuccess(model.id, result));
+        dispatch(modelsActions.getModelPreviewSuccess(model.id, result || fallback || ''));
     } catch (error) {
-        dispatch(modelsActions.getModelPreviewFailed(model.id, error));
+        if (fallback) {
+            dispatch(modelsActions.getModelPreviewSuccess(model.id, fallback));
+        } else {
+            dispatch(modelsActions.getModelPreviewFailed(model.id, error));
+        }
     }
 };

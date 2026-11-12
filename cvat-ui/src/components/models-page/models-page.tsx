@@ -8,27 +8,17 @@ import React, { useCallback, useEffect } from 'react';
 import { useHistory } from 'react-router';
 import { useDispatch, useSelector } from 'react-redux';
 import { shallowEqual } from 'utils/redux';
-import dayjs from 'dayjs';
 import { getModelsAsync } from 'actions/models-actions';
 import { updateHistoryFromQuery } from 'components/resource-sorting-filtering';
 import Spin from 'antd/lib/spin';
-import notification from 'antd/lib/notification';
 
 import { CombinedState, ModelsQuery, SelectedResourceType } from 'reducers';
 import { useResourceQuery } from 'utils/hooks';
 import { selectionActions } from 'actions/selection-actions';
-import { MLModel, ModelProviders } from 'cvat-core-wrapper';
 import DeployedModelsList from './deployed-models-list';
 import EmptyListComponent from './empty-list';
 import TopBar from './top-bar';
-
-function setUpModelsList(models: MLModel[], newPage: number, pageSize: number): MLModel[] {
-    const builtInModels = models.filter((model: MLModel) => model.provider === ModelProviders.CVAT);
-    const externalModels = models.filter((model: MLModel) => model.provider !== ModelProviders.CVAT);
-    externalModels.sort((a, b) => dayjs(a.createdDate).valueOf() - dayjs(b.createdDate).valueOf());
-    const renderModels = [...builtInModels, ...externalModels];
-    return renderModels.slice((newPage - 1) * pageSize, newPage * pageSize);
-}
+import { filterModels } from './model-list';
 
 function ModelsPageComponent(): JSX.Element {
     const history = useHistory();
@@ -39,9 +29,9 @@ function ModelsPageComponent(): JSX.Element {
         bulkFetching,
         interactors,
         detectors,
+        glms,
         trackers,
         reid,
-        totalCount,
         selectedCount,
     } = useSelector((state: CombinedState) => ({
         fetching: state.models.fetching,
@@ -49,82 +39,85 @@ function ModelsPageComponent(): JSX.Element {
         bulkFetching: state.bulkActions.fetching,
         interactors: state.models.interactors,
         detectors: state.models.detectors,
+        glms: state.models.glms,
         trackers: state.models.trackers,
         reid: state.models.reid,
-        totalCount: state.models.totalCount,
         selectedCount: state.models.selected.length,
     }), shallowEqual);
 
     const updatedQuery = useResourceQuery<ModelsQuery>(query, { pageSize: 12 });
 
-    const { page, pageSize } = updatedQuery;
-    const models = setUpModelsList(
-        [...interactors, ...detectors, ...trackers, ...reid],
-        page,
-        pageSize,
+    const allModels = [...interactors, ...detectors, ...trackers, ...reid, ...glms];
+    const filteredModels = filterModels(allModels, updatedQuery);
+    const models = filteredModels.slice(
+        (updatedQuery.page - 1) * updatedQuery.pageSize,
+        updatedQuery.page * updatedQuery.pageSize,
     );
 
-    useEffect(() => {
-        history.replace({
-            search: updateHistoryFromQuery(query),
-        });
-    }, [query]);
-
-    const pageOutOfBounds = totalCount && updatedQuery.page > Math.ceil(totalCount / query.pageSize);
-    useEffect(() => {
-        dispatch(getModelsAsync(updatedQuery));
-        if (pageOutOfBounds) {
-            notification.error({
-                message: 'Could not fetch models',
-                description: 'Invalid page',
-            });
+    const setQuery = useCallback((nextQuery: ModelsQuery): void => {
+        const search = updateHistoryFromQuery(nextQuery);
+        if (search !== history.location.search) {
+            history.push({ ...history.location, search });
         }
+    }, [history]);
+
+    useEffect(() => {
+        dispatch(getModelsAsync());
     }, []);
+
+    useEffect(() => {
+        const pages = Math.ceil(filteredModels.length / updatedQuery.pageSize);
+        if (!fetching && pages && updatedQuery.page > pages) {
+            setQuery({ ...updatedQuery, page: 1 });
+        }
+    }, [fetching, filteredModels.length, updatedQuery.page, updatedQuery.pageSize]);
 
     const onSelectAll = useCallback(() => {
         dispatch(selectionActions.selectResources(
-            models.filter((m) => m.provider !== ModelProviders.CVAT).map((m) => m.id),
+            models.map((model) => model.id),
             SelectedResourceType.MODELS,
         ));
     }, [models]);
 
-    const content = (totalCount && !pageOutOfBounds) ? (
-        <DeployedModelsList query={updatedQuery} models={models} totalCount={totalCount} />
-    ) : <EmptyListComponent />;
+    const content = filteredModels.length ? (
+        <DeployedModelsList
+            query={updatedQuery}
+            models={models}
+            totalCount={filteredModels.length}
+            onChangePage={(page: number, pageSize: number) => setQuery({
+                ...updatedQuery,
+                page,
+                pageSize,
+            })}
+        />
+    ) : <EmptyListComponent notFound={allModels.length > 0} />;
 
     return (
         <div className='cvat-models-page'>
             <TopBar
-                disabled
                 query={updatedQuery}
                 selectedCount={selectedCount}
                 onSelectAll={onSelectAll}
                 onApplySearch={(search: string | null) => {
-                    dispatch(
-                        getModelsAsync({
-                            ...query,
-                            search,
-                            page: 1,
-                        }),
-                    );
+                    setQuery({
+                        ...updatedQuery,
+                        search: search?.trim() || null,
+                        page: 1,
+                    });
                 }}
                 onApplyFilter={(filter: string | null) => {
-                    dispatch(
-                        getModelsAsync({
-                            ...query,
-                            filter,
-                            page: 1,
-                        }),
-                    );
+                    setQuery({
+                        ...updatedQuery,
+                        filter,
+                        page: 1,
+                    });
                 }}
                 onApplySorting={(sorting: string | null) => {
-                    dispatch(
-                        getModelsAsync({
-                            ...query,
-                            sort: sorting,
-                            page: 1,
-                        }),
-                    );
+                    setQuery({
+                        ...updatedQuery,
+                        sort: sorting,
+                        page: 1,
+                    });
                 }}
             />
             { fetching && !bulkFetching ? (

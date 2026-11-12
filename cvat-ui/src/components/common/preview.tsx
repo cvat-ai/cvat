@@ -115,6 +115,7 @@ export default function Preview(props: Readonly<Props>): JSX.Element {
                 onClick={onClick}
                 alt='Preview image'
                 aria-hidden
+                draggable={false}
             />
         </div>
     );

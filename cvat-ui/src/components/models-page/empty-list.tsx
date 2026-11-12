@@ -10,29 +10,38 @@ import Empty from 'antd/lib/empty';
 
 import config from 'config';
 
-export default function EmptyListComponent(): JSX.Element {
+interface Props {
+    notFound?: boolean;
+}
+
+export default function EmptyListComponent(props: Readonly<Props>): JSX.Element {
+    const { notFound = false } = props;
+
     return (
         <div className='cvat-empty-models-list'>
             <Empty
+                image={notFound ? Empty.PRESENTED_IMAGE_SIMPLE : Empty.PRESENTED_IMAGE_DEFAULT}
                 description={(
-                    <div>
-                        <Row justify='center' align='middle'>
-                            <Col>
-                                <Text strong>No models deployed yet...</Text>
-                            </Col>
-                        </Row>
-                        <Row justify='center' align='middle'>
-                            <Col>
-                                <Text type='secondary'>To annotate your tasks automatically</Text>
-                            </Col>
-                        </Row>
-                        <Row justify='center' align='middle'>
-                            <Col>
-                                <Text type='secondary'>deploy a model with </Text>
-                                <a href={`${config.NUCLIO_GUIDE}`}>nuclio</a>
-                            </Col>
-                        </Row>
-                    </div>
+                    notFound ? <Text strong>No models found</Text> : (
+                        <div>
+                            <Row justify='center' align='middle'>
+                                <Col>
+                                    <Text strong>No models deployed yet...</Text>
+                                </Col>
+                            </Row>
+                            <Row justify='center' align='middle'>
+                                <Col>
+                                    <Text type='secondary'>To annotate your tasks automatically</Text>
+                                </Col>
+                            </Row>
+                            <Row justify='center' align='middle'>
+                                <Col>
+                                    <Text type='secondary'>deploy a model with </Text>
+                                    <a href={`${config.NUCLIO_GUIDE}`}>nuclio</a>
+                                </Col>
+                            </Row>
+                        </div>
+                    )
                 )}
             />
         </div>

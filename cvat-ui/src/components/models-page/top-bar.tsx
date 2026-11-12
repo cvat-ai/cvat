@@ -48,7 +48,7 @@ export default function TopBarComponent(props: Readonly<VisibleTopBarProps>): JS
     }
 
     return (
-        <Row className='cvat-models-page-top-bar' justify='center' align='middle'>
+        <Row className='cvat-models-page-top-bar cvat-resource-card-top-bar' justify='center' align='middle'>
             <Col {...dimensions}>
                 <div className='cvat-models-page-filters-wrapper'>
                     <div>
@@ -71,8 +71,10 @@ export default function TopBarComponent(props: Readonly<VisibleTopBarProps>): JS
                             onVisibleChange={(visible: boolean) => (
                                 setVisibility({ ...defaultVisibility, sorting: visible })
                             )}
-                            defaultFields={query.sort?.split(',') || ['-ID']}
-                            sortingFields={['ID', 'Target URL', 'Owner', 'Description', 'Type', 'Updated date']}
+                            defaultFields={query.sort?.split(',') || []}
+                            sortingFields={[
+                                'Name', 'Provider', 'Kind', 'Owner', 'ID', 'Created date',
+                            ]}
                             onApplySorting={onApplySorting}
                         />
                         <FilteringComponent

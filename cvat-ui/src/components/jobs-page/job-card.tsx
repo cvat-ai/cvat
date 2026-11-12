@@ -6,13 +6,15 @@
 import React, { useCallback } from 'react';
 import { useSelector } from 'react-redux';
 import { useHistory } from 'react-router';
-import Card from 'antd/lib/card';
 import Descriptions from 'antd/lib/descriptions';
+import Button from 'antd/lib/button';
+import Text from 'antd/lib/typography/Text';
 import { MoreOutlined } from '@ant-design/icons';
 
 import { Job, JobType } from 'cvat-core-wrapper';
 import { useCardHeightHOC, useContextMenuClick } from 'utils/hooks';
 import Preview from 'components/common/preview';
+import ResourceCard from 'components/common/resource-card';
 import { CombinedState } from 'reducers';
 import JobStageStateBadges from 'components/job-item/job-status-visuals';
 import JobActionsComponent from './actions-menu';
@@ -43,23 +45,15 @@ function JobCardComponent(props: Readonly<Props>): JSX.Element {
     const history = useHistory();
     const height = useCardHeight();
     const { itemRef, handleContextMenuClick, handleContextMenuCapture } = useContextMenuClick<HTMLDivElement>();
+    const jobURL = `/tasks/${job.taskId}/jobs/${job.id}`;
+    const assigneeName = job.assignee?.username;
     const handleCardClick = useCallback((event: React.MouseEvent): void => {
+        event.stopPropagation();
         const cancel = onClick(event);
         if (!cancel) {
-            const url = `/tasks/${job.taskId}/jobs/${job.id}`;
-            if (event.ctrlKey) {
-                window.open(url, '_blank', 'noopener noreferrer');
-            } else {
-                history.push(url);
-            }
+            history.push(jobURL);
         }
-    }, [job, onClick]);
-
-    const style = {};
-    if (deleted) {
-        (style as any).pointerEvents = 'none';
-        (style as any).opacity = 0.5;
-    }
+    }, [history, jobURL, onClick]);
 
     let tag = null;
     if (job.type === JobType.GROUND_TRUTH) {
@@ -70,54 +64,57 @@ function JobCardComponent(props: Readonly<Props>): JSX.Element {
         tag = 'Replica';
     }
 
-    const cardClassName = `cvat-job-page-list-item${selected ? ' cvat-item-selected' : ''}`;
-
-    /* eslint-disable jsx-a11y/click-events-have-key-events, jsx-a11y/no-static-element-interactions */
     const card = (
-        <Card
-            ref={itemRef}
-            style={{ ...style, height }}
-            className={cardClassName}
-            cover={(
-                <>
-                    <Preview
-                        job={job}
-                        onClick={handleCardClick}
-                        loadingClassName='cvat-job-item-loading-preview'
-                        emptyPreviewClassName='cvat-job-item-empty-preview'
-                        previewWrapperClassName='cvat-jobs-page-job-item-card-preview-wrapper'
-                        previewClassName='cvat-jobs-page-job-item-card-preview'
-                    />
-                    <div className='cvat-job-page-list-item-id'>
-                        ID:
-                        {` ${job.id}`}
-                    </div>
-                    {tag && <div className='cvat-job-page-list-item-type'>{tag}</div>}
-                    <div className='cvat-job-page-list-item-dimension'>{job.dimension.toUpperCase()}</div>
-                    <div className='cvat-job-page-list-item-status'>
-                        <JobStageStateBadges stage={job.stage} state={job.state} />
-                    </div>
-                </>
+        <ResourceCard
+            cardRef={itemRef}
+            id={job.id}
+            preview={(
+                <Preview
+                    job={job}
+                    loadingClassName='cvat-job-item-loading-preview'
+                    emptyPreviewClassName='cvat-job-item-empty-preview'
+                    previewWrapperClassName='cvat-jobs-page-job-item-card-preview-wrapper'
+                    previewClassName='cvat-jobs-page-job-item-card-preview'
+                />
             )}
-            hoverable
-            onClick={onClick}
+            tags={[
+                { key: 'dimension', content: job.dimension.toUpperCase() },
+                ...(tag ? [{ key: 'type', content: tag }] : []),
+            ]}
+            mediaOverlay={(
+                <div className='cvat-job-page-list-item-status'>
+                    <JobStageStateBadges stage={job.stage} state={job.state} />
+                </div>
+            )}
+            description={(
+                <Descriptions className='cvat-resource-card-properties' column={1} size='small'>
+                    <Descriptions.Item label='Frames'>{job.stopFrame - job.startFrame + 1}</Descriptions.Item>
+                    <Descriptions.Item label='Assignee'>
+                        <Text
+                            ellipsis={{ tooltip: assigneeName }}
+                            className='cvat-resource-card-line'
+                        >
+                            {assigneeName}
+                        </Text>
+                    </Descriptions.Item>
+                </Descriptions>
+            )}
+            menu={(
+                <Button
+                    type='text'
+                    onClick={handleContextMenuClick}
+                    className='cvat-job-card-more-button cvat-actions-menu-button'
+                    icon={<MoreOutlined />}
+                />
+            )}
+            selected={selected}
+            disabled={deleted}
+            className='cvat-job-page-list-item'
+            style={{ height }}
+            onClick={handleCardClick}
+            onOpenInNewTab={() => window.open(jobURL, '_blank', 'noopener,noreferrer')}
             onContextMenuCapture={handleContextMenuCapture}
-        >
-            <Descriptions column={1} size='small'>
-                <Descriptions.Item label='Frames'>{job.stopFrame - job.startFrame + 1}</Descriptions.Item>
-                {job.assignee ? (
-                    <Descriptions.Item label='Assignee'>{job.assignee.username}</Descriptions.Item>
-                ) : (
-                    <Descriptions.Item label='Assignee'> </Descriptions.Item>
-                )}
-            </Descriptions>
-            <div
-                onClick={handleContextMenuClick}
-                className='cvat-job-card-more-button cvat-actions-menu-button'
-            >
-                <MoreOutlined className='cvat-menu-icon' />
-            </div>
-        </Card>
+        />
     );
 
     return (

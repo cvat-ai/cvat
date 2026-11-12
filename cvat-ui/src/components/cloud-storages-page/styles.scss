@@ -79,13 +79,12 @@
         margin-bottom: 0;
     }
 
-    cursor: default;
-
     .cvat-cloud-storage-item-loading-preview,
     .cvat-cloud-storage-item-empty-preview {
         @extend .cvat-base-preview;
 
-        height: $grid-unit-size * 24;
+        width: 100%;
+        height: 100%;
 
         svg {
             width: 40%;
@@ -94,16 +93,9 @@
     }
 
     .cvat-cloud-storage-item-preview {
-        height: $grid-unit-size * 24;
-        object-fit: cover;
-        margin: auto;
         width: 100%;
-    }
-
-    .cvat-cloud-storage-item-menu-button {
-        position: absolute;
-        bottom: 0;
-        right: 0;
+        height: 100%;
+        object-fit: cover;
     }
 
     .cvat-cloud-storage-description-icon {
@@ -111,5 +103,6 @@
         top: $grid-unit-size;
         width: auto;
         right: $grid-unit-size;
+        pointer-events: auto;
     }
 }

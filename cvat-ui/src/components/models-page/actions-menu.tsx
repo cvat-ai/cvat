@@ -27,12 +27,14 @@ function ModelActionsComponent(props: Readonly<ModelActionsProps>): JSX.Element 
     const {
         interactors,
         detectors,
+        glms,
         trackers,
         reid,
         selectedIds,
     } = useSelector((state: CombinedState) => ({
         interactors: state.models.interactors,
         detectors: state.models.detectors,
+        glms: state.models.glms,
         trackers: state.models.trackers,
         reid: state.models.reid,
         selectedIds: state.models.selected,
@@ -41,6 +43,7 @@ function ModelActionsComponent(props: Readonly<ModelActionsProps>): JSX.Element 
     const allModels = [
         ...interactors,
         ...detectors,
+        ...glms,
         ...trackers,
         ...reid,
     ];
@@ -61,11 +64,15 @@ function ModelActionsComponent(props: Readonly<ModelActionsProps>): JSX.Element 
 
     // Sort menu items by weight before passing to Dropdown
     const sortedMenuItems = [...menuItems].sort((menuItem1, menuItem2) => menuItem1[1] - menuItem2[1]);
-    const finalMenuItems = sortedMenuItems.map((menuItem) => menuItem[0]);
+    const selectionExcludesModel = selectedIds.length > 1 && !selectedIds.includes(model.id);
+    const finalMenuItems = selectionExcludesModel ? [] : sortedMenuItems.map((menuItem) => menuItem[0]);
 
     const renderedTrigger = triggerElement(finalMenuItems);
     if (!renderedTrigger) {
         return null;
+    }
+    if (!finalMenuItems.length) {
+        return renderedTrigger;
     }
 
     return (

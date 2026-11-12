@@ -93,11 +93,6 @@ const defaultState: PluginsState = {
                 menu: {
                     items: [],
                 },
-                topBar: {
-                    menu: {
-                        items: [],
-                    },
-                },
             },
         },
         projectActions: {
