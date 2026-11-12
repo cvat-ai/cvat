@@ -132,7 +132,7 @@ export default function CloudStorageItemComponent(props: Readonly<Props>): JSX.E
                     type='text'
                     onClick={handleContextMenuClick}
                     className='cvat-cloud-storage-item-menu-button cvat-actions-menu-button'
-                    icon={<MoreOutlined />}
+                    icon={<MoreOutlined className='cvat-menu-icon' />}
                 />
             )}
             selected={selected}

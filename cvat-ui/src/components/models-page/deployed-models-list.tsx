@@ -6,7 +6,7 @@
 import React from 'react';
 import { Row, Col } from 'antd/lib/grid';
 import Pagination from 'antd/lib/pagination';
-import { MLModel } from 'cvat-core-wrapper';
+import { MLModel, ModelProviders } from 'cvat-core-wrapper';
 import dimensions from 'utils/dimensions';
 import BulkWrapper from 'components/bulk-wrapper';
 import { ModelsQuery, SelectedResourceType } from 'reducers';
@@ -26,15 +26,16 @@ export default function DeployedModelsListComponent(props: Readonly<Props>): JSX
     } = props;
     const { page, pageSize } = query;
 
+    const selectableModels = models.filter((model) => model.provider !== ModelProviders.CVAT);
     const modelIdToIndex = new Map<string | number, number>();
-    models.forEach((m, idx) => modelIdToIndex.set(m.id, idx));
+    selectableModels.forEach((model, index) => modelIdToIndex.set(model.id, index));
 
     return (
         <>
             <Row justify='center' align='top' className='cvat-resource-list-wrapper'>
                 <Col {...dimensions} className='cvat-models-list cvat-resource-card-list'>
                     <BulkWrapper
-                        currentResourceIds={models.map((m) => m.id)}
+                        currentResourceIds={selectableModels.map((model) => model.id)}
                         resourceType={SelectedResourceType.MODELS}
                     >
                         {(selectProps) => (

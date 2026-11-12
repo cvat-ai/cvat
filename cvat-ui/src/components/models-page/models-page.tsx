@@ -15,6 +15,7 @@ import Spin from 'antd/lib/spin';
 import { CombinedState, ModelsQuery, SelectedResourceType } from 'reducers';
 import { useResourceQuery } from 'utils/hooks';
 import { selectionActions } from 'actions/selection-actions';
+import { ModelProviders } from 'cvat-core-wrapper';
 import DeployedModelsList from './deployed-models-list';
 import EmptyListComponent from './empty-list';
 import TopBar from './top-bar';
@@ -74,7 +75,7 @@ function ModelsPageComponent(): JSX.Element {
 
     const onSelectAll = useCallback(() => {
         dispatch(selectionActions.selectResources(
-            models.map((model) => model.id),
+            models.filter((model) => model.provider !== ModelProviders.CVAT).map((model) => model.id),
             SelectedResourceType.MODELS,
         ));
     }, [models]);

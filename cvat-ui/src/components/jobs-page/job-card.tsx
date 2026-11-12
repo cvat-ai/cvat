@@ -78,9 +78,18 @@ function JobCardComponent(props: Readonly<Props>): JSX.Element {
                 />
             )}
             tags={[
-                { key: 'dimension', content: job.dimension.toUpperCase() },
-                ...(tag ? [{ key: 'type', content: tag }] : []),
+                {
+                    key: 'dimension',
+                    content: job.dimension.toUpperCase(),
+                    className: 'cvat-job-page-list-item-dimension',
+                },
+                ...(tag ? [{
+                    key: 'type',
+                    content: tag,
+                    className: 'cvat-job-page-list-item-type',
+                }] : []),
             ]}
+            idClassName='cvat-job-page-list-item-id'
             mediaOverlay={(
                 <div className='cvat-job-page-list-item-status'>
                     <JobStageStateBadges stage={job.stage} state={job.state} />
@@ -104,7 +113,7 @@ function JobCardComponent(props: Readonly<Props>): JSX.Element {
                     type='text'
                     onClick={handleContextMenuClick}
                     className='cvat-job-card-more-button cvat-actions-menu-button'
-                    icon={<MoreOutlined />}
+                    icon={<MoreOutlined className='cvat-menu-icon' />}
                 />
             )}
             selected={selected}

@@ -93,6 +93,7 @@ export default function ProjectItemComponent(props: Props): JSX.Element {
                     <Descriptions.Item label='Updated'>{updated}</Descriptions.Item>
                 </Descriptions>
             )}
+            contentClassName='cvat-projects-project-item-description'
             menu={(
                 <Button
                     className='cvat-project-details-button cvat-actions-menu-button'

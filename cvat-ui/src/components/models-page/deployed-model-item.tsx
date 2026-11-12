@@ -42,7 +42,7 @@ function DeployedModelItem(props: Readonly<Props>): JSX.Element {
 
     const systemModel = model.provider === ModelProviders.CVAT;
     const onOpenModel = (event: React.MouseEvent): void => {
-        const cancel = onClick(event);
+        const cancel = !systemModel && onClick(event);
         if (!cancel) {
             setIsModalShown(true);
         }
@@ -76,6 +76,7 @@ function DeployedModelItem(props: Readonly<Props>): JSX.Element {
                     {model.name}
                 </Text>
             )}
+            contentClassName='cvat-models-item-description'
             menu={menuItems.length ? (
                 <Button
                     className='cvat-deployed-model-details-button cvat-actions-menu-button'
@@ -84,7 +85,7 @@ function DeployedModelItem(props: Readonly<Props>): JSX.Element {
                     onClick={handleContextMenuClick}
                 />
             ) : undefined}
-            selected={selected}
+            selected={!systemModel && selected}
             className='cvat-models-item-card'
             style={{ height }}
             onClick={onOpenModel}

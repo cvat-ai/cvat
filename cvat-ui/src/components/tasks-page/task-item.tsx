@@ -241,7 +241,7 @@ function TaskItemComponent(props: TaskItemProps): JSX.Element {
                             onClick={handleContextMenuClick}
                             className='cvat-task-item-actions-button cvat-actions-menu-button'
                         >
-                            <Text className='cvat-text-color'>Actions</Text>
+                            <Text style={{ marginRight: 8 }} className='cvat-text-color'>Actions</Text>
                             <MoreOutlined className='cvat-menu-icon' />
                         </div>
                     </Col>

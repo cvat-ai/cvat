@@ -11,15 +11,18 @@ export interface ResourceCardTag {
     key: React.Key;
     content: React.ReactNode;
     color?: TagProps['color'];
+    className?: string;
 }
 
 interface Props {
     cardRef?: React.Ref<HTMLDivElement>;
     id?: string | number;
+    idClassName?: string;
     preview: React.ReactNode;
     tags?: ResourceCardTag[];
     title?: React.ReactNode;
     description?: React.ReactNode;
+    contentClassName?: string;
     menu?: React.ReactNode;
     mediaOverlay?: React.ReactNode;
     selected?: boolean;
@@ -36,10 +39,12 @@ function ResourceCard(props: Readonly<Props>): JSX.Element {
     const {
         cardRef,
         id,
+        idClassName = '',
         preview,
         tags = [],
         title,
         description,
+        contentClassName = '',
         menu,
         mediaOverlay,
         selected = false,
@@ -76,12 +81,17 @@ function ResourceCard(props: Readonly<Props>): JSX.Element {
                 <div className='cvat-resource-card-media'>
                     <div className='cvat-resource-card-preview'>{preview}</div>
                     {typeof id !== 'undefined' && (
-                        <div className='cvat-resource-card-id' title={`ID: ${id}`}>{`ID: ${id}`}</div>
+                        <div
+                            className={`cvat-resource-card-id ${idClassName}`.trim()}
+                            title={`ID: ${id}`}
+                        >
+                            {`ID: ${id}`}
+                        </div>
                     )}
                     {!!tags.length && (
                         <div className='cvat-resource-card-tags'>
                             {tags.map((tag) => (
-                                <Tag key={tag.key} color={tag.color}>{tag.content}</Tag>
+                                <Tag key={tag.key} color={tag.color} className={tag.className}>{tag.content}</Tag>
                             ))}
                         </div>
                     )}
@@ -113,7 +123,7 @@ function ResourceCard(props: Readonly<Props>): JSX.Element {
             onContextMenuCapture={onContextMenuCapture}
         >
             {(title || description || menu) && (
-                <div className='cvat-resource-card-content'>
+                <div className={`cvat-resource-card-content ${contentClassName}`.trim()}>
                     {title && <div className='cvat-resource-card-title'>{title}</div>}
                     {menu && <div className='cvat-resource-card-menu'>{menu}</div>}
                     {description && (
