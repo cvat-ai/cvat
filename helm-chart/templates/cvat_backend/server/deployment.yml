@@ -83,6 +83,10 @@ spec:
         - name: cvat-nginx
           image: {{ .Values.cvat.backend.image }}:{{ .Values.cvat.backend.tag }}
           imagePullPolicy: {{ .Values.cvat.backend.imagePullPolicy }}
+          {{- with .Values.cvat.backend.server.nginx.resources }}
+          resources:
+          {{- toYaml . | nindent 12 }}
+          {{- end }}
           args:
           - "run"
           - "nginx"
