@@ -12,7 +12,7 @@ class Migration(migrations.Migration):
         migrations.AddField(
             model_name="usergrowthdata",
             name="last_seen_release_notes_version",
-            field=models.CharField(max_length=64, null=True),
+            field=models.CharField(blank=True, default="", max_length=64),
         ),
         migrations.AddField(
             model_name="usergrowthdata",

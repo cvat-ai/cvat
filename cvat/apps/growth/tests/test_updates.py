@@ -60,7 +60,7 @@ class UpdatesApiTestBase(ApiTestBase):
             "title": "Guide",
             "description": "Guide preview",
             "publishedAt": "2000-01-02T00:00:00Z",
-            "popup": True,
+            "announce": True,
             "editions": [self.edition, "other-edition"],
             "url": "https://docs.example.com/announcements/guide/",
             "markdownURL": "https://docs.example.com/announcements/guide/index.md",
@@ -98,6 +98,13 @@ class UpdatesApiTestBase(ApiTestBase):
 
 
 class UpdatesApiTestCase(UpdatesApiTestBase):
+    def test_new_user_has_empty_release_version(self) -> None:
+        response = self.client.get("/api/product-updates")
+
+        self.assertEqual(response.status_code, HTTPStatus.OK)
+        self.assertEqual(response.data["state"]["last_seen_release_notes_version"], "")
+        self.assertIsNone(response.data["state"]["last_seen_announcements_date"])
+
     def test_can_filter_release_previews_by_edition_and_version(self) -> None:
         assert VERSION[:3] >= (2, 0, 0)
         entries = self.documents["https://docs.example.com/release-notes/index.json"]["entries"]
@@ -108,7 +115,7 @@ class UpdatesApiTestCase(UpdatesApiTestBase):
             ]
         )
 
-        response = self.client.get("/api/updates")
+        response = self.client.get("/api/product-updates")
 
         self.assertEqual(response.status_code, HTTPStatus.OK)
         self.assertEqual([item["version"] for item in response.data["releases"]], ["2.0.0"])
@@ -126,9 +133,9 @@ class UpdatesApiTestCase(UpdatesApiTestBase):
         )
 
         with self.settings(CVAT_UPDATES_EDITION=custom_edition):
-            response = self.client.get("/api/updates")
+            response = self.client.get("/api/product-updates")
             content = self.client.get(
-                "/api/updates/content", {"kind": "release-notes", "id": "2.0.0"}
+                "/api/product-updates/content", {"kind": "release-notes", "id": "2.0.0"}
             )
 
         self.assertEqual(response.status_code, HTTPStatus.OK)
@@ -142,7 +149,7 @@ class UpdatesApiTestCase(UpdatesApiTestBase):
 
     @override_settings(CVAT_UPDATES_EDITION="invalid/edition")
     def test_invalid_edition_configuration_does_not_fetch_content(self) -> None:
-        response = self.client.get("/api/updates")
+        response = self.client.get("/api/product-updates")
 
         self.assertEqual(response.status_code, HTTPStatus.SERVICE_UNAVAILABLE)
         self.session.get.assert_not_called()
@@ -150,7 +157,7 @@ class UpdatesApiTestCase(UpdatesApiTestBase):
     def test_invalid_content_edition_keeps_announcement_state_unread(self) -> None:
         self.announcement["editions"] = ["invalid/edition"]
 
-        response = self.client.get("/api/updates")
+        response = self.client.get("/api/product-updates")
 
         self.assertEqual(response.status_code, HTTPStatus.OK)
         self.assertIn("announcements", response.data["errors"])
@@ -159,13 +166,15 @@ class UpdatesApiTestCase(UpdatesApiTestBase):
 
     @override_settings(CVAT_UPDATES_ENABLED=False)
     def test_disabled_feature_does_not_fetch_content(self) -> None:
-        response = self.client.get("/api/updates")
+        response = self.client.get("/api/product-updates")
 
         self.assertEqual(response.status_code, HTTPStatus.NOT_FOUND)
         self.session.get.assert_not_called()
 
     def test_content_request_validates_kind_before_fetching(self) -> None:
-        response = self.client.get("/api/updates/content", {"kind": "unknown", "id": "guide"})
+        response = self.client.get(
+            "/api/product-updates/content", {"kind": "unknown", "id": "guide"}
+        )
 
         self.assertEqual(response.status_code, HTTPStatus.BAD_REQUEST)
         self.assertIn("kind", response.data)
@@ -174,7 +183,7 @@ class UpdatesApiTestCase(UpdatesApiTestBase):
     def test_invalid_preview_media_keeps_announcement_state_unread(self) -> None:
         self.announcement["imageURL"] = 0
 
-        response = self.client.get("/api/updates")
+        response = self.client.get("/api/product-updates")
 
         self.assertEqual(response.status_code, HTTPStatus.OK)
         self.assertIn("announcements", response.data["errors"])
@@ -188,7 +197,9 @@ class UpdatesApiTestCase(UpdatesApiTestBase):
             '<section data-cvat-editions="other-edition"><h2>Other edition change</h2></section>'
         )
 
-        response = self.client.get("/api/updates/content", {"kind": "release-notes", "id": "2.0.0"})
+        response = self.client.get(
+            "/api/product-updates/content", {"kind": "release-notes", "id": "2.0.0"}
+        )
 
         self.assertEqual(response.status_code, HTTPStatus.OK)
         self.assertIn("Current edition change", response.data["body"])
@@ -196,25 +207,25 @@ class UpdatesApiTestCase(UpdatesApiTestBase):
         self.assertNotIn("Available in", response.data["body"])
 
     def test_can_reuse_cached_source_documents(self) -> None:
-        first = self.client.get("/api/updates")
+        first = self.client.get("/api/product-updates")
         self.assertEqual(first.status_code, HTTPStatus.OK)
         self.assertEqual(self.session.get.call_count, 2)
         self.session.get.side_effect = AssertionError("A fresh document must not be fetched again")
 
-        second = self.client.get("/api/updates")
+        second = self.client.get("/api/product-updates")
 
         self.assertEqual(second.status_code, HTTPStatus.OK)
         self.assertEqual(second.data, first.data)
 
     @override_settings(CVAT_UPDATES_CACHE_TTL=0)
     def test_stale_announcements_cannot_advance_seen_marker(self) -> None:
-        initial = self.client.get("/api/updates")
+        initial = self.client.get("/api/product-updates")
         self.assertTrue(initial.data["canAcknowledgeAnnouncements"])
         self.session.get.side_effect = requests.ConnectionError("Source is unavailable")
 
-        stale = self.client.get("/api/updates")
+        stale = self.client.get("/api/product-updates")
         acknowledged = self.client.post(
-            "/api/updates/acknowledge",
+            "/api/product-updates/acknowledge",
             {"announcements_seen_at": self.announcement["publishedAt"]},
             format="json",
         )
@@ -241,15 +252,21 @@ class UpdatesApiTestCase(UpdatesApiTestBase):
             }
         )
         first = self.client.post(
-            "/api/updates/acknowledge",
-            {"release_version": "2.0.0", "announcements_seen_at": self.announcement["publishedAt"]},
+            "/api/product-updates/acknowledge",
+            {
+                "release_version": "2.0.0",
+                "announcements_seen_at": self.announcement["publishedAt"],
+            },
             format="json",
         )
         self.assertEqual(first.status_code, HTTPStatus.OK)
 
         older = self.client.post(
-            "/api/updates/acknowledge",
-            {"release_version": "1.0.0", "announcements_seen_at": "2000-01-01T00:00:00Z"},
+            "/api/product-updates/acknowledge",
+            {
+                "release_version": "1.0.0",
+                "announcements_seen_at": "2000-01-01T00:00:00Z",
+            },
             format="json",
         )
 
@@ -269,17 +286,20 @@ class UpdatesApiTestCase(UpdatesApiTestBase):
         )
 
         self.assertEqual(response.status_code, HTTPStatus.OK)
-        self.assertIsNone(response.data["last_seen_release_notes_version"])
+        self.assertEqual(response.data["last_seen_release_notes_version"], "")
         self.assertFalse(response.data["promotion_notifications_allowed"])
 
     def test_cannot_acknowledge_an_unpublished_release(self) -> None:
         response = self.client.post(
-            "/api/updates/acknowledge", {"release_version": "9999.0.0"}, format="json"
+            "/api/product-updates/acknowledge",
+            {"release_version": "9999.0.0"},
+            format="json",
         )
 
         self.assertEqual(response.status_code, HTTPStatus.BAD_REQUEST)
-        self.assertIsNone(
-            UserGrowthData.objects.get(user=self.user).last_seen_release_notes_version
+        self.assertEqual(
+            UserGrowthData.objects.get(user=self.user).last_seen_release_notes_version,
+            "",
         )
 
     @override_settings(
@@ -297,7 +317,7 @@ class UpdatesApiTestCase(UpdatesApiTestBase):
         ]
 
         with patch(__name__ + ".sample_provider", return_value=previews):
-            response = self.client.get("/api/updates")
+            response = self.client.get("/api/product-updates")
 
         self.assertEqual(response.status_code, HTTPStatus.OK)
         self.assertEqual(
@@ -309,28 +329,31 @@ class UpdatesApiTestCase(UpdatesApiTestBase):
         CVAT_UPDATES_ANNOUNCEMENT_PROVIDER="cvat.apps.growth.tests.test_updates.sample_provider"
     )
     def test_duplicate_article_keeps_hugo_copy_and_latest_publication(self) -> None:
+        self.announcement["announce"] = False
         preview = {
             **self.announcement,
             "id": "website-guide",
             "url": self.announcement["url"].rstrip("/") + "?campaign=website",
             "publishedAt": "2000-01-03T00:00:00Z",
+            "announce": True,
         }
 
         with patch(__name__ + ".sample_provider", return_value=[preview]):
-            response = self.client.get("/api/updates")
+            response = self.client.get("/api/product-updates")
 
         self.assertEqual(response.status_code, HTTPStatus.OK)
         self.assertEqual(len(response.data["announcements"]), 1)
         self.assertEqual(response.data["announcements"][0]["id"], "guide")
         self.assertEqual(response.data["announcements"][0]["source"], "hugo")
         self.assertEqual(response.data["announcements"][0]["publishedAt"], preview["publishedAt"])
+        self.assertTrue(response.data["announcements"][0]["announce"])
 
     @override_settings(
         CVAT_UPDATES_ANNOUNCEMENT_PROVIDER="cvat.apps.growth.tests.test_updates.sample_provider"
     )
     def test_failed_provider_keeps_hugo_announcements_available(self) -> None:
         with patch(__name__ + ".sample_provider", side_effect=UpdatesUnavailable()):
-            response = self.client.get("/api/updates")
+            response = self.client.get("/api/product-updates")
 
         self.assertEqual(response.status_code, HTTPStatus.OK)
         self.assertEqual(response.data["errors"], ["external-announcements"])

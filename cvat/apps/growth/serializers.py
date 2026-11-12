@@ -96,7 +96,7 @@ class UpdatesAcknowledgementSerializer(serializers.Serializer):
 
 
 class UpdatesStateSerializer(serializers.Serializer):
-    last_seen_release_notes_version = serializers.CharField(allow_null=True)
+    last_seen_release_notes_version = serializers.CharField(allow_blank=True)
     last_seen_announcements_date = serializers.DateTimeField(allow_null=True)
     promotion_notifications_allowed = serializers.BooleanField()
 
@@ -124,7 +124,7 @@ class AnnouncementPreviewSerializer(serializers.Serializer):
     title = serializers.CharField()
     description = serializers.CharField(allow_blank=True)
     publishedAt = serializers.DateTimeField()
-    popup = serializers.BooleanField()
+    announce = serializers.BooleanField()
     editions = serializers.ListField(child=serializers.RegexField(EDITION_PATTERN))
     url = serializers.URLField()
     source = serializers.ChoiceField(choices=AnnouncementSource)

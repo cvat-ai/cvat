@@ -35,7 +35,7 @@ class AnnouncementPreview(TypedDict):
     publishedAt: str
     url: str
     editions: list[str]
-    popup: bool
+    announce: bool
     imageURL: NotRequired[str]
     videoURL: NotRequired[str]
     imageAlt: NotRequired[str]

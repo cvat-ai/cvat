@@ -26,12 +26,10 @@ from .serializers import (
 from .types import ContentKind
 
 
-@extend_schema(tags=["updates"])
-class UpdatesViewSet(viewsets.GenericViewSet):
+@extend_schema(tags=["product-updates"])
+class UpdatesViewSet(viewsets.ViewSet):
     iam_supports_organization_params = False
     iam_permission_class = UpdatesPermission
-    serializer_class = UpdatesAcknowledgementSerializer
-    pagination_class = None
 
     def initial(self, request: Request, *args: Any, **kwargs: Any) -> None:
         super().initial(request, *args, **kwargs)
@@ -109,7 +107,7 @@ class UpdatesViewSet(viewsets.GenericViewSet):
             current = UserGrowthData.objects.select_for_update().get(pk=current.pk)
             fields = []
             if version is not None and (
-                current.last_seen_release_notes_version is None
+                not current.last_seen_release_notes_version
                 or updates_service.version_parts(version)
                 > updates_service.version_parts(current.last_seen_release_notes_version)
             ):

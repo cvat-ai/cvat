@@ -282,7 +282,6 @@ def _index(body: str, kind: ContentKind) -> list[dict[str, Any]]:
             case ContentKind.RELEASE_NOTES:
                 identifier = raw["version"]
                 version_parts(identifier)
-                flag = "announce"
                 fields = _release_fields(raw)
             case ContentKind.ANNOUNCEMENTS:
                 identifier = raw["id"]
@@ -290,7 +289,6 @@ def _index(body: str, kind: ContentKind) -> list[dict[str, Any]]:
                     r"[a-z0-9][a-z0-9_-]{0,127}", identifier
                 ):
                     raise ValueError("Invalid announcement ID")
-                flag = "popup"
                 fields = _announcement_fields(raw)
             case _:
                 raise AssertionError(f"Unexpected content kind: {kind}")
@@ -300,8 +298,8 @@ def _index(body: str, kind: ContentKind) -> list[dict[str, Any]]:
         for field in ("title", "description"):
             if not isinstance(raw.get(field), str) or (field == "title" and not raw[field].strip()):
                 raise ValueError("Invalid content metadata")
-        if not isinstance(raw.get(flag), bool):
-            raise ValueError("Invalid presentation flag")
+        if not isinstance(raw.get("announce"), bool):
+            raise ValueError("Invalid notification flag")
         path = _content_path(raw.get("markdownURL"), kind)
         entries.append(
             {
@@ -314,7 +312,7 @@ def _index(body: str, kind: ContentKind) -> list[dict[str, Any]]:
                 "url": _public_url(path.removesuffix("index.md")),
                 "contentPath": path,
                 "editions": _editions(raw["editions"]),
-                flag: raw[flag],
+                "announce": raw["announce"],
                 **fields,
             }
         )
@@ -392,12 +390,12 @@ def announcement_feed() -> tuple[list[AnnouncementPreview], list[UpdateSource]]:
             previous = merged.get(key)
             if previous:
                 # Hugo controls the copy if the same article is also authored there.
-                # Keep the newest date and either source's automatic-popup eligibility.
+                # Keep the newest date and either source's notification eligibility.
                 item["publishedAt"] = max(
                     (previous["publishedAt"], item["publishedAt"]),
                     key=publication_date,
                 )
-                item["popup"] = previous["popup"] or item["popup"]
+                item["announce"] = previous["announce"] or item["announce"]
             merged[key] = item
     items = sorted(
         merged.values(),

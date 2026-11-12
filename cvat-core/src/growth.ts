@@ -19,7 +19,7 @@ export default class UserGrowthData {
     #githubPromptSupportClicked: boolean;
     #githubPromptEnabled: boolean;
     #promotionNotificationsAllowed: boolean;
-    #lastSeenReleaseNotesVersion: string | null;
+    #lastSeenReleaseNotesVersion: string;
     #lastSeenAnnouncementsDate: string | null;
 
     constructor(initialData: SerializedUserGrowthData) {
@@ -29,7 +29,7 @@ export default class UserGrowthData {
         this.#githubPromptSupportClicked = initialData.github_prompt_support_clicked;
         this.#githubPromptEnabled = initialData.github_prompt_enabled;
         this.#promotionNotificationsAllowed = initialData.promotion_notifications_allowed;
-        this.#lastSeenReleaseNotesVersion = initialData.last_seen_release_notes_version ?? null;
+        this.#lastSeenReleaseNotesVersion = initialData.last_seen_release_notes_version;
         this.#lastSeenAnnouncementsDate = initialData.last_seen_announcements_date ?? null;
     }
 
@@ -57,7 +57,7 @@ export default class UserGrowthData {
         return this.#promotionNotificationsAllowed;
     }
 
-    get lastSeenReleaseNotesVersion(): string | null {
+    get lastSeenReleaseNotesVersion(): string {
         return this.#lastSeenReleaseNotesVersion;
     }
 

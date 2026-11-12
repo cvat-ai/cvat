@@ -46,7 +46,7 @@ export function contentURL(value: string, base?: string): string | undefined {
     }
 }
 
-export function isNewVersion(version: string, shown: string | null): boolean {
+export function isNewVersion(version: string, shown: string): boolean {
     return !shown || compareVersions(version, shown) > 0;
 }
 
@@ -65,13 +65,13 @@ export interface PostPreview {
 
 export interface Announcement extends PostPreview {
     editions: string[];
-    popup: boolean;
+    announce: boolean;
     source: 'hugo' | 'external';
     markdownURL?: string;
 }
 
 export interface SeenState {
-    last_seen_release_notes_version: string | null;
+    last_seen_release_notes_version: string;
     last_seen_announcements_date: string | null;
     promotion_notifications_allowed: boolean;
 }

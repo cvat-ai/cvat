@@ -9,6 +9,6 @@ from .views import UserGrowthDataViewSet
 
 router = routers.DefaultRouter(trailing_slash=False)
 router.register("growth", UserGrowthDataViewSet, basename="growth")
-router.register("updates", UpdatesViewSet, basename="updates")
+router.register("product-updates", UpdatesViewSet, basename="product-updates")
 
 urlpatterns = router.urls

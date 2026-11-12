@@ -4086,6 +4086,91 @@ paths:
       responses:
         '204':
           description: The organization has been deleted
+  /api/product-updates:
+    get:
+      operationId: product_updates_list
+      summary: Get release notes, announcements and the current user's seen state
+      tags:
+      - product-updates
+      security:
+      - tokenAuth: []
+      - accessTokenAuth: []
+      - sessionAuth: []
+        csrfAuth: []
+        csrfHeaderAuth: []
+      - basicAuth: []
+      responses:
+        '200':
+          content:
+            application/vnd.cvat+json:
+              schema:
+                $ref: '#/components/schemas/UpdatesIndex'
+          description: ''
+  /api/product-updates/acknowledge:
+    post:
+      operationId: product_updates_create_acknowledge
+      summary: Acknowledge displayed updates for the current user
+      tags:
+      - product-updates
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/UpdatesAcknowledgementRequest'
+      security:
+      - tokenAuth: []
+      - accessTokenAuth: []
+      - sessionAuth: []
+        csrfAuth: []
+        csrfHeaderAuth: []
+      - basicAuth: []
+      responses:
+        '200':
+          content:
+            application/vnd.cvat+json:
+              schema:
+                $ref: '#/components/schemas/UpdatesState'
+          description: ''
+  /api/product-updates/content:
+    get:
+      operationId: product_updates_retrieve_content
+      summary: Get a published release note or announcement body
+      parameters:
+      - in: query
+        name: id
+        schema:
+          type: string
+          minLength: 1
+          maxLength: 128
+        required: true
+      - in: query
+        name: kind
+        schema:
+          enum:
+          - release-notes
+          - announcements
+          type: string
+          minLength: 1
+        description: |-
+          * `release-notes` - release-notes
+          * `announcements` - announcements
+        required: true
+      tags:
+      - product-updates
+      security:
+      - tokenAuth: []
+      - accessTokenAuth: []
+      - sessionAuth: []
+        csrfAuth: []
+        csrfHeaderAuth: []
+      - basicAuth: []
+      responses:
+        '200':
+          content:
+            application/vnd.cvat+json:
+              schema:
+                $ref: '#/components/schemas/UpdatesContent'
+          description: ''
   /api/projects:
     get:
       operationId: projects_list
@@ -7202,91 +7287,6 @@ paths:
               schema:
                 $ref: '#/components/schemas/RqId'
           description: Import of the backup file has started
-  /api/updates:
-    get:
-      operationId: updates_list
-      summary: Get release notes, announcements and the current user's seen state
-      tags:
-      - updates
-      security:
-      - tokenAuth: []
-      - accessTokenAuth: []
-      - sessionAuth: []
-        csrfAuth: []
-        csrfHeaderAuth: []
-      - basicAuth: []
-      responses:
-        '200':
-          content:
-            application/vnd.cvat+json:
-              schema:
-                $ref: '#/components/schemas/UpdatesIndex'
-          description: ''
-  /api/updates/acknowledge:
-    post:
-      operationId: updates_create_acknowledge
-      summary: Acknowledge displayed updates for the current user
-      tags:
-      - updates
-      requestBody:
-        content:
-          application/json:
-            schema:
-              $ref: '#/components/schemas/UpdatesAcknowledgementRequest'
-      security:
-      - tokenAuth: []
-      - accessTokenAuth: []
-      - sessionAuth: []
-        csrfAuth: []
-        csrfHeaderAuth: []
-      - basicAuth: []
-      responses:
-        '200':
-          content:
-            application/vnd.cvat+json:
-              schema:
-                $ref: '#/components/schemas/UpdatesState'
-          description: ''
-  /api/updates/content:
-    get:
-      operationId: updates_retrieve_content
-      summary: Get a published release note or announcement body
-      parameters:
-      - in: query
-        name: id
-        schema:
-          type: string
-          minLength: 1
-          maxLength: 128
-        required: true
-      - in: query
-        name: kind
-        schema:
-          enum:
-          - release-notes
-          - announcements
-          type: string
-          minLength: 1
-        description: |-
-          * `release-notes` - release-notes
-          * `announcements` - announcements
-        required: true
-      tags:
-      - updates
-      security:
-      - tokenAuth: []
-      - accessTokenAuth: []
-      - sessionAuth: []
-        csrfAuth: []
-        csrfHeaderAuth: []
-      - basicAuth: []
-      responses:
-        '200':
-          content:
-            application/vnd.cvat+json:
-              schema:
-                $ref: '#/components/schemas/UpdatesContent'
-          description: ''
   /api/users:
     get:
       operationId: users_list
@@ -8248,7 +8248,7 @@ components:
         publishedAt:
           type: string
           format: date-time
-        popup:
+        announce:
           type: boolean
         editions:
           type: array
@@ -8276,10 +8276,10 @@ components:
           type: string
           format: uri
       required:
+      - announce
       - description
       - editions
       - id
-      - popup
       - publishedAt
       - source
       - title
@@ -14294,7 +14294,6 @@ components:
       properties:
         last_seen_release_notes_version:
           type: string
-          nullable: true
         last_seen_announcements_date:
           type: string
           format: date-time
@@ -14430,7 +14429,6 @@ components:
         last_seen_release_notes_version:
           type: string
           readOnly: true
-          nullable: true
         last_seen_announcements_date:
           type: string
           format: date-time

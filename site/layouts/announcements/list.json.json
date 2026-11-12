@@ -23,7 +23,7 @@
     "title" .Title
     "description" .Description
     "publishedAt" $published
-    "popup" (.Params.popup | default false)
+    "announce" (.Params.announce | default false)
     "editions" $editions
     "url" .Permalink
     "markdownURL" $markdown.Permalink

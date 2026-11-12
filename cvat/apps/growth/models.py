@@ -17,7 +17,7 @@ class UserGrowthData(models.Model):
     github_prompt_shown_at = models.DateTimeField(null=True, blank=True)
     github_prompt_support_clicked = models.BooleanField(default=False)
     promotion_notifications_allowed = models.BooleanField(default=True)
-    last_seen_release_notes_version = models.CharField(max_length=64, null=True)
+    last_seen_release_notes_version = models.CharField(max_length=64, blank=True, default="")
     last_seen_announcements_date = models.DateTimeField(null=True)
 
     @classmethod

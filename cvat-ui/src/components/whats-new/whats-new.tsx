@@ -87,7 +87,7 @@ export default function WhatsNew(props: Props): JSX.Element {
     ).length > 0;
     const latestAnnouncedRelease = updates?.releases.find((release) => release.announce);
     const unreadRelease = !!latestAnnouncedRelease && isNewVersion(
-        latestAnnouncedRelease.version, seen?.last_seen_release_notes_version || null,
+        latestAnnouncedRelease.version, seen?.last_seen_release_notes_version || '',
     );
     const ready = !!updates && !loading && !loadError;
     const hasContent = !!selectedRelease || announcements.length > 0;
@@ -143,7 +143,7 @@ export default function WhatsNew(props: Props): JSX.Element {
             isNewVersion(item.version, updates.state.last_seen_release_notes_version));
         const promoteAnnouncements = unseenAnnouncements(
             announcements, updates.state.last_seen_announcements_date,
-        ).some((item) => item.popup);
+        ).some((item) => item.announce);
         if (!release && !promoteAnnouncements) {
             automaticPopups.offer('whats-new', null);
             return;
@@ -164,7 +164,7 @@ export default function WhatsNew(props: Props): JSX.Element {
     useEffect(() => {
         if (!open || !ready || !openingSeen) return undefined;
         const values: { release_version?: string; announcements_seen_at?: string } = {};
-        if (selectedRelease && isNewVersion(selectedRelease.version, seen?.last_seen_release_notes_version || null)) {
+        if (selectedRelease && isNewVersion(selectedRelease.version, seen?.last_seen_release_notes_version || '')) {
             values.release_version = selectedRelease.version;
         }
         if (announcementsDate && unreadAnnouncements && canAcknowledgeAnnouncements) {

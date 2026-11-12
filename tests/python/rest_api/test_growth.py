@@ -35,7 +35,7 @@ class TestGrowthData:
             "last_seen_release_notes_version",
             "last_seen_announcements_date",
         }
-        assert growth_data["last_seen_release_notes_version"] is None
+        assert growth_data["last_seen_release_notes_version"] == ""
         assert growth_data["last_seen_announcements_date"] is None
         assert isinstance(growth_data["id"], int)
         assert growth_data["owner"]["id"] == user["id"]
