@@ -239,10 +239,6 @@ export const getModelPreviewAsync = (model: MLModel): ThunkAction => async (disp
         const result = await model.preview();
         dispatch(modelsActions.getModelPreviewSuccess(model.id, result || fallback || ''));
     } catch (error) {
-        if (fallback) {
-            dispatch(modelsActions.getModelPreviewSuccess(model.id, fallback));
-        } else {
-            dispatch(modelsActions.getModelPreviewFailed(model.id, error));
-        }
+        dispatch(modelsActions.getModelPreviewFailed(model.id, error));
     }
 };
