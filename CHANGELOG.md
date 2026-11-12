@@ -16,6 +16,26 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 <!-- scriv-insert-here -->
 
+<a id='changelog-2.83.0'></a>
+## \[2.83.0\] - 2026-11-12
+
+### Added
+
+- Page-scoped state retention for tables and filter builders, preserving filters,
+  search, sorting, column visibility, and pagination across remounts.
+  Enabled for the validation frame table on the quality control page.
+  (<https://github.com/cvat-ai/cvat/pull/11392>)
+
+- Requirement names in annotation quality conflict cards.
+  Names can also be shown in conflict tooltips by enabling
+  `Settings` → `Workspace` → `Show requirements in conflict tooltips` (turned off by default)
+  (<https://github.com/cvat-ai/cvat/pull/11423>)
+
+### Fixed
+
+- Unhandled Django exceptions are now included in server exception events
+  (<https://github.com/cvat-ai/cvat/pull/11384>)
+
 <a id='changelog-2.82.0'></a>
 ## \[2.82.0\] - 2026-11-05
 
