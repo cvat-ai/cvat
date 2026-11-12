@@ -947,3 +947,548 @@ kubectl delete \
 Deleting the old Bitnami PVC after its PV policy was changed to `Retain` leaves
 the PV and underlying storage for manual cleanup; remove them only when the old
 database and rollback path are no longer needed.
+
+# Migrate ClickHouse from Bitnami to Altinity
+
+This procedure applies to CVAT installations deployed with the Helm chart. It
+migrates the analytics database from the Bitnami ClickHouse chart to the
+[Altinity ClickHouse chart](https://github.com/Altinity/helm-charts) by creating
+a logical dump and restoring it into a new persistent volume claim (PVC).
+
+The migration requires downtime. Do not start it while imports, exports, or
+other background jobs are running. The procedure covers the standard CVAT
+analytics deployment with one ClickHouse shard, one replica, no Keeper or
+ZooKeeper, and the `cvat.events` table. Adapt and test it separately if the
+source installation has additional databases, tables, replicas, or custom
+ClickHouse configuration.
+
+The Altinity chart and the Altinity ClickHouse Operator are licensed under
+Apache-2.0.
+
+## Before you begin
+
+1. Back up all CVAT data as described in the
+   {{< ilink "/docs/administration/community/advanced/backup_guide" "backup guide" >}}.
+1. Confirm that the Kubernetes cluster is version 1.25 or later. Altinity
+   ClickHouse Operator 0.27 requires Kubernetes 1.25 or later.
+1. Keep the ClickHouse server version unchanged during the chart migration.
+   The example below migrates CVAT ClickHouse 23.12.2 to the upstream
+   `clickhouse/clickhouse-server:23.12.2.59` image. Upgrade ClickHouse in a
+   separate maintenance operation.
+1. Check the source database size and make sure that both the migration PVC and
+   the new ClickHouse PVC have enough free space. The supplied migration
+   manifest requests 20 GiB; increase it when necessary.
+1. Record every values file used by the current Helm release and its order. Use
+   the same files in every `helm upgrade` command below. Append both maintenance
+   values files, in the order shown, while maintenance mode is required.
+1. The migration pod manifest is available at
+   `cvat/helm-chart/clickhouse-migration/clickhouse-dump-pod.yaml`. It assumes
+   that the Helm release is named `cvat` and that the analytics secret is named
+   `cvat-analytics-secret`. If the deployment uses different names, update
+   `CLICKHOUSE_SOURCE_HOST`, `CLICKHOUSE_TARGET_HOST`, and the referenced secret
+   in that file before applying it.
+
+This guide uses the following environment variables:
+
+```shell
+export CVAT_NAMESPACE="cvat"
+export CVAT_RELEASE="cvat"
+export CLICKHOUSE_STS="${CVAT_RELEASE}-clickhouse-shard0"
+export CLICKHOUSE_POD="${CLICKHOUSE_STS}-0"
+export OLD_CLICKHOUSE_PVC="data-${CLICKHOUSE_STS}-0"
+export CLICKHOUSE_CHI="${CVAT_RELEASE}-clickhouse"
+export CLICKHOUSE_TARGET_SERVICE="clickhouse-${CLICKHOUSE_CHI}"
+export MIGRATION_POD="clickhouse-migration-dump"
+```
+
+The StatefulSet, pod, PVC, and ClickHouseInstallation names above are the
+defaults for the CVAT chart. Confirm the source names before continuing:
+
+```shell
+kubectl version
+kubectl get statefulset,pod,pvc,service --namespace "$CVAT_NAMESPACE"
+```
+
+## Put CVAT and Vector into maintenance mode
+
+Before changing `Chart.yaml`, the ClickHouse values, or the analytics secret,
+upgrade the existing release with the Bitnami ClickHouse chart still
+configured. First stop the CVAT frontend, backend server, initializer, and
+workers while leaving Vector running so that it can send any buffered events:
+
+```shell
+cd your_cvat_helm_chart_directory
+
+helm upgrade \
+  --namespace "$CVAT_NAMESPACE" \
+  "$CVAT_RELEASE" \
+  . \
+  -f your-cvat-values.yaml \
+  -f values-maintenance.yaml
+```
+
+Wait until the CVAT application pods have terminated. The Bitnami ClickHouse
+pod and the Vector pod must remain running. Check the Vector logs and wait for
+it to finish sending buffered events.
+
+Then stop Vector by applying the additional analytics maintenance values:
+
+```shell
+helm upgrade \
+  --namespace "$CVAT_NAMESPACE" \
+  "$CVAT_RELEASE" \
+  . \
+  -f your-cvat-values.yaml \
+  -f values-maintenance.yaml \
+  -f values-maintenance-analytics.yaml
+```
+
+Confirm that Vector has stopped and that the source ClickHouse pod remains
+ready:
+
+```shell
+kubectl get pod \
+  --namespace "$CVAT_NAMESPACE" \
+  "$CLICKHOUSE_POD"
+```
+
+Do not create the final dump until all analytics writers have stopped.
+
+## Create and verify the ClickHouse dump
+
+Apply the supplied migration manifest. It creates a temporary PVC and a
+ClickHouse client pod that exports the database and table definitions and saves
+the `events` table in ClickHouse Native format:
+
+```shell
+kubectl apply \
+  --namespace "$CVAT_NAMESPACE" \
+  -f clickhouse-migration/clickhouse-dump-pod.yaml
+
+kubectl wait \
+  --namespace "$CVAT_NAMESPACE" \
+  --for=condition=Ready \
+  "pod/$MIGRATION_POD" \
+  --timeout=30m
+```
+
+The pod becomes ready only after the dump has completed. Follow its logs:
+
+```shell
+kubectl logs \
+  --namespace "$CVAT_NAMESPACE" \
+  --follow "$MIGRATION_POD"
+```
+
+Wait for the following message, then stop following the logs with `Ctrl+C`:
+
+```text
+Dump saved to /backup/cvat
+```
+
+Do not continue if the pod reports an error. The manifest deliberately fails
+if `events` is not the only table in the `cvat` database; extend the dump and
+restore procedure before continuing in that case.
+
+Verify the checksums and record the source version, table list, and row
+statistics:
+
+```shell
+kubectl exec --namespace "$CVAT_NAMESPACE" "$MIGRATION_POD" -- \
+  /bin/bash -ec '
+    cd /backup/cvat
+    sha256sum -c SHA256SUMS
+    cat source-version.txt
+    cat source-tables.txt
+    cat source-statistics.tsv
+  '
+```
+
+The source version must be `23.12.2.59` when the target image shown in this
+guide is used. If it differs, stop and select the matching upstream ClickHouse
+image instead of changing the server version during the chart migration.
+
+Copy the dump to a machine with enough free disk space. Keep this independent
+copy even though the migration pod retains another copy on its PVC:
+
+```shell
+kubectl cp \
+  --namespace "$CVAT_NAMESPACE" \
+  "$MIGRATION_POD:/backup/cvat" \
+  ./clickhouse-migration-backup
+```
+
+## Protect the old ClickHouse volume
+
+Check the StatefulSet PVC retention policy. An empty result means that the
+Kubernetes default, `Retain`, applies:
+
+```shell
+kubectl get statefulset \
+  --namespace "$CVAT_NAMESPACE" \
+  "$CLICKHOUSE_STS" \
+  -o jsonpath='{.spec.persistentVolumeClaimRetentionPolicy}{"\n"}'
+```
+
+If either `whenDeleted` or `whenScaled` is `Delete`, change both values to
+`Retain` before replacing the Bitnami StatefulSet:
+
+```shell
+kubectl patch statefulset \
+  --namespace "$CVAT_NAMESPACE" \
+  "$CLICKHOUSE_STS" \
+  --type merge \
+  -p '{"spec":{"persistentVolumeClaimRetentionPolicy":{"whenDeleted":"Retain","whenScaled":"Retain"}}}'
+```
+
+Find the persistent volume (PV) bound to the old PVC and check its reclaim
+policy:
+
+```shell
+OLD_CLICKHOUSE_PV=$(kubectl get pvc \
+  --namespace "$CVAT_NAMESPACE" \
+  "$OLD_CLICKHOUSE_PVC" \
+  -o jsonpath='{.spec.volumeName}')
+
+kubectl get pv "$OLD_CLICKHOUSE_PV" \
+  -o jsonpath='{.spec.persistentVolumeReclaimPolicy}{"\n"}'
+```
+
+If the reclaim policy is `Delete`, change it to `Retain`:
+
+```shell
+kubectl patch pv "$OLD_CLICKHOUSE_PV" \
+  --type merge \
+  -p '{"spec":{"persistentVolumeReclaimPolicy":"Retain"}}'
+```
+
+The old PVC is not reused by Altinity. It is retained only as a rollback path.
+
+## Prepare the Altinity charts
+
+In the target CVAT version, replace the Bitnami ClickHouse dependency in
+`Chart.yaml` with the Altinity ClickHouse chart:
+
+```yaml
+- name: clickhouse
+  version: "0.3.13"
+  repository: https://helm.altinity.com
+  condition: clickhouse.enabled
+```
+
+The ClickHouse chart 0.3.13 includes Operator 0.27.2 as an optional dependency.
+Disable that dependency in the values and add Operator 0.27.4 as a separate
+top-level dependency:
+
+```yaml
+- name: altinity-clickhouse-operator
+  alias: clickhouse-operator
+  version: "0.27.4"
+  repository: https://helm.altinity.com
+  condition: clickhouse-operator.enabled
+```
+
+The alias is intentional. Use the same `clickhouse-operator` key for the
+corresponding top-level values.
+
+Update the chart dependencies and check the result:
+
+```shell
+helm dependency update
+helm dependency list
+```
+
+The dependency list must contain the Altinity `clickhouse` and
+`altinity-clickhouse-operator` charts with an `ok` status.
+
+Set the application hostname to the service created by the Operator:
+
+```yaml
+analytics:
+  clickhouseHost: "clickhouse-{{ .Release.Name }}-clickhouse"
+```
+
+Do not append `-service`. The Altinity chart uses a name ending in `-service`
+for the internal CHI service template, not for the resulting Kubernetes
+Service. By default, the Operator names the CHI-level Service
+`clickhouse-{chi}`. For a release named `cvat`, the ClickHouseInstallation is
+named `cvat-clickhouse`, so the target Service is
+`clickhouse-cvat-clickhouse`.
+
+Replace the Bitnami-specific ClickHouse values with the Altinity values:
+
+```yaml
+clickhouse:
+  enabled: true
+
+  # Operator 0.27.4 is installed as the separate dependency below.
+  operator:
+    enabled: false
+
+  clickhouse:
+    defaultUser:
+      password_secret_name: cvat-analytics-secret
+      allowExternalAccess: false
+      hostIP: 127.0.0.1/32
+
+    users:
+      - name: user
+        hostIP:
+          - 0.0.0.0/0
+        accessManagement: 1
+        password_secret_name: cvat-analytics-secret
+
+    shardsCount: 1
+    replicasCount: 1
+
+    image:
+      repository: clickhouse/clickhouse-server
+      tag: "23.12.2.59"
+      pullPolicy: IfNotPresent
+
+    persistence:
+      enabled: true
+      size: 1Gi
+      accessMode: ReadWriteOnce
+      storageClass: ""
+      logs:
+        enabled: false
+
+  keeper:
+    enabled: false
+
+clickhouse-operator:
+  enabled: true
+```
+
+Set `persistence.size` and, when required, `persistence.storageClass` for the
+target cluster. These values create a new PVC; do not configure the old
+Bitnami claim as an existing claim.
+
+The `defaultUser` block configures the built-in ClickHouse `default` user and
+restricts it to localhost. The `users` block explicitly recreates the `user`
+account previously configured through Bitnami `auth.username`. It uses the
+same password as the existing CVAT deployment. Credential rotation and
+permission hardening should be performed separately after the migration.
+
+## Extend the analytics secret
+
+The Altinity chart expects the referenced password secret to contain a key
+named `password`. Add that key to
+`templates/analytics/cvat-analytics-secret.yml` while retaining the existing
+uppercase keys used by CVAT, Vector, and Grafana:
+
+```yaml
+stringData:
+  CLICKHOUSE_DB: {{ .Values.analytics.clickhouseDb }}
+  CLICKHOUSE_USER: {{ .Values.analytics.clickhouseUser }}
+  CLICKHOUSE_PASSWORD: {{ .Values.analytics.clickhousePassword }}
+  CLICKHOUSE_HOST: {{ tpl (.Values.analytics.clickhouseHost) . }}
+  CLICKHOUSE_PORT: {{ .Values.analytics.clickhousePort | quote }}
+  password: {{ .Values.analytics.clickhousePassword | quote }}
+```
+
+Do not create a second application credentials secret. The standard analytics
+secret is immutable, so it must be deleted immediately before the Helm upgrade
+and recreated by Helm with the additional key. Do not delete it before the
+dump has been verified.
+
+## Install the Altinity CRDs
+
+Install the Operator CRDs before the first Helm upgrade. The archives below
+are downloaded by `helm dependency update`:
+
+```shell
+for crd in \
+  CustomResourceDefinition-clickhouseinstallations.clickhouse.altinity.com.yaml \
+  CustomResourceDefinition-clickhouseinstallationtemplates.clickhouse.altinity.com.yaml \
+  CustomResourceDefinition-clickhousekeeperinstallations.clickhouse-keeper.altinity.com.yaml \
+  CustomResourceDefinition-clickhouseoperatorconfigurations.clickhouse.altinity.com.yaml
+do
+  tar -xOzf ./charts/altinity-clickhouse-operator-0.27.4.tgz \
+    "altinity-clickhouse-operator/crds/${crd}" \
+    | kubectl apply --server-side -f -
+done
+```
+
+Verify that all four CRDs are registered:
+
+```shell
+kubectl get crd | grep -E \
+  'clickhouseinstallations|clickhouseinstallationtemplates|clickhousekeeperinstallations|clickhouseoperatorconfigurations'
+```
+
+## Install Altinity ClickHouse
+
+Delete the immutable analytics secret:
+
+```shell
+kubectl delete secret \
+  --namespace "$CVAT_NAMESPACE" \
+  cvat-analytics-secret
+```
+
+The running migration pod retains the environment variables that it read from
+the old secret. Install the new charts while keeping CVAT and Vector in
+maintenance mode:
+
+```shell
+helm upgrade \
+  --namespace "$CVAT_NAMESPACE" \
+  "$CVAT_RELEASE" \
+  . \
+  -f your-cvat-values.yaml \
+  -f values-maintenance.yaml \
+  -f values-maintenance-analytics.yaml \
+  --wait \
+  --timeout 20m
+```
+
+Confirm that the Operator is ready, then watch the ClickHouseInstallation until
+its status is `Completed`:
+
+```shell
+kubectl get crd | grep clickhouse
+kubectl get deployment,pod --namespace "$CVAT_NAMESPACE"
+kubectl get clickhouseinstallation \
+  --namespace "$CVAT_NAMESPACE" \
+  "$CLICKHOUSE_CHI" \
+  --watch
+```
+
+After the installation has completed, verify the new service, pods, and PVCs:
+
+```shell
+kubectl get clickhouseinstallation,service,pod,pvc \
+  --namespace "$CVAT_NAMESPACE"
+
+kubectl get service \
+  --namespace "$CVAT_NAMESPACE" \
+  "$CLICKHOUSE_TARGET_SERVICE"
+
+kubectl get pvc \
+  --namespace "$CVAT_NAMESPACE" \
+  "$OLD_CLICKHOUSE_PVC"
+```
+
+Do not continue if the new service is not ready or if the old Bitnami PVC is
+missing.
+
+## Restore and verify the ClickHouse data
+
+Connect to the migration pod, which contains the dump and the target service
+hostname:
+
+```shell
+kubectl exec \
+  --namespace "$CVAT_NAMESPACE" \
+  -it "$MIGRATION_POD" -- \
+  /bin/bash
+```
+
+Inside the migration pod, verify the dump and create a client command for the
+new ClickHouse server:
+
+```shell
+cd /backup/cvat
+sha256sum -c SHA256SUMS
+
+target_client=(
+    clickhouse-client
+    --host "$CLICKHOUSE_TARGET_HOST"
+    --port "$CLICKHOUSE_NATIVE_PORT"
+    --user "$CLICKHOUSE_USER"
+    --password "$CLICKHOUSE_PASSWORD"
+)
+
+"${target_client[@]}" --query "SELECT version()"
+```
+
+The target version must match `source-version.txt`. Confirm that the target
+database does not exist before restoring it:
+
+```shell
+"${target_client[@]}" \
+    --query "EXISTS DATABASE ${CLICKHOUSE_DB}"
+```
+
+The command must return `0`. If it returns `1`, stop and investigate. The
+restore is intended for a new empty ClickHouse installation and must not be
+run twice.
+
+Restore the database definition, table definition, and data:
+
+```shell
+"${target_client[@]}" --multiquery < database.sql
+"${target_client[@]}" --multiquery < events.sql
+
+"${target_client[@]}" \
+    --query "INSERT INTO ${CLICKHOUSE_DB}.events FORMAT Native" \
+    < events.native
+```
+
+Record the target statistics and compare them with the source statistics:
+
+```shell
+"${target_client[@]}" \
+    --query "
+        SELECT
+            count() AS rows,
+            min(timestamp) AS min_timestamp,
+            max(timestamp) AS max_timestamp
+        FROM ${CLICKHOUSE_DB}.events
+        FORMAT TSVWithNames
+    " > target-statistics.tsv
+
+diff -u source-statistics.tsv target-statistics.tsv
+
+"${target_client[@]}" \
+    --query "CHECK TABLE ${CLICKHOUSE_DB}.events"
+
+exit
+```
+
+Do not bring CVAT back online if the statistics differ or `CHECK TABLE` does
+not succeed.
+
+## Bring CVAT back online
+
+Run the upgrade again without either maintenance values file. Keep every other
+values file and its order unchanged:
+
+```shell
+helm upgrade \
+  --namespace "$CVAT_NAMESPACE" \
+  "$CVAT_RELEASE" \
+  . \
+  -f your-cvat-values.yaml \
+  --wait \
+  --timeout 20m
+```
+
+The CVAT ClickHouse initializer is idempotent. It was disabled during the
+restore by `values-maintenance.yaml`; after maintenance mode is removed, it
+checks the restored schema and applies only any missing CVAT migrations.
+
+Wait for all CVAT workloads and Vector to become ready. Check the backend,
+initializer, Vector, ClickHouse, and Operator logs for errors. Verify login,
+perform a small read/write operation such as creating a task and an export,
+then confirm that new analytics events appear in `cvat.events`.
+
+Keep the local dump, the migration PVC, and the old Bitnami ClickHouse PVC and
+PV until all checks have passed and the normal backup policy has produced a
+new verified backup. The retained old volume is the rollback path; do not
+delete it merely because the new ClickHouse pod is ready.
+
+After the migration has been fully validated, the migration pod and PVC can be
+removed:
+
+```shell
+kubectl delete \
+  --namespace "$CVAT_NAMESPACE" \
+  -f clickhouse-migration/clickhouse-dump-pod.yaml
+```
+
+Deleting the old Bitnami PVC after its PV policy was changed to `Retain` leaves
+the PV and underlying storage for manual cleanup. Remove the old PVC, PV, and
+local dump only when the migration and rollback window are complete.

@@ -12,4 +12,4 @@ Pillow==13.0.0
 pyyaml==6.0.2
 numpy==2.3.2; python_version >= "3.14"
 numpy==2.0.0; python_version < "3.14"
-librosa==0.11.0
+soundfile==0.14.0
