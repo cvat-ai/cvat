@@ -54,8 +54,7 @@ def tus_server():
                 metadata = {
                     key: base64.b64decode(value).decode()
                     for key, value in (
-                        field.split(" ", 1)
-                        for field in self.headers["Upload-Metadata"].split(",")
+                        field.split(" ", 1) for field in self.headers["Upload-Metadata"].split(",")
                     )
                 }
                 state["uploads"].append(
