@@ -4,7 +4,7 @@
 
 import * as THREE from 'three';
 
-import { isFiniteMatrix, isFiniteVector } from './utils';
+import { isFiniteMatrixOfShape, isFiniteVector } from './utils';
 
 export interface CameraCalibration {
     intrinsicMatrix: number[][];
@@ -23,8 +23,8 @@ export function cameraRayFromImagePoint(
     if (
         !Number.isFinite(pixel[0]) ||
         !Number.isFinite(pixel[1]) ||
-        !isFiniteMatrix(intrinsicMatrix, 3, 3) ||
-        !isFiniteMatrix(extrinsicMatrix, 3, 4)
+        !isFiniteMatrixOfShape(intrinsicMatrix, 3, 3) ||
+        !isFiniteMatrixOfShape(extrinsicMatrix, 3, 4)
     ) {
         return null;
     }
@@ -33,6 +33,7 @@ export function cameraRayFromImagePoint(
         ...(intrinsicMatrix.flat() as Parameters<THREE.Matrix3['set']>),
     );
     if (Math.abs(cameraIntrinsic.determinant()) < Number.EPSILON) {
+        // Singular intrinsic matrix, cannot be inverted to compute ray
         return null;
     }
 

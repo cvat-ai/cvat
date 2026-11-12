@@ -36,7 +36,7 @@ import {
 import ConsensusSettings from 'cvat-core/src/consensus-settings';
 import ApiToken from 'cvat-core/src/api-token';
 import { FramesMetaData, FrameData } from 'cvat-core/src/frames';
-import type { RelatedImageMetadata } from 'cvat-core/src/frames';
+import type { CalibratedRelatedImageMetadata } from 'cvat-core/src/frames';
 import { ServerError, RequestError } from 'cvat-core/src/exceptions';
 import {
     ShapeType, ObjectType, LabelType, ModelKind, ModelProviders, HistoryActions,
@@ -180,5 +180,5 @@ export type {
     SerializedImageFilter,
     SerializedInterval,
     WebhookEvent,
-    RelatedImageMetadata,
+    CalibratedRelatedImageMetadata,
 };

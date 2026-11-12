@@ -26,7 +26,7 @@ import {
     getDataFailed,
     canvasErrorOccurred,
     collapseObjectItems,
-    removeFrameCameraRays,
+    clearCurrentFrameCameraRays,
 } from 'actions/annotation-actions';
 import {
     ActiveControl, ColorBy, CombinedState, ContextMenuType,
@@ -35,7 +35,7 @@ import {
 import getHiddenZLayers from 'utils/get-hidden-z-layers';
 import { shallowEqual } from 'utils/redux';
 import {
-    cameraRayFromImagePoint, hasCalibration,
+    cameraRayFromImagePoint,
     OrientationVisibility, CameraAction, Canvas3d, ViewsDOM,
     CameraRayData,
 } from 'cvat-canvas3d-wrapper';
@@ -216,7 +216,7 @@ function mapStateToProps(state: CombinedState): StateToProps {
         hiddenZLayers: getHiddenZLayers(state),
         frameFetching,
         frame,
-        cameraRayPoints: cameraRays[frame] || EMPTY_CAMERA_RAY_POINTS,
+        cameraRayPoints: cameraRays[frame]?.length ? cameraRays[frame] : EMPTY_CAMERA_RAY_POINTS,
         opacity,
         colorBy,
         selectedOpacity,
@@ -308,7 +308,6 @@ export const PerspectiveViewComponent = React.memo(
             activatedStateID,
             hiddenZLayers,
             cameraRayCount,
-            frame,
         } = useSelector((state: CombinedState) => ({
             canvas: state.annotation.canvas.instance as Canvas3d,
             canvasIsReady: state.annotation.canvas.ready,
@@ -501,12 +500,14 @@ export const PerspectiveViewComponent = React.memo(
 
             return (
                 <div className='cvat-canvas3d-perspective-tools-group'>
-                    <Button
-                        size='small'
-                        onClick={() => dispatch(removeFrameCameraRays(frame))}
-                    >
-                        Clear {cameraRayCount} {cameraRayCount === 1 ? 'ray' : 'rays'}
-                    </Button>
+                    <CVATTooltip title='Remove all camera rays for the current frame.'>
+                        <Button
+                            size='small'
+                            onClick={() => dispatch(clearCurrentFrameCameraRays())}
+                        >
+                            Remove all rays
+                        </Button>
+                    </CVATTooltip>
                 </div>
             );
         }
@@ -651,7 +652,7 @@ const Canvas3DWrapperComponent = React.memo((props: Props): null => {
     } = props;
 
     const { canvasInstance } = props as { canvasInstance: Canvas3d };
-    const relatedImagesMetadata = frameData?.relatedImagesMetadata;
+    const calibratedRelatedImagesMetadata = frameData?.calibratedRelatedImagesMetadata;
 
     const onCanvasSetup = (): void => {
         onSetupCanvas();
@@ -915,17 +916,17 @@ const Canvas3DWrapperComponent = React.memo((props: Props): null => {
     ]);
 
     useEffect(() => {
-        if (!relatedImagesMetadata) {
+        if (!calibratedRelatedImagesMetadata) {
             canvasInstance.setCameraRays([]);
             return;
         }
 
         const cameraRays = cameraRayPoints.reduce<CameraRayData[]>((rays, cameraRayPoint) => {
             const metadata = getRelatedImageMetadata(
-                relatedImagesMetadata,
+                calibratedRelatedImagesMetadata,
                 cameraRayPoint.relatedImageName,
             );
-            if (!metadata || !hasCalibration(metadata)) {
+            if (!metadata) {
                 return rays;
             }
 
@@ -937,7 +938,7 @@ const Canvas3DWrapperComponent = React.memo((props: Props): null => {
             return rays;
         }, []);
         canvasInstance.setCameraRays(cameraRays);
-    }, [cameraRayPoints, relatedImagesMetadata]);
+    }, [cameraRayPoints, calibratedRelatedImagesMetadata]);
 
     return null;
 });

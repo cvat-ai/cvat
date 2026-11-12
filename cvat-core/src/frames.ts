@@ -345,7 +345,7 @@ export class FramesMetaData {
     }
 }
 
-export type RelatedImageMetadata = CamelizedV2<SerializedRelatedImageMetadata>;
+export type CalibratedRelatedImageMetadata = Required<CamelizedV2<SerializedRelatedImageMetadata>>;
 
 export class FrameData {
     public readonly filename: string;
@@ -353,7 +353,7 @@ export class FrameData {
     public readonly height: number;
     public readonly number: number;
     public readonly relatedFiles: number;
-    public readonly relatedImagesMetadata: RelatedImageMetadata[];
+    public readonly calibratedRelatedImagesMetadata: CalibratedRelatedImageMetadata[];
     public readonly deleted: boolean;
     public readonly jobID: number;
 
@@ -367,7 +367,7 @@ export class FrameData {
         related_files: relatedFiles,
         related_files_metadata: relatedFilesMetadata = [],
     }) {
-        const calibratedRelatedImagesMetadata = relatedFilesMetadata
+        const calibratedRelatedImagesMetadata: CalibratedRelatedImageMetadata[] = relatedFilesMetadata
             .filter(
                 (metadata): metadata is Required<SerializedRelatedImageMetadata> => (
                     metadata.type === 'related_image' &&
@@ -377,6 +377,7 @@ export class FrameData {
             )
             .map((metadata) => ({
                 name: metadata.name,
+                type: metadata.type,
                 intrinsicMatrix: metadata.intrinsic_matrix,
                 extrinsicMatrix: metadata.extrinsic_matrix,
             }));
@@ -408,7 +409,7 @@ export class FrameData {
                     value: relatedFiles,
                     writable: false,
                 },
-                relatedImagesMetadata: {
+                calibratedRelatedImagesMetadata: {
                     value: calibratedRelatedImagesMetadata,
                     writable: false,
                 },

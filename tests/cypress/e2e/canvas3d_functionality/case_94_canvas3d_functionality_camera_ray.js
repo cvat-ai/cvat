@@ -56,7 +56,7 @@ context('Canvas 3D functionality. Camera ray.', () => {
 
             addCameraRay(1, 0.75, 0.75);
             getCameraRayMarkers(1).should('have.length', 1);
-            cy.contains(clearCameraRaysButton, 'Clear 2 rays').should('be.visible');
+            cy.contains(clearCameraRaysButton, 'Remove all rays').should('be.visible');
             cy.customScreenshot('.cvat-canvas3d-perspective', 'canvas3d_perspective_with_two_camera_rays');
             cy.compareImagesAndCheckResult(
                 `${screenshotsPath}/canvas3d_perspective_with_one_camera_ray.png`,
@@ -66,7 +66,7 @@ context('Canvas 3D functionality. Camera ray.', () => {
             getCameraRayMarkers(0).click();
             getCameraRayMarkers(0).should('not.exist');
             getCameraRayMarkers(1).should('have.length', 1);
-            cy.contains(clearCameraRaysButton, 'Clear 1 ray').should('be.visible');
+            cy.contains(clearCameraRaysButton, 'Remove all rays').should('be.visible');
 
             addCameraRay(1, 0.25, 0.25);
             getCameraRayMarkers(1).should('have.length', 2).first().click({ shiftKey: true });
@@ -75,7 +75,7 @@ context('Canvas 3D functionality. Camera ray.', () => {
 
             addCameraRay(0, 0.5, 0.5);
             addCameraRay(1, 0.5, 0.5);
-            cy.contains(clearCameraRaysButton, 'Clear 2 rays').click();
+            cy.contains(clearCameraRaysButton, 'Remove all rays').click();
             getCameraRayMarkers(0).should('not.exist');
             getCameraRayMarkers(1).should('not.exist');
             cy.get(clearCameraRaysButton).should('not.exist');

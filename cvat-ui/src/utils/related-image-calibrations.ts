@@ -2,7 +2,7 @@
 //
 // SPDX-License-Identifier: MIT
 
-import type { RelatedImageMetadata } from 'cvat-core-wrapper';
+import type { CalibratedRelatedImageMetadata } from 'cvat-core-wrapper';
 
 function getPathWithoutExtension(path: string, segmentsToKeep: number): string {
     const pathSegments = path.split('/');
@@ -15,16 +15,16 @@ function getPathWithoutExtension(path: string, segmentsToKeep: number): string {
 }
 
 /**
- * Finds the related image metadata that matches the given related image name.
- * @param relatedImageMetas - An array of related image metadata.
+ * Finds the calibrated related image metadata that matches the given related image name.
+ * @param relatedImageMetas - An array of calibrated related image metadata.
  * @param relatedImageName - The name of the related image to match against.
  * It's a relative path that may contain folders.
- * @returns The matching related image metadata, or null if no match is found.
+ * @returns The matching calibrated related image metadata, or null if no match is found.
  */
 export function getRelatedImageMetadata(
-    relatedImageMetas: RelatedImageMetadata[],
+    relatedImageMetas: CalibratedRelatedImageMetadata[],
     relatedImageName: string,
-): RelatedImageMetadata | null {
+): CalibratedRelatedImageMetadata | null {
     // relatedImageName is taken from the zip layout.
     // Backend strips common path and extension from all related images for a frame before creating the zip:
     // https://github.com/cvat-ai/cvat/blob/4f1086ea8c8f2ebf788b4714b04c206a155de6e7/cvat/apps/engine/cache.py#L738-L744

@@ -6,10 +6,11 @@ import React, { useCallback, useMemo } from 'react';
 import { useDispatch, useSelector } from 'react-redux';
 import notification from 'antd/lib/notification';
 
+import CVATTooltip from 'components/common/cvat-tooltip';
 import {
     addCameraRayFromContextImagePoint,
     removeCameraRay,
-    removeCameraRaysFromContextImage,
+    clearContextImageCameraRays,
 } from 'actions/annotation-actions';
 import { CombinedState } from 'reducers';
 import type { CameraRayPoint } from 'reducers';
@@ -28,6 +29,13 @@ interface CameraRayInteraction {
     onMarkerClick(id: string, removeAll: boolean): void;
 }
 
+const cameraRayMarkerTooltip = (
+    <>
+        <div>Click to clear the ray.</div>
+        <div>Shift+click to clear all rays on this image.</div>
+    </>
+);
+
 export default function useCameraRay({ contextImage, contextImageName }: Params): CameraRayInteraction {
     const dispatch = useDispatch<ThunkDispatch>();
     const cameraRays = useSelector((state: CombinedState): CameraRayPoint[] => (
@@ -43,11 +51,15 @@ export default function useCameraRay({ contextImage, contextImageName }: Params)
             type: 'camera-ray',
             className: 'cvat-context-image-camera-ray-marker',
             render: (scale): JSX.Element => (
-                <CameraRayMarker
-                    point={cameraRay.pixel}
-                    scale={scale}
-                    color={cameraRay.color}
-                />
+                <CVATTooltip title={cameraRayMarkerTooltip} mouseEnterDelay={0.5}>
+                    <g>
+                        <CameraRayMarker
+                            point={cameraRay.pixel}
+                            scale={scale}
+                            color={cameraRay.color}
+                        />
+                    </g>
+                </CVATTooltip>
             ),
         }));
     }, [cameraRays, contextImageName]);
@@ -67,7 +79,7 @@ export default function useCameraRay({ contextImage, contextImageName }: Params)
 
     const onMarkerClick = useCallback((id: string, removeAll: boolean): void => {
         if (removeAll && contextImageName) {
-            dispatch(removeCameraRaysFromContextImage(contextImageName));
+            dispatch(clearContextImageCameraRays(contextImageName));
             return;
         }
 

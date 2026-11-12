@@ -8,9 +8,7 @@ import { ThunkAction, ThunkDispatch } from 'utils/redux';
 import isAbleToChangeFrame from 'utils/is-able-to-change-frame';
 import getHiddenZLayers from 'utils/get-hidden-z-layers';
 import { getRelatedImageMetadata } from 'utils/related-image-calibrations';
-import {
-    cameraRayFromImagePoint, hasCalibration, CanvasMode as Canvas3DMode,
-} from 'cvat-canvas3d-wrapper';
+import { cameraRayFromImagePoint, CanvasMode as Canvas3DMode } from 'cvat-canvas3d-wrapper';
 import {
     RectDrawingMethod, CuboidDrawingMethod, Canvas, CanvasMode as Canvas2DMode, CanvasHistorySource,
     finalizePastedShapePoints,
@@ -107,6 +105,9 @@ export enum AnnotationActionTypes {
 
     UPDATE_ACTIVE_CONTROL = 'UPDATE_ACTIVE_CONTROL',
     UPDATE_CAMERA_RAYS = 'UPDATE_CAMERA_RAYS',
+    REMOVE_CAMERA_RAY = 'REMOVE_CAMERA_RAY',
+    CLEAR_CONTEXT_IMAGE_CAMERA_RAYS = 'CLEAR_CONTEXT_IMAGE_CAMERA_RAYS',
+    CLEAR_CURRENT_FRAME_CAMERA_RAYS = 'CLEAR_CURRENT_FRAME_CAMERA_RAYS',
 
     COPY_SHAPE = 'COPY_SHAPE',
     PASTE_SHAPE = 'PASTE_SHAPE',
@@ -1607,16 +1608,16 @@ export function addCameraRayFromContextImagePoint(
         const { number: frame, data: frameData } = state.annotation.player.frame;
         const cameraRays = state.annotation.canvas.cameraRays[frame] || [];
 
-        const relatedImagesMetadata = frameData?.relatedImagesMetadata;
-        if (!relatedImagesMetadata || !relatedImagesMetadata.length) {
+        const calibratedRelatedImagesMetadata = frameData?.calibratedRelatedImagesMetadata;
+        if (!calibratedRelatedImagesMetadata || !calibratedRelatedImagesMetadata.length) {
             return false;
         }
 
         const meta = getRelatedImageMetadata(
-            relatedImagesMetadata,
+            calibratedRelatedImagesMetadata,
             relatedImageName,
         );
-        if (!meta || !hasCalibration(meta)) {
+        if (!meta) {
             return false;
         }
 
@@ -1625,14 +1626,14 @@ export function addCameraRayFromContextImagePoint(
             return false;
         }
 
-        const relatedImageIndex = relatedImagesMetadata.indexOf(meta);
+        const relatedImageIndex = calibratedRelatedImagesMetadata.indexOf(meta);
         const color = cvat.enums.colors[relatedImageIndex % cvat.enums.colors.length];
         dispatch({
             type: AnnotationActionTypes.UPDATE_CAMERA_RAYS,
             payload: {
                 frame,
                 cameraRays: [...cameraRays, {
-                    id: `camera-ray:${frame}:${Date.now()}:${Math.random()}`,
+                    id: `camera-ray:${crypto.randomUUID()}`,
                     color,
                     relatedImageName,
                     pixel,
@@ -1644,57 +1645,27 @@ export function addCameraRayFromContextImagePoint(
     };
 }
 
-export function removeCameraRay(id: string): ThunkAction {
-    return async (dispatch: ThunkDispatch, getState: () => CombinedState): Promise<void> => {
-        const state = getState();
-        const { number: frame } = state.annotation.player.frame;
-        const cameraRays = state.annotation.canvas.cameraRays[frame] || [];
-        const remainingCameraRays = cameraRays.filter((cameraRay) => cameraRay.id !== id);
-
-        if (remainingCameraRays.length === cameraRays.length) {
-            return;
-        }
-
-        dispatch({
-            type: AnnotationActionTypes.UPDATE_CAMERA_RAYS,
-            payload: {
-                frame,
-                cameraRays: remainingCameraRays,
-            },
-        });
-    };
-}
-
-export function removeCameraRaysFromContextImage(relatedImageName: string): ThunkAction {
-    return async (dispatch: ThunkDispatch, getState: () => CombinedState): Promise<void> => {
-        const state = getState();
-        const { number: frame } = state.annotation.player.frame;
-        const cameraRays = state.annotation.canvas.cameraRays[frame] || [];
-        const remainingCameraRays = cameraRays.filter((cameraRay) => (
-            cameraRay.relatedImageName !== relatedImageName
-        ));
-
-        if (remainingCameraRays.length === cameraRays.length) {
-            return;
-        }
-
-        dispatch({
-            type: AnnotationActionTypes.UPDATE_CAMERA_RAYS,
-            payload: {
-                frame,
-                cameraRays: remainingCameraRays,
-            },
-        });
-    };
-}
-
-export function removeFrameCameraRays(frame: number): AnyAction {
+export function removeCameraRay(id: string): AnyAction {
     return {
-        type: AnnotationActionTypes.UPDATE_CAMERA_RAYS,
+        type: AnnotationActionTypes.REMOVE_CAMERA_RAY,
         payload: {
-            frame,
-            cameraRays: [],
+            id,
         },
+    };
+}
+
+export function clearContextImageCameraRays(relatedImageName: string): AnyAction {
+    return {
+        type: AnnotationActionTypes.CLEAR_CONTEXT_IMAGE_CAMERA_RAYS,
+        payload: {
+            relatedImageName,
+        },
+    };
+}
+
+export function clearCurrentFrameCameraRays(): AnyAction {
+    return {
+        type: AnnotationActionTypes.CLEAR_CURRENT_FRAME_CAMERA_RAYS,
     };
 }
 

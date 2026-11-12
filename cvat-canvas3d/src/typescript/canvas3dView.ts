@@ -18,6 +18,7 @@ import {
     createCuboidEdges, removeCuboidEdges, CuboidModel, makeCornerPointsMatrix,
 } from './cuboid';
 import { ObjectState, ObjectType } from '.';
+import { ThickArrowHelper } from './thickArrowHelper';
 import { disposeObject3D, disposeScene } from './utils';
 
 export interface Canvas3dView {
@@ -130,7 +131,7 @@ export class Canvas3dViewImpl implements Canvas3dView, Listener {
         cuboid: CuboidModel;
     }>;
     private hoverNeedsUpdate: boolean;
-    private cameraRayHelpers: THREE.ArrowHelper[];
+    private cameraRayHelpers: ThickArrowHelper[];
 
     public focusObjectByClientId(clientID: number, animate: boolean = true): void {
         const cuboidModel = this.drawnObjects[clientID];
@@ -1675,19 +1676,22 @@ export class Canvas3dViewImpl implements Canvas3dView, Listener {
         this.cameraRayHelpers = [];
 
         const rayLength = Math.max(this.sceneBBox.getSize(new THREE.Vector3()).length(), 20);
-        const headLength = Math.min(rayLength * 0.1, 2);
-        const headWidth = Math.min(rayLength * 0.05, 1);
+        const headLength = 2;
+        const headWidth = 1;
 
         ALL_VIEWS.forEach((view: ViewType): void => {
             cameraRays.forEach(({ ray, color }): void => {
-                const cameraRayHelper = new THREE.ArrowHelper(
+                const cameraRayHelper = new ThickArrowHelper(
                     ray.direction,
                     ray.origin,
                     rayLength,
                     color,
                     headLength,
                     headWidth,
+                    2,
+                    this.views[view].renderer.getDrawingBufferSize(new THREE.Vector2()),
                 );
+
                 this.views[view].scene.add(cameraRayHelper);
                 this.cameraRayHelpers.push(cameraRayHelper);
             });
@@ -1986,6 +1990,11 @@ export class Canvas3dViewImpl implements Canvas3dView, Listener {
             }
 
             view.renderer.setSize(width, height);
+            this.cameraRayHelpers.forEach((cameraRayHelper) => {
+                if (cameraRayHelper.parent === view.scene) {
+                    cameraRayHelper.setResolution(renderer.getDrawingBufferSize(new THREE.Vector2()));
+                }
+            });
             view.camera.updateProjectionMatrix();
         }
     }
