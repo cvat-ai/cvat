@@ -21,6 +21,10 @@ env:
 jobs:
   search_cache:
     if: |
+      (
+        vars.SKIP_DEPENDABOT_CI != 'true' ||
+        github.event.pull_request.user.login != 'dependabot[bot]'
+      ) &&
       github.event.pull_request.draft == false &&
       !startsWith(github.event.pull_request.title, '[WIP]') &&
       !startsWith(github.event.pull_request.title, '[Dependent]')
