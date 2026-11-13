@@ -401,7 +401,7 @@ that can (_Code Complete_, "Defensive Programming").
 - **When proposing a design**, list the alternatives with their downsides,
   quantify where possible, and state uncertainty explicitly.
 
-## 10. CVAT agreements
+## 10. CVAT conventions
 
 ### Server
 
