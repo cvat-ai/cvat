@@ -6,7 +6,8 @@ import React, { useEffect, useRef, useState } from 'react';
 import { ArrowUpOutlined, NotificationOutlined } from '@ant-design/icons';
 import Button from 'antd/lib/button';
 import Carousel, { CarouselRef } from 'antd/lib/carousel';
-import { Announcement, announcementKey, getContentURL } from './feed';
+import Typography from 'antd/lib/typography';
+import { Announcement, announcementKey } from './feed';
 
 function CarouselArrow({
     label, className, style, onClick,
@@ -35,8 +36,7 @@ export default function AnnouncementCarousel({ items, newKeys }: {
     if (!items.length) return null;
 
     const renderMedia = (item: Announcement, active: boolean): JSX.Element => {
-        const imageURL = getContentURL(item.imageURL || '');
-        const videoURL = getContentURL(item.videoURL || '');
+        const { imageURL, videoURL } = item;
         if (active && videoURL && !failedVideos.has(videoURL)) {
             return (
                 <video
@@ -117,13 +117,17 @@ export default function AnnouncementCarousel({ items, newKeys }: {
                                 tabIndex={index === activeIndex ? 0 : -1}
                             >
                                 <div className='cvat-updates-labels'>
-                                    <span className='cvat-updates-eyebrow'>{item.label || 'Announcement'}</span>
+                                    <Typography.Text className='cvat-updates-eyebrow'>
+                                        {item.label || 'Announcement'}
+                                    </Typography.Text>
                                     {newKeys.has(announcementKey(item)) && (
-                                        <span className='cvat-updates-new-badge'>New</span>
+                                        <Typography.Text className='cvat-updates-new-badge'>New</Typography.Text>
                                     )}
                                 </div>
-                                <h2>{item.title}</h2>
-                                <p>{item.description}</p>
+                                <Typography.Title level={2}>{item.title}</Typography.Title>
+                                <Typography.Paragraph className='cvat-updates-announcement-description'>
+                                    {item.description}
+                                </Typography.Paragraph>
                                 <Button
                                     className='cvat-updates-action cvat-updates-explore-button'
                                     type='primary'

@@ -2,8 +2,9 @@
 //
 // SPDX-License-Identifier: MIT
 
-import React, { useRef } from 'react';
+import React from 'react';
 import { ArrowUpOutlined } from '@ant-design/icons';
+import Typography from 'antd/lib/typography';
 import { ReleaseNote } from './feed';
 
 export default function ReleaseSummary({ release, isNew = false }: {
@@ -11,7 +12,6 @@ export default function ReleaseSummary({ release, isNew = false }: {
     isNew?: boolean;
 }): JSX.Element {
     const highlights = release.highlights?.length ? release.highlights : [release.description];
-    const highlightsRegion = useRef<HTMLDivElement>(null);
 
     return (
         <section className='cvat-updates-release-panel' aria-label={`Release notes for CVAT ${release.version}`}>
@@ -29,46 +29,29 @@ export default function ReleaseSummary({ release, isNew = false }: {
                         event.preventDefault();
                     }
                 }}
-                onKeyDown={(event) => {
-                    const region = highlightsRegion.current;
-                    if (!region || region.scrollHeight <= region.clientHeight ||
-                        event.altKey || event.ctrlKey || event.metaKey || event.shiftKey) return;
-                    const offsets: Record<string, number> = {
-                        ArrowDown: 40,
-                        ArrowUp: -40,
-                        PageDown: region.clientHeight,
-                        PageUp: -region.clientHeight,
-                        Home: -region.scrollHeight,
-                        End: region.scrollHeight,
-                    };
-                    const offset = offsets[event.key];
-                    if (offset !== undefined) {
-                        event.preventDefault();
-                        region.scrollBy({ top: offset });
-                    }
-                }}
             >
                 <div className='cvat-updates-release-meta'>
                     <div className='cvat-updates-labels'>
-                        <span className='cvat-updates-eyebrow'>Release notes</span>
-                        {isNew && <span className='cvat-updates-new-badge'>New release</span>}
+                        <Typography.Text className='cvat-updates-eyebrow'>Release notes</Typography.Text>
+                        {isNew && <Typography.Text className='cvat-updates-new-badge'>New release</Typography.Text>}
                     </div>
-                    <h2>CVAT v.{release.version}</h2>
-                    <time dateTime={release.publishedAt}>
-                        {new Date(release.publishedAt).toLocaleDateString(undefined, {
-                            year: 'numeric', month: 'short', day: 'numeric', timeZone: 'UTC',
-                        })}
-                    </time>
+                    <Typography.Title level={2}>CVAT v.{release.version}</Typography.Title>
+                    <Typography.Text>
+                        <time dateTime={release.publishedAt}>
+                            {new Date(release.publishedAt).toLocaleDateString(undefined, {
+                                year: 'numeric', month: 'short', day: 'numeric', timeZone: 'UTC',
+                            })}
+                        </time>
+                    </Typography.Text>
                 </div>
                 <div
-                    ref={highlightsRegion}
                     className='cvat-updates-release-highlights'
                     role='region'
                     aria-label='Release highlights'
                 >
                     <ul>
                         {highlights.slice(0, 5).map((highlight, index) => (
-                            <li key={`${index}:${highlight}`}>{highlight}</li>
+                            <li key={`${index}:${highlight}`}><Typography.Text>{highlight}</Typography.Text></li>
                         ))}
                     </ul>
                 </div>

@@ -34,18 +34,6 @@ export function compareVersions(left: string, right: string): number {
     return 0;
 }
 
-export function getContentURL(value: string, base?: string): string | undefined {
-    try {
-        const url = new URL(value, base);
-        if (url.username || url.password || url.protocol !== 'https:') {
-            return undefined;
-        }
-        return url.href;
-    } catch {
-        return undefined;
-    }
-}
-
 export function isNewVersion(version: string, shown: string): boolean {
     return !shown || compareVersions(version, shown) > 0;
 }
@@ -94,9 +82,13 @@ export interface Updates {
 }
 
 export function unseenAnnouncements(items: Announcement[], seenAt: string | null): Announcement[] {
-    const cutoff = seenAt ? Date.parse(seenAt) : -Infinity;
-    return items.filter((item) => Date.parse(item.publishedAt) > cutoff)
-        .sort((left, right) => Date.parse(right.publishedAt) - Date.parse(left.publishedAt));
+    const unread = seenAt ?
+        items.filter((item) => Date.parse(item.publishedAt) > Date.parse(seenAt)) :
+        [...items];
+
+    return unread.sort(
+        (left, right) => Date.parse(right.publishedAt) - Date.parse(left.publishedAt),
+    );
 }
 
 export function latestAnnouncementsDate(items: Announcement[]): string | null {
