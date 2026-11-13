@@ -98,6 +98,13 @@ PR descriptions, and review replies.
   or cite the documentation. If you have not checked, say so explicitly — and do not
   put unchecked assumptions into code comments.
 
+  Example: a migration used `Cast(..., FloatField())`. The SQL was rendered with the
+  test settings (SQLite) and showed `CAST(... AS real)`. From that, the author concluded
+  that PostgreSQL loses precision, replaced `Cast` with a hand-written `::double precision`
+  expression, and added a comment about the precision loss. On PostgreSQL, Django casts
+  `FloatField` to `double precision`; `real` is the SQLite type. One check of the
+  backend's type mapping would have prevented both the extra code and the wrong comment.
+
 - **Treat received claims as hypotheses**, including reviewers' and tools' claims. Tools can have
   bugs. Reviewers may be tired or lack context about the specific problem you're
   solving.
@@ -118,13 +125,6 @@ PR descriptions, and review replies.
 
 - **Keep the surroundings true.** When code changes, update the nearby comments,
   docstrings, and docs in the same change.
-
-Example: a migration used `Cast(..., FloatField())`. The SQL was rendered with the
-test settings (SQLite) and showed `CAST(... AS real)`. From that, the author concluded
-that PostgreSQL loses precision, replaced `Cast` with a hand-written `::double precision`
-expression, and added a comment about the precision loss. On PostgreSQL, Django casts
-`FloatField` to `double precision`; `real` is the SQLite type. One check of the
-backend's type mapping would have prevented both the extra code and the wrong comment.
 
 ## 3. Every line has a reason
 
