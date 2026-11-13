@@ -195,7 +195,7 @@ A common issue is a change added _next to_ the existing code instead of _into_ i
     should probably be split.
 
   - Open–closed: adding a variant should not require changing the generic base class.
-    For a fixed set of variants, a type enum is the default approach.
+    For a fixed set of variants, an enum type is the default approach.
     Use a registry when the set is dynamic (e.g. plugins).
     Express optional capabilities in types (a base class, a mixin, a `Protocol`) and
     declared properties, not with `hasattr` probes in generic code.
