@@ -84,7 +84,7 @@ class JobDataProvider(ABC):
 
 
 def make_job_data_provider(job_id: int, *, queryset=None, included_frames=None) -> JobDataProvider:
-    from cvat.apps.quality_control.datumaro_data_provider import DatumaroJobDataProvider
+    from cvat.apps.quality_control.backends.datumaro.data_provider import DatumaroJobDataProvider
 
     return DatumaroJobDataProvider(job_id, queryset=queryset, included_frames=included_frames)
 

@@ -24,6 +24,7 @@ import { useResourceQuery } from 'utils/hooks';
 import BulkWrapper from 'components/bulk-wrapper';
 import { selectionActions } from 'actions/selection-actions';
 import JobsCSVExportButton from 'components/jobs-page/jobs-csv-export-button';
+import DistributeJobsModal from 'components/jobs-page/distribute-jobs-modal';
 import {
     localStorageRecentKeyword, localStorageRecentCapacity, predefinedFilterValues, config,
 } from './jobs-filter-configuration';
@@ -222,6 +223,7 @@ function JobListComponent(props: Readonly<Props>): JSX.Element {
                     />
                 </Col>
             </Row>
+            <DistributeJobsModal listedJobIds={jobIds} />
         </>
     );
 }

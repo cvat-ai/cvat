@@ -7,7 +7,7 @@ import _ from 'lodash';
 import { AnyAction } from 'redux';
 import { ThunkAction } from 'utils/redux';
 import {
-    GridColor, ColorBy, SettingsState, ToolsBlockerState,
+    GridColor, ColorBy, SettingsState,
     CombinedState,
 } from 'reducers';
 import { OrientationVisibility } from 'cvat-canvas3d-wrapper';
@@ -39,6 +39,7 @@ export enum SettingsActionTypes {
     SWITCH_CONTROL_POINTS_SIZE = 'SWITCH_CONTROL_POINTS_SIZE',
     SWITCH_TEXT_POSITION = 'SWITCH_TEXT_POSITION',
     SWITCH_TEXT_CONTENT = 'SWITCH_TEXT_CONTENT',
+    SWITCH_SHOWING_CONFLICT_REQUIREMENTS = 'SWITCH_SHOWING_CONFLICT_REQUIREMENTS',
     CHANGE_BRIGHTNESS_LEVEL = 'CHANGE_BRIGHTNESS_LEVEL',
     CHANGE_CONTRAST_LEVEL = 'CHANGE_CONTRAST_LEVEL',
     CHANGE_SATURATION_LEVEL = 'CHANGE_SATURATION_LEVEL',
@@ -55,7 +56,6 @@ export enum SettingsActionTypes {
     CHANGE_CANVAS_BACKGROUND_COLOR = 'CHANGE_CANVAS_BACKGROUND_COLOR',
     SWITCH_SETTINGS_DIALOG = 'SWITCH_SETTINGS_DIALOG',
     SET_SETTINGS = 'SET_SETTINGS',
-    SWITCH_TOOLS_BLOCKER_STATE = 'SWITCH_TOOLS_BLOCKER_STATE',
     SWITCH_SHOWING_DELETED_FRAMES = 'SWITCH_SHOWING_DELETED_FRAMES',
     SWITCH_SHOWING_TAGS_ON_FRAME = 'SWITCH_SHOWING_TAGS_ON_FRAME',
     ENABLE_IMAGE_FILTER = 'ENABLE_IMAGE_FILTER',
@@ -254,6 +254,15 @@ export function switchTextContent(textContent: string[]): AnyAction {
     };
 }
 
+export function switchShowingConflictRequirements(showConflictRequirements: boolean): AnyAction {
+    return {
+        type: SettingsActionTypes.SWITCH_SHOWING_CONFLICT_REQUIREMENTS,
+        payload: {
+            showConflictRequirements,
+        },
+    };
+}
+
 export function changeBrightnessLevel(level: number): AnyAction {
     return {
         type: SettingsActionTypes.CHANGE_BRIGHTNESS_LEVEL,
@@ -383,15 +392,6 @@ export function changeDefaultApproxPolyAccuracy(approxPolyAccuracy: number): Any
         type: SettingsActionTypes.CHANGE_DEFAULT_APPROX_POLY_THRESHOLD,
         payload: {
             approxPolyAccuracy,
-        },
-    };
-}
-
-export function switchToolsBlockerState(toolsBlockerState: ToolsBlockerState): AnyAction {
-    return {
-        type: SettingsActionTypes.SWITCH_TOOLS_BLOCKER_STATE,
-        payload: {
-            toolsBlockerState,
         },
     };
 }

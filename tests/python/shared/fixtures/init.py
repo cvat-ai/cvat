@@ -32,7 +32,7 @@ DC_FILES = CONTAINER_NAME_FILES + [
     "tests/docker-compose.file_share.yml",
     "tests/docker-compose.moto.yml",
     "tests/docker-compose.pat_settings.yml",
-    "tests/docker-compose.test_servers.yml",
+    "tests/docker-compose.webhook_receiver.yml",
 ]
 
 
@@ -104,6 +104,14 @@ def pytest_addoption(parser):
         default="local",
         choices=("kube", "local"),
         help="Platform identifier - 'kube' or 'local'. (default: %(default)s)",
+    )
+
+    group._addoption(
+        "--no-coverage-collection",
+        action="store_true",
+        help=("""Don't collect the code coverage results from the containers at the end of the
+            session. The coverage statistics collection inside the containers is managed
+            by the COVERAGE_PROCESS_START env. variable separately (default: %(default)s)"""),
     )
 
 
@@ -529,6 +537,9 @@ def local_start(
         docker_exec(
             Container.DB, "psql -U root -d postgres -v from=cvat -v to=test_db -f /tmp/restore.sql"
         )
+    else:
+        # The containers might still require recreation if the environment changed
+        wait_for_services(waiting_time)
 
     if start:
         pytest.exit("All necessary containers have been created and started.", returncode=0)
@@ -575,7 +586,9 @@ def session_finish(session):
     platform = session.config.getoption("--platform")
 
     if platform == "local":
-        if os.environ.get("COVERAGE_PROCESS_START"):
+        if os.environ.get("COVERAGE_PROCESS_START") and not session.config.getoption(
+            "--no-coverage-collection"
+        ):
             collect_code_coverage_from_containers()
 
 

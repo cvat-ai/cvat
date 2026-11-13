@@ -16,7 +16,7 @@ import {
     changeFrameAsync,
     updateAnnotationsAsync,
 } from 'actions/annotation-actions';
-import isAbleToChangeFrame from 'utils/is-able-to-change-frame';
+import { isAbleToChangeFrame } from 'utils/annotation';
 import getHiddenZLayers from 'utils/get-hidden-z-layers';
 import GlobalHotKeys, { KeyMap } from 'utils/mousetrap-react';
 import { ThunkDispatch } from 'utils/redux';

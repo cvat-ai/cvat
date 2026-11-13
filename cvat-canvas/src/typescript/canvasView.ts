@@ -42,7 +42,7 @@ import {
     CanvasModel, Geometry, UpdateReasons, FrameZoom, ActiveElement,
     DrawData, MergeData, SplitData, Mode, Size, Configuration,
     InteractionResult, InteractionData, ColorBy, HighlightedElements,
-    HighlightSeverity, GroupData, SelectData, JoinData, CanvasHint,
+    HighlightSeverity, GroupData, SelectData, JoinData,
     MultiSelectModifier, CanvasHistorySource,
 } from './canvasModel';
 
@@ -121,6 +121,7 @@ export class CanvasViewImpl implements CanvasView, Listener {
     private selectedObjects: number[];
     private selectedObjectsSet: Set<number>;
     private selectedObjectsBox: SVG.Rect | null;
+    private selectedObjectsBoxBitmap: SVG.Rect | null;
     private selectedObjectsLabel: HTMLDivElement | null;
     private selectionPasteData: DrawData | null;
     private selectionPasteStates: any[];
@@ -139,20 +140,21 @@ export class CanvasViewImpl implements CanvasView, Listener {
 
     private set mode(value: Mode) {
         this.controller.mode = value;
+        this.canvas?.classList.toggle('cvat_canvas_selecting_objects', value === Mode.SELECT);
     }
 
     private get mode(): Mode {
         return this.controller.mode;
     }
 
-    private onMessage = (messages: CanvasHint[] | null, topic: string): void => {
+    private onMessage = (message: string | null, topic?: string): void => {
         this.canvas.dispatchEvent(
             new CustomEvent('canvas.message', {
                 bubbles: false,
                 cancelable: true,
                 detail: {
                     topic,
-                    messages,
+                    message,
                 },
             }),
         );
@@ -361,6 +363,7 @@ export class CanvasViewImpl implements CanvasView, Listener {
     private onInteraction = (
         shapes: InteractionResult[] | null,
         finished = false,
+        ctrlKey = false,
     ): void => {
         // whenever prompts are updated, interactor sends corresponding event with prompts
         // when finished, it also sends finish flag equals to "true"
@@ -371,6 +374,7 @@ export class CanvasViewImpl implements CanvasView, Listener {
                 cancelable: true,
                 detail: {
                     finished,
+                    ctrlKey,
                     shapes,
                 },
             });
@@ -553,7 +557,7 @@ export class CanvasViewImpl implements CanvasView, Listener {
 
     private onSelectDone = (objects?: any[], duration?: number): void => {
         if (this.mode === Mode.JOIN) {
-            this.onMessage(null, 'join');
+            this.onMessage(null);
         }
 
         if (objects && typeof duration !== 'undefined' && objects.length > 1) {
@@ -789,6 +793,7 @@ export class CanvasViewImpl implements CanvasView, Listener {
                         x: x - offset,
                         y: y - offset,
                         states: this.controller.objects,
+                        mouseEvent: e,
                     },
                 },
             );
@@ -2131,6 +2136,7 @@ export class CanvasViewImpl implements CanvasView, Listener {
                     x: x - offset,
                     y: y - offset,
                     states: this.controller.objects,
+                    mouseEvent: event,
                 },
             }));
             this.canvas.addEventListener('click', (clickEvent: MouseEvent) => {
@@ -2265,6 +2271,7 @@ export class CanvasViewImpl implements CanvasView, Listener {
         this.selectedObjects = [];
         this.selectedObjectsSet = new Set();
         this.selectedObjectsBox = null;
+        this.selectedObjectsBoxBitmap = null;
         this.selectedObjectsLabel = null;
         this.selectionPasteData = null;
         this.selectionPasteStates = [];
@@ -2476,6 +2483,18 @@ export class CanvasViewImpl implements CanvasView, Listener {
         });
         this.canvas.addEventListener('mousedown', this.onContentMouseDown, true);
         this.canvas.addEventListener('mousemove', this.onContentMouseMove, true);
+        this.canvas.addEventListener('contextmenu', (event: MouseEvent): void => {
+            if (this.mode !== Mode.SELECT || !this.selectedObjectsBox) return;
+
+            // The selection outline is click-through in Select mode, but keeps its context menu.
+            const [x, y] = translateToSVG(this.content, [event.clientX, event.clientY]);
+            const box = this.selectedObjectsBox.bbox();
+            if (x >= box.x && x <= box.x2 && y >= box.y && y <= box.y2) {
+                event.preventDefault();
+                event.stopPropagation();
+                this.openSelectedObjectsMenu(event.clientX, event.clientY);
+            }
+        }, true);
 
         window.document.addEventListener('mouseup', this.onMouseUp);
         window.document.addEventListener('keydown', this.onKeyDown);
@@ -2666,6 +2685,7 @@ export class CanvasViewImpl implements CanvasView, Listener {
             // this.setupObjects(model.objects);
         } else if (reason === UpdateReasons.BITMAP) {
             const { imageBitmap } = model;
+            this.canvas.classList.toggle('cvat_canvas_bitmap_enabled', imageBitmap);
             if (imageBitmap) {
                 this.bitmap.style.display = '';
                 this.redrawBitmap();
@@ -2673,6 +2693,7 @@ export class CanvasViewImpl implements CanvasView, Listener {
                 this.bitmap.style.display = 'none';
             }
         } else if (reason === UpdateReasons.IMAGE_CHANGED) {
+            this.canvas.removeAttribute('data-frame-number');
             const { image } = model;
             if (image) {
                 this.isImageLoading = false;
@@ -2755,6 +2776,9 @@ export class CanvasViewImpl implements CanvasView, Listener {
             }
             if (this.mode === Mode.MERGE) {
                 this.mergeHandler.repeatSelection();
+            }
+            if (model.imageID !== null) {
+                this.canvas.setAttribute('data-frame-number', String(model.imageID));
             }
             const event: CustomEvent = new CustomEvent('canvas.setup');
             this.canvas.dispatchEvent(event);
@@ -2926,11 +2950,15 @@ export class CanvasViewImpl implements CanvasView, Listener {
                 data = this.controller.joinData;
                 this.mode = Mode.JOIN;
 
-                this.onMessage([{
-                    type: 'text',
-                    icon: 'info',
-                    content: 'Click polygons or masks you would like to join together. To unselect click selected shape one more time',
-                }], 'join');
+                this.onMessage([
+                    '### Join shapes',
+                    '',
+                    'Select masks or polygons of the same label to join them.',
+                    '',
+                    '**Actions**',
+                    '- Click a shape to select it.',
+                    '- Click a selected shape again to remove it from the selection.',
+                ].join('\n'), 'join');
 
                 this.groupHandler.group(data, {
                     shapeType: ['mask', 'polygon'],
@@ -4046,7 +4074,8 @@ export class CanvasViewImpl implements CanvasView, Listener {
     }
 
     private isStateMovableInSelection(state: any): boolean {
-        return !!state && !state.lock && !state.pinned && !state.isGroundTruth;
+        return !!state && !state.lock && !state.pinned && !state.isGroundTruth &&
+            !state.hidden && !state.outside && !this.isInnerHidden(state.clientID);
     }
 
     private getMovableSelectedStates(): any[] {
@@ -4068,13 +4097,16 @@ export class CanvasViewImpl implements CanvasView, Listener {
 
     private setSelectedObjectsOverlayDragging(dragging: boolean): void {
         this.selectedObjectsBox?.node.classList.toggle('cvat_canvas_selected_objects_box_dragging', dragging);
+        this.selectedObjectsBoxBitmap?.node.classList.toggle('cvat_canvas_selected_objects_box_dragging', dragging);
         this.selectedObjectsLabel?.classList.toggle('cvat_canvas_selected_objects_label_dragging', dragging);
     }
 
     private clearSelectedObjectsOverlay(): void {
         this.selectedObjectsBox?.remove();
+        this.selectedObjectsBoxBitmap?.parent().remove();
         this.selectedObjectsLabel?.remove();
         this.selectedObjectsBox = null;
+        this.selectedObjectsBoxBitmap = null;
         this.selectedObjectsLabel = null;
     }
 
@@ -4235,7 +4267,11 @@ export class CanvasViewImpl implements CanvasView, Listener {
 
     private updateSelectedObjectsOverlay(): void {
         const selectedShapes = this.selectedObjects
-            .map((clientID: number): SVG.Shape | null => this.svgShapes[clientID] || null)
+            .map((clientID: number): SVG.Shape | null => {
+                const state = this.drawnStates[clientID];
+                return state && !state.hidden && !state.outside && !this.isInnerHidden(clientID) ?
+                    this.svgShapes[clientID] || null : null;
+            })
             .filter((shape: SVG.Shape | null): shape is SVG.Shape => Boolean(shape?.node.isConnected));
 
         if (!selectedShapes.length) {
@@ -4255,13 +4291,24 @@ export class CanvasViewImpl implements CanvasView, Listener {
                 .rect(right - left, bottom - top)
                 .addClass('cvat_canvas_selected_objects_box');
             this.makeSelectedObjectsBoxDraggable();
+
+            // Keep hit testing in the content SVG; only mirror the outline above the bitmap.
+            const overlay = SVG.adopt(
+                window.document.createElementNS('http://www.w3.org/2000/svg', 'svg') as unknown as HTMLElement,
+            ) as SVG.Container;
+            overlay.addClass('cvat_canvas_selection_overlay');
+            this.attachmentBoard.appendChild(overlay.node);
+            this.selectedObjectsBoxBitmap = overlay
+                .rect(right - left, bottom - top)
+                .addClass('cvat_canvas_selected_objects_box_bitmap');
         }
 
-        this.selectedObjectsBox
-            .move(left - padding, top - padding)
-            .size(right - left + padding * 2, bottom - top + padding * 2)
-            .attr('stroke-width', SELECTED_OBJECTS_BOX_STROKE_WIDTH / this.geometry.scale)
-            .front();
+        for (const box of [this.selectedObjectsBox, this.selectedObjectsBoxBitmap]) {
+            box?.move(left - padding, top - padding)
+                .size(right - left + padding * 2, bottom - top + padding * 2)
+                .attr('stroke-width', SELECTED_OBJECTS_BOX_STROKE_WIDTH / this.geometry.scale)
+                .front();
+        }
         this.selectedObjectsBox.node.classList.toggle(
             'cvat_canvas_selected_objects_box_not_draggable',
             !this.hasMovableSelectedObjects(),

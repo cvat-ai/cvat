@@ -82,12 +82,36 @@ polyline.cvat_shape_drawing_opacity {
     fill: #fcfbfc;
 }
 
+.cvat_canvas_selection_overlay {
+    display: none;
+    position: absolute;
+    width: 100%;
+    height: 100%;
+    overflow: visible;
+    pointer-events: none;
+}
+
 .cvat_canvas_selected_objects_box {
     fill: none;
     stroke: #1f1f1f;
     stroke-opacity: 1;
     pointer-events: all;
     cursor: move;
+}
+
+.cvat_canvas_selecting_objects .cvat_canvas_selected_objects_box {
+    // Let canvas clicks and box selections pass through; the header still moves the selection.
+    pointer-events: none;
+}
+
+.cvat_canvas_bitmap_enabled .cvat_canvas_selection_overlay {
+    display: block;
+}
+
+.cvat_canvas_selected_objects_box_bitmap {
+    fill: none;
+    stroke: white;
+    pointer-events: none;
 }
 
 .cvat_canvas_selected_objects_box_modifier_pressed,
@@ -452,7 +476,7 @@ g.cvat_canvas_shape_occluded {
 }
 
 .cvat-canvas-highlight-enabled {
-    svg {
+    #cvat_canvas_content {
         >rect:not(.cvat_canvas_issue_region,.cvat_canvas_conflicted,.cvat_canvas_warned),
         >ellipse:not(.cvat_canvas_issue_region,.cvat_canvas_conflicted,.cvat_canvas_warned),
         >polygon:not(.cvat_canvas_issue_region,.cvat_canvas_conflicted,.cvat_canvas_warned),
@@ -565,12 +589,4 @@ g.cvat_canvas_shape_occluded {
 .cvat_canvas_slicing_line {
     pointer-events: none;
     fill-opacity: 0;
-}
-
-.cvat-canvas-notification-list-warning {
-    color: orange;
-}
-
-.cvat-canvas-notification-list-shortcuts {
-    color: yellow;
 }

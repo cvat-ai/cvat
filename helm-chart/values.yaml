@@ -65,6 +65,8 @@ cvat:
         periodSeconds: 15
         failureThreshold: 5
         initialDelaySeconds: 60
+      nginx:
+        resources: {}
     worker:
       livenessProbe:
         enabled: true
@@ -364,8 +366,8 @@ postgresql:
   #See https://github.com/bitnami/charts/blob/master/bitnami/postgresql/ for more info
   enabled: true # false for external db
   image:
-    registry: public.ecr.aws
-    repository: b8u7h5e8/postgresql
+    registry: docker.io
+    repository: cvat/postgresql
     tag: 15.2.0-debian-11-r0
   external:
     # Ignored if an empty value is set
@@ -441,8 +443,8 @@ postgresql:
 redis:
   enabled: true
   image:
-    registry: public.ecr.aws
-    repository: docker/library/redis
+    registry: docker.io
+    repository: library/redis
     tag: 7.2.11
   external:
     host: 127.0.0.1
@@ -475,6 +477,8 @@ analytics:
   clickhouseUser: user
   clickhousePassword: user
   clickhouseHost: "{{ .Release.Name }}-clickhouse"
+## This value is used for Altinity chart
+#  clickhouseHost: "clickhouse-{{ .Release.Name }}-clickhouse"
   clickhousePort: 8123
 
 vector:
@@ -506,8 +510,8 @@ clickhouse:
   # Set to false in case of external db usage
   enabled: true
   image:
-    registry: public.ecr.aws
-    repository: b8u7h5e8/clickhouse
+    registry: docker.io
+    repository: cvat/clickhouse
     tag: 23.12.2-debian-11-r0
   shards: 1
   replicaCount: 1
@@ -519,6 +523,49 @@ clickhouse:
   # Consider enabling zookeeper if a distributed configuration is used
   zookeeper:
     enabled: false
+
+
+## Values for migration from Bitnami clickhouse chart to Altinity clickhouse chart
+#clickhouse:
+#  enabled: true
+#
+#  operator:
+#    enabled: false
+#
+#  clickhouse:
+#    defaultUser:
+#      password_secret_name: cvat-analytics-secret
+#      allowExternalAccess: false
+#      hostIP: 127.0.0.1/32
+#
+#    users:
+#      - name: user
+#        hostIP:
+#          - 0.0.0.0/0
+#        accessManagement: 1
+#        password_secret_name: cvat-analytics-secret
+#
+#    shardsCount: 1
+#    replicasCount: 1
+#
+#    image:
+#      repository: clickhouse/clickhouse-server
+#      tag: "23.12.2.59"
+#      pullPolicy: IfNotPresent
+#
+#    persistence:
+#      enabled: true
+#      size: 1Gi
+#      accessMode: ReadWriteOnce
+#      storageClass: ""
+#      logs:
+#        enabled: false
+#
+#  keeper:
+#    enabled: false
+#
+#clickhouse-operator:
+#  enabled: true
 
 grafana:
   envFromSecret: cvat-analytics-secret

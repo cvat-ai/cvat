@@ -356,6 +356,10 @@ function buildDuplicatedAPI(prototype): void {
                     );
                     return result;
                 },
+                hasUnsavedChanges() {
+                    const result = prototype.frames.hasUnsavedChanges.implementation.call(this);
+                    return result;
+                },
             },
             writable: true,
         }),
@@ -543,6 +547,7 @@ export class Session {
             frameTo: number,
         ) => Promise<number | null>;
         chunk: (chunk: number, quality: ChunkQuality) => Promise<ArrayBuffer>;
+        hasUnsavedChanges: () => boolean;
     };
 
     public logger: {
@@ -610,6 +615,7 @@ export class Session {
             contextImage: Object.getPrototypeOf(this).frames.contextImage.bind(this),
             contextImageData: Object.getPrototypeOf(this).frames.contextImageData.bind(this),
             chunk: Object.getPrototypeOf(this).frames.chunk.bind(this),
+            hasUnsavedChanges: Object.getPrototypeOf(this).frames.hasUnsavedChanges.bind(this),
         };
 
         this.logger = {

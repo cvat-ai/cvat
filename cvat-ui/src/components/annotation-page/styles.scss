@@ -366,7 +366,9 @@
     max-height: 50%;
     overflow-y: auto;
 
-    &:hover {
+    &:hover,
+    &:focus-within,
+    &:has(.ant-select-open) {
         opacity: 1;
     }
 }

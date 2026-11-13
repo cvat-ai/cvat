@@ -192,7 +192,7 @@ context('Slice and join tools', { scrollBehavior: false }, () => {
             }
 
             cy.get('.cvat-canvas-hints-container').within(() => {
-                cy.contains('Set initial point on the shape contour').should('exist');
+                cy.contains('Click the shape outline to start cutting.').should('exist');
             });
             cy.get('body').type('{alt}j');
         });

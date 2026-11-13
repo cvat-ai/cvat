@@ -13,7 +13,6 @@ from io import StringIO
 from time import sleep
 
 import pytest
-from dateutil import parser as datetime_parser
 
 import shared.utils.s3 as s3
 from shared.utils.config import delete_method, get_method, make_api_client, server_get
@@ -209,7 +208,7 @@ class TestGetAuditEvents:
         assert len(events)
 
         for event in events:
-            event_timestamp = datetime_parser.isoparse(event["timestamp"])
+            event_timestamp = datetime.fromisoformat(event["timestamp"])
             assert from_datetime <= event_timestamp <= to_datetime
 
     @pytest.mark.parametrize("api_version", [1, 2])

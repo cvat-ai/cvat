@@ -170,7 +170,9 @@ export default function implementAPI(cvat: CVATCore): CVATCore {
             is_active: isBoolean,
             self: isBoolean,
             search: isString,
+            filter: isString,
             limit: isInteger,
+            pageSize: isInteger,
         });
 
         let users = null;
@@ -184,7 +186,7 @@ export default function implementAPI(cvat: CVATCore): CVATCore {
                     searchParams[key] = filter[key];
                 }
             }
-            users = await serverProxy.users.get(searchParams);
+            users = await serverProxy.users.get(fieldsToSnakeCase(searchParams));
         }
 
         users = users.map((user) => new User(user));
@@ -526,10 +528,19 @@ export default function implementAPI(cvat: CVATCore): CVATCore {
 
                     // decorate the original conflict to avoid changing it
                     const description = descriptionList.join(', ');
+                    const requirements = Array.from(new Map(objectConflicts.flatMap((conflict) => (
+                        conflict.requirements.map((requirement) => [
+                            requirement.id, requirement,
+                        ] as const)
+                    ))).values()).sort((a, b) => a.id - b.id);
                     const visibleConflict = new Proxy(mainObjectConflict, {
                         get(target, prop) {
                             if (prop === 'description') {
                                 return description;
+                            }
+
+                            if (prop === 'requirements') {
+                                return requirements;
                             }
 
                             // By default, it looks like Reflect.get(target, prop, receiver)

@@ -28,6 +28,8 @@ export enum JobsActionTypes {
     DELETE_JOB_SUCCESS = 'DELETE_JOB_SUCCESS',
     OPEN_ADD_REPLICAS_MODAL = 'OPEN_ADD_REPLICAS_MODAL',
     CLOSE_ADD_REPLICAS_MODAL = 'CLOSE_ADD_REPLICAS_MODAL',
+    OPEN_DISTRIBUTE_JOBS_MODAL = 'OPEN_DISTRIBUTE_JOBS_MODAL',
+    CLOSE_DISTRIBUTE_JOBS_MODAL = 'CLOSE_DISTRIBUTE_JOBS_MODAL',
     DELETE_JOB_FAILED = 'DELETE_JOB_FAILED',
 }
 
@@ -78,6 +80,12 @@ export const jobsActions = {
     ),
     closeAddReplicasModal: () => (
         createAction(JobsActionTypes.CLOSE_ADD_REPLICAS_MODAL)
+    ),
+    openDistributeJobsModal: (jobs: Job[]) => (
+        createAction(JobsActionTypes.OPEN_DISTRIBUTE_JOBS_MODAL, { jobs })
+    ),
+    closeDistributeJobsModal: () => (
+        createAction(JobsActionTypes.CLOSE_DISTRIBUTE_JOBS_MODAL)
     ),
 };
 

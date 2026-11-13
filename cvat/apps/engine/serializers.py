@@ -4033,11 +4033,17 @@ class JobDataMetaWriteSerializer(serializers.ModelSerializer):
 
     @transaction.atomic
     def update(self, instance: models.Job, validated_data: dict[str, Any]) -> models.Job:
+        deleted_frames = validated_data["deleted_frames"]
+
+        if instance.type == models.JobType.REPLICA:
+            raise serializers.ValidationError(
+                "Frames cannot be deleted or restored in a replica job, "
+                "use its parent annotation job instead"
+            )
+
         db_segment = instance.segment
         db_task = db_segment.task
         db_data = db_task.require_data()
-
-        deleted_frames = validated_data["deleted_frames"]
 
         task_frame_provider = TaskFrameProvider(db_task)
         segment_rel_frame_set = set(

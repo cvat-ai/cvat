@@ -303,15 +303,13 @@ class CloudStoragePermission(OpenPolicyAgentPermission):
         if self.scope.startswith("create"):
             data = {
                 "owner": {"id": self.user_id},
-                "organization": ({"id": self.org_id} if self.org_id is not None else None),
+                "organization": self.make_id_dict(self.org_id),
             }
         elif self.obj:
             data = {
                 "id": self.obj.id,
                 "owner": {"id": self.obj.owner_id},
-                "organization": (
-                    {"id": self.obj.organization_id} if self.obj.organization_id else None
-                ),
+                "organization": self.make_id_dict(self.obj.organization_id),
             }
 
         return data
@@ -352,6 +350,7 @@ class ProjectPermission(
         owner_id = request.data.get("owner_id") or request.data.get("owner")
 
         scopes = cls.get_scopes(request, view, obj)
+        dst_iam_context = iam_context
 
         if cls.Scopes.UPDATE_ORGANIZATION in scopes:
             # consider this case as deleting a project in the org A and creating a new one in the org B
@@ -392,11 +391,11 @@ class ProjectPermission(
             permissions.append(self)
 
         if owner_id:
-            perm = UserPermission.create_scope_view(iam_context, owner_id)
+            perm = UserPermission.create_scope_view(dst_iam_context, owner_id)
             permissions.append(perm)
 
         if assignee_id:
-            perm = UserPermission.create_scope_view(iam_context, assignee_id)
+            perm = UserPermission.create_scope_view(dst_iam_context, assignee_id)
             permissions.append(perm)
 
         for field_source, field in [
@@ -410,7 +409,7 @@ class ProjectPermission(
             if cloud_storage_id := _get_key(field_source, field_path):
                 permissions.append(
                     CloudStoragePermission.create_scope_view(
-                        iam_context, storage_id=cloud_storage_id
+                        dst_iam_context, storage_id=cloud_storage_id
                     )
                 )
 
@@ -549,7 +548,7 @@ class ProjectPermission(
                 "id": self.obj.id,
                 "owner": {"id": self.obj.owner_id},
                 "assignee": {"id": self.obj.assignee_id},
-                "organization": {"id": self.obj.organization_id},
+                "organization": self.make_id_dict(self.obj.organization_id),
             }
 
             if DownloadExportedExtension.Scopes.DOWNLOAD_EXPORTED_FILE == self.scope:
@@ -567,7 +566,7 @@ class ProjectPermission(
                 "id": None,
                 "owner": {"id": self.user_id},
                 "assignee": ({"id": self.assignee_id} if self.assignee_id else None),
-                "organization": ({"id": self.org_id} if self.org_id else None),
+                "organization": self.make_id_dict(self.org_id),
             }
 
         return data
@@ -616,6 +615,7 @@ class TaskPermission(
         owner_id = request.data.get("owner_id") or request.data.get("owner")
 
         scopes = cls.get_scopes(request, view, obj)
+        dst_iam_context = iam_context
 
         if cls.Scopes.UPDATE_ORGANIZATION in scopes:
             # consider this case as deleting a task in the org A and creating a new one in the org B
@@ -668,15 +668,15 @@ class TaskPermission(
             permissions.append(self)
 
         if owner_id:
-            perm = UserPermission.create_scope_view(iam_context, owner_id)
+            perm = UserPermission.create_scope_view(dst_iam_context, owner_id)
             permissions.append(perm)
 
         if assignee_id:
-            perm = UserPermission.create_scope_view(iam_context, assignee_id)
+            perm = UserPermission.create_scope_view(dst_iam_context, assignee_id)
             permissions.append(perm)
 
         if project_id:
-            perm = ProjectPermission.create_scope_view(request, int(project_id), iam_context)
+            perm = ProjectPermission.create_scope_view(request, int(project_id), dst_iam_context)
             permissions.append(perm)
 
         for field_source, field in [
@@ -692,7 +692,7 @@ class TaskPermission(
             if cloud_storage_id := _get_key(field_source, field_path):
                 permissions.append(
                     CloudStoragePermission.create_scope_view(
-                        iam_context, storage_id=cloud_storage_id
+                        dst_iam_context, storage_id=cloud_storage_id
                     )
                 )
 
@@ -845,12 +845,12 @@ class TaskPermission(
                 "id": self.obj.id,
                 "owner": {"id": self.obj.owner_id},
                 "assignee": {"id": self.obj.assignee_id},
-                "organization": {"id": self.obj.organization_id},
+                "organization": self.make_id_dict(self.obj.organization_id),
                 "project": (
                     {
                         "owner": {"id": self.obj.project.owner_id},
                         "assignee": {"id": self.obj.project.assignee_id},
-                        "organization": {"id": self.obj.project.organization_id},
+                        "organization": self.make_id_dict(self.obj.project.organization_id),
                     }
                     if self.obj.project
                     else None
@@ -883,14 +883,12 @@ class TaskPermission(
                 "id": None,
                 "owner": {"id": self.user_id},
                 "assignee": {"id": self.assignee_id},
-                "organization": {"id": self.org_id},
+                "organization": self.make_id_dict(self.org_id),
                 "project": (
                     {
                         "owner": {"id": project.owner_id},
                         "assignee": {"id": project.assignee_id},
-                        "organization": (
-                            {"id": project.organization_id} if project.organization_id else None
-                        ),
+                        "organization": self.make_id_dict(project.organization_id),
                     }
                     if project is not None
                     else None
@@ -1096,7 +1094,7 @@ class JobPermission(OpenPolicyAgentPermission, DownloadExportedExtension):
             data = {
                 "id": self.obj.id,
                 "assignee": {"id": self.obj.assignee_id},
-                "organization": {"id": organization_id},
+                "organization": self.make_id_dict(organization_id),
                 "task": {
                     "owner": {"id": self.obj.segment.task.owner_id},
                     "assignee": {"id": self.obj.segment.task.assignee_id},
@@ -1128,7 +1126,7 @@ class JobPermission(OpenPolicyAgentPermission, DownloadExportedExtension):
                 organization_id = task.organization_id
 
             data = {
-                "organization": {"id": organization_id},
+                "organization": self.make_id_dict(organization_id),
                 "task": {"owner": {"id": task.owner_id}, "assignee": {"id": task.assignee_id}},
                 "project": (
                     {
@@ -1215,7 +1213,7 @@ class CommentPermission(OpenPolicyAgentPermission):
                     "owner": {"id": db_issue.owner_id},
                     "assignee": {"id": db_issue.assignee_id},
                 },
-                "organization": {"id": organization_id},
+                "organization": self.make_id_dict(organization_id),
             }
 
             return data
@@ -1310,7 +1308,7 @@ class IssuePermission(OpenPolicyAgentPermission):
                     "assignee": {"id": db_job.segment.task.assignee_id},
                 },
                 "job": {"assignee": {"id": db_job.assignee_id}},
-                "organization": {"id": organization_id},
+                "organization": self.make_id_dict(organization_id),
             }
 
             return data
@@ -1452,7 +1450,7 @@ class LabelPermission(OpenPolicyAgentPermission):
 
             data = {
                 "id": self.obj.id,
-                "organization": {"id": organization_id},
+                "organization": self.make_id_dict(organization_id),
                 "task": (
                     {
                         "owner": {"id": self.obj.task.owner_id},
@@ -1531,7 +1529,7 @@ class AnnotationGuidePermission(OpenPolicyAgentPermission):
                         "assignee": {"id": db_target.assignee_id},
                         "is_job_staff": db_target.is_job_staff(self.user_id),
                     },
-                    "organization": {"id": self.obj.organization_id},
+                    "organization": self.make_id_dict(self.obj.organization_id),
                 }
             )
         elif self.scope == self.Scopes.CREATE:
@@ -1554,7 +1552,7 @@ class AnnotationGuidePermission(OpenPolicyAgentPermission):
                         "owner": {"id": getattr(db_target, "owner_id", None)},
                         "assignee": {"id": getattr(db_target, "assignee_id", None)},
                     },
-                    "organization": {"id": organization_id},
+                    "organization": self.make_id_dict(organization_id),
                 }
             )
         return data
