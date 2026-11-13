@@ -197,8 +197,7 @@ A common issue is a change added _next to_ the existing code instead of _into_ i
   - Open–closed: adding a variant should not require changing the generic base class.
     For a fixed set of variants, an enum type is the default approach.
     Use a registry when the set is dynamic (e.g. plugins).
-    Express optional capabilities in types (a base class, a mixin, a `Protocol`) and
-    declared properties, not with `hasattr` probes in generic code.
+    Declare optional capabilities explicitly (see section 5).
 
   - Liskov substitution: a subclass keeps the base class contract, if the classes are supposed
     to be used in generic code.
@@ -250,6 +249,36 @@ A common issue is a change added _next to_ the existing code instead of _into_ i
     and views). Do not use `object` as an annotation for that.
 
   - A parameter is optional only when calling without it makes sense.
+
+- **Prefer declared capabilities to probing.** When generic code (a base class,
+  a function that accepts a base class or a union of types) needs to know what an object
+  can do, consider declaring it instead of probing with `hasattr` or catching `AttributeError`:
+  a dedicated base class with declared properties, a capability property in the base class,
+  or an `isinstance` check. Declared capabilities are visible in the interface and checked
+  by type checkers; probes break silently on a rename, and catching `AttributeError` also
+  hides the errors raised inside the called method. Probing can still be the only option,
+  e.g. for types you don't control.
+
+  ```python
+  # Instead of
+  if hasattr(importer, f"parse_{ext}"): ...
+  if hasattr(device, "read_buffer"): ...  # only FIFO devices have a buffer
+  try:
+      backend.render2d()
+  except AttributeError:
+      backend.render3d()
+
+  # Use
+  if ext in importer.accepted_extensions: ...
+  if device.is_fifo: ...
+  match backend:
+      case Backend2d():
+          backend.render2d()
+      case Backend3d():
+          backend.render3d()
+      case _:
+          raise AssertionError(f"Unexpected backend {type(backend)}")
+  ```
 
 - **Import at the module level.** A function-local import is a non-default solution, e.g. for
   breaking an import cycle. It needs a comment.
