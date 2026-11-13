@@ -36,7 +36,11 @@ def _target(count, image_size=(7, 6)):
         label_id = 11 + index % 2
         shapes.append(
             models.LabeledShape(
-                frame=0, label_id=label_id, type=models.ShapeType(shape_type), points=points, rotation=0
+                frame=0,
+                label_id=label_id,
+                type=models.ShapeType(shape_type),
+                points=points,
+                rotation=0,
             )
         )
         expected.append(bitmap)
@@ -56,7 +60,9 @@ def test_instance_mask_values_order_and_empty_shape(count, included):
     target, bitmaps, boxes, labels = _target(count)
     before = [shape.to_dict() for shape in target.annotations.shapes]
     selected = [
-        index for index, shape in enumerate(target.annotations.shapes) if shape.type.value in included
+        index
+        for index, shape in enumerate(target.annotations.shapes)
+        if shape.type.value in included
     ]
 
     result = ExtractInstanceMasks(include_shape_types=included)(target)
@@ -84,7 +90,9 @@ def test_returned_mask_batches_are_independent_of_each_other_and_annotations():
     first["masks"].zero_()
 
     torch.testing.assert_close(second["masks"], torch.tensor(np.stack(bitmaps), dtype=torch.uint8))
-    assert first["masks"].untyped_storage().data_ptr() != second["masks"].untyped_storage().data_ptr()
+    assert (
+        first["masks"].untyped_storage().data_ptr() != second["masks"].untyped_storage().data_ptr()
+    )
     assert [shape.to_dict() for shape in target.annotations.shapes] == before
 
 
@@ -103,7 +111,9 @@ def test_unselected_rotated_shapes_do_not_change_selected_masks():
     target, bitmaps, _, _ = _target(2)
     target.annotations.shapes[1].rotation = 15
     result = ExtractInstanceMasks(include_shape_types=("polygon",))(target)
-    torch.testing.assert_close(result["masks"], torch.tensor(np.stack(bitmaps[:1]), dtype=torch.uint8))
+    torch.testing.assert_close(
+        result["masks"], torch.tensor(np.stack(bitmaps[:1]), dtype=torch.uint8)
+    )
 
 
 def test_default_float_dtype_does_not_change_declared_output_dtypes():
@@ -132,7 +142,9 @@ def test_native_dataloader_segmentation_updates_match_manual_masks(dtype):
     target, bitmaps, _, _ = _target(2)
     transform = ExtractInstanceMasks(include_shape_types=("polygon", "mask"))
     image = torch.linspace(-1, 1, 3 * 6 * 7, dtype=dtype).reshape(3, 6, 7)
-    loader = DataLoader([(image, transform(target)), (image.flip(-1), transform(target))], batch_size=1)
+    loader = DataLoader(
+        [(image, transform(target)), (image.flip(-1), transform(target))], batch_size=1
+    )
     expected = torch.tensor(np.stack(bitmaps), dtype=dtype).unsqueeze(0)
     torch.manual_seed(78)
     model = torch.nn.Conv2d(3, 2, kernel_size=1).to(dtype)
