@@ -301,11 +301,11 @@ that can (_Code Complete_, "Defensive Programming").
 - **Errors should never pass silently** (PEP 20): no silent `return`, no broad `except`,
   no `value || 0` hiding a missing value. Pass `null` through and let the consumer decide.
 
-- **Data that users can produce** (e.g. an annotation outside the image) must not
-  break the operation; degrade gracefully (e.g. skip the annotation export, but report it).
-
-- **Handle degenerate inputs explicitly** (empty arrays, zero denominators), with
-  a comment on when they happen.
+- **Handle boundary, degenerate, and invalid cases gracefully.** Design code to handle all data the
+  system accepts, including edge cases like an annotation outside the image, an empty input, or a
+  zero-size shape. If the operation is heavy, one such item should not fail the whole operation:
+  e.g. skip an annotation in an export and report it. A good design usually covers special cases
+  without special handling.
 
 - **Error messages** state what happened, why, and what to do.
 
