@@ -36,7 +36,7 @@ def _target(count, image_size=(7, 6)):
         label_id = 11 + index % 2
         shapes.append(
             models.LabeledShape(
-                frame=0, label_id=label_id, type=models.ShapeType(shape_type), points=points
+                frame=0, label_id=label_id, type=models.ShapeType(shape_type), points=points, rotation=0
             )
         )
         expected.append(bitmap)
@@ -64,7 +64,8 @@ def test_instance_mask_values_order_and_empty_shape(count, included):
     expected = np.stack([bitmaps[index] for index in selected]) if selected else np.empty((0, 6, 7))
     torch.testing.assert_close(result["masks"], torch.tensor(expected, dtype=torch.uint8))
     torch.testing.assert_close(
-        result["boxes"], torch.tensor([boxes[index] for index in selected], dtype=torch.float).reshape(-1, 4)
+        result["boxes"],
+        torch.tensor([boxes[index] for index in selected], dtype=torch.float).reshape(-1, 4),
     )
     torch.testing.assert_close(
         result["labels"], torch.tensor([labels[index] for index in selected], dtype=torch.long)
@@ -146,7 +147,9 @@ def test_native_dataloader_segmentation_updates_match_manual_masks(dtype):
             loss = torch.nn.functional.binary_cross_entropy_with_logits(
                 model(inputs), extracted["masks"].to(dtype)
             )
-            reference_loss = torch.nn.functional.binary_cross_entropy_with_logits(reference(inputs), expected)
+            reference_loss = torch.nn.functional.binary_cross_entropy_with_logits(
+                reference(inputs), expected
+            )
             torch.testing.assert_close(loss, reference_loss, rtol=0, atol=0)
             loss.backward()
             reference_loss.backward()
