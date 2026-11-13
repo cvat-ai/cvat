@@ -110,10 +110,17 @@ class ModelHandler:
 
             for label, score, box in zip(labels, scores, boxes):
                 if score >= threshold:
-                    xtl = max(int(box[0]), 0)
-                    ytl = max(int(box[1]), 0)
-                    xbr = min(int(box[2]), w)
-                    ybr = min(int(box[3]), h)
+                    # Boxes come back in letterboxed coordinates and are only shifted
+                    # and rescaled, so one predicted in the padding can sit wholly
+                    # outside the image. Clamp both ends of each axis, otherwise a
+                    # corner keeps its original value and the rectangle is inverted.
+                    xtl = min(max(int(box[0]), 0), w)
+                    ytl = min(max(int(box[1]), 0), h)
+                    xbr = min(max(int(box[2]), 0), w)
+                    ybr = min(max(int(box[3]), 0), h)
+
+                    if xbr <= xtl or ybr <= ytl:
+                        continue
 
                     results.append(
                         {
