@@ -520,6 +520,9 @@ class _Agent:
                 error_message = "Invalid annotation request: " + str(ex)
             elif isinstance(ex, concurrent.futures.BrokenExecutor):
                 error_message = "Worker process crashed"
+            elif isinstance(ex, (cvatds.UnsupportedDatasetError, cvatds.UnreadableMediaError)):
+                # The texts of these errors are meant for users and hold no local paths.
+                error_message = str(ex)
 
             try:
                 self._client.api_client.call_api(
