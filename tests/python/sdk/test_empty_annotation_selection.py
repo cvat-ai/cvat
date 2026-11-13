@@ -16,7 +16,9 @@ from cvat_sdk.core.client import Client
 def _annotations():
     return {
         "version": 0,
-        "tags": [{"id": 11, "frame": 0, "label_id": 1, "group": 0, "source": "manual", "attributes": []}],
+        "tags": [
+            {"id": 11, "frame": 0, "label_id": 1, "group": 0, "source": "manual", "attributes": []}
+        ],
         "shapes": [
             {
                 "id": 22,
