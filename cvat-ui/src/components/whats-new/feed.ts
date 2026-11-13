@@ -34,7 +34,7 @@ export function compareVersions(left: string, right: string): number {
     return 0;
 }
 
-export function contentURL(value: string, base?: string): string | undefined {
+export function getContentURL(value: string, base?: string): string | undefined {
     try {
         const url = new URL(value, base);
         if (url.username || url.password || url.protocol !== 'https:') {

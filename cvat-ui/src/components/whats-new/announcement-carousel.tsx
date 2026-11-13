@@ -6,7 +6,7 @@ import React, { useEffect, useRef, useState } from 'react';
 import { ArrowUpOutlined, NotificationOutlined } from '@ant-design/icons';
 import Button from 'antd/lib/button';
 import Carousel, { CarouselRef } from 'antd/lib/carousel';
-import { Announcement, announcementKey, contentURL } from './feed';
+import { Announcement, announcementKey, getContentURL } from './feed';
 
 function CarouselArrow({
     label, className, style, onClick,
@@ -35,8 +35,8 @@ export default function AnnouncementCarousel({ items, newKeys }: {
     if (!items.length) return null;
 
     const renderMedia = (item: Announcement, active: boolean): JSX.Element => {
-        const imageURL = contentURL(item.imageURL || '');
-        const videoURL = contentURL(item.videoURL || '');
+        const imageURL = getContentURL(item.imageURL || '');
+        const videoURL = getContentURL(item.videoURL || '');
         if (active && videoURL && !failedVideos.has(videoURL)) {
             return (
                 <video

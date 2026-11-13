@@ -18,7 +18,7 @@ import automaticPopupController from 'utils/automatic-popup-controller';
 import { CombinedState } from 'reducers';
 
 import {
-    ReleaseNote, SeenState, Updates, UpdatesAcknowledgement, compareVersions, contentURL, isNewVersion,
+    ReleaseNote, SeenState, Updates, UpdatesAcknowledgement, compareVersions, isNewVersion,
     announcementKey, latestAnnouncementsDate, unseenAnnouncements,
 } from './feed';
 import { acknowledge, fetchUpdates } from './server';
@@ -94,8 +94,7 @@ export default function WhatsNew(props: Props): JSX.Element {
     const newRelease = !!openingSeen && !!selectedRelease && isNewVersion(
         selectedRelease.version, openingSeen.lastSeenReleaseNotesVersion,
     );
-    const historyURL = updates?.updatesHistoryURL ||
-        (updates?.releaseHistoryURL ? contentURL('../updates/', updates.releaseHistoryURL) : undefined);
+    const historyURL = updates?.updatesHistoryURL;
 
     useEffect(() => {
         const controller = new AbortController();
@@ -117,8 +116,12 @@ export default function WhatsNew(props: Props): JSX.Element {
     }, [retry]);
 
     useEffect(() => {
-        if (!promotionsAllowed && offered.current) automaticPopupController.offer('whats-new', null);
-        automaticPopupController.refresh();
+        if (!promotionsAllowed && offered.current) {
+            automaticPopupController.offer('whats-new', null);
+        }
+        if (!blocked) {
+            automaticPopupController.refresh();
+        }
     }, [blocked, promotionsAllowed]);
     useEffect(() => () => { automaticPopupController.offer('whats-new', null); }, []);
 
