@@ -580,3 +580,27 @@ For detailed SAM2 setup instructions, see the
   ```
   cvat-cli function delete 100 101
   ```
+
+## Video decoding library
+
+Reading frames of tasks created from video (for example, by `task auto-annotate`
+or by an agent) requires the `video` extra and the OpenH264 library:
+
+```bash
+pip install "cvat-sdk[video]"
+cvat-cli openh264 install
+```
+
+- `cvat-cli openh264 install` downloads Cisco's OpenH264 library for this system
+  into the user data directory.
+- `cvat-cli openh264 status` shows which library is used.
+- `cvat-cli openh264 remove` deletes the downloaded library.
+
+To use your own OpenH264 2.x library instead, set `CVAT_OPENH264_LIBRARY` to its path:
+
+```bash
+export CVAT_OPENH264_LIBRARY=/path/to/libopenh264.so
+```
+
+OpenH264 Video Codec provided by Cisco Systems, Inc.
+The library is distributed under [Cisco's binary license](https://www.openh264.org/BINARY_LICENSE.txt).

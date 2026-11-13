@@ -1,10 +1,31 @@
 # CVAT MP4/H.264 video reader
 
 `cvat-mp4-h264` decodes the H.264 video track of an MP4 file into `VideoFrame` objects
-using a separately supplied OpenH264 shared library.
+using Cisco's OpenH264 shared library.
 
-The package ships no OpenH264 binary, PyAV, FFmpeg, `libx264`, codec downloader, or
-install-time network hook. It uses a separately supplied OpenH264 shared library at runtime.
+The package ships no OpenH264 binary, PyAV, FFmpeg, `libx264`, or install-time network hook.
+The OpenH264 library is downloaded only when you run the command below.
+
+## OpenH264 library
+
+```shell
+python -m cvat_mp4_h264 install   # download Cisco's OpenH264 2.7.0 for this system
+python -m cvat_mp4_h264 status    # show which library is used
+python -m cvat_mp4_h264 remove    # delete the downloaded library
+```
+
+`install` downloads the library from `https://ciscobinary.openh264.org/`, checks its SHA-256,
+and stores it in the user data directory. Supported systems: Linux x86_64 and arm64
+(glibc 2.27 or newer), macOS x86_64 and arm64, Windows x86_64.
+
+OpenH264 Video Codec provided by Cisco Systems, Inc.
+
+To use another OpenH264 2.x library, set `CVAT_OPENH264_LIBRARY` to its path;
+it takes priority over the downloaded copy:
+
+```shell
+export CVAT_OPENH264_LIBRARY=/path/to/libopenh264.so
+```
 
 ## Isolated development install
 
@@ -27,9 +48,10 @@ for path in sorted(Path("videos").glob("*.mp4")):
         process(frame.to_image())
 ```
 
-The path to the OpenH264 shared library is taken from the `CVAT_OPENH264_LIBRARY` environment
-variable; no other locations are searched. The library must be built for the operating system
-and CPU architecture the Python process runs on.
+The OpenH264 library is taken from the `CVAT_OPENH264_LIBRARY` environment variable, else from
+the copy downloaded by `python -m cvat_mp4_h264 install`; no other locations are searched.
+The library must be built for the operating system and CPU architecture the Python process
+runs on.
 
 `len(reader)` reads the frame count from the MP4 sample tables, without decoding.
 

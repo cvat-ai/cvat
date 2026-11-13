@@ -64,9 +64,30 @@ To read frames of tasks whose chunks are stored as video files
 pip install "cvat-sdk[video]"
 ```
 
-The `video` extra does not include an H.264 decoder. Install the
-[OpenH264](https://github.com/cisco/openh264) shared library separately
-and set the `CVAT_OPENH264_LIBRARY` environment variable to its path:
+The `video` extra does not include an H.264 decoder. Download Cisco's
+[OpenH264](https://github.com/cisco/openh264) library with this command:
+
+```bash
+python -m cvat_mp4_h264 install
+```
+
+The command supports Linux (x86_64 and arm64, glibc 2.27 or newer), macOS (x86_64 and arm64)
+and Windows (x86_64). It stores the library in your user data directory:
+
+| OS | Path |
+|---|---|
+| Linux | `~/.local/share/cvat-mp4-h264/openh264-2/libopenh264.so` |
+| macOS | `~/Library/Application Support/cvat-mp4-h264/openh264-2/libopenh264.dylib` |
+| Windows | `%LOCALAPPDATA%\CVAT.ai\cvat-mp4-h264\openh264-2\openh264.dll` |
+
+`python -m cvat_mp4_h264 status` shows which library is used,
+and `python -m cvat_mp4_h264 remove` deletes the downloaded copy.
+
+OpenH264 Video Codec provided by Cisco Systems, Inc.
+The library is distributed under [Cisco's binary license](https://www.openh264.org/BINARY_LICENSE.txt).
+
+To use your own copy instead, set the `CVAT_OPENH264_LIBRARY` environment variable to its path.
+It takes priority over the downloaded copy:
 
 ```bash
 export CVAT_OPENH264_LIBRARY=/path/to/libopenh264.so

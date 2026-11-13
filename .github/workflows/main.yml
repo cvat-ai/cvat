@@ -192,14 +192,7 @@ jobs:
             --extra-index-url https://download.pytorch.org/whl/cpu
 
       - name: Download OpenH264
-        env:
-          OPENH264_URL: https://ciscobinary.openh264.org/libopenh264-2.6.0-linux64.8.so.bz2
-          OPENH264_SHA256: 27ab53323c110b76214c1c72222f459d17febbcd1e252136cadc292b0308d75b
-        run: |
-          curl -fsSL "${OPENH264_URL}" -o /tmp/libopenh264.so.bz2
-          echo "${OPENH264_SHA256}  /tmp/libopenh264.so.bz2" | sha256sum --check
-          bunzip2 /tmp/libopenh264.so.bz2
-          echo "CVAT_OPENH264_LIBRARY=/tmp/libopenh264.so" >> "${GITHUB_ENV}"
+        run: python3 -m cvat_mp4_h264 install
 
       # Fail fast on failed test data integrity checks.
       # Other tests rely on the test data, so their results are meaningless if it is broken.
@@ -539,14 +532,7 @@ jobs:
           pip3 install --user cvat-sdk/ cvat-cli/ cvat-mp4-h264/ -r tests/python/requirements.txt
 
       - name: Download OpenH264
-        env:
-          OPENH264_URL: https://ciscobinary.openh264.org/libopenh264-2.6.0-linux64.8.so.bz2
-          OPENH264_SHA256: 27ab53323c110b76214c1c72222f459d17febbcd1e252136cadc292b0308d75b
-        run: |
-          curl -fsSL "${OPENH264_URL}" -o /tmp/libopenh264.so.bz2
-          echo "${OPENH264_SHA256}  /tmp/libopenh264.so.bz2" | sha256sum --check
-          bunzip2 /tmp/libopenh264.so.bz2
-          echo "CVAT_OPENH264_LIBRARY=/tmp/libopenh264.so" >> "${GITHUB_ENV}"
+        run: python3 -m cvat_mp4_h264 install
 
       - name: Wait for CVAT to be ready
         run: |

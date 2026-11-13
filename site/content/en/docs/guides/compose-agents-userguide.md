@@ -92,7 +92,20 @@ Also, some explanatory example could be found in
 
 Detector agents (YOLO, RF-DETR, Hugging Face Transformers) need the
 [OpenH264](https://github.com/cisco/openh264) library to annotate tasks created from video.
-The agent images don't include it, so you mount a copy from your machine:
+The agent images don't include it. There are two ways to provide it.
+
+**Download at start.** In `.env`, set:
+
+```bash
+INSTALL_OPENH264=true
+```
+
+When the agent container starts, it downloads Cisco's OpenH264 library.
+The container needs access to `https://ciscobinary.openh264.org`.
+OpenH264 Video Codec provided by Cisco Systems, Inc.
+The library is distributed under [Cisco's binary license](https://www.openh264.org/BINARY_LICENSE.txt).
+
+**Mount your own copy.**
 
 1. Download an OpenH264 2.x library built for **Linux** and for the CPU architecture of the image.
 2. In `.env`, set `OPENH264_LIBRARY_ABSOLUTE_PATH` to the absolute path of that file.
@@ -184,7 +197,9 @@ docker compose down -v
 - Also there could be issues with MODEL_CONFIG_PARAMS. Please make sure that you have provided correct parameters for the model you are using. You can check the model documentation for more details on that.
 - If a detector fails on video tasks with "The agent cannot read the chunks of this task",
   check the agent logs:
-  - "Set CVAT_OPENH264_LIBRARY" means `docker-compose-mount-openh264.yaml` is not in `COMPOSE_FILE`.
+  - "OpenH264 library not found" means neither `INSTALL_OPENH264=true` is set
+    nor `docker-compose-mount-openh264.yaml` is in `COMPOSE_FILE`.
+  - "Could not download" means the container cannot reach `https://ciscobinary.openh264.org`.
   - "invalid ELF header" or "wrong ELF class" means the library is not a Linux build
     for the image's CPU architecture.
 - If `docker compose up` fails with "bind source path does not exist",

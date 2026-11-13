@@ -19,6 +19,7 @@ requires-python = ">=3.11"
 dependencies = [
     "attrs >= 21.4.0",
     "Pillow >= 10.3.0",
+    "platformdirs >= 2.1.0",
 ]
 
 [project.urls]
@@ -30,6 +31,9 @@ build-backend = "setuptools.build_meta"
 
 [tool.setuptools.dynamic]
 version = {attr = "cvat_mp4_h264.version.VERSION"}
+
+[tool.setuptools.package-data]
+"cvat_mp4_h264.commands" = ["OPENH264_BINARY_LICENSE.txt"]
 
 [tool.isort]
 profile = "black"

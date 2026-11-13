@@ -9,6 +9,9 @@ import enum
 # The bindings mirror the OpenH264 2.x headers.
 SUPPORTED_MAJOR_VERSION = 2
 
+# The version `python -m cvat_mp4_h264 install` downloads.
+INSTALL_VERSION = "2.7.0"
+
 # codec_app_def.h: VIDEO_BITSTREAM_TYPE
 VIDEO_BITSTREAM_AVC = 0
 

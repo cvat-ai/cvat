@@ -10,7 +10,7 @@ import ctypes
 
 from ..exceptions import UnsupportedVideoError
 from ..settings import OPENH264_LIBRARY_ENV_VAR, get_openh264_library_path
-from .bindings import ISVCDecoder, SBufferInfo, SDecodingParam, SVideoProperty, declare_functions
+from .bindings import ISVCDecoder, SBufferInfo, SDecodingParam, SVideoProperty
 from .consts import (
     DECODING_STATE,
     ERROR_CON_DISABLE,
@@ -19,30 +19,26 @@ from .consts import (
 )
 from .exceptions import VideoDecoderUnavailableError
 from .schemas import LibraryInfo, VideoFrame
-from .utils import (
-    copy_i420_frame,
-    ensure_supported_version,
-    open_shared_library,
-    probe_version,
-)
+from .utils import copy_i420_frame, get_library_install_path, load_library_from_path
 
 
 def load_library() -> LibraryInfo:
     """Find, load and version-validate the OpenH264 library."""
 
     library_path = get_openh264_library_path()
+    install_path = get_library_install_path()
+
+    if library_path is None and install_path.is_file():
+        library_path = str(install_path)
+
     if library_path is None:
         raise VideoDecoderUnavailableError(
-            "Decoding video chunks requires OpenH264. "
-            f"Set {OPENH264_LIBRARY_ENV_VAR} to the path of the OpenH264 shared library."
+            "OpenH264 library not found. "
+            "Run `python -m cvat_mp4_h264 install` to download it from Cisco, "
+            f"or set {OPENH264_LIBRARY_ENV_VAR} to the path of an OpenH264 2.x shared library."
         )
 
-    library = open_shared_library(library_path=library_path)
-    declare_functions(library=library)
-    version = probe_version(library=library)
-    ensure_supported_version(version=version, library_path=library_path)
-
-    return LibraryInfo(library_path=library_path, version=version, library=library)
+    return load_library_from_path(library_path=library_path)
 
 
 class OpenH264Decoder:
