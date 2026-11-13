@@ -496,7 +496,6 @@ function HeaderComponent(props: Props): JSX.Element {
             <div className='cvat-right-header'>
                 {props.whatsNewEnabled && (
                     <WhatsNew
-                        key={user.id}
                         userId={user.id}
                         autoOpenBlocked={!!props.whatsNewAutoOpenBlocked || settingsModalVisible ||
                             shortcutsModalVisible || props.changePasswordDialogShown}
