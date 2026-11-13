@@ -7,6 +7,7 @@ from collections.abc import Iterator
 
 import numpy as np
 import PIL.Image
+import torch
 from skimage import measure
 from torch import Tensor
 
@@ -55,6 +56,7 @@ def _generate_shapes(
 class _TorchvisionInstanceSegmentationFunction(TorchvisionFunction):
     _label_type = "mask"
 
+    @torch.no_grad()
     def detect(
         self, context: cvataa.DetectionFunctionContext, image: PIL.Image.Image
     ) -> list[models.LabeledShapeRequest]:
