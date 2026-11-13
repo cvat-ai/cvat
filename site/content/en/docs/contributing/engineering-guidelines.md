@@ -216,9 +216,8 @@ A common issue is a change added _next to_ the existing code instead of _into_ i
   inherently narrow (e.g. optimizing a specific operation). Generality is about structure;
   it does not justify extra options (see section 3).
 
-- **Stay consistent with sibling code.** When fixing one path, check the analogous
-  ones (e.g. export and import) and the same option in other media types.
-  Sibling helpers should have the same signature shape.
+- **Stay consistent with sibling code.** When fixing one path, check the analogous ones nearby.
+  It's likely they need some updates as well.
 
 ## 5. Types and constants
 
