@@ -39,7 +39,11 @@ class AnnotationCrudMixin(ABC):
         )
 
     def remove_annotations(self: _EntityT, *, ids: Sequence[int] | None = None):
-        if ids:
+        """Delete the selected IDs, or all annotations if ids is None. An empty sequence is a no-op."""
+        if ids is not None:
+            if not ids:
+                return
+
             anns = self.get_annotations()
 
             if not isinstance(ids, set):
