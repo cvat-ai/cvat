@@ -113,7 +113,7 @@ def annotation_endpoint(request):
             entity = (
                 Task(
                     client,
-                    models.TaskRead(
+                    models.TaskRead.from_openapi_data(
                         id=7,
                         name="annotation selection",
                         jobs=models.JobsSummary(completed=0, validation=0),
@@ -123,12 +123,12 @@ def annotation_endpoint(request):
                 if resource == "tasks"
                 else Job(
                     client,
-                    models.JobRead(
+                    models.JobRead.from_openapi_data(
                         id=7,
                         start_frame=0,
                         stop_frame=1,
                         frame_count=2,
-                        issues=models.IssuesSummary(count=0),
+                        issues=models.IssuesSummary.from_openapi_data(count=0),
                         labels=models.LabelsSummary(),
                     ),
                 )
