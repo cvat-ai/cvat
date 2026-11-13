@@ -3,6 +3,7 @@
 # SPDX-License-Identifier: MIT
 
 import gzip
+import hashlib
 import io
 import json
 import threading
@@ -114,9 +115,7 @@ def test_download_decodes_http_encoding_and_keeps_archive_bytes(
     assert progress.total == expected_total
 
 
-def test_intrinsically_gzipped_file_is_not_decoded_without_content_encoding(
-    tmp_path, download_server
-):
+def test_intrinsically_gzipped_file_is_not_decoded_without_content_encoding(tmp_path, download_server):
     url, state = download_server
     expected = gzip.compress(b"annotation file content")
     state["body"] = expected
@@ -134,7 +133,9 @@ def test_decoded_content_spans_multiple_download_reads(tmp_path, download_server
     state["body"] = gzip.compress(expected) if encoding == "gzip" else zlib.compress(expected)
     progress = RecordingProgress()
 
-    assert _download(url, tmp_path / "large.txt", progress).read_bytes() == expected
+    actual = _download(url, tmp_path / "large.txt", progress).read_bytes()
+    assert len(actual) == len(expected)
+    assert hashlib.sha256(actual).digest() == hashlib.sha256(expected).digest()
     assert progress.completed == len(expected)
     assert progress.total is None
 
