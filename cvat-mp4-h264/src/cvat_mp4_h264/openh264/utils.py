@@ -9,14 +9,31 @@ from __future__ import annotations
 import ctypes
 import platform
 import sys
+from pathlib import Path
 
 import PIL.Image
+import platformdirs
 
 from ..exceptions import UnsupportedVideoError
-from .bindings import OpenH264Version, SBufferInfo
+from .bindings import OpenH264Version, SBufferInfo, declare_functions
 from .consts import SUPPORTED_MAJOR_VERSION, videoFormatI420
 from .exceptions import DecoderVersionMismatchError, VideoDecoderUnavailableError
-from .schemas import VideoFrame
+from .schemas import LibraryInfo, VideoFrame
+
+
+def get_library_install_path() -> Path:
+    """Return where `python -m cvat_mp4_h264 install` puts the library; the file may not exist."""
+
+    file_names = {
+        "darwin": "libopenh264.dylib",
+        "win32": "openh264.dll",
+    }
+    file_name = file_names.get(sys.platform, "libopenh264.so")
+    return (
+        platformdirs.user_data_path("cvat-mp4-h264", "CVAT.ai")
+        / f"openh264-{SUPPORTED_MAJOR_VERSION}"
+        / file_name
+    )
 
 
 def open_shared_library(library_path: str) -> ctypes.CDLL:
@@ -45,6 +62,17 @@ def ensure_supported_version(version: tuple[int, int, int], library_path: str) -
             f"OpenH264 library {library_path!r} reports version {reported}, "
             f"but only {SUPPORTED_MAJOR_VERSION}.x is supported."
         )
+
+
+def load_library_from_path(library_path: str) -> LibraryInfo:
+    """Load and version-validate the OpenH264 library at the given path."""
+
+    library = open_shared_library(library_path=library_path)
+    declare_functions(library=library)
+    version = probe_version(library=library)
+    ensure_supported_version(version=version, library_path=library_path)
+
+    return LibraryInfo(library_path=library_path, version=version, library=library)
 
 
 def _copy_plane(pointer: int, width: int, height: int, stride: int) -> PIL.Image.Image:

@@ -169,6 +169,14 @@ and the OpenH264 library:
 
 ```bash
 python -m pip install "cvat-sdk[video]"
+cvat-cli openh264 install
+```
+
+The second command downloads Cisco's OpenH264 library
+(OpenH264 Video Codec provided by Cisco Systems, Inc.).
+To use your own OpenH264 2.x library instead, set `CVAT_OPENH264_LIBRARY` to its path:
+
+```bash
 export CVAT_OPENH264_LIBRARY=/path/to/libopenh264.so
 ```
 

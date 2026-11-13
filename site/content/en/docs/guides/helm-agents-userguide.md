@@ -172,7 +172,23 @@ agent:
 
 Detector agents (YOLO, RF-DETR, Hugging Face Transformers) need the
 [OpenH264](https://github.com/cisco/openh264) library to annotate tasks created from video.
-The agent images don't include it. Mount an OpenH264 2.x library built for Linux
+The agent images don't include it.
+
+To download Cisco's OpenH264 library when the agent pod starts, set `INSTALL_OPENH264`.
+The pod needs access to `https://ciscobinary.openh264.org`, and each pod downloads
+its own copy at start:
+
+```yaml
+agent:
+  envVars:
+    - name: INSTALL_OPENH264
+      value: "true"
+```
+
+OpenH264 Video Codec provided by Cisco Systems, Inc.
+The library is distributed under [Cisco's binary license](https://www.openh264.org/BINARY_LICENSE.txt).
+
+To use your own copy instead, mount an OpenH264 2.x library built for Linux
 and the CPU architecture of the image, and point `CVAT_OPENH264_LIBRARY` at it:
 
 ```yaml
