@@ -62,6 +62,8 @@ class ProjectVisionDataset(torchvision.datasets.VisionDataset):
         * If `include_subsets` is set to a container, then tasks whose subset is
           not a member of this container will be excluded.
 
+        If no tasks remain after filtering, the dataset is empty.
+
         `update_policy` determines when and if the local cache will be updated.
         """
 
@@ -87,6 +89,10 @@ class ProjectVisionDataset(torchvision.datasets.VisionDataset):
             tasks = [task for task in tasks if task.subset in include_subsets]
 
         tasks.sort(key=lambda t: t.id)  # ensure consistent order between executions
+
+        if not tasks:
+            self._underlying = []
+            return
 
         self._underlying = torch.utils.data.ConcatDataset(
             [
