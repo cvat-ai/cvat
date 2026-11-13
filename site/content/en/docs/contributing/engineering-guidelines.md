@@ -428,6 +428,10 @@ that can (_Code Complete_, "Defensive Programming").
 
 - Touch only the affected rows, in batches. Prefer bulk operations.
 
+- Optimize for the expected data distribution: write the common case cheaply and leave expensive
+  updates for the exceptions. For example, add a field with the most common value as a constant
+  default (PostgreSQL doesn't rewrite the rows for it), then update only the rows that deviate.
+
 - Avoid using DB provider-specific features, unless necessary. CVAT currently uses
   PostgreSQL and SQLite (in tests).
 
