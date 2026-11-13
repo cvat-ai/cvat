@@ -9,7 +9,7 @@ import sys
 
 import urllib3.exceptions
 from cvat_sdk import exceptions
-from cvat_sdk.core.exceptions import AuthStoreError
+from cvat_sdk.core.exceptions import AuthStoreError, ChunkReaderUnavailableException
 
 from ._internal.commands_all import COMMANDS
 from ._internal.common import (
@@ -46,6 +46,7 @@ def main(args: list[str] = None):
         urllib3.exceptions.HTTPError,
         CriticalError,
         AuthStoreError,
+        ChunkReaderUnavailableException,
     ) as e:
         logger.critical(e)
         return 1
