@@ -365,7 +365,7 @@ that can (_Code Complete_, "Defensive Programming").
   and what was not tested.
 
 - **Changelog entries** describe the user-visible effect, not the implementation,
-  and link the real PR.
+  and link the PR.
 
 - **When proposing a design**, list the alternatives with their downsides,
   quantify where possible, and state uncertainty explicitly.
