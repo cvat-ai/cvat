@@ -31,6 +31,7 @@ interface Props {
     autoOpenBlocked: boolean;
 }
 
+// Metadata and acknowledgement responses can arrive out of order; keep the newest seen markers.
 function mergeSeenState(current: SeenState | null, next: SeenState): SeenState {
     const previousVersion = current?.lastSeenReleaseNotesVersion;
     const previousDate = current?.lastSeenAnnouncementsDate;
@@ -47,6 +48,12 @@ function mergeSeenState(current: SeenState | null, next: SeenState): SeenState {
     };
 }
 
+/**
+ * Opens automatically for unseen eligible content after loading, when preferences and dialogs allow it.
+ * Manual opening can happen before metadata arrives and suppresses further automatic opening.
+ * Each opening captures an unread snapshot before acknowledging the displayed content.
+ * Failed content loads and acknowledgements can be retried independently.
+ */
 export default function WhatsNew(props: Props): JSX.Element {
     const [updates, setUpdates] = useState<Updates | null>(null);
     const [seen, setSeen] = useState<SeenState | null>(null);
@@ -59,7 +66,6 @@ export default function WhatsNew(props: Props): JSX.Element {
     const [retry, setRetry] = useState(0);
     const [ackRetry, setAckRetry] = useState(0);
     const manuallyOpened = useRef(false);
-    const ackRequests = useRef(new Set<string>());
     const profilePromotionsAllowed = useSelector((state: CombinedState) => (
         state.growth.data?.owner.id === props.userId ? state.growth.data.promotionNotificationsAllowed : undefined
     ));
@@ -95,6 +101,7 @@ export default function WhatsNew(props: Props): JSX.Element {
     );
     const historyURL = updates?.updatesHistoryURL;
 
+    // Load on mount or retry; cleanup prevents obsolete responses from updating state.
     useEffect(() => {
         const controller = new AbortController();
         setLoading(true);
@@ -114,11 +121,13 @@ export default function WhatsNew(props: Props): JSX.Element {
         return () => controller.abort();
     }, [retry]);
 
+    // Start a fresh eligibility check on mount and withdraw callbacks when this instance unmounts.
     useEffect(() => {
         automaticPopupController.resetEligibility('whats-new');
         return () => { automaticPopupController.offer('whats-new', null); };
     }, []);
 
+    // Withdraw disallowed offers and retry pending opening when a blocking dialog closes.
     useEffect(() => {
         if (!promotionsAllowed && automaticPopupController.isEligibilityResolved('whats-new')) {
             automaticPopupController.offer('whats-new', null);
@@ -134,6 +143,7 @@ export default function WhatsNew(props: Props): JSX.Element {
         if (open && ready && !openingSeen) setOpeningSeen(seen || updates?.state || null);
     }, [open, ready, openingSeen, seen, updates]);
 
+    // Resolve automatic-opening eligibility after loading; manual opening suppresses the offer.
     useEffect(() => {
         if (loading || automaticPopupController.isEligibilityResolved('whats-new')) return;
         if (!updates || loadError || manuallyOpened.current || !promotionsAllowed) {
@@ -162,6 +172,8 @@ export default function WhatsNew(props: Props): JSX.Element {
         });
     }, [updates, loading, loadError, announcements, promotionsAllowed]);
 
+    // Repeated acknowledgements are safe: the backend only advances seen markers.
+    // Ignore obsolete responses; confirmed seen state prevents another submission after success.
     useEffect(() => {
         if (!open || !ready || !openingSeen) return undefined;
         const values: UpdatesAcknowledgement = {};
@@ -172,28 +184,18 @@ export default function WhatsNew(props: Props): JSX.Element {
             values.announcementsSeenAt = announcementsDate;
         }
         if (!Object.keys(values).length) return undefined;
-        const key = JSON.stringify(values);
-        if (ackRequests.current.has(key)) return undefined;
-        ackRequests.current.add(key);
         const controller = new AbortController();
-        let settled = false;
         acknowledge(values, controller.signal).then((result) => {
             if (!controller.signal.aborted) {
-                settled = true;
                 setSeen((current) => mergeSeenState(current, result));
                 setAckError(false);
             }
         }).catch(() => {
             if (!controller.signal.aborted) {
-                settled = true;
-                ackRequests.current.delete(key);
                 setAckError(true);
             }
         });
-        return () => {
-            controller.abort();
-            if (!settled) ackRequests.current.delete(key);
-        };
+        return () => controller.abort();
     }, [
         open, ready, openingSeen, selectedRelease, announcementsDate,
         unreadAnnouncements, canAcknowledgeAnnouncements, seen, ackRetry,
