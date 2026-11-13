@@ -52,7 +52,6 @@ export const config: Partial<Config> = {
                     { value: 'classifier', title: 'Classifier' },
                     { value: 'detector', title: 'Detector' },
                     { value: 'segmenter', title: 'Segmenter' },
-                    { value: 'glm', title: 'GLM' },
                     { value: 'interactor', title: 'Interactor' },
                     { value: 'tracker', title: 'Tracker' },
                     { value: 'reid', title: 'ReID' },
