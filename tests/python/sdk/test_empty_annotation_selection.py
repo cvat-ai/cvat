@@ -111,9 +111,27 @@ def annotation_endpoint(request):
     try:
         with Client(f"http://127.0.0.1:{server.server_port}", check_server_version=False) as client:
             entity = (
-                Task(client, models.TaskRead(id=7, name="annotation selection"))
+                Task(
+                    client,
+                    models.TaskRead(
+                        id=7,
+                        name="annotation selection",
+                        jobs=models.JobsSummary(completed=0, validation=0),
+                        labels=models.LabelsSummary(),
+                    ),
+                )
                 if resource == "tasks"
-                else Job(client, models.JobRead(id=7, start_frame=0, stop_frame=1, frame_count=2))
+                else Job(
+                    client,
+                    models.JobRead(
+                        id=7,
+                        start_frame=0,
+                        stop_frame=1,
+                        frame_count=2,
+                        issues=models.IssuesSummary(count=0),
+                        labels=models.LabelsSummary(),
+                    ),
+                )
             )
             yield entity, calls, state
     finally:
