@@ -38,15 +38,18 @@ function JobsContentComponent(props: Readonly<Props>): JSX.Element {
 
     return (
         <Row justify='center' align='middle' className='cvat-resource-list-wrapper'>
-            <Col className='cvat-jobs-page-list' {...dimensions}>
+            <Col className='cvat-jobs-page-list cvat-resource-card-list' {...dimensions}>
                 <BulkWrapper currentResourceIds={jobs.map((j) => j.id)} resourceType={SelectedResourceType.JOBS}>
                     {(selectProps) => {
                         const renderJobRow = (jobInstances: Job[]): JSX.Element => (
-                            <Row key={jobInstances[0].id} className='cvat-jobs-list-row'>
+                            <Row
+                                key={jobInstances[0].id}
+                                className='cvat-jobs-list-row cvat-resource-card-list-row'
+                            >
                                 {jobInstances.map((job: Job) => {
                                     const globalIdx = jobIdToIndex.get(job.id) ?? 0;
                                     return (
-                                        <Col span={6} key={job.id}>
+                                        <Col span={6} key={job.id} className='cvat-resource-card-list-column'>
                                             <JobCard
                                                 key={job.id}
                                                 job={job}

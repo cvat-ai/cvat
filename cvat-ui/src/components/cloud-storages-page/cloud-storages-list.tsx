@@ -44,18 +44,21 @@ export default function StoragesList(props: Readonly<Props>): JSX.Element {
     return (
         <>
             <Row justify='center' align='middle' className='cvat-resource-list-wrapper'>
-                <Col {...dimensions} className='cvat-cloud-storages-list'>
+                <Col {...dimensions} className='cvat-cloud-storages-list cvat-resource-card-list'>
                     <BulkWrapper
                         currentResourceIds={storages.map((s) => s.id)}
                         resourceType={SelectedResourceType.CLOUD_STORAGES}
                     >
                         {(selectProps) => {
                             const renderStorageRow = (instances: CloudStorage[]): JSX.Element => (
-                                <Row key={instances[0].id} className='cvat-cloud-storages-list-row'>
+                                <Row
+                                    key={instances[0].id}
+                                    className='cvat-cloud-storages-list-row cvat-resource-card-list-row'
+                                >
                                     {instances.map((instance: CloudStorage) => {
                                         const globalIdx = storageIdToIndex.get(instance.id) ?? 0;
                                         return (
-                                            <Col span={6} key={instance.id}>
+                                            <Col span={6} key={instance.id} className='cvat-resource-card-list-column'>
                                                 <CloudStorageItemComponent
                                                     cloudStorage={instance}
                                                     {...selectProps(instance.id, globalIdx)}

@@ -54,15 +54,6 @@
     display: flex;
     flex-wrap: wrap;
     overflow-y: auto;
-
-    .cvat-cloud-storages-list-row {
-        width: 100%;
-        margin-bottom: $grid-unit-size;
-
-        > div:not(:first-child) {
-            padding-left: $grid-unit-size;
-        }
-    }
 }
 
 .cvat-empty-cloud-storages-list {
@@ -79,37 +70,40 @@
         margin-bottom: 0;
     }
 
-    cursor: default;
+    .cvat-cloud-storage-status {
+        position: absolute;
+        top: $grid-unit-size;
+        right: $grid-unit-size;
+        pointer-events: auto;
+    }
 
-    .cvat-cloud-storage-item-loading-preview,
-    .cvat-cloud-storage-item-empty-preview {
-        @extend .cvat-base-preview;
+    .cvat-cloud-storage-title {
+        display: flex;
+        align-items: center;
+        gap: $grid-unit-size;
+        min-width: 0;
 
-        height: $grid-unit-size * 24;
-
-        svg {
-            width: 40%;
-            height: 40%;
+        .ant-typography {
+            flex: 0 1 auto;
+            min-width: 0;
         }
     }
 
-    .cvat-cloud-storage-item-preview {
-        height: $grid-unit-size * 24;
-        object-fit: cover;
-        margin: auto;
-        width: 100%;
-    }
-
-    .cvat-cloud-storage-item-menu-button {
-        position: absolute;
-        bottom: 0;
-        right: 0;
-    }
-
     .cvat-cloud-storage-description-icon {
-        position: absolute;
-        top: $grid-unit-size;
+        flex: none;
         width: auto;
-        right: $grid-unit-size;
+        font-size: $grid-unit-size * 2;
+        color: $text-color-secondary;
+    }
+
+    .cvat-cloud-storage-status-indicator {
+        display: flex;
+        align-items: center;
+
+        .ant-badge-status-dot {
+            width: $grid-unit-size * 1.5;
+            height: $grid-unit-size * 1.5;
+            box-shadow: 0 0 0 2px $background-color-1, 0 1px 4px rgba(0, 0, 0, 35%);
+        }
     }
 }

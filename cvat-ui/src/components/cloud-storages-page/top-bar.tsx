@@ -46,7 +46,11 @@ export default function StoragesTopBar(props: Readonly<Props>): JSX.Element {
     const [visibility, setVisibility] = useState(defaultVisibility);
 
     return (
-        <Row justify='center' align='middle' className='cvat-cloud-storages-list-top-bar cvat-resource-top-bar-wrapper'>
+        <Row
+            justify='center'
+            align='middle'
+            className='cvat-cloud-storages-list-top-bar cvat-resource-top-bar-wrapper cvat-resource-card-top-bar'
+        >
             <Col {...dimensions}>
                 <div className='cvat-cloudstorages-page-filters-wrapper'>
                     <div>

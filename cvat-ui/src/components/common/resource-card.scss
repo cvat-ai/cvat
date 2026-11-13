@@ -1,0 +1,229 @@
+// Copyright (C) CVAT.ai Corporation
+//
+// SPDX-License-Identifier: MIT
+
+@import 'base';
+
+.cvat-resource-card {
+    display: flex;
+    flex-direction: column;
+    width: 100%;
+    overflow: hidden;
+    border: 1px solid $border-color-1;
+    border-radius: $grid-unit-size * 1.5;
+    background: $background-color-1;
+    cursor: pointer;
+    transition: box-shadow $box-shadow-transition;
+
+    &:hover {
+        box-shadow: $box-shadow-base;
+    }
+
+    &.cvat-resource-card-disabled {
+        opacity: 0.5;
+        pointer-events: none;
+    }
+
+    .ant-card-cover {
+        margin: 0;
+        border-radius: 0;
+    }
+
+    .ant-card-body {
+        padding: $grid-unit-size;
+    }
+
+    &.cvat-resource-card-fixed-height {
+        .ant-card-cover {
+            flex: 1;
+            min-height: 0;
+        }
+
+        .cvat-resource-card-media {
+            height: 100%;
+            aspect-ratio: auto;
+        }
+    }
+}
+
+.cvat-resource-card-media {
+    position: relative;
+    width: 100%;
+    aspect-ratio: 3 / 2;
+    overflow: hidden;
+    background: #f5f5f5;
+}
+
+.cvat-resource-card-list,
+.cvat-resource-card-top-bar {
+    padding-right: $grid-unit-size;
+    padding-left: $grid-unit-size;
+}
+
+.cvat-resource-card-list-row {
+    width: 100%;
+    margin-bottom: $grid-unit-size;
+
+    > .cvat-resource-card-list-column {
+        display: flex;
+
+        &:not(:first-child) {
+            padding-left: $grid-unit-size;
+        }
+    }
+}
+
+.cvat-resource-card-preview,
+.cvat-resource-card-preview > * {
+    width: 100%;
+    height: 100%;
+}
+
+.cvat-resource-card-preview {
+    position: absolute;
+    inset: 0;
+
+    > * {
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        overflow: hidden;
+    }
+
+    .ant-spin {
+        position: inherit;
+    }
+
+    .cvat-empty-preview {
+        font-size: $grid-unit-size * 15;
+        text-align: center;
+
+        .anticon {
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            width: 100%;
+            height: 100%;
+        }
+
+        svg {
+            width: 65%;
+            height: 65%;
+        }
+    }
+}
+
+.cvat-resource-card-preview img {
+    display: block;
+    width: 100%;
+    height: 100%;
+    object-fit: cover;
+}
+
+.cvat-resource-card-id {
+    position: absolute;
+    top: $grid-unit-size;
+    left: 0;
+    max-width: calc(100% - #{$grid-unit-size * 7});
+    padding: $grid-unit-size * 0.75 $grid-unit-size;
+    overflow: hidden;
+    border-radius: 0 $border-radius-base $border-radius-base 0;
+    background: rgba(255, 255, 255, 88%);
+    box-shadow: $box-shadow-base;
+    text-overflow: ellipsis;
+    cursor: text;
+    user-select: text;
+    white-space: nowrap;
+}
+
+.cvat-resource-card-tags {
+    position: absolute;
+    bottom: $grid-unit-size;
+    left: $grid-unit-size;
+    display: flex;
+    flex-wrap: wrap;
+    gap: $grid-unit-size * 0.75;
+    max-width: calc(100% - #{$grid-unit-size * 2});
+
+    .ant-tag {
+        margin: 0;
+        border: 1px solid rgba(255, 255, 255, 45%);
+        border-radius: $grid-unit-size * 2;
+        color: white;
+        background: rgba(24, 24, 24, 68%);
+        backdrop-filter: blur(6px);
+        text-transform: capitalize;
+    }
+}
+
+.cvat-resource-card-media-overlay {
+    position: absolute;
+    inset: 0;
+    pointer-events: none;
+}
+
+.cvat-resource-card-content {
+    position: relative;
+    display: flex;
+    flex-direction: column;
+    min-height: $grid-unit-size * 4;
+    padding-right: $grid-unit-size * 3;
+}
+
+.cvat-resource-card-title {
+    flex: 1;
+    min-width: 0;
+    cursor: text;
+    user-select: text;
+
+    > * {
+        display: block;
+        margin-bottom: 0;
+    }
+}
+
+.cvat-resource-card-descriptions {
+    display: flex;
+    flex-direction: column;
+    cursor: text;
+    user-select: text;
+}
+
+.cvat-resource-card-menu {
+    position: absolute;
+    right: 0;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+
+    .ant-btn {
+        display: flex;
+        align-items: center;
+        justify-content: center;
+    }
+}
+
+.cvat-resource-card-descriptions-spaced {
+    margin-top: $grid-unit-size * 0.75;
+}
+
+.cvat-resource-card-line {
+    display: block;
+    width: 100%;
+}
+
+.cvat-resource-card-description {
+    display: flex;
+    min-width: 0;
+}
+
+.cvat-resource-card-description-label {
+    flex: none;
+    margin-right: $grid-unit-size;
+    color: $text-color-secondary;
+}
+
+.cvat-resource-card-description-value {
+    flex: 1;
+    min-width: 0;
+}

@@ -56,25 +56,26 @@ export default function ProjectListComponent(): JSX.Element {
         [],
     );
 
-    const projectIdToIndex = new Map<number, number>();
-    projects.forEach((p, idx) => projectIdToIndex.set(p.id, idx));
-
-    const selectableProjectIds = projects.map((p) => p.id).filter((id) => !deletingProjects[id]);
+    const selectableProjectIds = projects.map((project) => project.id)
+        .filter((id) => !(id in deletingProjects));
     const selectableProjectIdToIndex = new Map<number, number>();
     selectableProjectIds.forEach((id, idx) => selectableProjectIdToIndex.set(id, idx));
 
     return (
         <>
             <Row justify='center' align='middle' className='cvat-resource-list-wrapper cvat-project-list-content'>
-                <Col className='cvat-projects-list' {...dimensions}>
+                <Col className='cvat-projects-list cvat-resource-card-list' {...dimensions}>
                     <BulkWrapper currentResourceIds={selectableProjectIds} resourceType={SelectedResourceType.PROJECTS}>
                         {(selectProps) => {
                             const defaultProps = { selected: false, onClick: () => false };
 
                             const renderProjectRow = (projectInstances: Project[]): JSX.Element => (
-                                <Row key={projectInstances[0].id} className='cvat-projects-list-row'>
+                                <Row
+                                    key={projectInstances[0].id}
+                                    className='cvat-projects-list-row cvat-resource-card-list-row'
+                                >
                                     {projectInstances.map((project: Project) => {
-                                        const isDeleting = deletingProjects[project.id];
+                                        const isDeleting = project.id in deletingProjects;
                                         const selectableIndex = isDeleting ?
                                             -1 :
                                             selectableProjectIdToIndex.get(project.id) ?? -1;
@@ -85,7 +86,7 @@ export default function ProjectListComponent(): JSX.Element {
                                             defaultProps;
 
                                         return (
-                                            <Col span={6} key={project.id}>
+                                            <Col span={6} key={project.id} className='cvat-resource-card-list-column'>
                                                 <ProjectItem
                                                     key={project.id}
                                                     projectInstance={project}
