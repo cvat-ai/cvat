@@ -71,9 +71,14 @@ export interface Announcement extends PostPreview {
 }
 
 export interface SeenState {
-    last_seen_release_notes_version: string;
-    last_seen_announcements_date: string | null;
-    promotion_notifications_allowed: boolean;
+    lastSeenReleaseNotesVersion: string;
+    lastSeenAnnouncementsDate: string | null;
+    promotionNotificationsAllowed: boolean;
+}
+
+export interface UpdatesAcknowledgement {
+    releaseVersion?: string;
+    announcementsSeenAt?: string;
 }
 
 export interface Updates {

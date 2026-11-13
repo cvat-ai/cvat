@@ -18,7 +18,7 @@ import automaticPopupController from 'utils/automatic-popup-controller';
 import { CombinedState } from 'reducers';
 
 import {
-    ReleaseNote, SeenState, Updates, compareVersions, contentURL, isNewVersion,
+    ReleaseNote, SeenState, Updates, UpdatesAcknowledgement, compareVersions, contentURL, isNewVersion,
     announcementKey, latestAnnouncementsDate, unseenAnnouncements,
 } from './feed';
 import { acknowledge, fetchUpdates } from './server';
@@ -32,18 +32,18 @@ interface Props {
 }
 
 function mergeSeenState(current: SeenState | null, next: SeenState): SeenState {
-    const previousVersion = current?.last_seen_release_notes_version;
-    const previousDate = current?.last_seen_announcements_date;
-    const keepPreviousVersion = previousVersion && (!next.last_seen_release_notes_version ||
-        compareVersions(previousVersion, next.last_seen_release_notes_version) > 0);
-    const keepPreviousDate = previousDate && (!next.last_seen_announcements_date ||
-        Date.parse(previousDate) > Date.parse(next.last_seen_announcements_date));
+    const previousVersion = current?.lastSeenReleaseNotesVersion;
+    const previousDate = current?.lastSeenAnnouncementsDate;
+    const keepPreviousVersion = previousVersion && (!next.lastSeenReleaseNotesVersion ||
+        compareVersions(previousVersion, next.lastSeenReleaseNotesVersion) > 0);
+    const keepPreviousDate = previousDate && (!next.lastSeenAnnouncementsDate ||
+        Date.parse(previousDate) > Date.parse(next.lastSeenAnnouncementsDate));
     return {
         ...next,
-        last_seen_release_notes_version: keepPreviousVersion ?
-            previousVersion : next.last_seen_release_notes_version,
-        last_seen_announcements_date: keepPreviousDate ?
-            previousDate : next.last_seen_announcements_date,
+        lastSeenReleaseNotesVersion: keepPreviousVersion ?
+            previousVersion : next.lastSeenReleaseNotesVersion,
+        lastSeenAnnouncementsDate: keepPreviousDate ?
+            previousDate : next.lastSeenAnnouncementsDate,
     };
 }
 
@@ -64,7 +64,7 @@ export default function WhatsNew(props: Props): JSX.Element {
     const profilePromotionsAllowed = useSelector((state: CombinedState) => (
         state.growth.data?.owner.id === props.userId ? state.growth.data.promotionNotificationsAllowed : undefined
     ));
-    const promotionsAllowed = profilePromotionsAllowed ?? seen?.promotion_notifications_allowed ?? false;
+    const promotionsAllowed = profilePromotionsAllowed ?? seen?.promotionNotificationsAllowed ?? false;
     const promotionsAllowedRef = useRef(promotionsAllowed);
     promotionsAllowedRef.current = promotionsAllowed;
     const blocked = props.autoOpenBlocked;
@@ -79,20 +79,20 @@ export default function WhatsNew(props: Props): JSX.Element {
     const announcements = useMemo(() => updates?.announcements || [], [updates]);
     const announcementsDate = latestAnnouncementsDate(announcements);
     const unreadAnnouncements = unseenAnnouncements(
-        announcements, seen?.last_seen_announcements_date || null,
+        announcements, seen?.lastSeenAnnouncementsDate || null,
     ).length > 0;
     const latestAnnouncedRelease = updates?.releases.find((release) => release.announce);
     const unreadRelease = !!latestAnnouncedRelease && isNewVersion(
-        latestAnnouncedRelease.version, seen?.last_seen_release_notes_version || '',
+        latestAnnouncedRelease.version, seen?.lastSeenReleaseNotesVersion || '',
     );
     const ready = !!updates && !loading && !loadError;
     const hasContent = !!selectedRelease || announcements.length > 0;
     const canAcknowledgeAnnouncements = updates?.canAcknowledgeAnnouncements || false;
     const newAnnouncementKeys = useMemo(() => new Set(unseenAnnouncements(
-        announcements, openingSeen?.last_seen_announcements_date || null,
+        announcements, openingSeen?.lastSeenAnnouncementsDate || null,
     ).map(announcementKey)), [announcements, openingSeen]);
     const newRelease = !!openingSeen && !!selectedRelease && isNewVersion(
-        selectedRelease.version, openingSeen.last_seen_release_notes_version,
+        selectedRelease.version, openingSeen.lastSeenReleaseNotesVersion,
     );
     const historyURL = updates?.updatesHistoryURL ||
         (updates?.releaseHistoryURL ? contentURL('../updates/', updates.releaseHistoryURL) : undefined);
@@ -136,9 +136,9 @@ export default function WhatsNew(props: Props): JSX.Element {
             return;
         }
         const release = updates.releases.find((item) => item.announce &&
-            isNewVersion(item.version, updates.state.last_seen_release_notes_version));
+            isNewVersion(item.version, updates.state.lastSeenReleaseNotesVersion));
         const promoteAnnouncements = unseenAnnouncements(
-            announcements, updates.state.last_seen_announcements_date,
+            announcements, updates.state.lastSeenAnnouncementsDate,
         ).some((item) => item.announce);
         if (!release && !promoteAnnouncements) {
             automaticPopupController.offer('whats-new', null);
@@ -159,12 +159,12 @@ export default function WhatsNew(props: Props): JSX.Element {
 
     useEffect(() => {
         if (!open || !ready || !openingSeen) return undefined;
-        const values: { release_version?: string; announcements_seen_at?: string } = {};
-        if (selectedRelease && isNewVersion(selectedRelease.version, seen?.last_seen_release_notes_version || '')) {
-            values.release_version = selectedRelease.version;
+        const values: UpdatesAcknowledgement = {};
+        if (selectedRelease && isNewVersion(selectedRelease.version, seen?.lastSeenReleaseNotesVersion || '')) {
+            values.releaseVersion = selectedRelease.version;
         }
         if (announcementsDate && unreadAnnouncements && canAcknowledgeAnnouncements) {
-            values.announcements_seen_at = announcementsDate;
+            values.announcementsSeenAt = announcementsDate;
         }
         if (!Object.keys(values).length) return undefined;
         const key = JSON.stringify(values);
