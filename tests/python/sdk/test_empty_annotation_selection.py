@@ -10,10 +10,7 @@ from urllib.parse import parse_qs, urlsplit
 
 import pytest
 
-from cvat_sdk import models
 from cvat_sdk.core.client import Client
-from cvat_sdk.core.proxies.jobs import Job
-from cvat_sdk.core.proxies.tasks import Task
 
 
 def _annotations():
@@ -68,7 +65,8 @@ def annotation_endpoint(request):
     state = _annotations()
     calls = []
     resource = request.param
-    path = f"/api/{resource}/7/annotations"
+    object_path = f"/api/{resource}/7"
+    path = object_path + "/annotations"
 
     class Handler(BaseHTTPRequestHandler):
         def _respond(self, status, data=None):
@@ -80,8 +78,20 @@ def annotation_endpoint(request):
             self.wfile.write(body)
 
         def do_GET(self):
-            assert urlsplit(self.path).path.rstrip("/") == path
+            requested_path = urlsplit(self.path).path.rstrip("/")
             calls.append(("GET", None))
+            if requested_path == object_path:
+                metadata = {"id": 7, "labels": {}}
+                if resource == "tasks":
+                    metadata.update(
+                        name="annotation selection",
+                        jobs={"completed": 0, "validation": 0},
+                    )
+                else:
+                    metadata.update(start_frame=0, stop_frame=1, frame_count=2, issues={})
+                self._respond(200, metadata)
+                return
+            assert requested_path == path
             self._respond(200, state)
 
         def do_PATCH(self):
@@ -110,29 +120,8 @@ def annotation_endpoint(request):
     thread.start()
     try:
         with Client(f"http://127.0.0.1:{server.server_port}", check_server_version=False) as client:
-            entity = (
-                Task(
-                    client,
-                    models.TaskRead.from_openapi_data(
-                        id=7,
-                        name="annotation selection",
-                        jobs=models.JobsSummary(completed=0, validation=0),
-                        labels=models.LabelsSummary(),
-                    ),
-                )
-                if resource == "tasks"
-                else Job(
-                    client,
-                    models.JobRead.from_openapi_data(
-                        id=7,
-                        start_frame=0,
-                        stop_frame=1,
-                        frame_count=2,
-                        issues=models.IssuesSummary.from_openapi_data(count=0),
-                        labels=models.LabelsSummary(),
-                    ),
-                )
-            )
+            entity = getattr(client, resource).retrieve(7)
+            calls.clear()
             yield entity, calls, state
     finally:
         server.shutdown()
