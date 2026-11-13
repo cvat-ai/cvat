@@ -351,7 +351,9 @@ that can (_Code Complete_, "Defensive Programming").
   - Extract big refactorings and preparatory changes (e.g. generalizing an existing
     abstraction for a feature) into a separate PR that the feature PR depends on.
 
-  - A dependent PR names its dependency in the first line of the description.
+  - A dependent PR names its dependency in the first line of the description. Also, consider
+  using the [Stacked PRs](https://docs.github.com/en/pull-requests/get-started/about-stacked-prs)
+  feature on GitHub to simplify the stack management.
 
 - **Split commits by logical change** before publishing a PR: refactoring before
   the feature, generated files after the sources.
