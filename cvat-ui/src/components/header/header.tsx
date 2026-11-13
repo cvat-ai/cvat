@@ -153,7 +153,7 @@ function mapDispatchToProps(dispatch: any): DispatchToProps {
     };
 }
 
-type Props = StateToProps & DispatchToProps & { extensionsBlocked?: boolean };
+type Props = StateToProps & DispatchToProps & { whatsNewAutoOpenBlocked?: boolean };
 
 function HeaderComponent(props: Props): JSX.Element {
     const {
@@ -497,11 +497,9 @@ function HeaderComponent(props: Props): JSX.Element {
                 {props.whatsNewEnabled && (
                     <WhatsNew
                         key={user.id}
-                        user={user}
-                        settingsModalVisible={settingsModalVisible}
-                        shortcutsModalVisible={shortcutsModalVisible}
-                        changePasswordDialogShown={props.changePasswordDialogShown}
-                        extensionsBlocked={props.extensionsBlocked}
+                        userId={user.id}
+                        autoOpenBlocked={!!props.whatsNewAutoOpenBlocked || settingsModalVisible ||
+                            shortcutsModalVisible || props.changePasswordDialogShown}
                     />
                 )}
                 <CVATTooltip overlay='Click to open repository'>

@@ -27,11 +27,8 @@ import ReleaseSummary from './release-summary';
 import { WHATS_NEW_STYLE, WHATS_NEW_THEME } from './theme';
 
 interface Props {
-    user: { id: number };
-    settingsModalVisible: boolean;
-    shortcutsModalVisible: boolean;
-    changePasswordDialogShown: boolean;
-    extensionsBlocked?: boolean;
+    userId: number;
+    autoOpenBlocked: boolean;
 }
 
 function mergeSeenState(current: SeenState | null, next: SeenState): SeenState {
@@ -65,13 +62,12 @@ export default function WhatsNew(props: Props): JSX.Element {
     const manuallyOpened = useRef(false);
     const ackRequests = useRef(new Set<string>());
     const profilePromotionsAllowed = useSelector((state: CombinedState) => (
-        state.growth.data?.owner.id === props.user.id ? state.growth.data.promotionNotificationsAllowed : undefined
+        state.growth.data?.owner.id === props.userId ? state.growth.data.promotionNotificationsAllowed : undefined
     ));
     const promotionsAllowed = profilePromotionsAllowed ?? seen?.promotion_notifications_allowed ?? false;
     const promotionsAllowedRef = useRef(promotionsAllowed);
     promotionsAllowedRef.current = promotionsAllowed;
-    const blocked = props.extensionsBlocked || props.settingsModalVisible ||
-        props.shortcutsModalVisible || props.changePasswordDialogShown;
+    const blocked = props.autoOpenBlocked;
     const blockedRef = useRef(blocked);
     blockedRef.current = blocked;
     const seenRef = useRef(seen);
