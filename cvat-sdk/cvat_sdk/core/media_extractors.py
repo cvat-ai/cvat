@@ -97,11 +97,16 @@ class VideoMp4ChunkReader(IChunkReader):
     @classmethod
     def ensure_available(cls) -> None:
         try:
-            importlib.import_module("cvat_mp4_h264")
+            cvat_mp4_h264 = importlib.import_module("cvat_mp4_h264")
         except ImportError as e:
             raise ChunkReaderUnavailableException(
                 "Reading video chunks requires the video extra: pip install 'cvat-sdk[video]'"
             ) from e
+
+        try:
+            cvat_mp4_h264.load_library()
+        except cvat_mp4_h264.VideoDecoderUnavailableError as e:
+            raise ChunkReaderUnavailableException(str(e)) from e
 
     def __iter__(self) -> Iterator[PIL.Image.Image]:
         import cvat_mp4_h264

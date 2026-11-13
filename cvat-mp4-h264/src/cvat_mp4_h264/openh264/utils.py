@@ -7,53 +7,44 @@
 from __future__ import annotations
 
 import ctypes
-import os
+import platform
+import sys
 
 import PIL.Image
 
 from ..exceptions import UnsupportedVideoError
-from .bindings import OpenH264Version, SBufferInfo, declare_functions
+from .bindings import OpenH264Version, SBufferInfo
 from .consts import SUPPORTED_MAJOR_VERSION, videoFormatI420
 from .exceptions import DecoderVersionMismatchError, VideoDecoderUnavailableError
-from .schemas import LibraryInfo, VideoFrame
+from .schemas import VideoFrame
 
 
-def _load_library(library_path: str) -> ctypes.CDLL:
+def open_shared_library(library_path: str) -> ctypes.CDLL:
     try:
         library = ctypes.CDLL(library_path)
     except OSError as exc:
         raise VideoDecoderUnavailableError(
-            f"Could not load a compatible OpenH264 library from {library_path!r}: {exc}"
+            f"Could not load a compatible OpenH264 library from {library_path!r}: {exc}. "
+            f"The library must be an OpenH264 {SUPPORTED_MAJOR_VERSION}.x build "
+            f"for {sys.platform} {platform.machine()}."
         ) from exc
 
     return library
 
 
-def _probe_version(library: ctypes.CDLL) -> tuple[int, int, int]:
+def probe_version(library: ctypes.CDLL) -> tuple[int, int, int]:
     native_version = OpenH264Version()
     library.WelsGetCodecVersionEx(ctypes.byref(native_version))
     return (native_version.uMajor, native_version.uMinor, native_version.uRevision)
 
 
-def _ensure_supported_version(version: tuple[int, int, int], library_path: str) -> None:
+def ensure_supported_version(version: tuple[int, int, int], library_path: str) -> None:
     if version[0] != SUPPORTED_MAJOR_VERSION:
         reported = ".".join(map(str, version))
         raise DecoderVersionMismatchError(
             f"OpenH264 library {library_path!r} reports version {reported}, "
             f"but only {SUPPORTED_MAJOR_VERSION}.x is supported."
         )
-
-
-def load_library(library_path: os.PathLike[str] | str) -> LibraryInfo:
-    """Load and version-validate the OpenH264 library at ``library_path``."""
-
-    resolved_path = os.fspath(library_path)
-    library = _load_library(library_path=resolved_path)
-    declare_functions(library=library)
-    version = _probe_version(library=library)
-    _ensure_supported_version(version=version, library_path=resolved_path)
-
-    return LibraryInfo(library_path=resolved_path, version=version, library=library)
 
 
 def _copy_plane(pointer: int, width: int, height: int, stride: int) -> PIL.Image.Image:

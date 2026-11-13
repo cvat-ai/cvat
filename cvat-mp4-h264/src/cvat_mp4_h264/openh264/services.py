@@ -2,14 +2,15 @@
 #
 # SPDX-License-Identifier: MIT
 
-"""Decode H.264 access units with OpenH264."""
+"""Load OpenH264 and decode H.264 access units with it."""
 
 from __future__ import annotations
 
 import ctypes
 
 from ..exceptions import UnsupportedVideoError
-from .bindings import ISVCDecoder, SBufferInfo, SDecodingParam, SVideoProperty
+from ..settings import OPENH264_LIBRARY_ENV_VAR, get_openh264_library_path
+from .bindings import ISVCDecoder, SBufferInfo, SDecodingParam, SVideoProperty, declare_functions
 from .consts import (
     DECODING_STATE,
     ERROR_CON_DISABLE,
@@ -17,8 +18,31 @@ from .consts import (
     VIDEO_BITSTREAM_AVC,
 )
 from .exceptions import VideoDecoderUnavailableError
-from .schemas import VideoFrame
-from .utils import copy_i420_frame
+from .schemas import LibraryInfo, VideoFrame
+from .utils import (
+    copy_i420_frame,
+    ensure_supported_version,
+    open_shared_library,
+    probe_version,
+)
+
+
+def load_library() -> LibraryInfo:
+    """Find, load and version-validate the OpenH264 library."""
+
+    library_path = get_openh264_library_path()
+    if library_path is None:
+        raise VideoDecoderUnavailableError(
+            "Decoding video chunks requires OpenH264. "
+            f"Set {OPENH264_LIBRARY_ENV_VAR} to the path of the OpenH264 shared library."
+        )
+
+    library = open_shared_library(library_path=library_path)
+    declare_functions(library=library)
+    version = probe_version(library=library)
+    ensure_supported_version(version=version, library_path=library_path)
+
+    return LibraryInfo(library_path=library_path, version=version, library=library)
 
 
 class OpenH264Decoder:
