@@ -142,7 +142,17 @@ context('Lock/hide features.', () => {
                 cy.getObjectSidebarItem(id).find('.cvat-object-item-button-lock-enabled').should('exist');
             });
         });
-        it('Hide all the objects. Objects are still visible because they cannot be hidden while locked.', () => {
+        it('Hide and show all the objects while they are locked. Objects stay locked.', () => {
+            cy.get('.cvat-objects-sidebar-states-header').within(() => {
+                cy.get('span[aria-label="eye"]').click();
+            });
+            shapeIds.forEach((id) => {
+                cy.getObjectSidebarItem(id).find('.cvat-object-item-button-hidden-enabled').should('exist');
+                cy.getObjectSidebarItem(id).find('.cvat-object-item-button-lock-enabled').should('exist');
+            });
+            cy.get('.cvat_canvas_shape').each((item) => {
+                cy.get(item).should('have.class', 'cvat_canvas_hidden');
+            });
             cy.get('.cvat-objects-sidebar-states-header').within(() => {
                 cy.get('span[aria-label="eye-invisible"]').click();
             });

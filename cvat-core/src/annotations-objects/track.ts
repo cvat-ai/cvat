@@ -513,6 +513,10 @@ export class Track extends Drawn {
 
     public save(frame: number, data: ObjectState): ObjectState {
         if (this.lock && data.lock) {
+            // visibility can be changed for locked objects
+            if (data.updateFlags.hidden) {
+                this.saveHidden(data.hidden, frame);
+            }
             return new ObjectState(this.get(frame));
         }
 

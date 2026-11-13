@@ -302,19 +302,16 @@ function mapStateToProps(state: CombinedState): StateToProps {
     let statesLocked = true;
 
     objectStates.forEach((objectState: ObjectState) => {
-        const { lock } = objectState;
-        if (!lock) {
-            if (objectState.objectType === ObjectType.SHAPE || objectState.objectType === ObjectType.TRACK) {
-                if (objectState.shapeType === ShapeType.SKELETON) {
-                    objectState.elements.forEach((element: ObjectState) => {
-                        statesHidden = statesHidden && (element.lock || element.hidden);
-                    });
-                } else {
-                    statesHidden = statesHidden && objectState.hidden;
-                }
+        if (objectState.objectType === ObjectType.SHAPE || objectState.objectType === ObjectType.TRACK) {
+            if (objectState.shapeType === ShapeType.SKELETON) {
+                objectState.elements.forEach((element: ObjectState) => {
+                    statesHidden = statesHidden && element.hidden;
+                });
+            } else {
+                statesHidden = statesHidden && objectState.hidden;
             }
-            statesLocked = statesLocked && objectState.lock;
         }
+        statesLocked = statesLocked && objectState.lock;
     });
 
     return {

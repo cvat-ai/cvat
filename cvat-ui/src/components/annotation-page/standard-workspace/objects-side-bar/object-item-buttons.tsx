@@ -207,22 +207,22 @@ function SwitchPinned(props: Props): JSX.Element {
 
 function SwitchHidden(props: Props): JSX.Element {
     const {
-        switchHiddenShortcut, locked, hidden, hiddenDisabled, show, hide,
+        switchHiddenShortcut, hidden, hiddenDisabled, show, hide,
     } = props;
 
-    const style = hiddenDisabled || locked ? disabledStyle : {};
+    const style = hiddenDisabled ? disabledStyle : {};
     return (
         <CVATTooltip title={`Switch hidden property ${switchHiddenShortcut}`}>
             {hidden ? (
                 <EyeInvisibleFilled
                     {...classes.hidden.enabled}
-                    onClick={hiddenDisabled || locked ? undefined : show}
+                    onClick={hiddenDisabled ? undefined : show}
                     style={style}
                 />
             ) : (
                 <EyeOutlined
                     {...classes.hidden.disabled}
-                    onClick={hiddenDisabled || locked ? undefined : hide}
+                    onClick={hiddenDisabled ? undefined : hide}
                     style={style}
                 />
             )}
