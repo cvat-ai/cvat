@@ -133,21 +133,24 @@ class ExtractInstanceMasks:
     def __call__(self, target: Target) -> LabeledMasks:
         boxes: list[Sequence[float]] = []
         labels: list[int] = []
-        masks: list[torch.Tensor] = []
+        shapes = [
+            shape
+            for shape in target.annotations.shapes
+            if shape.type.value in self.include_shape_types
+        ]
+        masks = torch.empty(
+            (len(shapes), target.image_size[1], target.image_size[0]), dtype=torch.uint8
+        )
 
-        for shape in target.annotations.shapes:
-            if shape.type.value not in self.include_shape_types:
-                continue
+        for index, shape in enumerate(shapes):
 
             if shape.rotation != 0:
                 raise UnsupportedDatasetError("Rotated shapes are not supported")
 
             boxes.append(shape_bbox(shape=shape))
             labels.append(target.label_id_to_index[shape.label_id])
-            masks.append(
-                torch.as_tensor(
-                    draw_mask(shape=shape, image_size=target.image_size), dtype=torch.uint8
-                )
+            masks[index].copy_(
+                torch.from_numpy(draw_mask(shape=shape, image_size=target.image_size))
             )
 
         return LabeledMasks(
@@ -157,9 +160,5 @@ class ExtractInstanceMasks:
                 else torch.empty((0, 4), dtype=torch.float)
             ),
             labels=torch.tensor(labels, dtype=torch.long),
-            masks=(
-                torch.stack(masks)
-                if masks
-                else torch.empty((0, target.image_size[1], target.image_size[0]), dtype=torch.uint8)
-            ),
+            masks=masks,
         )
