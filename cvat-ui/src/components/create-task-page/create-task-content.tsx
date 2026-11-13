@@ -65,7 +65,7 @@ type State = CreateTaskData & {
     multiTasks: (CreateTaskData & {
         status: 'pending' | 'progress' | 'failed' | 'completed' | 'cancelled';
     })[];
-    uploadFileErrorMessage: string;
+    uploadFileErrorMessages: Record<TabName, string>;
     loading: boolean;
     statusInProgressTask: string;
 };
@@ -93,7 +93,12 @@ const defaultState: State = {
     activeFileManagerTab: 'local',
     cloudStorageId: null,
     multiTasks: [],
-    uploadFileErrorMessage: '',
+    uploadFileErrorMessages: {
+        local: '',
+        share: '',
+        remote: '',
+        cloudStorage: '',
+    },
     loading: false,
     statusInProgressTask: '',
 };
@@ -333,9 +338,12 @@ class CreateTaskContent extends React.PureComponent<Props & RouteComponentProps,
             ) ? '' : UploadFileErrorMessages.multi;
         }
 
-        this.setState({
-            uploadFileErrorMessage,
-        });
+        this.setState((state) => ({
+            uploadFileErrorMessages: {
+                ...state.uploadFileErrorMessages,
+                local: uploadFileErrorMessage,
+            },
+        }));
 
         if (!uploadFileErrorMessage) {
             this.setState({
@@ -381,9 +389,12 @@ class CreateTaskContent extends React.PureComponent<Props & RouteComponentProps,
             uploadFileErrorMessage = `We can't process it. ${err}`;
         }
 
-        this.setState({
-            uploadFileErrorMessage,
-        });
+        this.setState((state) => ({
+            uploadFileErrorMessages: {
+                ...state.uploadFileErrorMessages,
+                remote: uploadFileErrorMessage,
+            },
+        }));
 
         if (!uploadFileErrorMessage) {
             this.setState({
@@ -400,7 +411,12 @@ class CreateTaskContent extends React.PureComponent<Props & RouteComponentProps,
         const { many } = this.props;
         const uploadFileErrorMessage = validateRemoteFiles(shareFiles, many);
         const filteredFiles = filterFiles(shareFiles, many);
-        this.setState({ uploadFileErrorMessage });
+        this.setState((state) => ({
+            uploadFileErrorMessages: {
+                ...state.uploadFileErrorMessages,
+                share: uploadFileErrorMessage,
+            },
+        }));
 
         if (!uploadFileErrorMessage) {
             this.setState({
@@ -417,7 +433,12 @@ class CreateTaskContent extends React.PureComponent<Props & RouteComponentProps,
         const { many } = this.props;
         const uploadFileErrorMessage = validateRemoteFiles(cloudStorageFiles, many);
         const filteredFiles = filterFiles(cloudStorageFiles, many);
-        this.setState({ uploadFileErrorMessage });
+        this.setState((state) => ({
+            uploadFileErrorMessages: {
+                ...state.uploadFileErrorMessages,
+                cloudStorage: uploadFileErrorMessage,
+            },
+        }));
 
         if (!uploadFileErrorMessage) {
             this.setState({
@@ -864,7 +885,8 @@ class CreateTaskContent extends React.PureComponent<Props & RouteComponentProps,
 
     private renderFilesBlock(): JSX.Element {
         const { many } = this.props;
-        const { uploadFileErrorMessage } = this.state;
+        const { uploadFileErrorMessages, activeFileManagerTab } = this.state;
+        const uploadFileErrorMessage = uploadFileErrorMessages[activeFileManagerTab];
 
         return (
             <>
@@ -971,7 +993,10 @@ class CreateTaskContent extends React.PureComponent<Props & RouteComponentProps,
     }
 
     private renderFooterSingleTask(): JSX.Element {
-        const { uploadFileErrorMessage, loading, statusInProgressTask: status } = this.state;
+        const {
+            uploadFileErrorMessages, activeFileManagerTab, loading, statusInProgressTask: status,
+        } = this.state;
+        const uploadFileErrorMessage = uploadFileErrorMessages[activeFileManagerTab];
 
         if (status === 'FAILED' || loading) {
             return (<Alert message={status} />);
@@ -1005,12 +1030,13 @@ class CreateTaskContent extends React.PureComponent<Props & RouteComponentProps,
     private renderFooterMultiTasks(): JSX.Element {
         const {
             multiTasks: items,
-            uploadFileErrorMessage,
+            uploadFileErrorMessages,
             files,
             activeFileManagerTab,
             loading,
         } = this.state;
         const currentFiles = files[activeFileManagerTab];
+        const uploadFileErrorMessage = uploadFileErrorMessages[activeFileManagerTab];
         const countPending = items.filter((item) => item.status === 'pending').length;
         const countAll = items.length;
 

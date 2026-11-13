@@ -46,7 +46,7 @@ interface Props {
 }
 
 type State = CreateTaskData & {
-    uploadFileErrorMessage: string;
+    uploadFileErrorMessages: Record<TabName, string>;
     loading: boolean;
     statusInProgressTask: string;
 };
@@ -73,7 +73,12 @@ const defaultState: State = {
     },
     activeFileManagerTab: 'local',
     cloudStorageId: null,
-    uploadFileErrorMessage: '',
+    uploadFileErrorMessages: {
+        local: '',
+        share: '',
+        remote: '',
+        cloudStorage: '',
+    },
     loading: false,
     statusInProgressTask: '',
 };
@@ -252,7 +257,12 @@ class AudioCreateTaskContent extends React.PureComponent<Props & RouteComponentP
         const excludedManifests = uploadedFiles.filter((x: File) => !x.name.endsWith('.jsonl'));
         const uploadFileErrorMessage = localFilesHaveNonAudio(excludedManifests) ? NON_AUDIO_ERROR : '';
 
-        this.setState({ uploadFileErrorMessage });
+        this.setState((state) => ({
+            uploadFileErrorMessages: {
+                ...state.uploadFileErrorMessages,
+                local: uploadFileErrorMessage,
+            },
+        }));
 
         if (!uploadFileErrorMessage) {
             this.setState({
@@ -268,7 +278,12 @@ class AudioCreateTaskContent extends React.PureComponent<Props & RouteComponentP
         const { files } = this.state;
         const uploadFileErrorMessage = pathsHaveNonAudio(urls) ? NON_AUDIO_ERROR : '';
 
-        this.setState({ uploadFileErrorMessage });
+        this.setState((state) => ({
+            uploadFileErrorMessages: {
+                ...state.uploadFileErrorMessages,
+                remote: uploadFileErrorMessage,
+            },
+        }));
 
         if (!uploadFileErrorMessage) {
             this.setState({
@@ -285,7 +300,12 @@ class AudioCreateTaskContent extends React.PureComponent<Props & RouteComponentP
         const keys = shareFiles.map((it) => it.key);
         const uploadFileErrorMessage = pathsHaveNonAudio(keys) ? NON_AUDIO_ERROR : '';
 
-        this.setState({ uploadFileErrorMessage });
+        this.setState((state) => ({
+            uploadFileErrorMessages: {
+                ...state.uploadFileErrorMessages,
+                share: uploadFileErrorMessage,
+            },
+        }));
 
         if (!uploadFileErrorMessage) {
             this.setState({
@@ -302,7 +322,12 @@ class AudioCreateTaskContent extends React.PureComponent<Props & RouteComponentP
         const keys = cloudStorageFiles.map((it) => it.key);
         const uploadFileErrorMessage = pathsHaveNonAudio(keys) ? NON_AUDIO_ERROR : '';
 
-        this.setState({ uploadFileErrorMessage });
+        this.setState((state) => ({
+            uploadFileErrorMessages: {
+                ...state.uploadFileErrorMessages,
+                cloudStorage: uploadFileErrorMessage,
+            },
+        }));
 
         if (!uploadFileErrorMessage) {
             this.setState({
@@ -506,7 +531,8 @@ class AudioCreateTaskContent extends React.PureComponent<Props & RouteComponentP
     }
 
     private renderFilesBlock(): JSX.Element {
-        const { uploadFileErrorMessage } = this.state;
+        const { uploadFileErrorMessages, activeFileManagerTab } = this.state;
+        const uploadFileErrorMessage = uploadFileErrorMessages[activeFileManagerTab];
 
         return (
             <>
@@ -617,7 +643,10 @@ class AudioCreateTaskContent extends React.PureComponent<Props & RouteComponentP
     }
 
     private renderFooterSingleTask(): JSX.Element {
-        const { uploadFileErrorMessage, loading, statusInProgressTask: status } = this.state;
+        const {
+            uploadFileErrorMessages, activeFileManagerTab, loading, statusInProgressTask: status,
+        } = this.state;
+        const uploadFileErrorMessage = uploadFileErrorMessages[activeFileManagerTab];
 
         if (status === 'FAILED' || loading) {
             return (<Alert message={status} />);
