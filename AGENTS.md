@@ -9,7 +9,7 @@ They apply to all code here. The rules below are additional, for agents.
 - Never state a fact about code, libraries, databases, or performance that you have not
   checked in the current session. If you are inferring, say so — in chat as well.
   Unchecked statements never go into code, comments, docs, commit messages, or PR text.
-- When asked "why?" about your change, answer with evidence or remove the thing.
+- When asked "why?" about your change, answer with evidence.
   Do not construct a justification after the fact.
 - Run what you change where it actually runs (PostgreSQL, both migration directions,
   the required services). Report what you did not run.
@@ -20,11 +20,15 @@ They apply to all code here. The rules below are additional, for agents.
   reworking code that the task does not require. An ambiguous reply is not approval.
 - Before adding code, read the neighboring code, the existing abstractions,
   and the related docs. Update the comments and docs your change makes outdated.
-- The diff is against the parent branch. When reworking your own earlier commits on
-  the work branch, do not keep compatibility with them, and do not mention them in
-  code, comments, docs, or the changelog.
-- Comments and docstrings describe the code as it is, not how it was developed
-  or why it was changed. That belongs in the commit message.
+- Code comments are for future readers of the code, not for the user you are talking to.
+  Do not answer questions or report your edits in comments (`# Changed to X as requested`,
+  `# No longer uses Y`): answer in the chat, and explain the change in the commit message.
+- A branch is a single change against its target branch as a whole
+  (`git diff <target>...HEAD`); its intermediate commits are not part of the result.
+  When reworking your own earlier commits, do not keep compatibility with them,
+  and do not mention them in code, docs, or the changelog.
+  To find the target branch, use the PR base (`gh pr view --json baseRefName`), otherwise
+  `develop`. If the branch may be stacked on another feature branch, ask.
 
 ## Self-review before reporting done
 
