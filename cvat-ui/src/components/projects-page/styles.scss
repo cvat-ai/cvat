@@ -98,83 +98,10 @@
     }
 }
 
-.cvat-project-list-content {
-    .ant-ribbon-wrapper {
-        .cvat-projects-project-item-card {
-            .cvat-projects-project-item-card-preview-wrapper {
-                height: 100%;
-
-                .cvat-projects-project-item-card-preview {
-                    height: 100%;
-                    width: 100%;
-                    display: flex;
-                    align-items: center;
-                    justify-content: space-around;
-                    object-fit: cover;
-                    cursor: pointer;
-                }
-            }
-
-            .cvat-project-item-loading-preview,
-            .cvat-project-item-empty-preview {
-                @extend .cvat-base-preview;
-
-                &:hover {
-                    cursor: pointer;
-                }
-            }
-
-            .cvat-project-item-loading-preview {
-                padding-top: $grid-unit-size * 3;
-            }
-
-            .cvat-projects-project-item-title {
-                width: 100%;
-                cursor: pointer;
-            }
-
-            .cvat-projects-project-item-description {
-                display: flex;
-                justify-content: space-between;
-
-                // actions button
-                > div:nth-child(2) {
-                    display: flex;
-                    align-self: flex-end;
-                    justify-content: center;
-
-                    > button {
-                        color: $text-color;
-                        width: inherit;
-                    }
-                }
-            }
-
-            .ant-card-cover {
-                flex: 1;
-                height: 0;
-            }
-
-            display: flex;
-            flex-direction: column;
-        }
-
-        &:nth-child(4n) {
-            border-right: 0;
-        }
-    }
-}
-
-.cvat-project-item-ribbon {
-    padding: $grid-unit-size;
-    height: unset;
-
-    > .ant-ribbon-text {
-        > div {
-            display: flex;
-            flex-direction: column;
-            gap: $grid-unit-size * 2;
-        }
+.cvat-projects-project-item-card {
+    .cvat-projects-project-item-title {
+        width: 100%;
+        cursor: pointer;
     }
 }
 
@@ -182,15 +109,6 @@
     overflow-y: auto;
     display: flex;
     flex-wrap: wrap;
-
-    .cvat-projects-list-row {
-        width: 100%;
-        margin-bottom: $grid-unit-size;
-
-        > div:not(:first-child) {
-            padding-left: $grid-unit-size;
-        }
-    }
 }
 
 .cvat-export-project-loading {

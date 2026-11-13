@@ -8,7 +8,7 @@ import { BoundariesActions, BoundariesActionTypes } from 'actions/boundaries-act
 import { ModelsActionTypes, ModelsActions } from 'actions/models-actions';
 import { AuthActionTypes, AuthActions } from 'actions/auth-actions';
 import { SelectionActionsTypes, SelectionActions } from 'actions/selection-actions';
-import { MLModel, ModelKind } from 'cvat-core-wrapper';
+import { MLModel, ModelKind, ModelProviders } from 'cvat-core-wrapper';
 import { ModelsState, SelectedResourceType } from '.';
 
 const defaultState: ModelsState = {
@@ -201,9 +201,18 @@ export default function (
         }
         case SelectionActionsTypes.SELECT_RESOURCES: {
             if (action.payload.resourceType === SelectedResourceType.MODELS) {
+                const selectableIDs = new Set([
+                    ...state.interactors,
+                    ...state.detectors,
+                    ...state.trackers,
+                    ...state.reid,
+                ].filter((model) => model.provider !== ModelProviders.CVAT).map((model) => model.id));
                 return {
                     ...state,
-                    selected: Array.from(new Set([...state.selected, ...action.payload.resourceIds as number[]])),
+                    selected: Array.from(new Set([
+                        ...state.selected.filter((id) => selectableIDs.has(id)),
+                        ...action.payload.resourceIds.filter((id) => selectableIDs.has(id)),
+                    ])),
                 };
             }
             return state;

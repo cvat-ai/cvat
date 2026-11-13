@@ -23,18 +23,9 @@
 }
 
 .cvat-models-list {
-    display: flex;
-    flex-wrap: wrap;
     overflow-y: auto;
-
-    .cvat-models-list-row {
-        width: 100%;
-        margin-bottom: $grid-unit-size;
-
-        > div:not(:first-child) {
-            padding-left: $grid-unit-size;
-        }
-    }
+    padding-top: $grid-unit-size;
+    padding-bottom: $grid-unit-size;
 }
 
 .cvat-models-item-card-removed {
@@ -85,134 +76,173 @@
 }
 
 .cvat-models-item-card {
-    display: flex;
-    flex-direction: column;
-    overflow: hidden;
+    height: 100%;
 
-    &:nth-child(4n) {
-        border-right: 0;
+    &.cvat-item-selected {
+        box-shadow: 0 0 0 2px rgba($validation-progress-color, 15%), 0 10px 28px rgba(0, 0, 0, 10%);
     }
 
-    .cvat-models-item-card-preview-wrapper {
-        display: flex;
-        justify-content: center;
-        align-items: center;
-        height: 100%;
-        width: 100%;
-        overflow: hidden;
-
-        &:hover {
-            cursor: pointer;
-        }
-    }
-
-    .ant-card-cover {
-        flex-grow: 1;
-        height: 0;
-
-        > div {
-            display: flex;
-        }
-    }
-
-    .cvat-model-item-loading-preview,
-    .cvat-model-item-empty-preview {
-        max-height: $grid-unit-size * 18;
-    }
-}
-
-.cvat-model-item-loading-preview,
-.cvat-model-item-empty-preview {
-    @extend .cvat-base-preview;
-
-    &:hover {
-        cursor: pointer;
-    }
-}
-
-.cvat-model-item-loading-preview {
-    padding-top: $grid-unit-size * 3;
-}
-
-.cvat-model-item-top-bar {
-    width: 100%;
-    position: absolute;
-    display: flex;
-    justify-content: flex-end;
-    top: 0;
-    left: 0;
-    padding: $grid-unit-size;
-}
-
-.cvat-models-item-description {
-    font-size: 14px;
-    display: flex;
-    justify-content: space-between;
-
-    > div > span:nth-child(2) {
-        margin-left: $grid-unit-size;
-    }
-
-    button {
-        position: relative;
-        color: black;
-        margin-right: -$grid-unit-size;
-    }
-
-    &:hover {
-        cursor: pointer;
-    }
 }
 
 .cvat-model-info-modal {
+    .ant-modal-content {
+        overflow: hidden;
+        border-radius: $grid-unit-size * 2;
+    }
+
     .ant-modal-body {
         position: relative;
         padding: 0;
-
-        >.cvat-model-info-container:not(:last-child) {
-            padding: 0 $grid-unit-size * 3;
-        }
-
-        >.cvat-model-info-container:last-child {
-            padding: 0 $grid-unit-size * 3 $grid-unit-size * 3 $grid-unit-size * 3;
-        }
     }
 
-    h3 {
-        margin-top: $grid-unit-size * 2;
-    }
+    .ant-modal-close {
+        top: $grid-unit-size;
+        right: $grid-unit-size;
+        border-radius: 50%;
+        color: white;
+        background: rgba(0, 0, 0, 45%);
+        backdrop-filter: blur(6px);
 
-    .cvat-model-item-loading-preview,
-    .cvat-model-item-empty-preview {
-        height: $grid-unit-size * 18;
+        &:hover {
+            color: white;
+            background: rgba(0, 0, 0, 65%);
+        }
     }
 }
 
-.cvat-model-info-modal-labels-title {
-    font-size: 16px;
+.cvat-model-info-hero {
+    position: relative;
+    aspect-ratio: 3 / 2;
+    overflow: hidden;
+    background: #f5f5f5;
+
+    &::after {
+        position: absolute;
+        right: 0;
+        bottom: 0;
+        left: 0;
+        height: 58%;
+        content: '';
+        background: linear-gradient(transparent, rgba(0, 0, 0, 78%));
+        pointer-events: none;
+    }
+
+}
+
+.cvat-model-info-preview-wrapper,
+.cvat-model-info-preview {
+    width: 100%;
+    height: 100%;
+}
+
+.cvat-model-info-preview {
+    display: block;
+    object-fit: cover;
+}
+
+.cvat-model-info-loading-preview,
+.cvat-model-info-empty-preview {
+    @extend .cvat-base-preview;
+
+    width: 100%;
+    height: 100%;
+    color: #bfbfbf;
+}
+
+.cvat-model-info-hero-content {
+    position: absolute;
+    z-index: 1;
+    right: $grid-unit-size * 4;
+    bottom: $grid-unit-size * 3;
+    left: $grid-unit-size * 4;
+
+    h2 {
+        margin: $grid-unit-size 0 0;
+        color: white;
+        line-height: 1.2;
+    }
+}
+
+.cvat-model-info-hero-tags {
+    display: flex;
+    gap: $grid-unit-size;
+
+    .ant-tag {
+        margin: 0;
+        border-color: rgba(255, 255, 255, 40%);
+        border-radius: $grid-unit-size * 2;
+        color: white;
+        background: rgba(0, 0, 0, 36%);
+        backdrop-filter: blur(6px);
+        text-transform: capitalize;
+    }
+}
+
+.cvat-model-info-content {
+    padding: $grid-unit-size * 3 $grid-unit-size * 4 $grid-unit-size * 4;
+}
+
+.cvat-model-info-description {
+    display: block;
+    color: #595959;
+    font-size: 15px;
+    line-height: 1.6;
+}
+
+.cvat-model-info-external-meta {
+    display: flex;
+    align-items: center;
+    gap: $grid-unit-size;
+    margin-top: $grid-unit-size;
+
+    > span:empty {
+        width: 3px;
+        height: 3px;
+        border-radius: 50%;
+        background: #bfbfbf;
+    }
+
+    .cvat-model-info-owner {
+        min-width: 0;
+        max-width: 60%;
+    }
+}
+
+.cvat-model-info-labels-heading {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+}
+
+.cvat-model-info-content .ant-divider {
+    margin: $grid-unit-size * 3 0 $grid-unit-size * 2;
 }
 
 .cvat-model-info-modal-labels-list {
-    margin-top: $grid-unit-size;
+    display: flex;
+    flex-wrap: wrap;
+    gap: $grid-unit-size;
+    margin-top: $grid-unit-size * 1.5;
     max-height: $grid-unit-size * 18;
     overflow: auto;
 
     .ant-tag {
-        margin-top: $grid-unit-size;
+        margin: 0;
+        border-radius: $grid-unit-size * 2;
     }
 }
 
 .cvat-models-item-title {
-    &:hover {
-        cursor: pointer !important;
-    }
+    display: block;
+    font-size: 16px;
+    line-height: 1.4;
 }
 
-.cvat-models-item-text-description {
-    max-width: 80%;
-    text-overflow: ellipsis;
-    white-space: nowrap;
+.cvat-models-item-card-summary {
+    min-height: 40px;
+    max-height: 40px;
+    margin-top: $grid-unit-size * 0.75;
     overflow: hidden;
-    max-height: $grid-unit-size * 6;
-    display: inline;
+    line-height: 20px;
+    white-space: normal;
 }
