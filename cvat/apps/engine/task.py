@@ -1426,18 +1426,23 @@ def _collect_image_dataset_descriptors(
         manifest.init_index()
 
     images: list[models.Image] = []
+
+    # Create a manifest_by_path to map the image_name to image_info
+    if manifest:
+        manifest_by_path = {f"{info["name"]}{info["extension"]}" : info for _, info in manifest}
+
     for frame_id in extractor.frame_range:
         image_path = extractor.get_path(frame_id).relative_to(upload_dir).as_posix()
         image_size = None
 
         if manifest:
-            image_info = manifest[frame_id]
-
-            # check mapping
-            manifest_image_path = f"{image_info['name']}{image_info['extension']}"
-            if image_path != manifest_image_path and not image_path.endswith(
-                "/" + manifest_image_path
-            ):
+            # Check if the name in the dictionary of manifest_by_path
+            import os
+            base_image_name = os.path.basename(image_path)
+            if base_image_name in manifest_by_path:
+                image_info = manifest_by_path[base_image_name]
+                manifest_image_path = f"{image_info["name"]}{image_info["extension"]}"
+            else:
                 raise ValidationError("Incorrect file mapping to manifest content")
 
             if image_info.get("width") is not None and image_info.get("height") is not None:
