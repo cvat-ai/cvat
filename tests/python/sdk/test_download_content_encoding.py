@@ -115,7 +115,9 @@ def test_download_decodes_http_encoding_and_keeps_archive_bytes(
     assert progress.total == expected_total
 
 
-def test_intrinsically_gzipped_file_is_not_decoded_without_content_encoding(tmp_path, download_server):
+def test_intrinsically_gzipped_file_is_not_decoded_without_content_encoding(
+    tmp_path, download_server
+):
     url, state = download_server
     expected = gzip.compress(b"annotation file content")
     state["body"] = expected
