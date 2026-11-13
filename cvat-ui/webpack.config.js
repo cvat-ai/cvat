@@ -231,10 +231,11 @@ module.exports = (env, argv = {}) => {
                         from: 'src/assets/*.{png,webp}',
                         to  : 'assets/[name][ext]',
                     },
-                    {
-                        from: 'plugins/**/assets/*.(onnx|js|png)',
+                    ...pluginPaths.map(({ cwd }) => ({
+                        from: path.join(cwd, 'assets/*.(onnx|js|png)'),
                         to  : 'assets/[name][ext]',
-                    },
+                        noErrorOnMissing: true,
+                    })),
                 ],
             }),
         ],

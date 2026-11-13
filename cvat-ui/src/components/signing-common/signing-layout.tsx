@@ -6,6 +6,7 @@ import './styles.scss';
 import React from 'react';
 import { useSelector } from 'react-redux';
 import { CombinedState } from 'reducers';
+import { usePlugins } from 'utils/hooks';
 import Layout from 'antd/lib/layout';
 import { Col, Row } from 'antd/lib/grid';
 import Title from 'antd/lib/typography/Title';
@@ -49,19 +50,41 @@ export const formSizes: FormSizes = {
     },
 };
 
+const titleSizes: Sizes = {
+    xs: { span: 0 },
+    sm: { span: 0 },
+    md: { span: 0 },
+    lg: { span: 0 },
+    xl: { span: 8 },
+    xxl: { span: 10 },
+};
+
+function SigningFooter(): JSX.Element | null {
+    const footerItems = usePlugins((state: CombinedState) => state.plugins.components.signingLayout.footer.items);
+    if (!footerItems.length) return null;
+    return (
+        <footer className='cvat-signing-footer'>
+            <Row justify='center'>
+                <Col {...titleSizes} />
+                <Col {...formSizes.wrapper}>
+                    <Row justify='center'>
+                        <Col {...formSizes.form}>
+                            {[...footerItems].sort((a, b) => a.weight - b.weight).map(
+                                ({ component: Component }, index) => <Component key={index} />,
+                            )}
+                        </Col>
+                    </Row>
+                </Col>
+            </Row>
+        </footer>
+    );
+}
+
 function SignInLayout(props: SignInLayoutComponentProps): JSX.Element {
     const { children } = props;
     const { Content, Header } = Layout;
     const subtitle = useSelector((state: CombinedState) => state.about.server.subtitle);
 
-    const titleSizes = {
-        xs: { span: 0 },
-        sm: { span: 0 },
-        md: { span: 0 },
-        lg: { span: 0 },
-        xl: { span: 8 },
-        xxl: { span: 10 },
-    };
     const logoSizes = {
         xs: { span: 21 },
         sm: { span: 21 },
@@ -89,6 +112,7 @@ function SignInLayout(props: SignInLayoutComponentProps): JSX.Element {
                         {children}
                     </Row>
                 </Content>
+                <SigningFooter />
             </Layout>
         </Layout>
     );
