@@ -164,6 +164,17 @@ source .venv/bin/activate
 python -m pip install --upgrade pip cvat-cli
 ```
 
+To run a detector on tasks created from video, the agent also needs the `video` extra
+and the OpenH264 library:
+
+```bash
+python -m pip install "cvat-sdk[video]"
+export CVAT_OPENH264_LIBRARY=/path/to/libopenh264.so
+```
+
+Without them, the agent still works on image tasks, but requests for video tasks fail.
+Interactors and trackers don't need them.
+
 Create a {{< ilink "/docs/api_sdk/access_tokens" "Personal Access Token" >}} in CVAT, then configure your connection:
 
 ```bash

@@ -88,6 +88,25 @@ Refer to the model documentation.
 Also, some explanatory example could be found in
  `cvat/ai-models/agents_deployment/transformers/.env`
 
+### Video tasks (detectors only)
+
+Detector agents (YOLO, RF-DETR, Hugging Face Transformers) need the
+[OpenH264](https://github.com/cisco/openh264) library to annotate tasks created from video.
+The agent images don't include it, so you mount a copy from your machine:
+
+1. Download an OpenH264 2.x library built for **Linux** and for the CPU architecture of the image.
+2. In `.env`, set `OPENH264_LIBRARY_ABSOLUTE_PATH` to the absolute path of that file.
+3. In `.env`, uncomment the line that adds the mount to the Compose files:
+
+   ```bash
+   COMPOSE_FILE=docker-compose.yaml:docker-compose-mount-openh264.yaml
+   ```
+
+   To combine it with another mount, list all the files, for example,
+   `COMPOSE_FILE=docker-compose.yaml:docker-compose-mount-userdata.yaml:docker-compose-mount-openh264.yaml`.
+
+Image tasks work without the library. Interactors and trackers, such as SAM2, don't need it.
+
 ## How to run CVAT agent with Docker Compose
 
 To run CVAT agent with Docker Compose, you need to run the following command in the terminal:
@@ -163,3 +182,11 @@ docker compose down -v
 ```
 
 - Also there could be issues with MODEL_CONFIG_PARAMS. Please make sure that you have provided correct parameters for the model you are using. You can check the model documentation for more details on that.
+- If a detector fails on video tasks with "The agent cannot read the chunks of this task",
+  check the agent logs:
+  - "Set CVAT_OPENH264_LIBRARY" means `docker-compose-mount-openh264.yaml` is not in `COMPOSE_FILE`.
+  - "invalid ELF header" or "wrong ELF class" means the library is not a Linux build
+    for the image's CPU architecture.
+- If `docker compose up` fails with "bind source path does not exist",
+  check `OPENH264_LIBRARY_ABSOLUTE_PATH`. With Docker Desktop, the file must also be in a folder
+  that Docker Desktop shares with containers (see **Settings → Resources → File sharing**).

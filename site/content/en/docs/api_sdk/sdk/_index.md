@@ -72,6 +72,9 @@ and set the `CVAT_OPENH264_LIBRARY` environment variable to its path:
 export CVAT_OPENH264_LIBRARY=/path/to/libopenh264.so
 ```
 
+The library must be OpenH264 2.x, built for the operating system and CPU architecture
+of the machine where your Python code runs.
+
 We support Python versions 3.11 and higher.
 
 ## Usage
