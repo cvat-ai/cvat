@@ -29,6 +29,19 @@ class AutomaticPopupController {
         }
     }
 
+    /** Both a callback and null count as a resolved eligibility decision. */
+    public isEligibilityResolved(id: string): boolean {
+        return this.sources.get(id)?.eligibilityResolved ?? false;
+    }
+
+    /** Start a fresh eligibility check on remount without restoring a consumed opening allowance. */
+    public resetEligibility(id: string): void {
+        const source = this.sources.get(id);
+        if (!source) return;
+        source.eligibilityResolved = false;
+        source.tryShow = null;
+    }
+
     /** Reset eligibility and the opening allowance when the signed-in account changes. */
     public setUser(userId: number | null): void {
         if (this.userId === userId) return;

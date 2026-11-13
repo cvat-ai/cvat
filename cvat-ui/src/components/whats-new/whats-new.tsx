@@ -58,7 +58,6 @@ export default function WhatsNew(props: Props): JSX.Element {
     const [open, setOpen] = useState(false);
     const [retry, setRetry] = useState(0);
     const [ackRetry, setAckRetry] = useState(0);
-    const offered = useRef(false);
     const manuallyOpened = useRef(false);
     const ackRequests = useRef(new Set<string>());
     const profilePromotionsAllowed = useSelector((state: CombinedState) => (
@@ -116,14 +115,18 @@ export default function WhatsNew(props: Props): JSX.Element {
     }, [retry]);
 
     useEffect(() => {
-        if (!promotionsAllowed && offered.current) {
+        automaticPopupController.resetEligibility('whats-new');
+        return () => { automaticPopupController.offer('whats-new', null); };
+    }, []);
+
+    useEffect(() => {
+        if (!promotionsAllowed && automaticPopupController.isEligibilityResolved('whats-new')) {
             automaticPopupController.offer('whats-new', null);
         }
         if (!blocked) {
             automaticPopupController.refresh();
         }
     }, [blocked, promotionsAllowed]);
-    useEffect(() => () => { automaticPopupController.offer('whats-new', null); }, []);
 
     // Capture before acknowledging; highlights remain stable until this popup closes.
     // Manual opening while metadata is loading captures when it becomes available.
@@ -132,8 +135,7 @@ export default function WhatsNew(props: Props): JSX.Element {
     }, [open, ready, openingSeen, seen, updates]);
 
     useEffect(() => {
-        if (loading || offered.current) return;
-        offered.current = true;
+        if (loading || automaticPopupController.isEligibilityResolved('whats-new')) return;
         if (!updates || loadError || manuallyOpened.current || !promotionsAllowed) {
             automaticPopupController.offer('whats-new', null);
             return;
