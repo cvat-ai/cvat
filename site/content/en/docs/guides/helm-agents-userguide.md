@@ -168,6 +168,33 @@ agent:
   #      claimName: model-cache-pvc
 ```
 
+### Video tasks (optional)
+
+Detector agents (YOLO, RF-DETR, Hugging Face Transformers) need the
+[OpenH264](https://github.com/cisco/openh264) library to annotate tasks created from video.
+The agent images don't include it. Mount an OpenH264 2.x library built for Linux
+and the CPU architecture of the image, and point `CVAT_OPENH264_LIBRARY` at it:
+
+```yaml
+agent:
+  envVars:
+    - name: CVAT_OPENH264_LIBRARY
+      value: /opt/openh264/libopenh264.so
+  extraVolumeMounts:
+    - name: openh264
+      mountPath: /opt/openh264/libopenh264.so
+      readOnly: true
+  extraVolumes:
+    - name: openh264
+      hostPath:
+        path: /opt/openh264/libopenh264-2.6.0-linux64.8.so
+        type: File
+```
+
+`hostPath` is a path on the Kubernetes node, not on your machine,
+so the file must exist on every node where the agent can run.
+Image tasks work without the library. Interactors and trackers, such as SAM2, don't need it.
+
 ## How to deploy CVAT agent with Helm
 
 Once `values.yaml` is configured, deploy with:

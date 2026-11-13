@@ -35,6 +35,14 @@ request the `pytorch` extra:
 pip install "cvat-sdk[pytorch]"
 ```
 
+To read frames of tasks created from video, request the `video` extra and set
+`CVAT_OPENH264_LIBRARY` to the path of an OpenH264 2.x shared library
+(see [the installation docs](https://docs.cvat.ai/docs/api_sdk/sdk/#installation)):
+
+```bash
+pip install "cvat-sdk[video]"
+```
+
 To install from the local directory, follow [the developer guide](https://docs.cvat.ai/docs/api_sdk/sdk/developer_guide).
 
 After installation you can import the package:

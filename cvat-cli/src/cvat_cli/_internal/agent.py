@@ -25,6 +25,7 @@ import cvat_sdk.auto_annotation as cvataa
 import cvat_sdk.datasets as cvatds
 import urllib3.exceptions
 from cvat_sdk import Client
+from cvat_sdk.core.exceptions import ChunkReaderUnavailableException
 from cvat_sdk.datasets.caching import make_cache_manager
 from cvat_sdk.exceptions import ApiException
 
@@ -522,6 +523,10 @@ class _Agent:
                 error_message = "Invalid annotation request: " + str(ex)
             elif isinstance(ex, concurrent.futures.BrokenExecutor):
                 error_message = "Worker process crashed"
+            elif isinstance(ex, ChunkReaderUnavailableException):
+                error_message = (
+                    "The agent cannot read the chunks of this task. See the agent log for details."
+                )
 
             try:
                 self._client.api_client.call_api(
