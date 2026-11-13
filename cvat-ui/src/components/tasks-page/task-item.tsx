@@ -11,10 +11,9 @@ import { Row, Col } from 'antd/lib/grid';
 import Button from 'antd/lib/button';
 import { MoreOutlined } from '@ant-design/icons';
 import Progress from 'antd/lib/progress';
-import Badge from 'antd/lib/badge';
 import { Task, RQStatus, Request } from 'cvat-core-wrapper';
 import Preview from 'components/common/preview';
-import { ActiveInference, PluginComponent } from 'reducers';
+import { ActiveInference } from 'reducers';
 import StatusMessage from 'components/requests-page/request-status';
 import { useContextMenuClick, useIsMounted } from 'utils/hooks';
 import AutomaticAnnotationProgress from './automatic-annotation-progress';
@@ -25,7 +24,6 @@ export interface TaskItemProps {
     deleted: boolean;
     activeInference: ActiveInference | null;
     activeRequest: Request | null;
-    ribbonPlugins: PluginComponent[];
     cancelAutoAnnotation(): void;
     updateTaskInState(task: Task): void;
     selected: boolean;
@@ -44,7 +42,6 @@ function TaskItemComponent(props: TaskItemProps): JSX.Element {
         deleted,
         activeInference,
         activeRequest,
-        ribbonPlugins,
         cancelAutoAnnotation,
         updateTaskInState,
         selected,
@@ -107,10 +104,6 @@ function TaskItemComponent(props: TaskItemProps): JSX.Element {
     const owner = taskInstance.owner ? taskInstance.owner.username : null;
     const updated = dayjs(taskInstance.updatedDate).fromNow();
     const created = dayjs(taskInstance.createdDate).format('MMMM Do YYYY');
-
-    const ribbonItems = ribbonPlugins
-        .filter((plugin) => plugin.data.shouldBeRendered(props, { importingState }))
-        .map((plugin) => ({ component: plugin.component, weight: plugin.data.weight }));
 
     const renderProgress = (): JSX.Element => {
         if (importingState) {
@@ -251,25 +244,11 @@ function TaskItemComponent(props: TaskItemProps): JSX.Element {
     );
 
     return (
-        <Badge.Ribbon
-            style={{ visibility: ribbonItems.length ? 'visible' : 'hidden' }}
-            className='cvat-task-item-ribbon'
-            placement='start'
-            text={(
-                <div>
-                    {ribbonItems.sort((item1, item2) => item1.weight - item2.weight)
-                        .map((item) => item.component).map((Component, index) => (
-                            <Component key={index} targetProps={props} targetState={{ importingState }} />
-                        ))}
-                </div>
-            )}
-        >
-            <TaskActionsComponent
-                dropdownTrigger={['contextMenu']}
-                taskInstance={taskInstance}
-                triggerElement={row}
-            />
-        </Badge.Ribbon>
+        <TaskActionsComponent
+            dropdownTrigger={['contextMenu']}
+            taskInstance={taskInstance}
+            triggerElement={row}
+        />
     );
 }
 

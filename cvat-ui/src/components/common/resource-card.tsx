@@ -14,6 +14,11 @@ export interface ResourceCardTag {
     className?: string;
 }
 
+interface ResourceCardDescription {
+    label: string;
+    value?: React.ReactNode;
+}
+
 interface Props {
     cardRef?: React.Ref<HTMLDivElement>;
     id?: string | number;
@@ -21,7 +26,7 @@ interface Props {
     preview: React.ReactNode;
     tags?: ResourceCardTag[];
     title?: React.ReactNode;
-    description?: React.ReactNode;
+    descriptions?: ResourceCardDescription[];
     contentClassName?: string;
     menu?: React.ReactNode;
     mediaOverlay?: React.ReactNode;
@@ -43,7 +48,7 @@ function ResourceCard(props: Readonly<Props>): JSX.Element {
         preview,
         tags = [],
         title,
-        description,
+        descriptions = [],
         contentClassName = '',
         menu,
         mediaOverlay,
@@ -130,13 +135,18 @@ function ResourceCard(props: Readonly<Props>): JSX.Element {
             onContextMenu={isDisabled ? undefined : onContextMenu}
             onContextMenuCapture={isDisabled ? undefined : onContextMenuCapture}
         >
-            {(title || description || menu) && (
+            {(title || descriptions.length || menu) && (
                 <div className={`cvat-resource-card-content ${contentClassName}`.trim()}>
                     {title && <div className='cvat-resource-card-title'>{title}</div>}
                     {menu && <div className='cvat-resource-card-menu'>{menu}</div>}
-                    {description && (
-                        <div className={`cvat-resource-card-description${title ? ' cvat-resource-card-description-spaced' : ''}`}>
-                            {description}
+                    {!!descriptions.length && (
+                        <div className={`cvat-resource-card-descriptions${title ? ' cvat-resource-card-descriptions-spaced' : ''}`}>
+                            {descriptions.map(({ label, value }) => (
+                                <div className='cvat-resource-card-description' key={label}>
+                                    <span className='cvat-resource-card-description-label'>{`${label}:`}</span>
+                                    <span className='cvat-resource-card-description-value'>{value}</span>
+                                </div>
+                            ))}
                         </div>
                     )}
                 </div>

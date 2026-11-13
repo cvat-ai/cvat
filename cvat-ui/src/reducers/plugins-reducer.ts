@@ -104,14 +104,6 @@ const defaultState: PluginsState = {
         jobActions: {
             items: [],
         },
-        taskItem: {
-            // not used
-            ribbon: [],
-        },
-        projectItem: {
-            // not used
-            ribbon: [],
-        },
         router: [],
         settings: {
             player: [],

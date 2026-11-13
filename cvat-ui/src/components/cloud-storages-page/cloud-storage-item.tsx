@@ -10,7 +10,6 @@ import dayjs from 'dayjs';
 import { QuestionCircleOutlined, MoreOutlined } from '@ant-design/icons';
 import Paragraph from 'antd/lib/typography/Paragraph';
 import Text from 'antd/lib/typography/Text';
-import Descriptions from 'antd/lib/descriptions';
 import Button from 'antd/lib/button';
 import Modal from 'antd/lib/modal';
 
@@ -118,19 +117,20 @@ export default function CloudStorageItemComponent(props: Readonly<Props>): JSX.E
                     )}
                 </div>
             )}
-            description={(
-                <Descriptions className='cvat-resource-card-properties' column={1} size='small'>
-                    <Descriptions.Item label='Owner'>
+            descriptions={[
+                {
+                    label: 'Owner',
+                    value: (
                         <Text
                             ellipsis={{ tooltip: ownerName }}
                             className='cvat-resource-card-line'
                         >
                             {ownerName}
                         </Text>
-                    </Descriptions.Item>
-                    <Descriptions.Item label='Updated'>{dayjs(updatedDate).fromNow()}</Descriptions.Item>
-                </Descriptions>
-            )}
+                    ),
+                },
+                { label: 'Updated', value: dayjs(updatedDate).fromNow() },
+            ]}
             menu={(
                 <Button
                     type='text'

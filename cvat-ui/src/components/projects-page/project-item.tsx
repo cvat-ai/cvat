@@ -8,14 +8,12 @@ import dayjs from 'dayjs';
 import { useSelector } from 'react-redux';
 import { useHistory } from 'react-router';
 import Text from 'antd/lib/typography/Text';
-import Descriptions from 'antd/lib/descriptions';
-import Badge from 'antd/lib/badge';
 import Button from 'antd/lib/button';
 import { MoreOutlined } from '@ant-design/icons';
 
 import { CombinedState } from 'reducers';
 import { Project } from 'cvat-core-wrapper';
-import { useCardHeightHOC, usePlugins, useContextMenuClick } from 'utils/hooks';
+import { useCardHeightHOC, useContextMenuClick } from 'utils/hooks';
 import Preview from 'components/common/preview';
 import ResourceCard from 'components/common/resource-card';
 import ProjectActionsComponent from './actions-menu';
@@ -42,7 +40,6 @@ export default function ProjectItemComponent(props: Props): JSX.Element {
     } = props;
 
     const history = useHistory();
-    const ribbonPlugins = usePlugins((state: CombinedState) => state.plugins.components.projectItem.ribbon, props);
     const height = useCardHeight();
     const { itemRef, handleContextMenuClick, handleContextMenuCapture } = useContextMenuClick<HTMLDivElement>();
     const ownerName = instance.owner?.username;
@@ -80,19 +77,20 @@ export default function ProjectItemComponent(props: Props): JSX.Element {
                     {instance.name}
                 </Text>
             )}
-            description={(
-                <Descriptions className='cvat-resource-card-properties' column={1} size='small'>
-                    <Descriptions.Item label='Owner'>
+            descriptions={[
+                {
+                    label: 'Owner',
+                    value: (
                         <Text
                             ellipsis={{ tooltip: ownerName }}
                             className='cvat-resource-card-line'
                         >
                             {ownerName}
                         </Text>
-                    </Descriptions.Item>
-                    <Descriptions.Item label='Updated'>{updated}</Descriptions.Item>
-                </Descriptions>
-            )}
+                    ),
+                },
+                { label: 'Updated', value: updated },
+            ]}
             contentClassName='cvat-projects-project-item-description'
             menu={(
                 <Button
@@ -113,24 +111,10 @@ export default function ProjectItemComponent(props: Props): JSX.Element {
     );
 
     return (
-        <Badge.Ribbon
-            style={{ visibility: ribbonPlugins.length ? 'visible' : 'hidden' }}
-            className='cvat-project-item-ribbon'
-            placement='start'
-            text={(
-                <div>
-                    {ribbonPlugins.sort((item1, item2) => item1.weight - item2.weight)
-                        .map((item) => item.component).map((Component, index) => (
-                            <Component key={index} targetProps={props} />
-                        ))}
-                </div>
-            )}
-        >
-            <ProjectActionsComponent
-                projectInstance={instance}
-                dropdownTrigger={['contextMenu']}
-                triggerElement={card}
-            />
-        </Badge.Ribbon>
+        <ProjectActionsComponent
+            projectInstance={instance}
+            dropdownTrigger={['contextMenu']}
+            triggerElement={card}
+        />
     );
 }

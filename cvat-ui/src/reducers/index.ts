@@ -504,12 +504,6 @@ export interface PluginsState {
         jobActions: {
             items: PluginComponent[];
         };
-        taskItem: {
-            ribbon: PluginComponent[];
-        };
-        projectItem: {
-            ribbon: PluginComponent[];
-        };
         settings: {
             player: PluginComponent[];
         };
@@ -595,6 +589,7 @@ export interface ModelsState {
     creatingStatus: string;
     interactors: MLModel[];
     detectors: MLModel[];
+    glms: MLModel[];
     trackers: MLModel[];
     reid: MLModel[];
     totalCount: number;

@@ -182,7 +182,9 @@
     }
 }
 
-.cvat-resource-card-description {
+.cvat-resource-card-descriptions {
+    display: flex;
+    flex-direction: column;
     cursor: text;
     user-select: text;
 }
@@ -201,7 +203,7 @@
     }
 }
 
-.cvat-resource-card-description-spaced {
+.cvat-resource-card-descriptions-spaced {
     margin-top: $grid-unit-size * 0.75;
 }
 
@@ -210,18 +212,18 @@
     width: 100%;
 }
 
-.cvat-resource-card-description > .cvat-resource-card-properties {
-    .ant-descriptions-view {
-        table {
-            table-layout: fixed;
-        }
+.cvat-resource-card-description {
+    display: flex;
+    min-width: 0;
+}
 
-        .ant-descriptions-row .ant-descriptions-item {
-            padding: 0;
-        }
-    }
+.cvat-resource-card-description-label {
+    flex: none;
+    margin-right: $grid-unit-size;
+    color: $text-color-secondary;
+}
 
-    .ant-descriptions-item-label {
-        width: $grid-unit-size * 10;
-    }
+.cvat-resource-card-description-value {
+    flex: 1;
+    min-width: 0;
 }

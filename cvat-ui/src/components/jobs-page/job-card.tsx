@@ -6,7 +6,6 @@
 import React, { useCallback } from 'react';
 import { useSelector } from 'react-redux';
 import { useHistory } from 'react-router';
-import Descriptions from 'antd/lib/descriptions';
 import Button from 'antd/lib/button';
 import Text from 'antd/lib/typography/Text';
 import { MoreOutlined } from '@ant-design/icons';
@@ -95,19 +94,20 @@ function JobCardComponent(props: Readonly<Props>): JSX.Element {
                     <JobStageStateBadges stage={job.stage} state={job.state} />
                 </div>
             )}
-            description={(
-                <Descriptions className='cvat-resource-card-properties' column={1} size='small'>
-                    <Descriptions.Item label='Frames'>{job.stopFrame - job.startFrame + 1}</Descriptions.Item>
-                    <Descriptions.Item label='Assignee'>
+            descriptions={[
+                { label: 'Frames', value: job.stopFrame - job.startFrame + 1 },
+                {
+                    label: 'Assignee',
+                    value: (
                         <Text
                             ellipsis={{ tooltip: assigneeName }}
                             className='cvat-resource-card-line'
                         >
                             {assigneeName}
                         </Text>
-                    </Descriptions.Item>
-                </Descriptions>
-            )}
+                    ),
+                },
+            ]}
             menu={(
                 <Button
                     type='text'
