@@ -33,7 +33,7 @@ import {
 import {
     changeShowGroundTruth as changeShowGroundTruthAction,
 } from 'actions/settings-actions';
-import isAbleToChangeFrame from 'utils/is-able-to-change-frame';
+import { isAbleToChangeFrame } from 'utils/annotation';
 import getHiddenZLayers from 'utils/get-hidden-z-layers';
 import {
     CombinedState, StatesOrdering, ColorBy, Workspace, isMultiSelectionSupported,

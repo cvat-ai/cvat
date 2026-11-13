@@ -20,6 +20,7 @@ import {
     getCachedChunks,
     getJobFrameNumbers,
     getFramesMeta,
+    hasUnsavedFrameChanges,
     clear as clearFrames,
     findFrame,
     getContextImage,
@@ -251,6 +252,14 @@ export function implementJob(Job: typeof JobClass): typeof JobClass {
             this: JobClass,
         ): ReturnType<typeof JobClass.prototype.frames.save> {
             return patchMeta(this.id).then((meta) => [meta]);
+        },
+    });
+
+    Object.defineProperty(Job.prototype.frames.hasUnsavedChanges, 'implementation', {
+        value: function hasUnsavedFrameChangesImplementation(
+            this: JobClass,
+        ): ReturnType<typeof JobClass.prototype.frames.hasUnsavedChanges> {
+            return hasUnsavedFrameChanges(this.id);
         },
     });
 
@@ -1098,6 +1107,14 @@ export function implementTask(Task: typeof TaskClass): typeof TaskClass {
             this: TaskClass,
         ): ReturnType<typeof TaskClass.prototype.frames.save> {
             return Promise.all(this.jobs.map((job) => patchMeta(job.id)));
+        },
+    });
+
+    Object.defineProperty(Task.prototype.frames.hasUnsavedChanges, 'implementation', {
+        value: function hasUnsavedFrameChangesImplementation(
+            this: TaskClass,
+        ): ReturnType<typeof TaskClass.prototype.frames.hasUnsavedChanges> {
+            return this.jobs.some((job) => job.frames.hasUnsavedChanges());
         },
     });
 
