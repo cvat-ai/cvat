@@ -37,6 +37,13 @@ x-clickhouse-env: &clickhouse-env
   CLICKHOUSE_USER: user
   CLICKHOUSE_PASSWORD: user
 
+x-updates-env: &updates-env
+  CVAT_UPDATES_SOURCE_URL:
+  CVAT_UPDATES_ENABLED:
+  CVAT_UPDATES_PUBLIC_URL:
+  CVAT_UPDATES_CACHE_TTL:
+  CVAT_UPDATES_EDITION:
+
 services:
   cvat_db:
     container_name: cvat_db
@@ -93,7 +100,7 @@ services:
         condition:
           service_started
     environment:
-      <<: [*backend-env, *clickhouse-env]
+      <<: [*backend-env, *clickhouse-env, *updates-env]
       DJANGO_MODWSGI_EXTRA_ARGS: ''
       ALLOWED_HOSTS: '*'
       ADAPTIVE_AUTO_ANNOTATION: 'false'

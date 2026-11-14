@@ -329,6 +329,7 @@ class ServerViewSet(viewsets.ViewSet):
     def plugins(request: ExtendedRequest):
         data = {
             "ANALYTICS": settings.ANALYTICS_ENABLED,
+            "WHATS_NEW": settings.CVAT_UPDATES_ENABLED,
             "MODELS": to_bool(
                 os.environ.get("CVAT_SERVERLESS", False)
             ),  # not used anymore, remove later

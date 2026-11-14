@@ -1661,7 +1661,8 @@ paths:
       - in: path
         name: id
         schema:
-          type: string
+          type: integer
+        description: A unique integer value identifying this user growth data.
         required: true
       tags:
       - growth
@@ -1686,7 +1687,8 @@ paths:
       - in: path
         name: id
         schema:
-          type: string
+          type: integer
+        description: A unique integer value identifying this user growth data.
         required: true
       tags:
       - growth
@@ -4084,6 +4086,91 @@ paths:
       responses:
         '204':
           description: The organization has been deleted
+  /api/product-updates:
+    get:
+      operationId: product_updates_list
+      summary: Get release notes, announcements and the current user's seen state
+      tags:
+      - product-updates
+      security:
+      - tokenAuth: []
+      - accessTokenAuth: []
+      - sessionAuth: []
+        csrfAuth: []
+        csrfHeaderAuth: []
+      - basicAuth: []
+      responses:
+        '200':
+          content:
+            application/vnd.cvat+json:
+              schema:
+                $ref: '#/components/schemas/UpdatesIndex'
+          description: ''
+  /api/product-updates/acknowledge:
+    post:
+      operationId: product_updates_create_acknowledge
+      summary: Acknowledge displayed updates for the current user
+      tags:
+      - product-updates
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/UpdatesAcknowledgementRequest'
+      security:
+      - tokenAuth: []
+      - accessTokenAuth: []
+      - sessionAuth: []
+        csrfAuth: []
+        csrfHeaderAuth: []
+      - basicAuth: []
+      responses:
+        '200':
+          content:
+            application/vnd.cvat+json:
+              schema:
+                $ref: '#/components/schemas/UpdatesState'
+          description: ''
+  /api/product-updates/content:
+    get:
+      operationId: product_updates_retrieve_content
+      summary: Get a published release note or announcement body
+      parameters:
+      - in: query
+        name: id
+        schema:
+          type: string
+          minLength: 1
+          maxLength: 128
+        required: true
+      - in: query
+        name: kind
+        schema:
+          enum:
+          - release-notes
+          - announcements
+          type: string
+          minLength: 1
+        description: |-
+          * `release-notes` - release-notes
+          * `announcements` - announcements
+        required: true
+      tags:
+      - product-updates
+      security:
+      - tokenAuth: []
+      - accessTokenAuth: []
+      - sessionAuth: []
+        csrfAuth: []
+        csrfHeaderAuth: []
+      - basicAuth: []
+      responses:
+        '200':
+          content:
+            application/vnd.cvat+json:
+              schema:
+                $ref: '#/components/schemas/UpdatesContent'
+          description: ''
   /api/projects:
     get:
       operationId: projects_list
@@ -8163,6 +8250,54 @@ components:
         * `mask` - Mask
         * `polygon` - Polygon
         * `ellipse` - Ellipse
+    AnnouncementPreview:
+      type: object
+      properties:
+        id:
+          type: string
+        title:
+          type: string
+        description:
+          type: string
+        publishedAt:
+          type: string
+          format: date-time
+        announce:
+          type: boolean
+        editions:
+          type: array
+          items:
+            type: string
+            pattern: ^[a-z][a-z0-9-]*$
+        url:
+          type: string
+          format: uri
+        source:
+          $ref: '#/components/schemas/SourceEnum'
+        imageURL:
+          type: string
+          format: uri
+        videoURL:
+          type: string
+          format: uri
+        imageAlt:
+          type: string
+        cta:
+          type: string
+        label:
+          type: string
+        markdownURL:
+          type: string
+          format: uri
+      required:
+      - announce
+      - description
+      - editions
+      - id
+      - publishedAt
+      - source
+      - title
+      - url
     AssetRead:
       type: object
       properties:
@@ -9005,6 +9140,16 @@ components:
       required:
       - exporters
       - importers
+    ErrorsEnum:
+      enum:
+      - release-notes
+      - announcements
+      - external-announcements
+      type: string
+      description: |-
+        * `release-notes` - release-notes
+        * `announcements` - announcements
+        * `external-announcements` - external-announcements
     Event:
       type: object
       properties:
@@ -11675,9 +11820,12 @@ components:
           type: boolean
         MODELS:
           type: boolean
+        WHATS_NEW:
+          type: boolean
       required:
       - ANALYTICS
       - MODELS
+      - WHATS_NEW
     ProjectFileRequest:
       type: object
       properties:
@@ -13514,6 +13662,48 @@ components:
       - password1
       - password2
       - username
+    ReleaseNote:
+      type: object
+      properties:
+        version:
+          type: string
+        title:
+          type: string
+        description:
+          type: string
+        publishedAt:
+          type: string
+          format: date-time
+        announce:
+          type: boolean
+        editions:
+          type: array
+          items:
+            type: string
+            pattern: ^[a-z][a-z0-9-]*$
+        url:
+          type: string
+          format: uri
+        markdownURL:
+          type: string
+          format: uri
+        hasEditionSections:
+          type: boolean
+        highlights:
+          type: array
+          items:
+            type: string
+      required:
+      - announce
+      - description
+      - editions
+      - hasEditionSections
+      - highlights
+      - markdownURL
+      - publishedAt
+      - title
+      - url
+      - version
     ReplicaJobCreateRequest:
       type: object
       properties:
@@ -13859,6 +14049,14 @@ components:
         * `natural` - NATURAL
         * `predefined` - PREDEFINED
         * `random` - RANDOM
+    SourceEnum:
+      enum:
+      - hugo
+      - external
+      type: string
+      description: |-
+        * `hugo` - hugo
+        * `external` - external
     Storage:
       type: object
       properties:
@@ -14547,6 +14745,84 @@ components:
       required:
       - frame
       - type
+    UpdatesAcknowledgementRequest:
+      type: object
+      properties:
+        release_version:
+          type: string
+          minLength: 1
+          maxLength: 64
+          pattern: ^[0-9]+\.[0-9]+\.[0-9]+$
+        announcements_seen_at:
+          type: string
+          format: date-time
+    UpdatesContent:
+      type: object
+      properties:
+        body:
+          type: string
+        baseURL:
+          type: string
+          format: uri
+      required:
+      - baseURL
+      - body
+    UpdatesIndex:
+      type: object
+      properties:
+        edition:
+          type: string
+          pattern: ^[a-z][a-z0-9-]*$
+        state:
+          $ref: '#/components/schemas/UpdatesState'
+        releases:
+          type: array
+          items:
+            $ref: '#/components/schemas/ReleaseNote'
+        announcements:
+          type: array
+          items:
+            $ref: '#/components/schemas/AnnouncementPreview'
+        canAcknowledgeAnnouncements:
+          type: boolean
+        errors:
+          type: array
+          items:
+            $ref: '#/components/schemas/ErrorsEnum'
+        releaseHistoryURL:
+          type: string
+          format: uri
+        announcementHistoryURL:
+          type: string
+          format: uri
+        updatesHistoryURL:
+          type: string
+          format: uri
+      required:
+      - announcementHistoryURL
+      - announcements
+      - canAcknowledgeAnnouncements
+      - edition
+      - errors
+      - releaseHistoryURL
+      - releases
+      - state
+      - updatesHistoryURL
+    UpdatesState:
+      type: object
+      properties:
+        last_seen_release_notes_version:
+          type: string
+        last_seen_announcements_date:
+          type: string
+          format: date-time
+          nullable: true
+        promotion_notifications_allowed:
+          type: boolean
+      required:
+      - last_seen_announcements_date
+      - last_seen_release_notes_version
+      - promotion_notifications_allowed
     User:
       type: object
       properties:
@@ -14669,6 +14945,14 @@ components:
           readOnly: true
         promotion_notifications_allowed:
           type: boolean
+        last_seen_release_notes_version:
+          type: string
+          readOnly: true
+        last_seen_announcements_date:
+          type: string
+          format: date-time
+          readOnly: true
+          nullable: true
     UserIdentifiers:
       type: object
       properties:

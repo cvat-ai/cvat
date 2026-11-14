@@ -1,0 +1,3 @@
+{{ define "main" }}
+{{ partial "updates/list.html" (dict "Page" . "Entries" (partial "release-notes/pages.html" .)) }}
+{{ end }}

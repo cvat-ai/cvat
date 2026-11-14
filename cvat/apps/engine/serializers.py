@@ -3901,6 +3901,7 @@ class ChapterSerializer(serializers.Serializer):
 class PluginsSerializer(serializers.Serializer):
     ANALYTICS = serializers.BooleanField()
     MODELS = serializers.BooleanField()
+    WHATS_NEW = serializers.BooleanField()
 
 
 class DataMetaReadSerializer(serializers.ModelSerializer):

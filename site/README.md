@@ -72,6 +72,100 @@ Before tagging, check the actual restriction rather than guessing from folder lo
 or a legacy URL alias — verify what the page's text says, and if there's no explicit
 statement, confirm with the team before adding a tag.
 
+### Writing release notes and announcements
+
+Create an `index.md` in one of these folders, with any images or videos alongside it:
+
+- Release notes: `site/content/release-notes/<version>/index.md`
+- Announcements: `site/content/announcements/<slug>/index.md`
+
+These paths do not include `en/`. Keep authoring guides outside `site/content/`;
+Markdown files there are published as content.
+
+#### Release notes
+
+```markdown
+---
+title: "CVAT 2.81: annotation improvements"
+description: "A short overview of the release."
+date: 2026-11-10T12:00:00Z
+version: "2.81.0"
+announce: true
+---
+
+{{< release-section title="Faster annotation review" editions="all" >}}
+Explain the change and how to use it.
+
+![Annotation review](review.png)
+{{< /release-section >}}
+
+{{< release-section title="Enterprise deployment improvements" editions="enterprise" >}}
+Describe the Enterprise-specific change.
+{{< /release-section >}}
+```
+
+- Use a unique version in `X.Y.Z` format.
+- `announce`: whether the release notes are eligible for automatic user notifications.
+  Defaults to `false`.
+- Put changes inside `release-section` blocks. Use `all`, `community`, `enterprise`,
+  `saas`, or comma-separated editions such as `enterprise,saas`. Do not nest blocks.
+- The `title` argument becomes the section heading. For example,
+  `title="Faster annotation review"` creates a heading named "Faster annotation review".
+- Keep section titles descriptive and concise.
+- The public docs show all sections and their availability labels.
+
+#### Announcements
+
+```markdown
+---
+id: "annotation-workflow-guide"
+title: "Explore the new annotation workflow"
+description: "One or two sentences summarizing the announcement."
+date: 2026-11-10T12:01:00Z
+announce: true
+image: /announcements/annotation-workflow-guide/preview.png
+image_alt: "Annotation editor showing the new workflow"
+video: /announcements/annotation-workflow-guide/demo.mp4
+cta: "Read the guide"
+---
+
+Write the full announcement here using Markdown.
+```
+
+- Use a unique, permanent `id`: lowercase letters, numbers, hyphens, or underscores.
+- The `id` does not need to match the folder name. Using the same value is recommended
+  for clarity. Keep the ID unchanged when updating an existing announcement.
+- Give each announcement a unique publication timestamp with a timezone.
+- Omit `editions` to make the announcement available to all editions, without a
+  product restriction badge. To restrict availability, specify a non-empty list using
+  `community`, `enterprise`, and/or `saas` (CVAT Online), for example
+  `editions: [saas, enterprise]`.
+- `announce`: whether the announcement is eligible for automatic user notifications.
+  Defaults to `false`.
+- `image`, `image_alt`, `video`, and `cta` are optional. Images and videos can be provided
+  together; the image can serve as a video poster or fallback.
+- The CTA links to the announcement's own docs page.
+
+#### Media and publishing
+
+Use relative image links in the article body, such as `![Description](preview.png)`.
+To embed a video in the published page, insert the following HTML into the body of
+`index.md`, after the closing `---` of the front matter:
+
+```html
+<video controls preload="none" poster="preview.png">
+  <source src="demo.mp4" type="video/mp4">
+</video>
+```
+
+Preview locally using the instructions below, then submit a PR to `develop`.
+After merge, the docs pipeline publishes the pages and generates the JSON feeds
+automatically; do not edit generated JSON. No CVAT application deployment is required.
+
+Keep IDs, versions, and publication timestamps unchanged when correcting existing
+articles. Publish new announcements with a new ID and a current timestamp; backdated
+entries can be missed by users who have already seen newer content.
+
 ### How to start the site locally
 
 #### Installation
