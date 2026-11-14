@@ -333,6 +333,7 @@ class TaskQualityCalculator:
             assignee_id=task_report["assignee_id"],
             assignee_last_updated=task_report["assignee_last_updated"],
             data=task_report["data"],
+            version=models.QualityReportVersion.GENERALIZED,
         )
         db_task_report.save()
 
@@ -345,6 +346,7 @@ class TaskQualityCalculator:
                 assignee_id=job_report["assignee_id"],
                 assignee_last_updated=job_report["assignee_last_updated"],
                 data=job_report["data"],
+                version=models.QualityReportVersion.GENERALIZED,
             )
             db_job_reports.append(db_job_report)
 
@@ -450,7 +452,7 @@ class ProjectQualityCalculator:
                             models.QualityReport.objects.filter(
                                 created_date__isnull=False,
                                 task_id=OuterRef("id"),
-                                data__regex=models.CURRENT_REPORT_DATA_REGEX,
+                                version=models.QualityReportVersion.GENERALIZED,
                             )
                             .order_by("-created_date")
                             .values("id")[:1]
@@ -530,6 +532,7 @@ class ProjectQualityCalculator:
                     target_last_updated=project.updated_date,
                     gt_last_updated=None,
                     data=project_comparison_report.to_json(),
+                    version=models.QualityReportVersion.GENERALIZED,
                     # project reports don't include conflicts
                 ),
                 child_reports=[
