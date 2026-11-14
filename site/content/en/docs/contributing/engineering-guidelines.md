@@ -225,8 +225,10 @@ A common issue is a change added _next to_ the existing code instead of _into_ i
   mistakes, instead of a typo becoming a latent bug (CG P.5). A typo in an enum name fails
   at the first use, or earlier in the IDE; a typo in a string fails silently.
 
-- **When branching on an enum**, list the handled values in a `match` and add
-  a failing default, so that a new enum value cannot silently fall into some branch:
+- **When branching on an enum or another fixed set of variants**, make sure the code
+  either handles a newly added variant or fails loudly on it, instead of silently
+  falling into some branch. Usually this means listing the handled values in a `match`
+  with a failing default:
 
   ```python
   match task.dimension:
