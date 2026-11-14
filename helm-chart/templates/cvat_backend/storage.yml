@@ -1,4 +1,4 @@
-{{- if .Values.cvat.backend.defaultStorage.enabled }}
+{{- if and .Values.cvat.backend.defaultStorage.enabled (not .Values.cvat.backend.defaultStorage.existingClaimName) }}
 apiVersion: v1
 kind: PersistentVolumeClaim
 metadata:
