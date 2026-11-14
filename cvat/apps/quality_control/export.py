@@ -26,7 +26,6 @@ from cvat.apps.quality_control.comparison_report import (
     compute_quality_metric_summary,
     compute_target_metric,
 )
-from cvat.apps.quality_control.utils import is_current_report_data
 
 
 class QualityReportExportFormat(TextChoices):
@@ -90,13 +89,15 @@ def prepare_json_report_for_downloading(db_report: models.QualityReport, *, host
     )
 
     stored_report_data = parse_json(db_report.get_report_data())
-    if is_current_report_data(stored_report_data):
-        comparison_report = ComparisonReport.from_dict(stored_report_data)
-        serialized_data.update(comparison_report.to_dict())
-    else:
-        # Legacy reports cannot be represented by ComparisonReport anymore. Preserve their
-        # original payload so they can still be downloaded after the UI switches formats.
-        serialized_data.update(stored_report_data)
+    match db_report.version:
+        case models.QualityReportVersion.GENERALIZED:
+            comparison_report = ComparisonReport.from_dict(stored_report_data)
+            serialized_data.update(comparison_report.to_dict())
+        case models.QualityReportVersion.LEGACY:
+            # ComparisonReport cannot represent legacy reports, their stored data is returned as is
+            serialized_data.update(stored_report_data)
+        case _:
+            raise AssertionError(f"Unexpected quality report version {db_report.version}")
 
     def _decorate_frame_results(frame_results: dict) -> None:
         for frame_result in frame_results.values():
