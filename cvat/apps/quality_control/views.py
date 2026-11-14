@@ -33,10 +33,10 @@ from cvat.apps.quality_control.export import (
     prepare_requirement_confusion_matrix_json,
 )
 from cvat.apps.quality_control.models import (
-    CURRENT_REPORT_DATA_REGEX,
     AnnotationConflict,
     QualityReport,
     QualityReportTarget,
+    QualityReportVersion,
     QualityRequirement,
     QualitySettings,
 )
@@ -322,7 +322,7 @@ class QualityReportViewSet(
             if not query_serializer.validated_data["include_legacy"]:
                 # The new UI only understands generalized reports. Legacy reports remain
                 # downloadable, and API clients can discover them with include_legacy=true.
-                queryset = queryset.filter(data__regex=CURRENT_REPORT_DATA_REGEX)
+                queryset = queryset.filter(version=QualityReportVersion.GENERALIZED)
             queryset = queryset.defer("data")  # heavy field, should be excluded from COUNT(*)
 
         if self.action != "list":
@@ -513,8 +513,13 @@ class QualityReportViewSet(
     @action(detail=True, methods=["GET"], url_path="confusion", serializer_class=None)
     def confusion(self, request, pk):
         report = self.get_object()  # check permissions
-        if not report.has_current_data_format:
-            raise NotFound("Confusion matrices are not available for this report format")
+        match report.version:
+            case QualityReportVersion.GENERALIZED:
+                pass
+            case QualityReportVersion.LEGACY:
+                raise NotFound("Confusion matrices are not available for this report format")
+            case _:
+                raise AssertionError(f"Unexpected quality report version {report.version}")
 
         archive = prepare_confusion_matrices_archive_for_downloading(report)
         response = HttpResponse(archive, content_type="application/zip")
@@ -555,8 +560,13 @@ class QualityReportViewSet(
     @action(detail=True, methods=["GET"], url_path="confusion/matrix", serializer_class=None)
     def confusion_matrix(self, request, pk):
         report = self.get_object()  # check permissions
-        if not report.has_current_data_format:
-            raise NotFound("Confusion matrices are not available for this report format")
+        match report.version:
+            case QualityReportVersion.GENERALIZED:
+                pass
+            case QualityReportVersion.LEGACY:
+                raise NotFound("Confusion matrices are not available for this report format")
+            case _:
+                raise AssertionError(f"Unexpected quality report version {report.version}")
 
         requirement = request.query_params.get("requirement")
         if not requirement:
