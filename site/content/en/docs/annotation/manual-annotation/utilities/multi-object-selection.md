@@ -104,6 +104,9 @@ To move a selection, drag one of the following:
 - The **SELECTION (N)** label.
 - A movable object that belongs to a selection containing multiple objects.
 
+The selection bounding box can also be dragged while **Select objects** is active.
+To draw a new selection box from inside the existing one, hold **Shift** while dragging.
+
 All movable objects are translated by the same distance, preserving their relative positions,
 rotations, and layer order.
 
