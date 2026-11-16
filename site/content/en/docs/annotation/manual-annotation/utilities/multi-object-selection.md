@@ -41,6 +41,9 @@ For rotated objects, CVAT uses the transformed object boundaries.
 The **Select objects** tool remains active, so you can draw another selection box without selecting the tool again.
 Each new selection box starts a new selection and replaces the previous one.
 
+While **Select objects** is active, hold **Shift** and drag from inside the existing selection box
+to draw a new box and replace the current selection instead of moving it.
+
 You can also hold **Shift** and start dragging from an empty canvas area while using the **Cursor** tool.
 This activates **Select objects** and starts the selection box from the initial pointer position.
 If the box selects at least one object, **Select objects** remains active after you release the mouse button.
@@ -105,7 +108,6 @@ To move a selection, drag one of the following:
 - A movable object that belongs to a selection containing multiple objects.
 
 The selection bounding box can also be dragged while **Select objects** is active.
-To draw a new selection box from inside the existing one, hold **Shift** while dragging.
 
 All movable objects are translated by the same distance, preserving their relative positions,
 rotations, and layer order.
