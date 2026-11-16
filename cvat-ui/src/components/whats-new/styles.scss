@@ -16,7 +16,7 @@
 }
 
 .cvat-release-notes-modal {
-    --cvat-updates-heading-size: 24px;
+    --cvat-updates-heading-font-size: 24px;
 
     max-width: calc(100vw - $grid-unit-size * 4);
 
@@ -27,7 +27,7 @@
     .cvat-release-notes-empty h2 {
         color: var(--cvat-updates-ink);
         font-family: inherit;
-        font-size: var(--cvat-updates-heading-size);
+        font-size: var(--cvat-updates-heading-font-size);
         font-weight: 700;
         letter-spacing: -0.35px;
         line-height: 1.3;
@@ -424,7 +424,7 @@
     }
 
     @media (width <= 767px) {
-        --cvat-updates-heading-size: 22px;
+        --cvat-updates-heading-font-size: 22px;
 
         .cvat-updates-announcements {
             height: $grid-unit-size * 60;

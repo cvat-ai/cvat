@@ -141,7 +141,7 @@ export default function WhatsNew(props: Props): JSX.Element {
     // Manual opening while metadata is loading captures when it becomes available.
     useEffect(() => {
         if (open && ready && !openingSeen) setOpeningSeen(seen || updates?.state || null);
-    }, [open, ready, openingSeen, seen, updates]);
+    }, [open, ready, openingSeen, seen, updates?.state]);
 
     // Resolve automatic-opening eligibility after loading; manual opening suppresses the offer.
     useEffect(() => {
