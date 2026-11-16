@@ -35,7 +35,7 @@
   {{- end -}}
 {{- end -}}
 <section data-cvat-editions="{{ delimit $editions "," }}">
-  <h2>{{ $title }}</h2>
+  <h2 id="release-section-{{ .Ordinal }}-{{ $title | anchorize }}">{{ $title }}</h2>
   <p data-cvat-availability="true"><strong>Available in:</strong> {{ delimit $labels ", " }}</p>
   {{ .Page.RenderString (dict "display" "block") .Inner }}
 </section>

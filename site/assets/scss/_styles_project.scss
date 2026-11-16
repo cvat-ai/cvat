@@ -32,8 +32,14 @@
 }
 
 .cvat-updates-month,
-.cvat-updates-entry {
+.cvat-updates-entry,
+.cvat-release-note :is(h2, h3, h4, h5, h6) {
     scroll-margin-top: calc(var(--td-header-height, 4rem) + 1.5rem);
+}
+
+// Scroll margins replace Docsy's anchor spacer, which overlaps the preceding content.
+.cvat-release-note :is(h2, h3, h4, h5, h6)[id]::before {
+    content: none;
 }
 
 .cvat-updates-toc {

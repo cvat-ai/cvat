@@ -26,7 +26,8 @@
     new bootstrap.ScrollSpy(document.body, {
       target: '#TableOfContents',
       rootMargin: '0px 0px -75%',
-      smoothScroll: true,
+      // Native update links respect the CSS scroll margin below the fixed header.
+      smoothScroll: !toc.closest('.cvat-updates-toc'),
     });
   });
 }());
