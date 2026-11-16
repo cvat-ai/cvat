@@ -26,6 +26,9 @@ class AutomaticPopupController {
     public register(id: string, priority: number): void {
         if (!this.sources.has(id)) {
             this.sources.set(id, { priority, eligibilityResolved: false, tryShow: null });
+            this.sources = new Map(
+                [...this.sources].sort(([, left], [, right]) => right.priority - left.priority),
+            );
         }
     }
 
@@ -82,8 +85,7 @@ class AutomaticPopupController {
 
     private tryOpenNextPopup(): void {
         if (this.automaticOpeningConsumed || this.userId === null || window.document.hidden) return;
-        const prioritizedSources = [...this.sources.values()].sort((left, right) => right.priority - left.priority);
-        for (const source of prioritizedSources) {
+        for (const source of this.sources.values()) {
             // Wait for the higher-priority decision even if a lower-priority source is ready.
             if (!source.eligibilityResolved) return;
             if (!source.tryShow) continue;
