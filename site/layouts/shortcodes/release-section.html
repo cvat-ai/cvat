@@ -4,8 +4,8 @@
 {{- if not $title -}}
   {{- errorf "release-section needs a title: %s" .Position -}}
 {{- end -}}
-{{- if not $raw -}}
-  {{- errorf "release-section needs editions: %s" .Position -}}
+{{- if and (isset .Params "editions") (not $raw) -}}
+  {{- errorf "release-section editions cannot be empty: %s" .Position -}}
 {{- end -}}
 {{- if eq (trim .Inner " \t\r\n") "" -}}
   {{- errorf "release-section needs content: %s" .Position -}}
@@ -17,7 +17,7 @@
 {{- end -}}
 {{- $editions := slice -}}
 {{- $labels := slice -}}
-{{- if eq $raw "all" -}}
+{{- if or (not $raw) (eq $raw "all") -}}
   {{- $editions = slice "community" "enterprise" "saas" -}}
   {{- $labels = slice "All editions" -}}
 {{- else -}}

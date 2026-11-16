@@ -93,7 +93,7 @@ version: "2.81.0"
 announce: true
 ---
 
-{{< release-section title="Faster annotation review" editions="all" >}}
+{{< release-section title="Faster annotation review" >}}
 Explain the change and how to use it.
 
 ![Annotation review](review.png)
@@ -107,12 +107,16 @@ Describe the Enterprise-specific change.
 - Use a unique version in `X.Y.Z` format.
 - `announce`: whether the release notes are eligible for automatic user notifications.
   Defaults to `false`.
-- Put changes inside `release-section` blocks. Use `all`, `community`, `enterprise`,
-  `saas`, or comma-separated editions such as `enterprise,saas`. Do not nest blocks.
+- Put changes inside `release-section` blocks. Omit `editions` to make a section
+  available to all editions, as with announcements. To restrict availability, use a
+  comma-separated list of specific editions (`community`, `enterprise`, `saas`),
+  such as `editions="enterprise,saas"`. Explicit `editions="all"` is also accepted;
+  do not combine `all` with specific editions. Do not nest blocks.
 - The `title` argument becomes the section heading. For example,
   `title="Faster annotation review"` creates a heading named "Faster annotation review".
 - Keep section titles descriptive and concise.
-- The public docs show all sections and their availability labels.
+- The public docs show all sections and their availability labels. Applications consuming
+  the exported content can filter sections by edition and display only relevant changes.
 
 #### Announcements
 
@@ -144,7 +148,8 @@ Write the full announcement here using Markdown.
   Defaults to `false`.
 - `image`, `image_alt`, `video`, and `cta` are optional. Images and videos can be provided
   together; the image can serve as a video poster or fallback.
-- The CTA links to the announcement's own docs page.
+- Consumers are encouraged to use `cta` as the label for a link to the announcement's
+  page in the docs.
 
 #### Media and publishing
 
