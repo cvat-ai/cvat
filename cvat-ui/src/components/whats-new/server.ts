@@ -31,7 +31,7 @@ function deserializeSeenState(state: SerializedSeenState): SeenState {
 }
 
 export async function fetchUpdates(signal: AbortSignal): Promise<Updates> {
-    const response = await core.server.request('/api/product-updates', {
+    const response = await core.server.request('/api/whats-new', {
         method: 'GET', params: { org: '' }, signal, timeout: 25000,
     }) as { data: SerializedUpdates };
     return { ...response.data, state: deserializeSeenState(response.data.state) };
@@ -43,7 +43,7 @@ export async function acknowledge(
     const data: SerializedUpdatesAcknowledgement = {};
     if (values.releaseVersion !== undefined) data.release_version = values.releaseVersion;
     if (values.announcementsSeenAt !== undefined) data.announcements_seen_at = values.announcementsSeenAt;
-    const response = await core.server.request('/api/product-updates/acknowledge', {
+    const response = await core.server.request('/api/whats-new/acknowledge', {
         method: 'POST', params: { org: '' }, data, signal, timeout: 25000,
     }) as { data: SerializedSeenState };
     return deserializeSeenState(response.data);

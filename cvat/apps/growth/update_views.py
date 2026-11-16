@@ -26,7 +26,7 @@ from .serializers import (
 from .types import ContentKind
 
 
-@extend_schema(tags=["product-updates"])
+@extend_schema(tags=["whats-new"])
 class UpdatesViewSet(viewsets.ViewSet):
     iam_supports_organization_params = False
     iam_permission_class = UpdatesPermission
