@@ -4,6 +4,7 @@ permissions:
   contents: read
 jobs:
   zizmor:
+    if: vars.SKIP_DEPENDABOT_CI != 'true' || github.event.pull_request.user.login != 'dependabot[bot]'
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
@@ -20,6 +21,7 @@ jobs:
           version: 1.28.0
 
   bandit:
+    if: vars.SKIP_DEPENDABOT_CI != 'true' || github.event.pull_request.user.login != 'dependabot[bot]'
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
@@ -34,6 +36,7 @@ jobs:
           bandit -a file --ini .bandit --recursive .
 
   black:
+    if: vars.SKIP_DEPENDABOT_CI != 'true' || github.event.pull_request.user.login != 'dependabot[bot]'
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
@@ -49,6 +52,7 @@ jobs:
           black --check --diff .
 
   hadolint:
+    if: vars.SKIP_DEPENDABOT_CI != 'true' || github.event.pull_request.user.login != 'dependabot[bot]'
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
@@ -67,6 +71,7 @@ jobs:
           git ls-files -z 'Dockerfile*' '*/Dockerfile*' | xargs -0 "$HADOLINT" -t "$VERIFICATION_LEVEL"
 
   isort:
+    if: vars.SKIP_DEPENDABOT_CI != 'true' || github.event.pull_request.user.login != 'dependabot[bot]'
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
@@ -82,6 +87,7 @@ jobs:
           isort --check --diff --resolve-all-configs .
 
   pylint:
+    if: vars.SKIP_DEPENDABOT_CI != 'true' || github.event.pull_request.user.login != 'dependabot[bot]'
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
@@ -133,6 +139,7 @@ jobs:
           pylint -j0 .
 
   regal:
+    if: vars.SKIP_DEPENDABOT_CI != 'true' || github.event.pull_request.user.login != 'dependabot[bot]'
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
@@ -147,6 +154,7 @@ jobs:
       - run: regal lint --format=github cvat/apps/*/rules
 
   spellcheck:
+    if: vars.SKIP_DEPENDABOT_CI != 'true' || github.event.pull_request.user.login != 'dependabot[bot]'
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
@@ -161,6 +169,7 @@ jobs:
           typos
 
   eslint:
+    if: vars.SKIP_DEPENDABOT_CI != 'true' || github.event.pull_request.user.login != 'dependabot[bot]'
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
@@ -183,6 +192,7 @@ jobs:
           yarn run eslint .
 
   typescript:
+    if: vars.SKIP_DEPENDABOT_CI != 'true' || github.event.pull_request.user.login != 'dependabot[bot]'
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
@@ -197,6 +207,7 @@ jobs:
         run: yarn run type-check
 
   remark:
+    if: vars.SKIP_DEPENDABOT_CI != 'true' || github.event.pull_request.user.login != 'dependabot[bot]'
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
@@ -213,6 +224,7 @@ jobs:
           npx remark --quiet --frail -i .remarkignore .
 
   stylelint:
+    if: vars.SKIP_DEPENDABOT_CI != 'true' || github.event.pull_request.user.login != 'dependabot[bot]'
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1

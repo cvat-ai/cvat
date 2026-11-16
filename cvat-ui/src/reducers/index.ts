@@ -503,11 +503,6 @@ export interface PluginsState {
                 menu: {
                     items: PluginComponent[];
                 };
-                topBar:{
-                    menu: {
-                        items: PluginComponent[];
-                    };
-                };
             };
         };
         projectActions: {
@@ -518,12 +513,6 @@ export interface PluginsState {
         };
         jobActions: {
             items: PluginComponent[];
-        };
-        taskItem: {
-            ribbon: PluginComponent[];
-        };
-        projectItem: {
-            ribbon: PluginComponent[];
         };
         settings: {
             player: PluginComponent[];

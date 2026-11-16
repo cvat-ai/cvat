@@ -66,6 +66,11 @@ $annotation-view-control-transition: 0.1s transform;
     }
 }
 
+.cvat-empty-preview {
+    color: $text-color-secondary;
+    background: $background-color-2;
+}
+
 .cvat-scrollbar {
     overflow-y: auto;
 

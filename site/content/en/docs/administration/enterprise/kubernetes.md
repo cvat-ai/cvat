@@ -73,10 +73,13 @@ products:
    docker push registry.example/cvat/ui_ent:vX.Y.Z
    ```
 1. Check out the <a href="https://github.com/cvat-ai/cvat" target="_blank">open source CVAT repository</a> at the tag corresponding to the desired release.
-1. Unpack the archive with the enterprise chart:
+1. Pull the enterprise chart from the private OCI repository:
    ```bash
-   tar -xvzf cvat_enterprise-*.tgz
+   helm pull "oci://CVAT_ACCOUNT_ID.dkr.ecr.eu-west-1.amazonaws.com/cvat/cvat_enterprise" --version CHART_VERSION --untar
    ```
+   CVAT_ACCOUNT_ID will be provided by the CVAT team (It is the same as in previous steps).
+   The chart version must match the release of the open source CVAT repository checked out in the previous step.
+
 1. Create a file named values.override.yml with the necessary settings, which must contain at least the override for CVAT image registry, as shown in the example below. All supported settings can be obtained in the community version of <a href="https://github.com/cvat-ai/cvat/blob/develop/helm-chart/values.yaml" target="_blank">values.yaml</a>, which is used as a subchart of the enterprise chart, and in the enterprise chart archive, which you should obtain from the CVAT team along with these instructions.
 1. Add Enterprise-specific settings to `values.override.yml`:
    ```yaml

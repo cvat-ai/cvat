@@ -17,6 +17,7 @@ jobs:
     # requirements can execute package build code, so fork PRs must not run this
     # workflow with access to the CVAT bot token.
     if: >
+      vars.SKIP_DEPENDABOT_CI != 'true' &&
       github.event.pull_request.user.login == 'dependabot[bot]' &&
       github.event.pull_request.head.repo.full_name == github.repository &&
       startsWith(github.event.pull_request.head.ref, 'dependabot/pip/')
