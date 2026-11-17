@@ -44,7 +44,7 @@ context('Video action intervals', () => {
         taskSpec.labels.push({ name: 'Inspect', attributes: [], type: 'interval' });
         cy.visit('/auth/login');
         cy.login();
-        cy.readFile('mounted_file_share/videos/video_1.mp4', null).then((data) => {
+        cy.readFile('mounted_file_share/videos/video_with_chapters.mp4', null).then((data) => {
             cy.window().then(({ File }) => {
                 dataSpec.client_files = [new File([data], 'video.mp4', { type: 'video/mp4' })];
                 return cy.headlessCreateTask(taskSpec, dataSpec, extras);
@@ -73,8 +73,8 @@ context('Video action intervals', () => {
         seek(5);
         pressNumber(2);
 
-        cy.get(segment).contains('Move').should('have.attr', 'title', 'Move · 2–4');
-        cy.get(segment).contains('Inspect').should('have.attr', 'title', 'Inspect · 3–5');
+        cy.contains(segment, /^Move$/).should('have.attr', 'title', 'Move · 2–4');
+        cy.contains(segment, /^Inspect$/).should('have.attr', 'title', 'Inspect · 3–5');
         cy.intercept('PATCH', `/api/jobs/${jobId}/annotations*`).as('intervalSave');
         cy.clickSaveAnnotationView();
         cy.wait('@intervalSave').then(({ request, response }) => {
@@ -89,7 +89,7 @@ context('Video action intervals', () => {
         cy.get('.cvat-workspace-selector').then(($selector) => {
             if (!$selector.text().includes('Video understanding')) openWorkspace();
         });
-        cy.get(segment).contains('Move').should('have.attr', 'title', 'Move · 2–4');
-        cy.get(segment).contains('Inspect').should('have.attr', 'title', 'Inspect · 3–5');
+        cy.contains(segment, /^Move$/).should('have.attr', 'title', 'Move · 2–4');
+        cy.contains(segment, /^Inspect$/).should('have.attr', 'title', 'Inspect · 3–5');
     });
 });
