@@ -951,6 +951,7 @@ export interface AnnotationState {
             delay: number;
             changeTime: number | null;
             changeFrameEvent: Event | null;
+            nextFrameStep?: boolean;
         };
         navigationType: NavigationType;
         ranges: string;
@@ -1036,6 +1037,7 @@ export enum Workspace {
     ATTRIBUTES = 'Attribute annotation',
     SINGLE_SHAPE = 'Single shape',
     TAGS = 'Tag annotation',
+    VIDEO_UNDERSTANDING = 'Video understanding',
     REVIEW = 'Review',
     AUDIO = 'Audio annotation',
 }

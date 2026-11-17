@@ -199,6 +199,15 @@ export default class Collection {
         };
     }
 
+    public addLabels(labels: Label[]): void {
+        for (const label of labels) {
+            this.labels[label.id] ??= label;
+            for (const sublabel of label.structure?.sublabels ?? []) {
+                this.labels[sublabel.id] ??= sublabel;
+            }
+        }
+    }
+
     private _applyZOrderUpdates(frame: number, zOrders: Map<number, number>): ObjectState[] {
         const updatedStates: ObjectState[] = [];
         const ownsTransaction = this.history.beginTransaction(HistoryActions.CHANGED_ZORDER);

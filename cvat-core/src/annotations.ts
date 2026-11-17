@@ -3,6 +3,7 @@
 //
 // SPDX-License-Identifier: MIT
 
+import type { Label } from './labels';
 import { Storage } from './storage';
 import serverProxy from './server-proxy';
 import AnnotationsCollection from './annotations-collection';
@@ -52,6 +53,10 @@ export function getCollection(session): AnnotationsCollection {
     throw new InstanceNotInitializedError(
         'Session has not been initialized yet. Call annotations.get() or annotations.clear({ reload: true }) before',
     );
+}
+
+export function addSessionLabels(session: Job, labels: Label[]): void {
+    jobCollectionCache.get(session)?.collection.addLabels(labels);
 }
 
 export function getSaver(session): AnnotationsSaver {

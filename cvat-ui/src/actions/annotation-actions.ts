@@ -89,6 +89,7 @@ export function receiveAnnotationsParameters(): AnnotationsParameters {
 export enum AnnotationActionTypes {
     GET_JOB = 'GET_JOB',
     GET_JOB_SUCCESS = 'GET_JOB_SUCCESS',
+    SYNC_JOB_LABELS = 'SYNC_JOB_LABELS',
     GET_JOB_FAILED = 'GET_JOB_FAILED',
     UPDATE_JOB_SUCCESS = 'UPDATE_CURRENT_SUCCESS',
     CLOSE_JOB = 'CLOSE_JOB',
@@ -368,8 +369,10 @@ async function fetchAnnotations(predefinedFrame?: number): Promise<{
         states = lockStatesForReviewWorkspace(states);
     }
 
-    const intervals = jobInstance.dimension === DimensionType.DIMENSION_1D ?
-        await jobInstance.annotations.intervals(filters) : [];
+    const isAudio = jobInstance.dimension === DimensionType.DIMENSION_1D;
+    const fetchVideoPhases = workspace === Workspace.VIDEO_UNDERSTANDING && typeof predefinedFrame === 'undefined';
+    const intervals = isAudio || fetchVideoPhases ?
+        await jobInstance.annotations.intervals(isAudio ? filters : []) : [];
     const history = await jobInstance.actions.get();
 
     return {
@@ -1097,6 +1100,7 @@ export function changeFrameAsync(
     frameStep?: number,
     forceUpdate?: boolean,
     skipSelectionHistory?: boolean,
+    nextFrameStep?: boolean,
 ): ThunkAction {
     return async (dispatch: ThunkDispatch, getState: () => CombinedState): Promise<void> => {
         const { jobInstance: job, frame } = receiveAnnotationsParameters();
@@ -1193,6 +1197,7 @@ export function changeFrameAsync(
                 type: AnnotationActionTypes.CHANGE_FRAME_SUCCESS,
                 payload: {
                     number: toFrame,
+                    nextFrameStep,
                     data,
                     filename: data.filename,
                     relatedFiles: data.relatedFiles,
