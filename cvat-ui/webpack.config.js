@@ -192,6 +192,9 @@ module.exports = (env, argv = {}) => {
                 {
                     test: /\.(png|jpg|jpeg|gif|webp)$/i,
                     type: 'asset/resource',
+                    generator: {
+                        filename: 'assets/[contenthash][ext]',
+                    },
                 },
             ],
             parser: {
