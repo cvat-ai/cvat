@@ -6,4 +6,8 @@ from cvat.utils.version import get_version
 
 VERSION = (2, 83, 1, "alpha", 0)
 
-__version__ = get_version(VERSION)
+__version__ = get_version(VERSION, include_sub=True)
+
+# Omit the subversion suffixes after the patch component to simplify the repository maintenance.
+# Public CVAT releases never use subversions.
+API_VERSION = get_version(VERSION, include_sub=False)
