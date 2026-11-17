@@ -72,6 +72,12 @@ interface Props {
 }
 
 const componentShortcuts = {
+    TOGGLE_OBJECT_SELECTION: {
+        name: 'Toggle object selection',
+        description: 'Switch between the Cursor and Select objects tools',
+        sequences: ['shift+s'],
+        scope: ShortcutScope.STANDARD_WORKSPACE_CONTROLS,
+    },
     CLOCKWISE_ROTATION_STANDARD_CONTROLS: {
         name: 'Rotate clockwise',
         description: 'Change active rectangle or ellipse orientation clockwise by 90°, or rotate the image if none is active',
@@ -299,6 +305,17 @@ export default function ControlsSideBarComponent(props: Props): JSX.Element {
             },
         };
 
+    const toggleSelection = (): void => {
+        if (activeControl === ActiveControl.SELECT) {
+            canvasInstance.selectObjects({ enabled: false });
+            updateActiveControl(ActiveControl.CURSOR);
+        } else {
+            canvasInstance.cancel();
+            canvasInstance.selectObjects({ enabled: true });
+            updateActiveControl(ActiveControl.SELECT);
+        }
+    };
+
     let handlers: Partial<Record<keyof typeof componentShortcuts, (event?: KeyboardEvent) => void>> = {
         CLOCKWISE_ROTATION_STANDARD_CONTROLS: (event: KeyboardEvent | undefined) => {
             event?.preventDefault();
@@ -390,6 +407,11 @@ export default function ControlsSideBarComponent(props: Props): JSX.Element {
     if (!controlsDisabled) {
         handlers = {
             ...handlers,
+            TOGGLE_OBJECT_SELECTION: (event?: KeyboardEvent): void => {
+                if (!event?.repeat && [ActiveControl.CURSOR, ActiveControl.SELECT].includes(activeControl)) {
+                    toggleSelection();
+                }
+            },
             PASTE_SHAPE: (event: KeyboardEvent | undefined) => {
                 event?.preventDefault();
                 canvasInstance.cancel();
@@ -419,10 +441,10 @@ export default function ControlsSideBarComponent(props: Props): JSX.Element {
                     activeControl={activeControl}
                 />
                 <ObservedSelectControl
-                    canvasInstance={canvasInstance}
-                    activeControl={activeControl}
+                    selecting={activeControl === ActiveControl.SELECT}
                     disabled={controlsDisabled}
-                    updateActiveControl={updateActiveControl}
+                    shortcut={normalizedKeyMap.TOGGLE_OBJECT_SELECTION}
+                    onClick={toggleSelection}
                 />
                 <ObservedMoveControl canvasInstance={canvasInstance} activeControl={activeControl} />
                 <ObservedRotateControl
