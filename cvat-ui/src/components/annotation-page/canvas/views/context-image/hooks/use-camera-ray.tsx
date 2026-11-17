@@ -19,7 +19,6 @@ import CameraRayMarker from '../camera-ray-marker';
 import type { SVGObject } from '../context-image-svg-overlay';
 
 interface Params {
-    contextImage: ImageBitmap | undefined;
     contextImageName: string | undefined;
 }
 
@@ -36,7 +35,7 @@ const cameraRayMarkerTooltip = (
     </>
 );
 
-export default function useCameraRay({ contextImage, contextImageName }: Params): CameraRayInteraction {
+export default function useCameraRay({ contextImageName }: Params): CameraRayInteraction {
     const dispatch = useDispatch<ThunkDispatch>();
     const cameraRays = useSelector((state: CombinedState): CameraRayPoint[] => (
         state.annotation.canvas.cameraRays[state.annotation.player.frame.number] || []
@@ -65,7 +64,7 @@ export default function useCameraRay({ contextImage, contextImageName }: Params)
     }, [cameraRays, contextImageName]);
 
     const onImageClick = useCallback((point: [number, number]): void => {
-        if (!contextImage || !contextImageName) {
+        if (!contextImageName) {
             return;
         }
 
@@ -75,7 +74,7 @@ export default function useCameraRay({ contextImage, contextImageName }: Params)
                 description: 'A 3D camera ray cannot be calculated for this related image.',
             });
         }
-    }, [contextImage, contextImageName, dispatch]);
+    }, [contextImageName, dispatch]);
 
     const onMarkerClick = useCallback((id: string, removeAll: boolean): void => {
         if (removeAll && contextImageName) {

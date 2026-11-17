@@ -1678,6 +1678,7 @@ export class Canvas3dViewImpl implements Canvas3dView, Listener {
         const rayLength = Math.max(this.sceneBBox.getSize(new THREE.Vector3()).length(), 20);
         const headLength = 2;
         const headWidth = 1;
+        const lineWidth = 2;
 
         ALL_VIEWS.forEach((view: ViewType): void => {
             cameraRays.forEach(({ ray, color }): void => {
@@ -1688,7 +1689,7 @@ export class Canvas3dViewImpl implements Canvas3dView, Listener {
                     color,
                     headLength,
                     headWidth,
-                    2,
+                    lineWidth,
                     this.views[view].renderer.getDrawingBufferSize(new THREE.Vector2()),
                 );
 

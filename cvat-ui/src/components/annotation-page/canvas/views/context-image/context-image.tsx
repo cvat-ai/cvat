@@ -4,7 +4,6 @@
 
 import './styles.scss';
 import React, {
-    useCallback,
     useEffect,
     useRef,
     useState,
@@ -21,16 +20,24 @@ import { shallowEqual } from 'utils/redux';
 import CVATTooltop from 'components/common/cvat-tooltip';
 import { CombinedState } from 'reducers';
 import ContextImageSelector from './context-image-selector';
-import ContextImageSVGOverlay, { SVGObject } from './context-image-svg-overlay';
-import useCameraRay from './hooks/use-camera-ray';
 import useContextImageViewport from './hooks/use-context-image-viewport';
+
+export interface ContextImageOverlayProps {
+    imageSize: {
+        width: number;
+        height: number;
+    };
+    contextImageName: string;
+    scale: number;
+}
 
 interface Props {
     offset: number[];
+    Overlay?: React.ComponentType<ContextImageOverlayProps>;
 }
 
 function ContextImage(props: Props): JSX.Element {
-    const { offset } = props;
+    const { offset, Overlay } = props;
     const defaultFrameOffset = (offset[0] || 0);
     const defaultContextImageOffset = (offset[1] || 0);
 
@@ -108,27 +115,8 @@ function ContextImage(props: Props): JSX.Element {
         image: contextImage,
         viewportElement,
     });
-    const {
-        objects: cameraRayObjects,
-        onImageClick: onCameraRayImageClick,
-        onMarkerClick: onCameraRayMarkerClick,
-    } = useCameraRay({
-        contextImage,
-        contextImageName,
-    });
-
-    // callbacks
-    const onSVGOverlayBackgroundClick = useCallback((point: [number, number]): void => {
-        onCameraRayImageClick(point);
-    }, [onCameraRayImageClick]);
-    const onSVGOverlayObjectClick = useCallback((object: SVGObject, isShiftKeyDown: boolean): void => {
-        if (object.type === 'camera-ray') {
-            onCameraRayMarkerClick(object.id, isShiftKeyDown);
-        }
-    }, [onCameraRayMarkerClick]);
 
     // render
-    const svgOverlayObjects = cameraRayObjects;
     const imagePlaneTransform = imageViewport ?
         `translate(${imageViewport.left}px, ${imageViewport.top}px) ` +
         `scale(${imageViewport.scale})` :
@@ -167,13 +155,11 @@ function ContextImage(props: Props): JSX.Element {
                         }}
                     >
                         <canvas ref={canvasRef} className='cvat-context-image-canvas' />
-                        {imageViewport ? (
-                            <ContextImageSVGOverlay
+                        {imageViewport && Overlay && contextImage && contextImageName ? (
+                            <Overlay
                                 imageSize={contextImage}
+                                contextImageName={contextImageName}
                                 scale={imageViewport.scale}
-                                objects={svgOverlayObjects}
-                                onBackgroundClick={onSVGOverlayBackgroundClick}
-                                onObjectClick={onSVGOverlayObjectClick}
                             />
                         ) : null}
                     </div>

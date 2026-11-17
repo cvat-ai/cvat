@@ -33,6 +33,7 @@ import CanvasWrapper3DComponent, {
     FrontViewComponent,
 } from 'components/annotation-page/canvas/views/canvas3d/canvas-wrapper3D';
 import ContextImage from 'components/annotation-page/canvas/views/context-image/context-image';
+import ContextImage3D from 'components/annotation-page/canvas/views/context-image/context-image-3d';
 import CVATTooltip from 'components/common/cvat-tooltip';
 import { useUpdateEffect } from 'utils/hooks';
 import { shallowEqual } from 'utils/redux';
@@ -40,7 +41,7 @@ import defaultLayout, { ItemLayout, ViewType } from './canvas-layout.conf';
 
 const ReactGridLayout = WidthProvider(RGL);
 
-const ViewFabric = (itemLayout: ItemLayout): JSX.Element => {
+const ViewFabric = (itemLayout: ItemLayout, dimension: DimensionType): JSX.Element => {
     const { viewType: type, offset } = itemLayout;
 
     let component = null;
@@ -52,7 +53,8 @@ const ViewFabric = (itemLayout: ItemLayout): JSX.Element => {
             component = <PerspectiveViewComponent />;
             break;
         case ViewType.RELATED_IMAGE:
-            component = <ContextImage offset={offset} />;
+            component = dimension === DimensionType.DIMENSION_3D ?
+                <ContextImage3D offset={offset} /> : <ContextImage offset={offset} />;
             break;
         case ViewType.CANVAS_3D_FRONT:
             component = <FrontViewComponent />;
@@ -211,7 +213,7 @@ function CanvasLayout({ type }: { type?: DimensionType }): JSX.Element {
         window.dispatchEvent(new Event('resize'));
     }, [layoutConfig]);
 
-    const children = layoutConfig.map((value: ItemLayout) => ViewFabric(value));
+    const children = layoutConfig.map((value: ItemLayout) => ViewFabric(value, type as DimensionType));
     const layout = layoutConfig.map((value: ItemLayout) => ({
         x: value.x,
         y: value.y,

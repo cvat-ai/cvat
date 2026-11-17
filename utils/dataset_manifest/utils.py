@@ -265,7 +265,7 @@ def serialize_related_image_metadata(metadata: RelatedImageMetadata) -> dict[str
     }
 
 
-def load_related_image_metadata_from_manifest(
+def parse_related_image_metadata_from_manifest(
     metadata: Any,
     *,
     manifest_path: PurePath,

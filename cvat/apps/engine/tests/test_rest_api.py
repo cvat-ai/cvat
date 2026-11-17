@@ -56,7 +56,7 @@ from cvat.apps.engine.cloud_provider import (
     S3CloudStorageClient,
     Status,
 )
-from cvat.apps.engine.media_extractors import ValidateDimension, sort
+from cvat.apps.engine.media_extractors import ValidateDimension, get_mime, sort
 from cvat.apps.engine.models import (
     AnnotationGuide,
     AttributeSpec,
@@ -4864,6 +4864,7 @@ class TaskDataAPITestCase(ApiTestBase):
             self.assertEqual(len(images), min(task["data_chunk_size"], len(expected_image_sizes)))
 
             if task["data_original_chunk_type"] == self.ChunkType.IMAGESET:
+                # don't include server_files_exclude key
                 server_files = [img for key, img in data.items() if key.startswith("server_files[")]
                 client_files = [img for key, img in data.items() if key.startswith("client_files")]
 
@@ -4880,6 +4881,19 @@ class TaskDataAPITestCase(ApiTestBase):
                 source_files = [
                     _add_prefix(f) for f in source_files if not _name_key(f).endswith("jsonl")
                 ]
+
+                expanded_source_files = []
+                for source_file in source_files:
+                    if isinstance(source_file, str) and os.path.isdir(source_file):
+                        # Match task creation, which expands selected shared directories.
+                        expanded_source_files.extend(
+                            os.fspath(path)
+                            for path in Path(source_file).rglob("*")
+                            if get_mime(path) == "image"
+                        )
+                    else:
+                        expanded_source_files.append(source_file)
+                source_files = expanded_source_files
 
                 # Load images
                 source_images = {}
@@ -6332,6 +6346,29 @@ class TaskDataAPITestCase(ApiTestBase):
                 related_image_path: {
                     "intrinsic_matrix": [],
                     "extrinsic_matrix": [],
+                },
+            },
+        )
+
+    def test_api_v2_tasks_id_data_reads_calibration_sidecar_from_selected_share_directory(self):
+        related_image_path = "test_pointcloud_pcd/related_images/000001_pcd/000001.png"
+        self._test_api_v2_tasks_id_data_spec(
+            self.admin,
+            {"name": "3D task with selected calibration"},
+            {
+                "server_files[0]": "test_pointcloud_pcd/",
+                "copy_data": False,
+                "image_quality": 100,
+            },
+            self.ChunkType.IMAGESET,
+            self.ChunkType.IMAGESET,
+            self._share_image_sizes["test_pointcloud_pcd.zip"],
+            expected_uploaded_data_location=StorageChoice.SHARE,
+            dimension=DimensionType.DIM_3D,
+            expected_related_image_calibrations={
+                related_image_path: {
+                    "intrinsic_matrix": [721.5, 0, 609.6, 0, 721.5, 172.9, 0, 0, 1],
+                    "extrinsic_matrix": [1, 0, 0, 0.2, 0, 1, 0, 0, 0, 0, 1, 1.7],
                 },
             },
         )

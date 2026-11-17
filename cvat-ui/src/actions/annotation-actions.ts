@@ -50,6 +50,7 @@ interface AnnotationsParameters {
 
 const cvat = getCore();
 let store: null | Store<CombinedState> = null;
+let nextCameraRayID = 0;
 
 function getStore(): Store<CombinedState> {
     if (store === null) {
@@ -1633,7 +1634,7 @@ export function addCameraRayFromContextImagePoint(
             payload: {
                 frame,
                 cameraRays: [...cameraRays, {
-                    id: `camera-ray:${crypto.randomUUID()}`,
+                    id: `camera-ray:${nextCameraRayID++}`,
                     color,
                     relatedImageName,
                     pixel,

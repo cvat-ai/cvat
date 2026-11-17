@@ -26,13 +26,15 @@ export function getRelatedImageMetadata(
     relatedImageName: string,
 ): CalibratedRelatedImageMetadata | null {
     // relatedImageName is taken from the zip layout.
-    // Backend strips common path and extension from all related images for a frame before creating the zip:
+    // Backend strips common path for all related images for a frame before creating the zip.
     // https://github.com/cvat-ai/cvat/blob/4f1086ea8c8f2ebf788b4714b04c206a155de6e7/cvat/apps/engine/cache.py#L738-L744
     // So for formats that don't have all related images in one folder zip may contain folders
     // and map related images to something like:
-    // 0000/000001
-    // 0001/000001
-    // 0002/000001
+    // 0000/000001.jpg
+    // 0001/000001.jpg
+    // 0002/000001.jpg
+    // UI then strips the extension upon decoding the zip.
+
     // The name in meta is the same path but it's normally relative to higher level folder
     // and it contains more segments and extension not stripped.
     const contextImagePathSegments = relatedImageName.split('/').length;
