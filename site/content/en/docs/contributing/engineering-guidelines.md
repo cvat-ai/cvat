@@ -409,7 +409,7 @@ that can (_Code Complete_, "Defensive Programming").
 
 - Regenerate `cvat/schema.yml` after server API changes. It can be done via the VS Code
   launch configuration `server: Generate REST API Schema` or manually. Remember to check
-  the results and remove the `.devNNN` suffix from the version.
+  the results.
 
 - Server tests: the default place is `tests/python` (pytest, REST API tests against
   a running server). Check how long the new tests take. Use the Django unit tests in
