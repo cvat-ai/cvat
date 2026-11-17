@@ -6,38 +6,24 @@ import React from 'react';
 import Icon from '@ant-design/icons';
 import { SelectIcon } from 'icons';
 
-import { Canvas } from 'cvat-canvas-wrapper';
 import CVATTooltip from 'components/common/cvat-tooltip';
-import { ActiveControl } from 'reducers';
 
 export interface Props {
-    canvasInstance: Canvas;
-    activeControl: ActiveControl;
+    selecting: boolean;
     disabled: boolean;
-    updateActiveControl(activeControl: ActiveControl): void;
+    shortcut: string;
+    onClick(): void;
 }
 
 function SelectControl(props: Props): JSX.Element {
     const {
-        canvasInstance, activeControl, disabled, updateActiveControl,
+        selecting, disabled, shortcut, onClick,
     } = props;
-    const selecting = activeControl === ActiveControl.SELECT;
-
-    const onClick = (): void => {
-        if (selecting) {
-            canvasInstance.selectObjects({ enabled: false });
-            updateActiveControl(ActiveControl.CURSOR);
-        } else {
-            canvasInstance.cancel();
-            canvasInstance.selectObjects({ enabled: true });
-            updateActiveControl(ActiveControl.SELECT);
-        }
-    };
 
     return disabled ? (
         <Icon component={SelectIcon} className='cvat-select-control cvat-disabled-canvas-control' />
     ) : (
-        <CVATTooltip title='Select objects' placement='right'>
+        <CVATTooltip title={`Select objects ${shortcut}`} placement='right'>
             <Icon
                 component={SelectIcon}
                 className={selecting ?

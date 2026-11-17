@@ -41,6 +41,9 @@ For rotated objects, CVAT uses the transformed object boundaries.
 The **Select objects** tool remains active, so you can draw another selection box without selecting the tool again.
 Each new selection box starts a new selection and replaces the previous one.
 
+Press **Shift+S** to switch between **Cursor** and **Select objects** in the Standard workspace.
+You can change the **Toggle object selection** binding in the keyboard shortcut settings.
+
 You can also hold **Shift** and start dragging from an empty canvas area while using the **Cursor** tool.
 This activates **Select objects** and starts the selection box from the initial pointer position.
 If the box selects at least one object, **Select objects** remains active after you release the mouse button.
