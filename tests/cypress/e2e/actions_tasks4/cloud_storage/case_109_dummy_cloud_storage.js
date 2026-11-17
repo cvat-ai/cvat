@@ -33,28 +33,44 @@ context('Dummy cloud storages.', { browser: '!firefox' }, () => {
     function testCSValues({
         status, id, displayName, provider, description,
     }) {
-        cy.get('.cvat-cloud-storage-item').then((csItem) => {
-            cy.get(csItem)
+        cy.get('.cvat-cloud-storage-item').should('have.length', 1).as('cloudStorageItem');
+        cy.get('@cloudStorageItem')
+            .find('.cvat-cloud-storage-status-indicator')
+            .trigger('mouseover');
+        cy.get('[role="tooltip"]')
+            .filter(':visible')
+            .should('be.visible')
+            .and('have.text', `Status: ${status}`);
+        cy.get('@cloudStorageItem')
+            .find('.cvat-cloud-storage-status-indicator')
+            .trigger('mouseout');
+
+        if (description) {
+            cy.get('@cloudStorageItem')
+                .find('.cvat-cloud-storage-description-icon')
                 .should('have.length', 1)
-                .should('contain', `Status: ${status}`);
-            if (description) {
-                cy.get('.cvat-cloud-storage-description-icon')
-                    .should('have.length', 1)
-                    .trigger('mouseover');
-                cy.get('[role="tooltip"]')
-                    .should('be.visible')
-                    .and('have.text', description);
-            }
-            if (displayName) {
-                cy.get(csItem).should('contain', `#${id}: ${displayName}`);
-            }
-            if (provider) {
-                cy.get(csItem).should('contain', `Provider: ${provider}`);
-            }
-            if (status !== 'Error') {
-                cy.get(csItem).should('exist');
-            }
-        });
+                .trigger('mouseover');
+            cy.get('[role="tooltip"]')
+                .filter(':visible')
+                .should('be.visible')
+                .and('have.text', description);
+            cy.get('@cloudStorageItem')
+                .find('.cvat-cloud-storage-description-icon')
+                .trigger('mouseout');
+        }
+        if (displayName) {
+            cy.get('@cloudStorageItem')
+                .find('.cvat-resource-card-id')
+                .should('have.text', `ID: ${id}`);
+            cy.get('@cloudStorageItem')
+                .find('.cvat-resource-card-title')
+                .should('contain.text', displayName);
+        }
+        if (provider) {
+            cy.get('@cloudStorageItem')
+                .find('.cvat-resource-card-tags')
+                .should('contain.text', provider);
+        }
     }
 
     function testCSSetStatusPreview(id, status, image) {

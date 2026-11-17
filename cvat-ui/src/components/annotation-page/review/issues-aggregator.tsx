@@ -48,6 +48,7 @@ export default function IssueAggregatorComponent(): JSX.Element | null {
         qualityConflicts,
         objectStates,
         showConflicts,
+        showConflictRequirements,
         highlightedConflict,
         activeControl,
     } = useSelector((state: CombinedState) => ({
@@ -63,6 +64,7 @@ export default function IssueAggregatorComponent(): JSX.Element | null {
         qualityConflicts: state.review.frameConflicts,
         objectStates: state.annotation.annotations.states,
         showConflicts: state.settings.shapes.showGroundTruth,
+        showConflictRequirements: state.settings.workspace.showConflictRequirements,
         highlightedConflict: state.annotation.annotations.highlightedConflict,
         activeControl: state.annotation.canvas.activeControl,
     }), shallowEqual);
@@ -299,6 +301,7 @@ export default function IssueAggregatorComponent(): JSX.Element | null {
                 onEnter={onEnter}
                 onLeave={onLeave}
                 tooltipVisible={isConflictHighlighted}
+                showRequirements={showConflictRequirements}
             />,
         );
     }

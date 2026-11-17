@@ -24,10 +24,12 @@ import Paragraph from 'antd/lib/typography/Paragraph';
 import { ConflictSeverity, QualityConflict, Issue } from 'cvat-core-wrapper';
 import { changeShowGroundTruth } from 'actions/settings-actions';
 import { ShowGroundTruthIcon } from 'icons';
+import ConflictRequirements from '../../review/conflict-requirements';
 
 export default function IssuesListComponent(): JSX.Element {
     const dispatch = useDispatch();
     const {
+        job,
         frame,
         frameIssues,
         frameConflicts,
@@ -41,6 +43,7 @@ export default function IssuesListComponent(): JSX.Element {
         ready,
         activeControl,
     } = useSelector((state: CombinedState) => ({
+        job: state.annotation.job.instance,
         frame: state.annotation.player.frame.number,
         frameIssues: state.review.frameIssues,
         frameConflicts: state.review.frameConflicts,
@@ -276,6 +279,9 @@ export default function IssuesListComponent(): JSX.Element {
                                 </Paragraph>
                                 <Text />
                             </Row>
+                            {!!frameConflict.requirements.length && (
+                                <ConflictRequirements job={job} requirements={frameConflict.requirements} />
+                            )}
                         </div>
                     ),
                 )}

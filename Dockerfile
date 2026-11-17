@@ -39,13 +39,19 @@ ENV FFMPEG_VERSION=8.0 \
     OPENH264_VERSION=2.6.0
 
 WORKDIR /tmp/openh264
-RUN curl -sL https://github.com/cisco/openh264/archive/v${OPENH264_VERSION}.tar.gz --output - | \
-    tar -zx --strip-components=1 && \
+RUN curl --fail --location --retry 5 --retry-all-errors --show-error --silent \
+        https://github.com/cisco/openh264/archive/v${OPENH264_VERSION}.tar.gz \
+        --output /tmp/openh264.tar.gz && \
+    tar -zxf /tmp/openh264.tar.gz --strip-components=1 && \
+    rm /tmp/openh264.tar.gz && \
     make -j5 && make install-shared PREFIX=${PREFIX} && make clean
 
 WORKDIR /tmp/ffmpeg
-RUN curl -sL https://ffmpeg.org/releases/ffmpeg-${FFMPEG_VERSION}.tar.gz --output - | \
-    tar -zx --strip-components=1 && \
+RUN curl --fail --location --retry 5 --retry-all-errors --show-error --silent \
+        https://ffmpeg.org/releases/ffmpeg-${FFMPEG_VERSION}.tar.gz \
+        --output /tmp/ffmpeg.tar.gz && \
+    tar -zxf /tmp/ffmpeg.tar.gz --strip-components=1 && \
+    rm /tmp/ffmpeg.tar.gz && \
     ./configure --disable-nonfree --disable-gpl --enable-libopenh264 --enable-libmp3lame \
         --enable-shared --disable-static --disable-doc --disable-programs --prefix="${PREFIX}" && \
     make -j5 && make install && make clean
@@ -81,10 +87,9 @@ RUN --mount=type=cache,target=/root/.cache/pip/http-v2 \
     -r /tmp/cvat/requirements/${CVAT_CONFIGURATION}.txt \
     -w /tmp/wheelhouse
 
-FROM golang:1.27.2 AS build-smokescreen
+FROM golang:1.27.3 AS build-smokescreen
 
-RUN git clone --filter=blob:none --no-checkout https://github.com/stripe/smokescreen.git
-RUN cd smokescreen && git checkout eb1ac09 && go build -o /tmp/smokescreen
+RUN GOBIN=/tmp go install github.com/stripe/smokescreen@5b4b7aabca9bc70a8435358d648edd03294c299e
 
 FROM ${BASE_IMAGE}
 

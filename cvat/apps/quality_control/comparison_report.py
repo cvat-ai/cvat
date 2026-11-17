@@ -14,10 +14,9 @@ from functools import cached_property, lru_cache
 from io import StringIO
 from typing import Any, ClassVar
 
-import datumaro as dm
 import json_stream
 import numpy as np
-from attrs import asdict, define, field, fields_dict
+from attrs import asdict, define, evolve, field
 from datumaro.util import dump_json, parse_json
 
 from cvat.apps.engine.models import ShapeType
@@ -193,6 +192,7 @@ class AnnotationConflict(ReportNode):
     annotation_ids: list[AnnotationId]
     severity: AnnotationConflictSeverity = AnnotationConflictSeverity.ERROR
     attribute_names: list[str] = field(factory=list)
+    requirements: list[dict[str, Any]] = field(factory=list)
 
     @staticmethod
     def default_severity_for_type(
@@ -219,6 +219,10 @@ class AnnotationConflict(ReportNode):
                 else cls.default_severity_for_type(conflict_type)
             ),
             attribute_names=sorted(set(d.get("attribute_names") or [])),
+            requirements=sorted(
+                (dict(requirement) for requirement in d.get("requirements", [])),
+                key=lambda requirement: requirement["id"],
+            ),
         )
 
 
@@ -252,11 +256,15 @@ def annotation_conflict_key(
 def merge_annotation_conflicts(
     target: AnnotationConflict, other: AnnotationConflict
 ) -> AnnotationConflict:
-    merged_attribute_names = sorted(set(target.attribute_names) | set(other.attribute_names))
-    if merged_attribute_names != target.attribute_names:
-        target.attribute_names = merged_attribute_names
-
-    return target
+    requirements = {
+        requirement["id"]: requirement
+        for requirement in itertools.chain(target.requirements, other.requirements)
+    }
+    return evolve(
+        target,
+        attribute_names=sorted(set(target.attribute_names) | set(other.attribute_names)),
+        requirements=[requirements[requirement_id] for requirement_id in sorted(requirements)],
+    )
 
 
 def deduplicate_annotation_conflicts(
@@ -274,80 +282,13 @@ def deduplicate_annotation_conflicts(
     for conflict in conflicts:
         key = annotation_conflict_key(conflict)
         if key in deduplicated_conflicts:
-            merge_annotation_conflicts(deduplicated_conflicts[key], conflict)
+            deduplicated_conflicts[key] = merge_annotation_conflicts(
+                deduplicated_conflicts[key], conflict
+            )
         else:
             deduplicated_conflicts[key] = conflict
 
     return list(deduplicated_conflicts.values())
-
-
-@define(kw_only=True, init=False, slots=False)
-class ComparisonParameters(ReportNode):
-    included_annotation_types: list[dm.AnnotationType] = [
-        dm.AnnotationType.bbox,
-        dm.AnnotationType.points,
-        dm.AnnotationType.mask,
-        dm.AnnotationType.polygon,
-        dm.AnnotationType.polyline,
-        dm.AnnotationType.skeleton,
-        dm.AnnotationType.label,
-        dm.AnnotationType.ellipse,
-    ]
-
-    non_groupable_ann_type = dm.AnnotationType.label
-    "Annotation type that can't be grouped"
-
-    compare_attributes: bool = True
-    "Enables or disables attribute checks"
-
-    ignored_attributes: list[str] = []
-
-    iou_threshold: float = 0.4
-    "Used for distinction between matched / unmatched shapes"
-
-    oks_sigma: float = 0.09
-    "Like IoU threshold, but for points, % of the bbox area to match a pair of points"
-
-    point_size_base: models.PointSizeBase = models.PointSizeBase.GROUP_BBOX_SIZE
-    "Determines how to obtain the object size for point comparisons"
-
-    line_thickness: float = 0.01
-    "Thickness of polylines, relatively to the (image area) ^ 0.5"
-
-    compare_line_orientation: bool = True
-    "Indicates that polylines have direction"
-
-    line_orientation_threshold: float = 0.1
-    """
-    The minimal gain in the IoU between the given and reversed line directions
-    to count the line inverted
-    """
-
-    compare_groups: bool = True
-    "Enables or disables group checks"
-
-    group_match_threshold: float = 0.5
-    "Minimal IoU for groups to be considered matching"
-
-    check_covered_annotations: bool = True
-    "Check for fully-covered annotations"
-
-    object_visibility_threshold: float = 0.05
-    "Minimal visible area % of the spatial annotations"
-
-    panoptic_comparison: bool = True
-    "Use only the visible part of the masks and polygons in comparisons"
-
-    def _value_serializer(self, v):
-        if isinstance(v, dm.AnnotationType):
-            return str(v.name)
-        else:
-            return super()._value_serializer(v)
-
-    @classmethod
-    def from_dict(cls, d: dict) -> ComparisonParameters:
-        fields = fields_dict(cls)
-        return cls(**{field_name: d[field_name] for field_name in fields if field_name in d})
 
 
 @define(kw_only=True, init=False, slots=False)

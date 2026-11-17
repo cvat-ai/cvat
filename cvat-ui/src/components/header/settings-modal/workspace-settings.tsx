@@ -29,6 +29,7 @@ interface Props {
     controlPointsSize: number;
     textPosition: 'center' | 'auto';
     textContent: string;
+    showConflictRequirements: boolean;
     showTagsOnFrame: boolean;
     onSwitchAutoSave(enabled: boolean): void;
     onChangeAutoSaveInterval(interval: number): void;
@@ -42,6 +43,7 @@ interface Props {
     onChangeControlPointsSize(pointsSize: number): void;
     onChangeTextPosition(position: 'auto' | 'center'): void;
     onChangeTextContent(textContent: string[]): void;
+    onSwitchShowingConflictRequirements(enabled: boolean): void;
     onSwitchShowingTagsOnFrame(enabled: boolean): void;
 }
 
@@ -59,6 +61,7 @@ function WorkspaceSettingsComponent(props: Props): JSX.Element {
         controlPointsSize,
         textPosition,
         textContent,
+        showConflictRequirements,
         showTagsOnFrame,
         onSwitchAutoSave,
         onChangeAutoSaveInterval,
@@ -72,6 +75,7 @@ function WorkspaceSettingsComponent(props: Props): JSX.Element {
         onChangeControlPointsSize,
         onChangeTextPosition,
         onChangeTextContent,
+        onSwitchShowingConflictRequirements,
         onSwitchShowingTagsOnFrame,
     } = props;
 
@@ -197,6 +201,19 @@ function WorkspaceSettingsComponent(props: Props): JSX.Element {
                         max={20}
                         value={textFontSize}
                     />
+                </Col>
+            </Row>
+            <Row className='cvat-workspace-settings-show-conflict-requirements cvat-player-setting'>
+                <Col span={24}>
+                    <Checkbox
+                        className='cvat-text-color'
+                        checked={showConflictRequirements}
+                        onChange={(event: CheckboxChangeEvent): void => {
+                            onSwitchShowingConflictRequirements(event.target.checked);
+                        }}
+                    >
+                        Show requirements in conflict tooltips
+                    </Checkbox>
                 </Col>
             </Row>
             <Row className='cvat-workspace-settings-adaptive-zoom cvat-player-setting'>

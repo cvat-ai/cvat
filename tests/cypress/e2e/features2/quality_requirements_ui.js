@@ -157,6 +157,50 @@ context('Quality requirements UI', {
         }
     });
 
+    it('Retains frame table preferences through validation updates and quality tab switches', () => {
+        cy.visit(`/tasks/${taskId}/quality-control#management`);
+        const table = '.cvat-table-wrapper:has(.cvat-frame-allocation-table)';
+        cy.get(`${table} .ant-table-row`).should('have.length', 2);
+        cy.get(`${table} .cvat-table-search-bar input`).type('image{enter}');
+        cy.contains(`${table} th`, 'Frame').click();
+        cy.contains(`${table} th`, 'Frame').click();
+        cy.get(`${table} .anticon-more`).click();
+        cy.contains('.cvat-table-columns-settings-menu:visible .ant-checkbox-wrapper', 'Name')
+            .find('input').uncheck();
+        cy.get(`${table} .anticon-more`).click();
+
+        function checkPreferences() {
+            cy.get(`${table} .cvat-table-search-bar input`).should('have.value', 'image');
+            cy.contains(`${table} th`, 'Frame').should('have.attr', 'aria-sort', 'descending');
+            cy.get(`${table} thead`).should('not.contain.text', 'Name');
+        }
+
+        cy.get(`${table} .ant-table-row`).first().invoke('attr', 'data-row-key').then((frame) => {
+            cy.get(`${table} tr[data-row-key="${frame}"] .cvat-allocation-frame-delete`).click();
+            cy.get(`${table} tr[data-row-key="${frame}"] .cvat-allocation-frame-restore`).should('be.visible');
+            checkPreferences();
+            cy.get(`${table} tr[data-row-key="${frame}"] .cvat-allocation-frame-restore`).click();
+            cy.get(`${table} tr[data-row-key="${frame}"] .cvat-allocation-frame-delete`).should('be.visible');
+            checkPreferences();
+        });
+
+        cy.get(`${table} .ant-table-filter-trigger`).click();
+        cy.contains('.ant-table-filter-dropdown:visible .ant-dropdown-menu-item', 'Active')
+            .find('input').check();
+        cy.contains('.ant-table-filter-dropdown:visible button', 'OK').click();
+        cy.contains('.cvat-quality-control-page-tabs [role="tab"]', 'Settings').click();
+        cy.get('.cvat-quality-control-settings-tab').should('be.visible');
+        cy.contains('.cvat-quality-control-page-tabs [role="tab"]', 'Management').click();
+        checkPreferences();
+        cy.get(`${table} .ant-table-filter-trigger`).should('have.class', 'active');
+        cy.get(`${table} .ant-table-row`).should('have.length', 2);
+
+        cy.reload();
+        cy.get(`${table} .cvat-table-search-bar input`).should('have.value', '');
+        cy.get(`${table} thead`).should('contain.text', 'Name');
+        cy.get(`${table} .ant-table-filter-trigger`).should('not.have.class', 'active');
+    });
+
     it('Default requirement row is read-only and disabled by default', () => {
         openSettingsTab();
 

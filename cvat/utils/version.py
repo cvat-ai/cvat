@@ -1,4 +1,5 @@
 # Copyright (C) 2019-2022 Intel Corporation
+# Copyright (C) CVAT.ai Corporation
 #
 # SPDX-License-Identifier: MIT
 #
@@ -10,9 +11,10 @@
 import datetime
 import os
 import subprocess
+from collections.abc import Sequence
 
 
-def get_version(version):
+def get_version(version: Sequence[int], *, include_sub: bool = True) -> str:
     """Return a PEP 440-compliant version number from VERSION."""
     # Now build the two parts of the version number:
     # main = X.Y.Z
@@ -22,14 +24,15 @@ def get_version(version):
     main = get_main_version(version)
 
     sub = ""
-    if version[3] == "alpha" and version[4] == 0:
-        git_changeset = get_git_changeset()
-        if git_changeset:
-            sub = ".dev%s" % git_changeset
+    if include_sub:
+        if version[3] == "alpha" and version[4] == 0:
+            git_changeset = get_git_changeset()
+            if git_changeset:
+                sub = ".dev%s" % git_changeset
 
-    elif version[3] != "final":
-        mapping = {"alpha": "a", "beta": "b", "rc": "rc"}
-        sub = mapping[version[3]] + str(version[4])
+        elif version[3] != "final":
+            mapping = {"alpha": "a", "beta": "b", "rc": "rc"}
+            sub = mapping[version[3]] + str(version[4])
 
     return main + sub
 

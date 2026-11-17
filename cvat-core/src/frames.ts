@@ -294,6 +294,10 @@ export class FramesMetaData {
         return updatedFields;
     }
 
+    hasUnsavedChanges(): boolean {
+        return Object.keys(this.getUpdated()).length > 0;
+    }
+
     resetUpdated(): void {
         this.#updateTrigger.reset();
     }
@@ -685,6 +689,10 @@ function mergeMetaData(
     }
 
     return Promise.resolve(framesMetaData);
+}
+
+export function hasUnsavedFrameChanges(jobID: number): boolean {
+    return frameMetaCacheSync[jobID]?.hasUnsavedChanges() ?? false;
 }
 
 export function getJobFramesMetaSync(jobID: number): FramesMetaData {

@@ -46,7 +46,7 @@ jobs:
           context: .
           file: ./Dockerfile
           cache-from: type=local,src=/tmp/cvat_cache_server
-          cache-to: type=local,dest=/tmp/cvat_cache_server-new
+          cache-to: type=local,dest=/tmp/cvat_cache_server-new,mode=max
 
       - name: Caching CVAT UI
         uses: docker/build-push-action@c3c9e263c25d99ce0380d002d59b67737d91b0dc # v7.4.0
@@ -54,7 +54,7 @@ jobs:
           context: .
           file: ./Dockerfile.ui
           cache-from: type=local,src=/tmp/cvat_cache_ui
-          cache-to: type=local,dest=/tmp/cvat_cache_ui-new
+          cache-to: type=local,dest=/tmp/cvat_cache_ui-new,mode=max
 
       - name: Moving cache
         run: |

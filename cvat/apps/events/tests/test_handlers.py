@@ -6,6 +6,7 @@ import unittest
 from types import SimpleNamespace
 from unittest.mock import Mock, patch
 
+from django.test import RequestFactory
 from django.utils.functional import SimpleLazyObject
 from rest_framework import serializers
 from rest_framework.exceptions import NotFound, PermissionDenied
@@ -23,19 +24,17 @@ class TestHandleViewsetException(unittest.TestCase):
         cases = [
             ("organization", {"organization": org}, 35127, "chaindetection"),
             ("personal workspace", {"organization": None}, None, None),
+            ("missing context", None, None, None),
             ("invalid organization", invalid_context, None, None),
         ]
 
         for name, iam_context, expected_org_id, expected_org_slug in cases:
             with self.subTest(name=name):
-                request = SimpleNamespace(
-                    iam_context=iam_context,
-                    user=SimpleNamespace(id=1, username="user", email="user@example.com"),
-                    get_full_path=lambda: "/api/jobs/4592943/annotations",
-                    query_params={},
-                    content_type="application/json",
-                    method="PATCH",
+                request = RequestFactory().patch(
+                    "/api/jobs/4592943/annotations", content_type="application/json"
                 )
+                request.iam_context = iam_context
+                request.user = SimpleNamespace(id=1, username="user", email="user@example.com")
                 with (
                     patch.object(handlers, "record_server_event") as record,
                     patch.object(handlers, "request_info", return_value={}),

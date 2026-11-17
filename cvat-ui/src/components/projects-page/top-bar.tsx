@@ -58,7 +58,11 @@ function TopBarComponent(props: Readonly<Props>): JSX.Element {
     const history = useHistory();
 
     return (
-        <Row className='cvat-projects-page-top-bar cvat-resource-top-bar-wrapper' justify='center' align='middle'>
+        <Row
+            className='cvat-projects-page-top-bar cvat-resource-top-bar-wrapper cvat-resource-card-top-bar'
+            justify='center'
+            align='middle'
+        >
             <Col {...dimensions}>
                 <div className='cvat-projects-page-filters-wrapper'>
                     <div>

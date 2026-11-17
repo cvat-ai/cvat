@@ -65,7 +65,10 @@ is_same_org_as_resource_with_perm(role) if {
 
 is_same_context_as_resource if is_same_context_as_resource_with_perm(WORKER)
 
-is_same_context_as_resource_with_perm(role) if utils.is_sandbox
+is_same_context_as_resource_with_perm(role) if {
+    utils.is_sandbox
+    input.resource.organization == null
+}
 
 is_same_context_as_resource_with_perm(role) if is_same_org_as_resource_with_perm(role)
 

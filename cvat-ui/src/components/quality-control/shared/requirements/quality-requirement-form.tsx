@@ -19,7 +19,7 @@ import CVATTooltip from 'components/common/cvat-tooltip';
 import config from 'config';
 import { QualityRequirement } from 'cvat-core-wrapper';
 import {
-    QualityRequirementAnnotationType, QualityRequirementPointSizeBase,
+    QualityRequirementAnnotationType, QualityRequirementPointSizeBase, QualityRequirementSimilarityMetric,
 } from 'cvat-core/src/quality/server-response-types';
 import { validateThresholdPolicy } from 'cvat-core/src/quality/threshold-policy';
 import {
@@ -40,21 +40,21 @@ import {
     getAncestorFilters,
     getChangedFieldNames,
     getCopiedInitialValues,
+    getChoiceFieldDescription,
     getCopiedTouchedFields,
     getInitialValues,
-    getPointSizeBaseDescription,
     hasLocalInheritedField,
-    IOU_ANNOTATION_TYPES,
     METRIC_OPTION_GROUPS,
     OverridableFormFieldName,
     OVERRIDABLE_FORM_FIELDS,
-    POINT_ANNOTATION_TYPES,
     POINT_SIZE_BASE_OPTIONS,
     QualityRequirementFormProps,
     removeInheritedFields,
     RequirementFormValues,
     SEGMENTATION_ANNOTATION_TYPES,
     serializeRequirementValues,
+    SIMILARITY_METRIC_LABELS,
+    SUPPORTED_SIMILARITY_METRICS,
     validateJsonLogic,
 } from './quality-requirement-form-utils';
 
@@ -111,6 +111,7 @@ export default function QualityRequirementForm(props: Readonly<QualityRequiremen
     );
     const watchedAnnotationType = Form.useWatch('annotationType', form);
     const watchedParentRequirement = Form.useWatch('parentRequirement', form);
+    const watchedSimilarityMetric = Form.useWatch('similarityMetric', form);
     const attributeOptions = useMemo(() => buildAttributeOptions(labels), [labels]);
     const attributeOptionsBySpecId = useMemo(() => (
         new Map(attributeOptions.map((option) => [option.value, option]))
@@ -120,6 +121,11 @@ export default function QualityRequirementForm(props: Readonly<QualityRequiremen
         form.getFieldValue('annotationType') ??
         initialValues.annotationType
     ) as QualityRequirementAnnotationType;
+    const similarityMetric = (
+        watchedSimilarityMetric ??
+        form.getFieldValue('similarityMetric') ??
+        initialValues.similarityMetric
+    ) as QualityRequirementSimilarityMetric;
     const rawParentRequirementId = typeof watchedParentRequirement !== 'undefined' ?
         watchedParentRequirement :
         form.getFieldValue('parentRequirement');
@@ -440,19 +446,30 @@ export default function QualityRequirementForm(props: Readonly<QualityRequiremen
         </Form.Item>
     );
 
-    const renderShapeComparison = (): JSX.Element | null => {
-        if (annotationType === QualityRequirementAnnotationType.TAG) {
-            return null;
-        }
+    const renderPixelInput = (
+        name: OverridableFormFieldName,
+        label: string,
+        description?: string,
+    ): JSX.Element => (
+        <Form.Item
+            name={name}
+            label={renderOverrideControl(name, label)}
+            tooltip={getTooltipDescription(description)}
+            rules={[{ required: true, message: 'This field is required' }]}
+        >
+            <InputNumber
+                min={0}
+                precision={1}
+                className='cvat-quality-requirement-form-short-input'
+            />
+        </Form.Item>
+    );
 
-        return (
-            <>
-                <Divider />
-                <Row className='cvat-quality-requirement-form-section-title'>
-                    <Text strong>Shape comparison</Text>
-                </Row>
-                <Row gutter={16}>
-                    {ADAPTIVE_IOU_ANNOTATION_TYPES.has(annotationType) && (
+    const renderSimilarityParameters = (): JSX.Element | null => {
+        switch (similarityMetric) {
+            case QualityRequirementSimilarityMetric.IOU:
+                if (ADAPTIVE_IOU_ANNOTATION_TYPES.has(annotationType)) {
+                    return (
                         <Col span={24}>
                             <Form.Item
                                 name='iouThreshold'
@@ -473,51 +490,112 @@ export default function QualityRequirementForm(props: Readonly<QualityRequiremen
                                 />
                             </Form.Item>
                         </Col>
-                    )}
-                    {IOU_ANNOTATION_TYPES.has(annotationType) && !ADAPTIVE_IOU_ANNOTATION_TYPES.has(annotationType) && (
+                    );
+                }
+
+                return (
+                    <Col span={12}>
+                        {renderPercentInput(
+                            'iouThreshold', 'IoU threshold (%)', requirementDescriptions.iouThreshold,
+                        )}
+                    </Col>
+                );
+            case QualityRequirementSimilarityMetric.OKS:
+                return (
+                    <>
                         <Col span={12}>
                             {renderPercentInput(
-                                'iouThreshold', 'IoU threshold (%)', requirementDescriptions.iouThreshold,
+                                'oksThreshold', 'OKS threshold (%)', requirementDescriptions.oksThreshold,
                             )}
                         </Col>
-                    )}
-                    {POINT_ANNOTATION_TYPES.has(annotationType) && (
-                        <>
-                            <Col span={12}>
-                                {renderPercentInput(
-                                    /* for points, the same threshold is applied to the OKS values */
-                                    'iouThreshold', 'OKS threshold (%)', requirementDescriptions.iouThreshold,
+                        <Col span={12}>
+                            {renderPercentInput(
+                                'pointSize', 'Point size (%)', requirementDescriptions.pointSize,
+                            )}
+                        </Col>
+                        <Col span={12}>
+                            <Form.Item
+                                name='pointSizeBase'
+                                label={renderOverrideControl('pointSizeBase', 'Point size base')}
+                                tooltip={getTooltipDescription(
+                                    getChoiceFieldDescription(requirementDescriptions.pointSizeBase),
                                 )}
-                            </Col>
-                            <Col span={12}>
-                                {renderPercentInput(
-                                    'pointSize', 'Point size (%)', requirementDescriptions.pointSize,
-                                )}
-                            </Col>
-                            <Col span={12}>
-                                <Form.Item
-                                    name='pointSizeBase'
-                                    label={renderOverrideControl('pointSizeBase', 'Point size base')}
-                                    tooltip={getTooltipDescription(
-                                        getPointSizeBaseDescription(requirementDescriptions.pointSizeBase),
-                                    )}
-                                >
-                                    <Select>
-                                        {POINT_SIZE_BASE_OPTIONS.map((value) => (
-                                            <Select.Option key={value} value={value}>
-                                                {value === QualityRequirementPointSizeBase.GROUP_BBOX_SIZE ? (
-                                                    'Group bbox size'
-                                                ) : (
-                                                    'Image size'
-                                                )}
-                                            </Select.Option>
-                                        ))}
-                                    </Select>
-                                </Form.Item>
-                            </Col>
-                        </>
-                    )}
-                    {annotationType === 'polyline' && (
+                            >
+                                <Select>
+                                    {POINT_SIZE_BASE_OPTIONS.map((value) => (
+                                        <Select.Option key={value} value={value}>
+                                            {value === QualityRequirementPointSizeBase.GROUP_BBOX_SIZE ? (
+                                                'Group bbox size'
+                                            ) : (
+                                                'Image size'
+                                            )}
+                                        </Select.Option>
+                                    ))}
+                                </Select>
+                            </Form.Item>
+                        </Col>
+                    </>
+                );
+            case QualityRequirementSimilarityMetric.BOUNDARY_F:
+                return (
+                    <>
+                        <Col span={12}>
+                            {renderPercentInput(
+                                'boundaryFThreshold',
+                                'Boundary F threshold (%)',
+                                requirementDescriptions.boundaryFThreshold,
+                            )}
+                        </Col>
+                        <Col span={12}>
+                            {renderPixelInput(
+                                'boundaryFTolerance',
+                                'Boundary tolerance (px)',
+                                requirementDescriptions.boundaryFTolerance,
+                            )}
+                        </Col>
+                    </>
+                );
+            case QualityRequirementSimilarityMetric.EQUALITY:
+                return null;
+            default:
+                throw new Error(`Unexpected similarity metric '${similarityMetric}'`);
+        }
+    };
+
+    const renderShapeComparison = (): JSX.Element | null => {
+        if (annotationType === QualityRequirementAnnotationType.TAG) {
+            return null;
+        }
+
+        return (
+            <>
+                <Divider />
+                <Row className='cvat-quality-requirement-form-section-title'>
+                    <Text strong>Shape comparison</Text>
+                </Row>
+                <Row gutter={16}>
+                    <Col span={12}>
+                        <Form.Item
+                            name='similarityMetric'
+                            label={renderOverrideControl('similarityMetric', 'Similarity metric')}
+                            tooltip={getTooltipDescription(
+                                getChoiceFieldDescription(requirementDescriptions.similarityMetric),
+                            )}
+                            rules={[{ required: true, message: 'This field is required' }]}
+                        >
+                            <Select disabled={SUPPORTED_SIMILARITY_METRICS[annotationType].length < 2}>
+                                {SUPPORTED_SIMILARITY_METRICS[annotationType].map((value) => (
+                                    <Select.Option key={value} value={value}>
+                                        {SIMILARITY_METRIC_LABELS[value]}
+                                    </Select.Option>
+                                ))}
+                            </Select>
+                        </Form.Item>
+                    </Col>
+                    {renderSimilarityParameters()}
+                    {annotationType === QualityRequirementAnnotationType.POLYLINE &&
+                        // with Boundary F, the line thickness is defined by the boundary tolerance
+                        similarityMetric === QualityRequirementSimilarityMetric.IOU && (
                         <Col span={12}>
                             {renderPercentInput(
                                 'lineThickness', 'Line thickness (%)', requirementDescriptions.lineThickness,
