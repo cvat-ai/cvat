@@ -2215,6 +2215,33 @@ class TaskCloudStorageTestCase(_CloudStorageTestBase, ExportApiTestBase, ImportA
             ).encode(),
         )
 
+    def _get_related_image_metadata(self, task_id, frame_name, related_image_path):
+        jobs_response = self._get_request(
+            "/api/jobs",
+            self.owner,
+            query_params={"task_id": task_id},
+        )
+        self.assertEqual(jobs_response.status_code, status.HTTP_200_OK)
+
+        for job in jobs_response.data["results"]:
+            meta_response = self._get_request(f"/api/jobs/{job['id']}/data/meta", self.owner)
+            self.assertEqual(meta_response.status_code, status.HTTP_200_OK)
+
+            for frame in meta_response.data["frames"]:
+                if frame["name"] != frame_name:
+                    continue
+
+                related_files_metadata = {
+                    related_file_metadata["name"]: related_file_metadata
+                    for related_file_metadata in frame.get("related_files_metadata", [])
+                }
+                self.assertIn(related_image_path, related_files_metadata)
+                return related_files_metadata[related_image_path]
+
+        self.fail(
+            f"Related image metadata for {related_image_path} was not found in frame {frame_name}"
+        )
+
     @override_settings(MEDIA_CACHE_ALLOW_STATIC_CACHE=True)
     def test_create_local_3d_task_with_calibrated_related_image(self):
         self._upload_pointcloud_pcd_dataset()
@@ -2238,17 +2265,18 @@ class TaskCloudStorageTestCase(_CloudStorageTestBase, ExportApiTestBase, ImportA
                 / "test_pointcloud_pcd/related_images/000001_pcd/000001.png.json"
             ).is_file()
         )
-        related_file = RelatedFile.objects.get(
-            data=db_data,
-            path="test_pointcloud_pcd/related_images/000001_pcd/000001.png",
+        related_file_metadata = self._get_related_image_metadata(
+            task["id"],
+            "test_pointcloud_pcd/pointcloud/000001.pcd",
+            "test_pointcloud_pcd/related_images/000001_pcd/000001.png",
         )
         self.assertEqual(
-            related_file.intrinsic_matrix,
-            [721.5, 0, 609.6, 0, 721.5, 172.9, 0, 0, 1],
+            related_file_metadata["intrinsic_matrix"],
+            [[721.5, 0.0, 609.6], [0.0, 721.5, 172.9], [0.0, 0.0, 1.0]],
         )
         self.assertEqual(
-            related_file.extrinsic_matrix,
-            [1, 0, 0, 0.2, 0, 1, 0, 0, 0, 0, 1, 1.7],
+            related_file_metadata["extrinsic_matrix"],
+            [[1.0, 0.0, 0.0, 0.2], [0.0, 1.0, 0.0, 0.0], [0.0, 0.0, 1.0, 1.7]],
         )
 
     def test_create_cached_3d_task_with_calibrated_related_image(self):
@@ -2273,17 +2301,18 @@ class TaskCloudStorageTestCase(_CloudStorageTestBase, ExportApiTestBase, ImportA
                 / "test_pointcloud_pcd/related_images/000001_pcd/000001.png.json"
             ).exists()
         )
-        related_file = RelatedFile.objects.get(
-            data=db_data,
-            path="test_pointcloud_pcd/related_images/000001_pcd/000001.png",
+        related_file_metadata = self._get_related_image_metadata(
+            task["id"],
+            "test_pointcloud_pcd/pointcloud/000001.pcd",
+            "test_pointcloud_pcd/related_images/000001_pcd/000001.png",
         )
         self.assertEqual(
-            related_file.intrinsic_matrix,
-            [721.5, 0, 609.6, 0, 721.5, 172.9, 0, 0, 1],
+            related_file_metadata["intrinsic_matrix"],
+            [[721.5, 0.0, 609.6], [0.0, 721.5, 172.9], [0.0, 0.0, 1.0]],
         )
         self.assertEqual(
-            related_file.extrinsic_matrix,
-            [1, 0, 0, 0.2, 0, 1, 0, 0, 0, 0, 1, 1.7],
+            related_file_metadata["extrinsic_matrix"],
+            [[1.0, 0.0, 0.0, 0.2], [0.0, 1.0, 0.0, 0.0], [0.0, 0.0, 1.0, 1.7]],
         )
         manifest = ImageManifestManager(db_data.get_manifest_path())
         manifest_entry = next(iter(manifest))[1]
@@ -2291,22 +2320,15 @@ class TaskCloudStorageTestCase(_CloudStorageTestBase, ExportApiTestBase, ImportA
             manifest_entry["meta"]["auxiliary_files"],
             ["test_pointcloud_pcd/related_images/000001_pcd/000001.png.json"],
         )
-        self.assertEqual(
-            manifest_entry["meta"]["related_image_metadata"][
-                "test_pointcloud_pcd/related_images/000001_pcd/000001.png"
-            ],
-            {
-                "intrinsic_matrix": [721.5, 0, 609.6, 0, 721.5, 172.9, 0, 0, 1],
-                "extrinsic_matrix": [1, 0, 0, 0.2, 0, 1, 0, 0, 0, 0, 1, 1.7],
-            },
-        )
 
     def test_import_cloud_3d_task_backup_with_calibration(self):
         self._upload_pointcloud_pcd_dataset()
         cloud_storage_id = self._create_cloud_storage()
+        pointcloud_path = "test_pointcloud_pcd/pointcloud/000001.pcd"
         sidecar_path = "test_pointcloud_pcd/related_images/000001_pcd/000001.png.json"
         related_image_path = sidecar_path.removesuffix(".json")
         manifest_intrinsic_matrix = [1, 0, 0, 0, 1, 0, 0, 0, 1]
+        sidecar_intrinsic_matrix = [721.5, 0, 609.6, 0, 721.5, 172.9, 0, 0, 1]
         self._upload_image_manifest(
             "manifest.jsonl",
             [
@@ -2339,15 +2361,18 @@ class TaskCloudStorageTestCase(_CloudStorageTestBase, ExportApiTestBase, ImportA
                 "use_cache": True,
             },
         )
-        db_data = Task.objects.get(pk=task["id"]).require_data()
-        source_related_file = RelatedFile.objects.get(data=db_data, path=related_image_path)
-        manifest = ImageManifestManager(db_data.get_manifest_path())
-        manifest_entry = next(iter(manifest))[1]
+
+        source_related_file_metadata = self._get_related_image_metadata(
+            task["id"],
+            pointcloud_path,
+            related_image_path,
+        )
         self.assertEqual(
-            manifest_entry["meta"]["related_image_metadata"][related_image_path][
-                "intrinsic_matrix"
+            source_related_file_metadata["intrinsic_matrix"],
+            [
+                sidecar_intrinsic_matrix[index : index + 3]
+                for index in range(0, len(sidecar_intrinsic_matrix), 3)
             ],
-            source_related_file.intrinsic_matrix,
         )
 
         for lightweight in (True, False):
@@ -2367,18 +2392,20 @@ class TaskCloudStorageTestCase(_CloudStorageTestBase, ExportApiTestBase, ImportA
                 backup_file.name = "task-backup.zip"
                 restored_task_id = self._import_task_backup(self.owner, backup_file)
 
-                restored_related_file = RelatedFile.objects.get(
-                    data=Task.objects.get(pk=restored_task_id).require_data(),
-                    path=related_image_path,
+                restored_related_file_metadata = self._get_related_image_metadata(
+                    restored_task_id,
+                    pointcloud_path,
+                    related_image_path,
                 )
                 self.assertEqual(
-                    restored_related_file.intrinsic_matrix,
-                    source_related_file.intrinsic_matrix,
+                    restored_related_file_metadata["intrinsic_matrix"],
+                    source_related_file_metadata["intrinsic_matrix"],
                 )
 
     def test_import_lightweight_cloud_3d_task_backup_with_manifest_sidecar(self):
         self._upload_pointcloud_pcd_dataset()
         cloud_storage_id = self._create_cloud_storage()
+        pointcloud_path = "test_pointcloud_pcd/pointcloud/000001.pcd"
         related_image_path = "test_pointcloud_pcd/related_images/000001_pcd/000001.png"
         sidecar_path = f"{related_image_path}.json"
         calibration = {
@@ -2410,11 +2437,24 @@ class TaskCloudStorageTestCase(_CloudStorageTestBase, ExportApiTestBase, ImportA
                 "use_cache": True,
             },
         )
-        db_data = Task.objects.get(pk=task["id"]).require_data()
-        manifest_entry = next(iter(ImageManifestManager(db_data.get_manifest_path())))[1]
+        source_related_file_metadata = self._get_related_image_metadata(
+            task["id"],
+            pointcloud_path,
+            related_image_path,
+        )
         self.assertEqual(
-            manifest_entry["meta"]["related_image_metadata"],
-            {related_image_path: calibration},
+            source_related_file_metadata["intrinsic_matrix"],
+            [
+                calibration["intrinsic_matrix"][index : index + 3]
+                for index in range(0, len(calibration["intrinsic_matrix"]), 3)
+            ],
+        )
+        self.assertEqual(
+            source_related_file_metadata["extrinsic_matrix"],
+            [
+                calibration["extrinsic_matrix"][index : index + 4]
+                for index in range(0, len(calibration["extrinsic_matrix"]), 4)
+            ],
         )
 
         response = self._export_task_backup(
@@ -2429,12 +2469,12 @@ class TaskCloudStorageTestCase(_CloudStorageTestBase, ExportApiTestBase, ImportA
         backup_file.name = "task-backup.zip"
         restored_task_id = self._import_task_backup(self.owner, backup_file)
 
-        restored_related_file = RelatedFile.objects.get(
-            data=Task.objects.get(pk=restored_task_id).require_data(),
-            path=related_image_path,
+        restored_related_file_metadata = self._get_related_image_metadata(
+            restored_task_id,
+            pointcloud_path,
+            related_image_path,
         )
-        self.assertEqual(restored_related_file.intrinsic_matrix, calibration["intrinsic_matrix"])
-        self.assertEqual(restored_related_file.extrinsic_matrix, calibration["extrinsic_matrix"])
+        self.assertEqual(restored_related_file_metadata, source_related_file_metadata)
 
     @override_settings(MEDIA_CACHE_ALLOW_STATIC_CACHE=True)
     def test_create_3d_task_with_calibration_referenced_by_manifest(self):
@@ -2577,6 +2617,11 @@ class TaskCloudStorageTestCase(_CloudStorageTestBase, ExportApiTestBase, ImportA
                 expected_related_image_path = (
                     f"{prefix}/{related_image_path}" if prefix else related_image_path
                 )
+                expected_pointcloud_path = (
+                    f"{prefix}/test_pointcloud_pcd/pointcloud/000001.pcd"
+                    if prefix
+                    else "test_pointcloud_pcd/pointcloud/000001.pcd"
+                )
                 expected_auxiliary_file_path = (
                     f"{prefix}/{auxiliary_file_path}" if prefix else auxiliary_file_path
                 )
@@ -2589,11 +2634,25 @@ class TaskCloudStorageTestCase(_CloudStorageTestBase, ExportApiTestBase, ImportA
                         else StorageMethodChoice.FILE_SYSTEM
                     ),
                 )
-                related_file = RelatedFile.objects.get(
-                    data=db_data, path=expected_related_image_path
+                related_file_metadata = self._get_related_image_metadata(
+                    task["id"],
+                    expected_pointcloud_path,
+                    expected_related_image_path,
                 )
-                self.assertEqual(related_file.intrinsic_matrix, calibration["intrinsic_matrix"])
-                self.assertEqual(related_file.extrinsic_matrix, calibration["extrinsic_matrix"])
+                self.assertEqual(
+                    related_file_metadata["intrinsic_matrix"],
+                    [
+                        calibration["intrinsic_matrix"][index : index + 3]
+                        for index in range(0, len(calibration["intrinsic_matrix"]), 3)
+                    ],
+                )
+                self.assertEqual(
+                    related_file_metadata["extrinsic_matrix"],
+                    [
+                        calibration["extrinsic_matrix"][index : index + 4]
+                        for index in range(0, len(calibration["extrinsic_matrix"]), 4)
+                    ],
+                )
 
                 manifest_entry = next(iter(ImageManifestManager(db_data.get_manifest_path())))[1]
                 if case.include_auxiliary_file:
