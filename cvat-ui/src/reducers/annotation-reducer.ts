@@ -213,6 +213,11 @@ export default (state = defaultState, action: AnyAction): AnnotationState => {
                 },
             };
         }
+        case AnnotationActionTypes.SYNC_JOB_LABELS:
+            return state.job.instance === action.payload.job ? {
+                ...state,
+                job: { ...state.job, labels: action.payload.job.labels },
+            } : state;
         case BoundariesActionTypes.RESET_AFTER_ERROR:
         case AnnotationActionTypes.GET_JOB_SUCCESS: {
             const {
@@ -390,6 +395,7 @@ export default (state = defaultState, action: AnyAction): AnnotationState => {
             const { activatedStateID } = state.annotations;
             const {
                 number,
+                nextFrameStep,
                 data,
                 filename,
                 relatedFiles,
@@ -416,6 +422,7 @@ export default (state = defaultState, action: AnyAction): AnnotationState => {
                         filename,
                         relatedFiles,
                         number,
+                        nextFrameStep,
                         fetching: false,
                         changeTime,
                         delay,

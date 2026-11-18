@@ -31,10 +31,10 @@ import Issue from './issue';
 import {
     SerializedTask, SerializedJobValidationLayout, SerializedTaskValidationLayout,
 } from './server-response-types';
-import { getUpdatedLabels } from './labels';
+import { getUpdatedLabels, Label } from './labels';
 import { checkInEnum, checkObjectType } from './common';
 import {
-    getCollection, getSaver, clearAnnotations, getAnnotations,
+    addSessionLabels, getCollection, getSaver, clearAnnotations, getAnnotations,
     getAllIntervals,
     importDataset, exportDataset, clearCache, getHistory,
 } from './annotations';
@@ -108,6 +108,37 @@ export function implementJob(Job: typeof JobClass): typeof JobClass {
 
             const job = await serverProxy.jobs.create({ ...jobSpec, ...fields });
             return new JobClass({ ...job, labels: [] });
+        },
+    });
+
+    Object.defineProperty(Job.prototype.addLabel, 'implementation', {
+        value: async function addLabelImplementation(this: JobClass, label: Label): Promise<Label[]> {
+            checkObjectType('label', label, null, { cls: Label, name: 'Label' });
+            if (label.id !== undefined || this.labels.some(({ name }) => name === label.name)) {
+                throw new ArgumentError('The action label must have a new name.');
+            }
+
+            const fields = { labels: [label.toJSON()] };
+            // Use the same append-only PATCH as the task or project label editor.
+            if (this.projectId !== null) await serverProxy.projects.save(this.projectId, fields);
+            else await serverProxy.tasks.save(this.taskId, fields);
+
+            const { results } = await serverProxy.labels.get({ job_id: this.id });
+            const known = new Set(this.labels.map(({ id }) => id));
+            const labels = results.filter(({ id }) => !known.has(id)).map((data) => new Label(data));
+            addSessionLabels(this, labels);
+            return labels;
+        },
+    });
+
+    Object.defineProperty(Job.prototype.deleteLabel, 'implementation', {
+        value: async function deleteLabelImplementation(this: JobClass, label: Label): Promise<void> {
+            checkObjectType('label', label, null, { cls: Label, name: 'Label' });
+            if (!Number.isInteger(label.id) || !this.labels.some(({ id }) => id === label.id)) {
+                throw new ArgumentError('This label does not belong to the job.');
+            }
+
+            await serverProxy.labels.delete(label.id);
         },
     });
 

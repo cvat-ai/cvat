@@ -428,7 +428,10 @@ function mapDispatchToProps(dispatch: any): DispatchToProps {
     };
 }
 
-type Props = StateToProps & DispatchToProps;
+type Props = StateToProps & DispatchToProps & {
+    showObjectOverlays?: boolean;
+    showFrameTagOverlays?: boolean;
+};
 
 class CanvasWrapperComponent extends React.PureComponent<Props> {
     private debouncedUpdate = debounce(this.updateCanvas.bind(this), 250, { leading: true });
@@ -645,6 +648,7 @@ class CanvasWrapperComponent extends React.PureComponent<Props> {
             prevProps.annotations !== annotations ||
             prevProps.frameData !== frameData ||
             prevProps.hiddenZLayers !== hiddenZLayers ||
+            prevProps.showObjectOverlays !== this.props.showObjectOverlays ||
             prevProps.renderData !== renderData
         ) {
             this.updateCanvas();
@@ -1155,12 +1159,12 @@ class CanvasWrapperComponent extends React.PureComponent<Props> {
     private updateCanvas(): void {
         const {
             hiddenZLayers, annotations, frameData,
-            workspace, frame, imageFilters, renderData,
+            workspace, frame, imageFilters, renderData, showObjectOverlays,
         } = this.props;
 
         const { canvasInstance } = this.props as { canvasInstance: Canvas };
         if (frameData !== null && canvasInstance) {
-            const filteredAnnotations = filterAnnotations(annotations, {
+            const filteredAnnotations = showObjectOverlays === false ? [] : filterAnnotations(annotations, {
                 frame,
                 workspace,
                 exclude: [ObjectType.TAG],
@@ -1303,6 +1307,8 @@ class CanvasWrapperComponent extends React.PureComponent<Props> {
             automaticBordering,
             snapToPoint,
             showTagsOnFrame,
+            showFrameTagOverlays,
+            workspace,
             canvasIsReady,
             annotations,
             activatedStateID,
@@ -1399,19 +1405,21 @@ class CanvasWrapperComponent extends React.PureComponent<Props> {
                     <UpOutlined className='cvat-canvas-image-setups-trigger' />
                 </Popover>
 
-                <CVATTooltip title={`Open layer stack. Current layer ${currentZLayer}`}>
-                    <button
-                        className='cvat-canvas-layer-stack-trigger'
-                        type='button'
-                        aria-label={`Open layer stack. Current layer ${currentZLayer}`}
-                        onClick={(): void => onOpenLayerStack(sidebarCollapsed)}
-                    >
-                        <Icon component={LayerStackIcon} />
-                        <span className='cvat-canvas-layer-stack-trigger-layer'>{currentZLayer}</span>
-                    </button>
-                </CVATTooltip>
+                {workspace !== Workspace.VIDEO_UNDERSTANDING && (
+                    <CVATTooltip title={`Open layer stack. Current layer ${currentZLayer}`}>
+                        <button
+                            className='cvat-canvas-layer-stack-trigger'
+                            type='button'
+                            aria-label={`Open layer stack. Current layer ${currentZLayer}`}
+                            onClick={(): void => onOpenLayerStack(sidebarCollapsed)}
+                        >
+                            <Icon component={LayerStackIcon} />
+                            <span className='cvat-canvas-layer-stack-trigger-layer'>{currentZLayer}</span>
+                        </button>
+                    </CVATTooltip>
+                )}
 
-                {showTagsOnFrame ? (
+                {(showFrameTagOverlays ?? showTagsOnFrame) ? (
                     <div className='cvat-canvas-frame-tags'>
                         <FrameTags />
                     </div>

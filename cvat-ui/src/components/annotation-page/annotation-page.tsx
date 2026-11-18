@@ -16,6 +16,7 @@ import SingleShapeWorkspace from 'components/annotation-page/single-shape-worksp
 import ReviewAnnotationsWorkspace from 'components/annotation-page/review-workspace/review-workspace';
 import StandardWorkspaceComponent from 'components/annotation-page/standard-workspace/standard-workspace';
 import StandardWorkspace3DComponent from 'components/annotation-page/standard3D-workspace/standard3D-workspace';
+import VideoUnderstandingWorkspace from 'components/annotation-page/video-understanding-workspace/video-understanding-workspace';
 import TagAnnotationWorkspace from 'components/annotation-page/tag-annotation-workspace/tag-annotation-workspace';
 import FiltersModalComponent from 'components/annotation-page/top-bar/filters-modal';
 import { JobNotFoundComponent } from 'components/common/not-found';
@@ -164,6 +165,7 @@ export default function AnnotationPageComponent(props: Props): JSX.Element {
                 {workspace === Workspace.SINGLE_SHAPE && <SingleShapeWorkspace />}
                 {workspace === Workspace.ATTRIBUTES && <AttributeAnnotationWorkspace />}
                 {workspace === Workspace.TAGS && <TagAnnotationWorkspace />}
+                {workspace === Workspace.VIDEO_UNDERSTANDING && <VideoUnderstandingWorkspace />}
                 {workspace === Workspace.REVIEW && <ReviewAnnotationsWorkspace />}
             </Layout.Content>
             {job.dimension === DimensionType.DIMENSION_2D &&

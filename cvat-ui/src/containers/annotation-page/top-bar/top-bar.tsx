@@ -81,7 +81,7 @@ interface StateToProps {
 }
 
 interface DispatchToProps {
-    onChangeFrame(frame: number, fillBuffer?: boolean, frameStep?: number): void;
+    onChangeFrame(frame: number, fillBuffer?: boolean, frameStep?: number, nextFrameStep?: boolean): void;
     onSwitchPlay(playing: boolean): void;
     switchShowSearchPallet(visible: boolean): void;
     onSaveAnnotation(): void;
@@ -205,8 +205,8 @@ function mapStateToProps(state: CombinedState): StateToProps {
 
 function mapDispatchToProps(dispatch: any): DispatchToProps {
     return {
-        onChangeFrame(frame: number, fillBuffer?: boolean, frameStep?: number): void {
-            dispatch(changeFrameAsync(frame, fillBuffer, frameStep));
+        onChangeFrame(frame: number, fillBuffer?: boolean, frameStep?: number, nextFrameStep?: boolean): void {
+            dispatch(changeFrameAsync(frame, fillBuffer, frameStep, undefined, undefined, nextFrameStep));
         },
         onSwitchPlay(playing: boolean): void {
             dispatch(switchPlay(playing));
@@ -512,7 +512,7 @@ class AnnotationTopBarContainer extends React.PureComponent<Props> {
             }
 
             if (navigationType === NavigationType.REGULAR) {
-                this.changeFrame(newFrame);
+                this.changeFrame(newFrame, true);
             } else if (navigationType === NavigationType.FILTERED) {
                 searchAnnotations(jobInstance, newFrame, stopFrame);
             } else if (navigationType === NavigationType.CHAPTER) {
@@ -710,10 +710,10 @@ class AnnotationTopBarContainer extends React.PureComponent<Props> {
         }
     }
 
-    private changeFrame(frame: number): void {
+    private changeFrame(frame: number, nextFrameStep?: boolean): void {
         const { onChangeFrame } = this.props;
         if (isAbleToChangeFrame(frame)) {
-            onChangeFrame(frame);
+            onChangeFrame(frame, undefined, undefined, nextFrameStep);
         }
     }
 

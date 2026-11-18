@@ -848,6 +848,19 @@ export class Job extends Session {
         return [...this.#data.labels];
     }
 
+    async addLabel(label: Label): Promise<Label> {
+        const labels: Label[] = await PluginRegistry.apiWrapper.call(this, Job.prototype.addLabel, label);
+        const known = new Set(this.#data.labels.map(({ id }) => id));
+        this.#data.labels.push(...labels.filter(({ id }) => !known.has(id)));
+        const created = this.#data.labels.find(({ name }) => name === label.name);
+        if (!created) throw new Error('The new label could not be loaded for this job.');
+        return created;
+    }
+
+    async deleteLabel(label: Label): Promise<void> {
+        await PluginRegistry.apiWrapper.call(this, Job.prototype.deleteLabel, label);
+    }
+
     public get type(): JobType {
         return this.#data.type;
     }

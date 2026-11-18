@@ -1,0 +1,283 @@
+// Copyright (C) CVAT.ai Corporation
+//
+// SPDX-License-Identifier: MIT
+
+@import 'base';
+
+.cvat-video-understanding-workspace.ant-layout {
+    height: 100%;
+}
+
+.cvat-video-workspace-content {
+    min-width: 0;
+    flex: 1 1 0;
+}
+
+.cvat-action-phases {
+    --phase-track-label-width: 208px;
+
+    padding: $grid-unit-size $grid-unit-size * 2;
+    box-sizing: border-box;
+    border-top: 1px solid $border-color-1;
+    background: $background-color-1;
+    overflow: auto;
+    font-size: 13px;
+}
+
+.cvat-action-phase-toolbar,
+.cvat-action-phase-details,
+.cvat-action-phase-details > div,
+.cvat-action-phase-details form {
+    display: flex;
+    align-items: center;
+    gap: 4px;
+    flex-wrap: wrap;
+}
+
+.cvat-action-phase-toolbar {
+    min-height: $grid-unit-size * 4;
+    border-bottom: 1px solid $border-color-1;
+
+    > .ant-typography:first-child {
+        margin-right: $grid-unit-size;
+    }
+}
+
+.cvat-action-phase-coverage {
+    margin-left: auto;
+    font-variant-numeric: tabular-nums;
+}
+
+.cvat-action-phase-overlay-options {
+    display: grid;
+    gap: $grid-unit-size;
+}
+
+.cvat-action-phase-settings {
+    display: grid;
+    grid-template-columns: auto minmax(140px, 1fr);
+    align-items: center;
+    gap: $grid-unit-size;
+}
+
+.cvat-action-phase-tracks {
+    max-height: 153px;
+    overflow: auto;
+    padding: 0 $grid-unit-size;
+}
+
+.cvat-action-phase-track {
+    display: grid;
+    grid-template-columns: var(--phase-track-label-width) minmax(0, 1fr);
+    align-items: center;
+    gap: $grid-unit-size;
+    min-height: 26px;
+    border-bottom: 1px solid $border-color-1;
+
+    &[data-active='true'] {
+        outline: 2px solid $border-color-hover;
+        outline-offset: -2px;
+    }
+
+    &[data-hidden='true'] .cvat-action-phase-track-label {
+        color: $text-color-secondary;
+    }
+
+    &[data-recording='true'] .cvat-action-phase-timeline {
+        box-shadow: inset 2px 0 $danger-icon-color;
+    }
+}
+
+.cvat-action-phase-playback {
+    position: sticky;
+    top: 0;
+    z-index: 4;
+    background-color: $background-color-1;
+}
+
+.cvat-action-phase-track-heading {
+    display: flex;
+    align-items: center;
+    min-width: 0;
+}
+
+.cvat-action-phase-track .cvat-action-phase-track-label {
+    display: inline-flex;
+    flex: 1 1 0;
+    justify-content: flex-start;
+    align-items: center;
+    min-width: 0;
+    gap: 4px;
+}
+
+.cvat-action-phase-track-name {
+    overflow: hidden;
+    text-overflow: ellipsis;
+}
+
+.cvat-action-phase-track-shortcut {
+    max-width: 60px;
+    padding-inline: 4px;
+    overflow: hidden;
+    color: $text-color-secondary;
+    font-variant-numeric: tabular-nums;
+    text-overflow: ellipsis;
+}
+
+.cvat-action-phase-track-number {
+    min-width: 14px;
+    color: $text-color-secondary;
+    text-align: center;
+    font-variant-numeric: tabular-nums;
+}
+
+.cvat-action-phase-track-color,
+.cvat-action-phase-recording-dot {
+    display: inline-block;
+    flex: none;
+    border-radius: 50%;
+    width: 7px;
+    height: 7px;
+}
+
+.cvat-action-phase-recording-dot {
+    background: $danger-icon-color;
+}
+
+.cvat-action-phase-timeline {
+    position: relative;
+    height: 24px;
+    min-width: 0;
+    background-color: $background-color-2;
+    border-radius: 2px;
+    cursor: crosshair;
+}
+
+.cvat-action-phase-track-surface {
+    position: absolute;
+    inset: 0;
+    border: 0;
+    padding: 0;
+    background: transparent;
+    cursor: inherit;
+}
+
+.cvat-action-phase-clip {
+    position: absolute;
+    top: 1px;
+    bottom: 1px;
+    min-width: 4px;
+
+    &:has([aria-pressed='true']) {
+        z-index: 2;
+    }
+}
+
+.cvat-action-phases .cvat-action-phase-segment {
+    width: 100%;
+    height: 100%;
+    padding: 0 4px;
+    min-width: 0;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    color: $background-color-1;
+    border-color: transparent;
+    border-radius: 2px;
+    cursor: grab;
+    touch-action: none;
+
+    &[aria-pressed='true'] {
+        outline: 2px solid $info-icon-color;
+    }
+
+    &:active {
+        cursor: grabbing;
+    }
+}
+
+.cvat-action-phases .cvat-action-phase-handle {
+    position: absolute;
+    top: 0;
+    bottom: 0;
+    width: 7px;
+    padding: 0;
+    border: 0;
+    background: transparent;
+    cursor: ew-resize;
+    touch-action: none;
+    pointer-events: auto;
+
+    &::before {
+        content: '';
+        position: absolute;
+        top: 50%;
+        left: 1px;
+        width: 5px;
+        height: 10px;
+        box-sizing: border-box;
+        border-radius: 2px;
+        border: 1px solid $player-slider-color;
+        background: $background-color-1;
+        transform: translateY(-50%);
+        pointer-events: none;
+    }
+
+    &[data-edge-target='true']::before {
+        height: 18px;
+    }
+}
+
+.cvat-action-phase-handle-start {
+    left: -6px;
+}
+
+.cvat-action-phase-handle-end {
+    right: -6px;
+}
+
+.cvat-action-phase-draft,
+.cvat-action-phase-playhead {
+    position: absolute;
+    pointer-events: none;
+    z-index: 3;
+}
+
+.cvat-action-phase-draft {
+    top: 1px;
+    bottom: 1px;
+    min-width: 4px;
+    background: $active-label-background-color;
+    border: 1px dashed $danger-icon-color;
+}
+
+.cvat-action-phases .cvat-action-phase-draft-body {
+    display: block;
+    width: 100%;
+    height: 100%;
+    padding: 0;
+    border-radius: 0;
+    pointer-events: auto;
+}
+
+.cvat-action-phase-draft[data-pending-end='true'] {
+    border-color: $info-icon-color;
+}
+
+.cvat-action-phase-playhead {
+    top: 0;
+    bottom: 0;
+    width: 1px;
+    background: $info-icon-color;
+}
+
+.cvat-action-phase-seek {
+    margin: 0 1px;
+}
+
+.cvat-action-phase-details {
+    padding-top: 4px;
+}
+
+.cvat-action-phase-details .ant-input-number {
+    width: 86px;
+}

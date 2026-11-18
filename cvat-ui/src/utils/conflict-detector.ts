@@ -27,6 +27,7 @@ const shortcutScopeConflicts: Record<ShortcutScope, ShortcutScope[]> = {
         ShortcutScope.ATTRIBUTE_ANNOTATION_WORKSPACE,
         ShortcutScope.SINGLE_SHAPE_ANNOTATION_WORKSPACE,
         ShortcutScope.TAG_ANNOTATION_WORKSPACE,
+        ShortcutScope.VIDEO_UNDERSTANDING,
         ShortcutScope.REVIEW_WORKSPACE_CONTROLS,
         ShortcutScope['3D_ANNOTATION_WORKSPACE'],
         ShortcutScope['3D_ANNOTATION_WORKSPACE_CONTROLS'],
@@ -75,6 +76,11 @@ const shortcutScopeConflicts: Record<ShortcutScope, ShortcutScope[]> = {
         ShortcutScope.TAG_ANNOTATION_WORKSPACE,
         ShortcutScope.OBJECTS_SIDEBAR,
         ShortcutScope.ANNOTATION_PAGE,
+    ],
+    [ShortcutScope.VIDEO_UNDERSTANDING]: [
+        ShortcutScope.GENERAL,
+        ShortcutScope.ANNOTATION_PAGE,
+        ShortcutScope.VIDEO_UNDERSTANDING,
     ],
     [ShortcutScope.REVIEW_WORKSPACE_CONTROLS]: [
         ShortcutScope.GENERAL,
