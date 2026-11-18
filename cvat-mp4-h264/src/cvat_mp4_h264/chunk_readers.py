@@ -5,7 +5,7 @@
 from __future__ import annotations
 
 import os
-from collections.abc import Iterator
+from collections.abc import Generator
 from pathlib import Path
 
 from .openh264.schemas import VideoFrame
@@ -35,5 +35,5 @@ class VideoMp4ChunkReader:
 
         raise NotImplementedError
 
-    def __iter__(self) -> Iterator[VideoFrame]:
+    def __iter__(self) -> Generator[VideoFrame, None, None]:
         raise NotImplementedError

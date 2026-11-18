@@ -4,7 +4,7 @@
 
 """Decode the H.264 video track of MP4 files with OpenH264."""
 
-from .media_extractors import VideoMp4ChunkReader
+from .chunk_readers import VideoMp4ChunkReader
 from .openh264.schemas import VideoFrame
 
 __all__ = [

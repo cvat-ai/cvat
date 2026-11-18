@@ -13,7 +13,6 @@ import cvat_sdk.datasets as cvatds
 import PIL.Image
 import pytest
 from cvat_sdk import Client, models
-from cvat_sdk.core.exceptions import ChunkReaderUnavailableException
 from cvat_sdk.core.proxies.annotations import AnnotationUpdateAction
 from cvat_sdk.core.proxies.tasks import ResourceType
 
@@ -400,7 +399,7 @@ class TestTaskDataset:
         video_task_id = self._create_video_task()
         monkeypatch.setitem(sys.modules, "cvat_mp4_h264", None)
 
-        with pytest.raises(ChunkReaderUnavailableException, match=r"cvat-sdk\[video\]"):
+        with pytest.raises(cvatds.UnsupportedDatasetError, match=r"cvat-sdk\[video\]"):
             cvatds.TaskDataset(
                 self.client,
                 video_task_id,
