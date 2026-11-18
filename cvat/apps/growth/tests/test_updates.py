@@ -28,19 +28,19 @@ def sample_provider(
 
 
 @override_settings(
-    CVAT_UPDATES_ENABLED=True,
-    CVAT_UPDATES_EDITION="community",
-    CVAT_UPDATES_SOURCE_URL="https://docs.example.com/",
-    CVAT_UPDATES_PUBLIC_URL="https://docs.example.com/",
-    CVAT_UPDATES_CACHE_TTL=900,
-    CVAT_UPDATES_ANNOUNCEMENT_PROVIDER=None,
+    CVAT_NEWS_ENABLED=True,
+    CVAT_NEWS_EDITION="community",
+    CVAT_NEWS_SOURCE_URL="https://docs.example.com/",
+    CVAT_NEWS_PUBLIC_URL="https://docs.example.com/",
+    CVAT_NEWS_CACHE_TTL=900,
+    CVAT_NEWS_ANNOUNCEMENT_PROVIDER=None,
 )
 class UpdatesApiTestBase(ApiTestBase):
     def setUp(self) -> None:
         super().setUp()
         self.user = User.objects.create_user(username="updates-user", password="password")
         self.client.force_authenticate(user=self.user)
-        self.edition = settings.CVAT_UPDATES_EDITION
+        self.edition = settings.CVAT_NEWS_EDITION
         self.release = {
             "version": "2.0.0",
             "title": "Release",
@@ -132,7 +132,7 @@ class UpdatesApiTestCase(UpdatesApiTestBase):
             '<section data-cvat-editions="other-edition"><h2>Other change</h2></section>'
         )
 
-        with self.settings(CVAT_UPDATES_EDITION=custom_edition):
+        with self.settings(CVAT_NEWS_EDITION=custom_edition):
             response = self.client.get("/api/whats-new")
             content = self.client.get(
                 "/api/whats-new/content", {"kind": "release-notes", "id": "2.0.0"}
@@ -147,7 +147,7 @@ class UpdatesApiTestCase(UpdatesApiTestBase):
         self.assertIn("Matching change", content.data["body"])
         self.assertNotIn("Other change", content.data["body"])
 
-    @override_settings(CVAT_UPDATES_EDITION="invalid/edition")
+    @override_settings(CVAT_NEWS_EDITION="invalid/edition")
     def test_invalid_edition_configuration_does_not_fetch_content(self) -> None:
         response = self.client.get("/api/whats-new")
 
@@ -164,7 +164,7 @@ class UpdatesApiTestCase(UpdatesApiTestBase):
         self.assertFalse(response.data["canAcknowledgeAnnouncements"])
         self.assertIsNone(response.data["state"]["last_seen_announcements_date"])
 
-    @override_settings(CVAT_UPDATES_ENABLED=False)
+    @override_settings(CVAT_NEWS_ENABLED=False)
     def test_disabled_feature_does_not_fetch_content(self) -> None:
         response = self.client.get("/api/whats-new")
 
@@ -215,7 +215,7 @@ class UpdatesApiTestCase(UpdatesApiTestBase):
         self.assertEqual(second.status_code, HTTPStatus.OK)
         self.assertEqual(second.data, first.data)
 
-    @override_settings(CVAT_UPDATES_CACHE_TTL=0)
+    @override_settings(CVAT_NEWS_CACHE_TTL=0)
     def test_stale_announcements_cannot_advance_seen_marker(self) -> None:
         initial = self.client.get("/api/whats-new")
         self.assertTrue(initial.data["canAcknowledgeAnnouncements"])
@@ -300,8 +300,27 @@ class UpdatesApiTestCase(UpdatesApiTestBase):
             "",
         )
 
+    def test_cannot_acknowledge_releases_for_a_newer_version_or_another_edition(self) -> None:
+        self.documents["https://docs.example.com/release-notes/index.json"]["entries"].extend(
+            [
+                {**self.release, "version": "9999.0.0"},
+                {**self.release, "version": "1.0.0", "editions": ["other-edition"]},
+            ]
+        )
+
+        for version in ("9999.0.0", "1.0.0"):
+            with self.subTest(version=version):
+                response = self.client.post(
+                    "/api/whats-new/acknowledge", {"release_version": version}, format="json"
+                )
+
+                self.assertEqual(response.status_code, HTTPStatus.BAD_REQUEST)
+                self.assertEqual(
+                    UserGrowthData.objects.get(user=self.user).last_seen_release_notes_version, ""
+                )
+
     @override_settings(
-        CVAT_UPDATES_ANNOUNCEMENT_PROVIDER="cvat.apps.growth.tests.test_updates.sample_provider"
+        CVAT_NEWS_ANNOUNCEMENT_PROVIDER="cvat.apps.growth.tests.test_updates.sample_provider"
     )
     def test_latest_five_announcements_are_sorted_by_publication(self) -> None:
         previews = [
@@ -324,7 +343,7 @@ class UpdatesApiTestCase(UpdatesApiTestBase):
         )
 
     @override_settings(
-        CVAT_UPDATES_ANNOUNCEMENT_PROVIDER="cvat.apps.growth.tests.test_updates.sample_provider"
+        CVAT_NEWS_ANNOUNCEMENT_PROVIDER="cvat.apps.growth.tests.test_updates.sample_provider"
     )
     def test_duplicate_article_keeps_hugo_copy_and_latest_publication(self) -> None:
         self.announcement["announce"] = False
@@ -347,7 +366,7 @@ class UpdatesApiTestCase(UpdatesApiTestBase):
         self.assertTrue(response.data["announcements"][0]["announce"])
 
     @override_settings(
-        CVAT_UPDATES_ANNOUNCEMENT_PROVIDER="cvat.apps.growth.tests.test_updates.sample_provider"
+        CVAT_NEWS_ANNOUNCEMENT_PROVIDER="cvat.apps.growth.tests.test_updates.sample_provider"
     )
     def test_failed_provider_keeps_hugo_announcements_available(self) -> None:
         with patch(__name__ + ".sample_provider", side_effect=UpdatesUnavailable()):

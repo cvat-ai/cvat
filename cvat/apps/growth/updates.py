@@ -6,10 +6,10 @@
 
 import hashlib
 import json
-import logging
 import re
 import time
 from collections.abc import Callable
+from copy import deepcopy
 from datetime import datetime, timezone
 from http import HTTPStatus
 from typing import Any, TypeVar, cast
@@ -24,6 +24,7 @@ from django.utils.timezone import now
 from rest_framework.exceptions import APIException, NotFound
 
 from cvat import VERSION
+from cvat.apps.engine.log import ServerLogManager
 from cvat.utils.http import make_requests_session
 
 from . import release_sections
@@ -40,7 +41,7 @@ from .types import (
     UpdateSource,
 )
 
-logger = logging.getLogger(__name__)
+slogger = ServerLogManager(__name__)
 ANNOUNCEMENT_LIMIT = 5
 REFRESH_LOCK_TTL = 20
 RETRY_DELAY = 30
@@ -54,10 +55,11 @@ class UpdatesUnavailable(APIException):
     default_detail = "What's New is temporarily unavailable."
 
 
-def version_parts(value: Any) -> tuple[int, ...]:
+def version_parts(value: Any) -> tuple[int, int, int]:
     if not isinstance(value, str) or not re.fullmatch(RELEASE_VERSION_PATTERN, value):
         raise ValueError("Expected a release version in X.Y.Z format")
-    return tuple(int(part) for part in value.split("."))
+    major, minor, patch = value.split(".")
+    return int(major), int(minor), int(patch)
 
 
 def publication_date(value: Any) -> datetime:
@@ -68,14 +70,14 @@ def publication_date(value: Any) -> datetime:
 
 
 def edition() -> str:
-    value = settings.CVAT_UPDATES_EDITION
+    value = settings.CVAT_NEWS_EDITION
     if not isinstance(value, str) or not re.fullmatch(EDITION_PATTERN, value):
-        raise UpdatesUnavailable("CVAT_UPDATES_EDITION must be a lowercase edition identifier.")
+        raise UpdatesUnavailable("CVAT_NEWS_EDITION must be a lowercase edition identifier.")
     return value
 
 
 def _base_url(public: bool = False) -> str:
-    value = settings.CVAT_UPDATES_PUBLIC_URL if public else settings.CVAT_UPDATES_SOURCE_URL
+    value = settings.CVAT_NEWS_PUBLIC_URL if public else settings.CVAT_NEWS_SOURCE_URL
     parsed = urlsplit(value)
     if (
         parsed.scheme not in ("http", "https")
@@ -98,7 +100,7 @@ def _document(
     url = urljoin(_base_url(), path)
     key = "cvat:updates:" + hashlib.sha256((url + _base_url(public=True)).encode()).hexdigest()
     saved = cache.get(key)
-    if saved and time.time() - saved["checked_at"] < max(0, settings.CVAT_UPDATES_CACHE_TTL):
+    if saved and time.time() - saved["checked_at"] < max(0, settings.CVAT_NEWS_CACHE_TTL):
         if saved.get("stale") and on_stale:
             on_stale()
         return saved["data"]
@@ -145,12 +147,10 @@ def _document(
                 return data
     except (requests.RequestException, ValueError, TypeError, KeyError) as exc:
         reason = type(exc).__name__ if isinstance(exc, requests.RequestException) else str(exc)
-        logger.warning("Could not refresh What's New document %s: %s", path, reason)
+        slogger.glob.warning("Could not refresh What's New document %s: %s", path, reason)
         if saved:
             # Back off briefly without discarding the last valid document.
-            saved["checked_at"] = (
-                time.time() - max(0, settings.CVAT_UPDATES_CACHE_TTL) + RETRY_DELAY
-            )
+            saved["checked_at"] = time.time() - max(0, settings.CVAT_NEWS_CACHE_TTL) + RETRY_DELAY
             saved["stale"] = True
             cache.set(key, saved, timeout=STALE_TTL)
             if on_stale:
@@ -321,25 +321,31 @@ def _index(body: str, kind: ContentKind) -> list[dict[str, Any]]:
 
 def entries(kind: ContentKind, *, on_stale: OnStale | None = None) -> list[dict[str, Any]]:
     data = _document(f"{kind}/index.json", lambda body: _index(body, kind), on_stale=on_stale)
-    published = [item.copy() for item in data if publication_date(item["publishedAt"]) <= now()]
+    published = [deepcopy(item) for item in data if publication_date(item["publishedAt"]) <= now()]
     current_edition = edition()
     published = [item for item in published if current_edition in item["editions"]]
-    if kind == ContentKind.RELEASE_NOTES:
-        published = [item for item in published if version_parts(item["version"]) <= VERSION[:3]]
-        for item in published:
-            item["highlights"] = [
-                highlight["text"]
-                for highlight in item["highlights"]
-                if current_edition in highlight["editions"]
-            ] or [item["description"]]
-        return sorted(published, key=lambda item: version_parts(item["version"]), reverse=True)
     match kind:
+        case ContentKind.RELEASE_NOTES:
+            published = [
+                item for item in published if version_parts(item["version"]) <= VERSION[:3]
+            ]
+            for item in published:
+                item["highlights"] = [
+                    highlight["text"]
+                    for highlight in item["highlights"]
+                    if current_edition in highlight["editions"]
+                ] or [item["description"]]
+            return sorted(published, key=lambda item: version_parts(item["version"]), reverse=True)
         case ContentKind.ANNOUNCEMENTS:
             return sorted(
                 published, key=lambda item: publication_date(item["publishedAt"]), reverse=True
             )
         case _:
             raise AssertionError(f"Unexpected content kind: {kind}")
+
+
+def has_entry(*, version: str) -> bool:
+    return any(item["version"] == version for item in entries(ContentKind.RELEASE_NOTES))
 
 
 def _article_key(value: str) -> tuple[str, str]:
@@ -354,13 +360,13 @@ def external_announcements(*, on_stale: OnStale | None = None) -> list[Announcem
     The callable must implement AnnouncementProvider. An unconfigured provider
     contributes no previews; an unavailable provider raises UpdatesUnavailable.
     """
-    provider = settings.CVAT_UPDATES_ANNOUNCEMENT_PROVIDER
+    provider = settings.CVAT_NEWS_ANNOUNCEMENT_PROVIDER
     if provider is None:
         return []
     try:
         load = cast(AnnouncementProvider, import_string(provider))
     except (ImportError, AttributeError):
-        logger.error("Could not load the configured announcement provider")
+        slogger.glob.error("Could not load the configured announcement provider")
         raise UpdatesUnavailable() from None
     return load(edition=edition(), limit=ANNOUNCEMENT_LIMIT, on_stale=on_stale)
 

@@ -9,7 +9,9 @@ from django.conf import settings
 from rest_framework.request import Request
 from rest_framework.viewsets import ViewSetMixin
 
-from cvat.apps.iam.permissions import OpenPolicyAgentPermission
+from cvat.apps.iam.permissions import OpenPolicyAgentPermission, get_iam_context
+
+from .models import UserGrowthData
 
 
 class UserGrowthDataPermission(OpenPolicyAgentPermission):
@@ -50,19 +52,32 @@ class UserGrowthDataPermission(OpenPolicyAgentPermission):
         return None
 
 
-class UpdatesPermission(UserGrowthDataPermission):
+class UpdatesPermission(OpenPolicyAgentPermission):
     """Reuse the growth policy for read/write access to the current user's state."""
+
+    @classmethod
+    def create(
+        cls, request: Request, view: ViewSetMixin, obj: Any, iam_context: dict[str, Any] | None
+    ) -> list[UserGrowthDataPermission]:
+        iam_context = iam_context or get_iam_context(request, None)
+        return [
+            UserGrowthDataPermission(
+                **iam_context, scope=scope, obj=UserGrowthData(user=request.user)
+            )
+            for scope in cls.get_scopes(request, view, obj)
+        ]
 
     @classmethod
     def _get_scopes(
         cls, request: Request, view: ViewSetMixin, obj: Any
     ) -> list[UserGrowthDataPermission.Scopes]:
+        Scopes = UserGrowthDataPermission.Scopes
         scopes = {
-            "list": cls.Scopes.VIEW,
-            "content": cls.Scopes.VIEW,
-            "acknowledge": cls.Scopes.UPDATE,
+            "list": Scopes.VIEW,
+            "content": Scopes.VIEW,
+            "acknowledge": Scopes.UPDATE,
         }
         return [scopes[view.action]]
 
-    def get_resource(self) -> dict[str, dict[str, int]]:
-        return {"user": {"id": self.user_id}}
+    def get_resource(self) -> None:
+        return None

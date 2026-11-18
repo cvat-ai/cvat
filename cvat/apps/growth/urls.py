@@ -4,8 +4,7 @@
 
 from rest_framework import routers
 
-from .update_views import UpdatesViewSet
-from .views import UserGrowthDataViewSet
+from .views import UpdatesViewSet, UserGrowthDataViewSet
 
 router = routers.DefaultRouter(trailing_slash=False)
 router.register("growth", UserGrowthDataViewSet, basename="growth")
