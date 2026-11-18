@@ -140,7 +140,6 @@ export class CanvasViewImpl implements CanvasView, Listener {
 
     private set mode(value: Mode) {
         this.controller.mode = value;
-        this.canvas?.classList.toggle('cvat_canvas_selecting_objects', value === Mode.SELECT);
     }
 
     private get mode(): Mode {
@@ -2486,7 +2485,6 @@ export class CanvasViewImpl implements CanvasView, Listener {
         this.canvas.addEventListener('contextmenu', (event: MouseEvent): void => {
             if (this.mode !== Mode.SELECT || !this.selectedObjectsBox) return;
 
-            // The selection outline is click-through in Select mode, but keeps its context menu.
             const [x, y] = translateToSVG(this.content, [event.clientX, event.clientY]);
             const box = this.selectedObjectsBox.bbox();
             if (x >= box.x && x <= box.x2 && y >= box.y && y <= box.y2) {
@@ -4125,13 +4123,20 @@ export class CanvasViewImpl implements CanvasView, Listener {
         let moved = false;
 
         (this.selectedObjectsBox as any).draggable();
-        this.selectedObjectsBox.on('contextmenu', (event: MouseEvent): void => {
+        this.selectedObjectsBox.on('click', (event: MouseEvent): void => {
+            if (moved && this.mode === Mode.SELECT) {
+                event.preventDefault();
+                event.stopPropagation();
+            }
+            moved = false;
+        }).on('contextmenu', (event: MouseEvent): void => {
             event.preventDefault();
             event.stopPropagation();
             this.openSelectedObjectsMenu(event.clientX, event.clientY);
         }).on('beforedrag', (event: CustomEvent): void => {
             const sourceEvent = event.detail.event as MouseEvent;
-            sourceEvent.stopPropagation();
+            const startingSelection = this.mode === Mode.SELECT && this.isMultiSelectModifierPressed(sourceEvent);
+            if (!startingSelection) sourceEvent.stopPropagation();
             if (this.isMultiSelectModifierPressed(sourceEvent) ||
                 this.isMultiSelectObjectModifierPressed(sourceEvent) ||
                 !this.hasMovableSelectedObjects()) {
@@ -4216,7 +4221,6 @@ export class CanvasViewImpl implements CanvasView, Listener {
             }
 
             dragging = false;
-            moved = false;
             movableStates = [];
             previewShapes = [];
             startPointer = null;
