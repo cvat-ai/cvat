@@ -25,11 +25,19 @@ interface RawIssueData {
     end_frame?: number | null;
     object_id?: number | null;
     object_type?: ObjectType.SHAPE | ObjectType.TRACK | null;
+    view?: IssueView | null;
     id?: number;
     comments?: RawCommentData[];
     owner?: any;
     resolved?: boolean;
     created_date?: string;
+}
+
+export interface IssueView {
+    position: number[];
+    target: number[];
+    up: number[];
+    zoom: number;
 }
 
 export default class Issue {
@@ -39,6 +47,7 @@ export default class Issue {
     public readonly endFrame: number;
     public readonly objectID: number | null;
     public readonly objectType: ObjectType.SHAPE | ObjectType.TRACK | null;
+    public readonly view: IssueView | null;
     public readonly owner?: User;
     public readonly comments: Comment[];
     public readonly resolved?: boolean;
@@ -55,6 +64,7 @@ export default class Issue {
             end_frame: null,
             object_id: null,
             object_type: null,
+            view: null,
             created_date: undefined,
             owner: undefined,
             resolved: undefined,
@@ -109,6 +119,14 @@ export default class Issue {
                 },
                 objectType: {
                     get: () => data.object_type,
+                },
+                view: {
+                    get: () => (data.view ? {
+                        position: [...data.view.position],
+                        target: [...data.view.target],
+                        up: [...data.view.up],
+                        zoom: data.view.zoom,
+                    } : null),
                 },
                 createdDate: {
                     get: () => data.created_date,
@@ -181,6 +199,7 @@ export default class Issue {
             end_frame: this.endFrame === this.frame ? null : this.endFrame,
             object_id: this.objectID,
             object_type: this.objectType,
+            view: this.view,
         };
 
         if (typeof this.id === 'number') {

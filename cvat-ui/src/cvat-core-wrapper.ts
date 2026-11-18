@@ -178,3 +178,5 @@ export type {
     SerializedInterval,
     WebhookEvent,
 };
+
+export type { IssueView } from 'cvat-core/src/issue';

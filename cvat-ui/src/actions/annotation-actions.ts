@@ -1574,11 +1574,12 @@ export function rememberObject(createParams: {
     };
 }
 
-export function updateActiveControl(activeControl: ActiveControl): AnyAction {
+export function updateActiveControl(activeControl: ActiveControl, preserveSelection = false): AnyAction {
     return {
         type: AnnotationActionTypes.UPDATE_ACTIVE_CONTROL,
         payload: {
             activeControl,
+            preserveSelection,
         },
     };
 }

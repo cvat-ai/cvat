@@ -6,6 +6,7 @@
 import * as THREE from 'three';
 import { PCDLoader } from 'three/examples/jsm/loaders/PCDLoader';
 import CameraControls from 'camera-controls';
+import type { IssueView } from 'cvat-core/src/issue';
 import { Canvas3dController } from './canvas3dController';
 import { Listener, Master } from './master';
 import consts from './consts';
@@ -19,16 +20,26 @@ import {
 } from './cuboid';
 import { ObjectState, ObjectType } from '.';
 import { disposeScene } from './utils';
+import { IssueRegion, ISSUE_REGION_NAME } from './issueRegion';
 
 export interface Canvas3dView {
     html(): ViewsDOM;
     render(): void;
     keyControls(keys: KeyboardEvent): void;
     focusObjectByClientId(clientID: number, animate?: boolean): void;
-    pickPosition(clientX: number, clientY: number): number[] | null;
+    setupIssueRegions(regions: Record<number, IssueRegion>): void;
+    pick(clientX: number, clientY: number, view?: ViewType): PickResult | null;
+    pickPosition(clientX: number, clientY: number, view?: ViewType): number[] | null;
     projectPosition(position: number[], view: ViewType): [number, number] | null;
     focusPosition(position: number[]): void;
+    getReviewView(): IssueView | null;
+    restoreReviewView(view: IssueView): void;
     movePosition(position: number[], view: ViewType, from: [number, number], to: [number, number]): number[] | null;
+}
+
+export interface PickResult {
+    position: number[];
+    clientID: number | null;
 }
 
 export enum CameraAction {
@@ -134,27 +145,63 @@ export class Canvas3dViewImpl implements Canvas3dView, Listener {
         cuboid: CuboidModel;
     }>;
     private hoverNeedsUpdate: boolean;
+    private issueRegions: Record<number, IssueRegion> = {};
+    private redrawMaterial: THREE.MeshBasicMaterial | null = null;
 
-    public pickPosition(clientX: number, clientY: number): number[] | null {
-        const { camera, renderer, scene } = this.views.perspective;
+    public setupIssueRegions(regions: Record<number, IssueRegion>): void {
+        this.issueRegions = { ...regions };
+        Object.values(this.drawnObjects).forEach(({ cuboid, data }) => {
+            cuboid.setIssueRegion(this.issueRegions[data.clientID] ?? null);
+        });
+    }
+
+    public pick(clientX: number, clientY: number, view: ViewType = ViewType.PERSPECTIVE): PickResult | null {
+        const { camera, renderer, scene } = this.views[view];
         const rect = renderer.domElement.getBoundingClientRect();
-        if (!camera || !rect.width || !rect.height) return null;
+        if (!camera || !rect.width || !rect.height || clientX < rect.left || clientX > rect.right ||
+            clientY < rect.top || clientY > rect.bottom) return null;
 
         const raycaster = new THREE.Raycaster();
-        raycaster.setFromCamera(new THREE.Vector2(
+        const pointer = new THREE.Vector2(
             ((clientX - rect.left) / rect.width) * 2 - 1,
             -((clientY - rect.top) / rect.height) * 2 + 1,
-        ), camera);
-        const cuboidHit = raycaster.intersectObjects(this.getAllVisibleCuboids(), false)[0];
-        if (cuboidHit) return cuboidHit.point.toArray();
+        );
+        raycaster.setFromCamera(pointer, camera);
+        if (camera instanceof THREE.OrthographicCamera) {
+            // Start at the near plane, including when it is behind the camera.
+            // Side/front views clip the cloud to the selected cuboid's depth.
+            raycaster.ray.origin.copy(new THREE.Vector3(pointer.x, pointer.y, -1).unproject(camera));
+            raycaster.far = camera.far - camera.near;
+        }
+        const cuboidHit = raycaster.intersectObjects(this.getAllVisibleCuboids(view), false)[0];
+        if (cuboidHit) {
+            return {
+                position: cuboidHit.point.toArray(),
+                clientID: Number(cuboidHit.object.name),
+            };
+        }
 
         // Pick real cloud points, rather than inventing a depth for empty background.
-        raycaster.params.Points.threshold = Math.max(
-            this.sceneBBox.getSize(new THREE.Vector3()).length() * 0.002, 0.01,
-        );
+        // Keep orthographic picking within five screen pixels at any zoom level.
+        raycaster.params.Points.threshold = camera instanceof THREE.OrthographicCamera ?
+            Math.max((camera.right - camera.left) / rect.width, (camera.top - camera.bottom) / rect.height) *
+                (5 / camera.zoom) :
+            Math.max(this.sceneBBox.getSize(new THREE.Vector3()).length() * 0.002, 0.01);
         const clouds = scene.children.filter((child) => child instanceof THREE.Points && child.visible);
-        const pointHit = raycaster.intersectObjects(clouds, false)[0];
-        return pointHit ? pointHit.point.toArray() : null;
+        for (const pointHit of raycaster.intersectObjects(clouds, false)) {
+            const cloud = pointHit.object as THREE.Points;
+            const position = new THREE.Vector3().fromBufferAttribute(cloud.geometry.attributes.position, pointHit.index)
+                .applyMatrix4(cloud.matrixWorld);
+            const projected = position.clone().project(camera);
+            if (Math.abs(projected.x) <= 1 && Math.abs(projected.y) <= 1 && Math.abs(projected.z) <= 1) {
+                return { position: position.toArray(), clientID: null };
+            }
+        }
+        return null;
+    }
+
+    public pickPosition(clientX: number, clientY: number, view: ViewType = ViewType.PERSPECTIVE): number[] | null {
+        return this.pick(clientX, clientY, view)?.position ?? null;
     }
 
     public projectPosition(position: number[], view: ViewType): [number, number] | null {
@@ -185,6 +232,43 @@ export class Canvas3dViewImpl implements Canvas3dView, Listener {
             camera.position.add(anchor.sub(center));
             camera.updateMatrixWorld();
         });
+    }
+
+    public getReviewView(): IssueView | null {
+        const { camera, controls } = this.views.perspective;
+        if (!camera || !controls || controls.distance <= 0) return null;
+        // Capture the rendered view, including any in-progress camera movement.
+        // The public controls getters return the destination of a transition.
+        const target = camera.position.clone().addScaledVector(
+            camera.getWorldDirection(new THREE.Vector3()), controls.distance,
+        );
+        return {
+            position: camera.position.toArray(),
+            target: target.toArray(),
+            up: camera.up.toArray(),
+            zoom: camera.zoom,
+        };
+    }
+
+    public restoreReviewView(view: IssueView): void {
+        const { camera, controls } = this.views.perspective;
+        if (!camera || !controls || !view ||
+            ![view.position, view.target, view.up].every((vector) => (
+                Array.isArray(vector) && vector.length === 3 && vector.every(Number.isFinite)
+            )) || !Number.isFinite(view.zoom) || view.zoom <= 0 ||
+            view.position.every((value, index) => value === view.target[index]) ||
+            !view.up.some((value) => value)) return;
+        camera.up.set(...view.up as [number, number, number]).normalize();
+        controls.updateCameraUp();
+        controls.setFocalOffset(0, 0, 0, false);
+        controls.setLookAt(
+            view.position[0], view.position[1], view.position[2],
+            view.target[0], view.target[1], view.target[2], false,
+        );
+        controls.zoomTo(view.zoom, false);
+        controls.update(0);
+        camera.updateProjectionMatrix();
+        camera.updateMatrixWorld();
     }
 
     public movePosition(
@@ -1119,6 +1203,7 @@ export class Canvas3dViewImpl implements Canvas3dView, Listener {
     }
 
     private completeActions(): void {
+        if (this.mode === Mode.SELECT_REGION) return;
         const { scan, detected } = this.action;
         if (this.model.data.activeElement.clientID === null) return;
         if (!detected) {
@@ -1279,6 +1364,7 @@ export class Canvas3dViewImpl implements Canvas3dView, Listener {
         cuboid.setRotation(state.points[3], state.points[4], state.points[5]);
         cuboid.attachCameraReference();
         cuboid.setOrientationVisibility(orientationVisibility);
+        cuboid.setIssueRegion(this.issueRegions[state.clientID] ?? null);
 
         cuboid[ViewType.PERSPECTIVE].visible = !(state.hidden || state.outside);
         for (const view of BOTTOM_VIEWS) {
@@ -1620,6 +1706,12 @@ export class Canvas3dViewImpl implements Canvas3dView, Listener {
                 if (this.drawnObjects[data.redraw]?.cuboid?.perspective?.visible) {
                     const { cuboid } = this.drawnObjects[data.redraw];
                     this.cube.perspective = cuboid.perspective.clone() as THREE.Mesh;
+                    // Review highlighting belongs to the source annotation, not its drawing preview.
+                    this.cube.perspective.getObjectByName(ISSUE_REGION_NAME)?.removeFromParent();
+                    const material = (cuboid.perspective.material as THREE.MeshBasicMaterial).clone();
+                    material.colorWrite = true;
+                    this.cube.perspective.material = material;
+                    this.redrawMaterial = material;
                     cuboid.perspective.visible = false;
                 } else {
                     // an object must be drawn and visible to be redrawn
@@ -1666,6 +1758,8 @@ export class Canvas3dViewImpl implements Canvas3dView, Listener {
             }
 
             if (this.mode === Mode.DRAW) {
+                this.redrawMaterial?.dispose();
+                this.redrawMaterial = null;
                 this.controller.drawData.enabled = false;
                 const { redraw } = this.controller.drawData;
                 if (Number.isInteger(redraw)) {

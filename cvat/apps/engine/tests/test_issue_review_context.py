@@ -2,6 +2,8 @@
 #
 # SPDX-License-Identifier: MIT
 
+from types import SimpleNamespace
+
 from django.test import TestCase
 
 from cvat.apps.engine import models
@@ -38,7 +40,65 @@ class IssueReviewContextTest(TestCase):
         self.assertIsNone(issue.end_frame)
         self.assertIsNone(issue.object_id)
         self.assertIsNone(issue.object_type)
+        self.assertIsNone(issue.view)
         self.assertEqual(issue.comments.get().message, "Check this object")
+
+    def camera_view(self, **changes):
+        return {
+            "position": [10, -5, 8],
+            "target": [0, 0, 1],
+            "up": [0, 0, 1],
+            "zoom": 1.5,
+            **changes,
+        }
+
+    def test_review_view_persists_through_issue_updates(self):
+        view = self.camera_view()
+        serializer = IssueWriteSerializer(data=self.issue_data(view=view))
+        self.assertTrue(serializer.is_valid(), serializer.errors)
+        issue = serializer.save()
+        issue.refresh_from_db()
+        self.assertEqual(IssueReadSerializer(issue).data["view"], view)
+
+        update = IssueWriteSerializer(
+            issue,
+            data={"position": [2, 3, 4], "resolved": True, "view": self.camera_view(zoom=2)},
+            partial=True,
+            context={"view": SimpleNamespace(action="partial_update")},
+        )
+        self.assertTrue(update.is_valid(), update.errors)
+        update.save()
+        issue.refresh_from_db()
+        self.assertEqual(issue.view, view)
+        self.assertEqual(list(issue.position), [2, 3, 4])
+        self.assertTrue(issue.resolved)
+
+    def test_invalid_camera_views(self):
+        for view in [
+            {},
+            self.camera_view(position=[1, 2]),
+            self.camera_view(target=[0, 0, 0, 1]),
+            self.camera_view(position=[0, 0, 1]),
+            self.camera_view(up=[0, 0, 0]),
+            self.camera_view(zoom=0),
+            self.camera_view(zoom=-1),
+            self.camera_view(zoom=float("inf")),
+            self.camera_view(position=[float("nan"), 0, 1]),
+        ]:
+            with self.subTest(view=view):
+                serializer = IssueWriteSerializer(data=self.issue_data(view=view))
+                self.assertFalse(serializer.is_valid())
+                self.assertIn("view", serializer.errors)
+
+    def test_2d_issues_do_not_accept_3d_camera_views(self):
+        task = self.job.segment.task
+        task.dimension = "2d"
+        task.save(update_fields=["dimension"])
+        legacy = IssueWriteSerializer(data=self.issue_data(view=None))
+        self.assertTrue(legacy.is_valid(), legacy.errors)
+        invalid = IssueWriteSerializer(data=self.issue_data(view=self.camera_view()))
+        self.assertFalse(invalid.is_valid())
+        self.assertIn("view", invalid.errors)
 
     def test_shape_and_track_context_round_trip(self):
         for object_type, annotation in [("shape", self.shape), ("track", self.track)]:

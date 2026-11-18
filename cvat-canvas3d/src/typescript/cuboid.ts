@@ -8,6 +8,7 @@ import { OrientationVisibility, ViewType } from './canvas3dModel';
 import constants from './consts';
 import getCircleTexture from './controlPointTexture';
 import { disposeObject3D, disposeObjectResources } from './utils';
+import { IssueRegion, setIssueRegion } from './issueRegion';
 
 export interface Indexable {
     [key: string]: any;
@@ -242,6 +243,17 @@ export class CuboidModel {
     public setOpacity(opacity: number): void {
         [ViewType.PERSPECTIVE, ViewType.TOP, ViewType.SIDE, ViewType.FRONT].forEach((view): void => {
             ((this as Indexable)[view].material as THREE.MeshBasicMaterial).opacity = opacity / 100;
+        });
+    }
+
+    public setIssueRegion(region: IssueRegion | null): void {
+        if (this.perspective) {
+            // All views share this material. Let the issue overlay provide the fill
+            // without blending it with the annotation's normal label color.
+            (this.perspective.material as THREE.MeshBasicMaterial).colorWrite = !region;
+        }
+        [ViewType.PERSPECTIVE, ViewType.TOP, ViewType.SIDE, ViewType.FRONT].forEach((view): void => {
+            setIssueRegion(this[view], region);
         });
     }
 

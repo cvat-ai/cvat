@@ -5,6 +5,7 @@
 
 from __future__ import annotations
 
+import math
 import mimetypes
 import os
 import re
@@ -4508,10 +4509,26 @@ class CommentWriteSerializer(WriteOnceMixin, serializers.ModelSerializer):
         write_once_fields = ("issue",)
 
 
+class IssueViewSerializer(serializers.Serializer):
+    position = serializers.ListField(child=serializers.FloatField(), min_length=3, max_length=3)
+    target = serializers.ListField(child=serializers.FloatField(), min_length=3, max_length=3)
+    up = serializers.ListField(child=serializers.FloatField(), min_length=3, max_length=3)
+    zoom = serializers.FloatField()
+
+    def validate(self, attrs):
+        values = [*attrs["position"], *attrs["target"], *attrs["up"], attrs["zoom"]]
+        if not all(math.isfinite(value) for value in values):
+            raise serializers.ValidationError("Camera values must be finite.")
+        if attrs["position"] == attrs["target"] or not any(attrs["up"]) or attrs["zoom"] <= 0:
+            raise serializers.ValidationError("Invalid camera view.")
+        return attrs
+
+
 class IssueReadSerializer(serializers.ModelSerializer):
     owner = BasicUserSerializer(allow_null=True, required=False)
     assignee = BasicUserSerializer(allow_null=True, required=False)
     position = serializers.ListField(child=serializers.FloatField(), allow_empty=False)
+    view = IssueViewSerializer(read_only=True, allow_null=True)
     comments = CommentsSummarySerializer(models.Comment, url_filter_key="issue_id")
 
     class Meta:
@@ -4523,6 +4540,7 @@ class IssueReadSerializer(serializers.ModelSerializer):
             "object_id",
             "object_type",
             "position",
+            "view",
             "job",
             "owner",
             "assignee",
@@ -4544,12 +4562,20 @@ class IssueWriteSerializer(WriteOnceMixin, serializers.ModelSerializer):
         allow_empty=False,
     )
     message = serializers.CharField(style={"base_template": "textarea.html"})
+    view = IssueViewSerializer(required=False, allow_null=True)
 
     def validate(self, attrs):
         attrs = super().validate(attrs)
         instance = self.instance
         job = attrs.get("job", instance.job if instance else None)
         frame = attrs.get("frame", instance.frame if instance else None)
+        if (
+            attrs.get("view") is not None
+            and job.segment.task.dimension != models.DimensionType.DIM_3D
+        ):
+            raise serializers.ValidationError(
+                {"view": "Camera views are only supported for 3D issues."}
+            )
         end_frame = attrs.get("end_frame", instance.end_frame if instance else None)
         if end_frame is not None and (not instance or "end_frame" in attrs):
             if not job.segment.start_frame <= frame <= end_frame <= job.segment.stop_frame:
@@ -4590,12 +4616,13 @@ class IssueWriteSerializer(WriteOnceMixin, serializers.ModelSerializer):
             "object_id",
             "object_type",
             "position",
+            "view",
             "job",
             "assignee",
             "message",
             "resolved",
         )
-        write_once_fields = ("frame", "job", "message")
+        write_once_fields = ("frame", "job", "message", "view")
 
 
 class ManifestSerializer(serializers.ModelSerializer):

@@ -1759,6 +1759,7 @@ class Issue(TimestampedModel, AssignableModel):
         max_length=5, choices=(("shape", "Shape"), ("track", "Track")), null=True, blank=True
     )
     position = FloatArrayField()
+    view = models.JSONField(null=True, blank=True)
     job = models.ForeignKey(
         Job, related_name="issues", related_query_name="issue", on_delete=models.CASCADE
     )

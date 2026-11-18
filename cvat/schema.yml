@@ -9501,6 +9501,11 @@ components:
           items:
             type: number
             format: double
+        view:
+          allOf:
+          - $ref: '#/components/schemas/IssueView'
+          readOnly: true
+          nullable: true
         job:
           type: integer
           readOnly: true
@@ -9530,6 +9535,70 @@ components:
       required:
       - comments
       - position
+    IssueView:
+      type: object
+      properties:
+        position:
+          type: array
+          items:
+            type: number
+            format: double
+          maxItems: 3
+          minItems: 3
+        target:
+          type: array
+          items:
+            type: number
+            format: double
+          maxItems: 3
+          minItems: 3
+        up:
+          type: array
+          items:
+            type: number
+            format: double
+          maxItems: 3
+          minItems: 3
+        zoom:
+          type: number
+          format: double
+      required:
+      - position
+      - target
+      - up
+      - zoom
+    IssueViewRequest:
+      type: object
+      properties:
+        position:
+          type: array
+          items:
+            type: number
+            format: double
+          maxItems: 3
+          minItems: 3
+        target:
+          type: array
+          items:
+            type: number
+            format: double
+          maxItems: 3
+          minItems: 3
+        up:
+          type: array
+          items:
+            type: number
+            format: double
+          maxItems: 3
+          minItems: 3
+        zoom:
+          type: number
+          format: double
+      required:
+      - position
+      - target
+      - up
+      - zoom
     IssueWriteRequest:
       type: object
       properties:
@@ -9559,6 +9628,10 @@ components:
           items:
             type: number
             format: double
+        view:
+          allOf:
+          - $ref: '#/components/schemas/IssueViewRequest'
+          nullable: true
         job:
           type: integer
         assignee:

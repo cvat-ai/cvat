@@ -67,7 +67,7 @@ function dispatchToProps(dispatch: any): DispatchToProps {
             dispatch(resetAnnotationsGroup());
         },
         updateActiveControl(activeControl: ActiveControl): void {
-            dispatch(updateActiveControlAction(activeControl));
+            dispatch(updateActiveControlAction(activeControl, activeControl === ActiveControl.OPEN_ISSUE));
         },
     };
 }

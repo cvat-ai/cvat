@@ -40,10 +40,6 @@
 
 .cvat-create-issue-dialog-3d {
     width: $grid-unit-size * 40;
-
-    .ant-input-number {
-        width: 100%;
-    }
 }
 
 .cvat-issue-context {
@@ -51,7 +47,8 @@
     flex-direction: column;
     margin-bottom: $grid-unit-size;
 
-    .cvat-issue-select-object {
+    .cvat-issue-select-object,
+    .cvat-issue-restore-view {
         padding: 0;
         text-align: left;
         height: auto;
@@ -148,11 +145,16 @@
     position: fixed;
     inset: 0;
     pointer-events: none;
-    z-index: 100;
+
+    // Keep review content above the canvas and below workspace menus and dialogs.
+    z-index: 1;
 }
 
 .cvat-canvas3d-issues-view {
     position: absolute;
+
+    // Contain label stacking so issue discussions always appear above them.
+    z-index: 0;
     overflow: hidden;
     pointer-events: none;
 

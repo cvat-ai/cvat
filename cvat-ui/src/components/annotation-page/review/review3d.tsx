@@ -7,13 +7,17 @@ import React, {
     ReactNode, useEffect, useRef, useState,
 } from 'react';
 import { useDispatch, useSelector } from 'react-redux';
-import { CombinedState, ActiveControl, NewIssueSource } from 'reducers';
+import {
+    CombinedState, ActiveControl, ContextMenuType, NewIssueSource, Workspace,
+} from 'reducers';
 import { Canvas3d, ViewType } from 'cvat-canvas3d-wrapper';
-import { Issue } from 'cvat-core-wrapper';
+import { Issue, ObjectType, ShapeType } from 'cvat-core-wrapper';
 import {
     commentIssueAsync, moveIssueAsync, reopenIssueAsync, resolveIssueAsync, reviewActions,
 } from 'actions/review-actions';
-import { switchNavigationBlocked, updateActiveControl } from 'actions/annotation-actions';
+import {
+    activateObject, switchNavigationBlocked, updateActiveControl, updateCanvasContextMenu,
+} from 'actions/annotation-actions';
 import { ThunkDispatch, shallowEqual } from 'utils/redux';
 import { useIsMounted } from 'utils/hooks';
 import CreateIssueDialog from './create-issue-dialog';
@@ -64,9 +68,9 @@ function ViewOverlay({ canvasRect, children }: {
 export default function Review3D(): JSX.Element {
     const dispatch = useDispatch<ThunkDispatch>();
     const {
-        canvas, ready, activeControl, issues, newPosition, newSource,
+        canvas, ready, activeControl, issues, newPosition, newSource, newObjectClientID,
         hidden, resolvedHidden, activeIssueId, highlightedIssueId, fetching,
-        frame, job, navigationBlocked,
+        frame, job, navigationBlocked, objects, workspace,
     } = useSelector((state: CombinedState) => ({
         canvas: state.annotation.canvas.instance as Canvas3d,
         ready: state.annotation.canvas.ready,
@@ -74,6 +78,7 @@ export default function Review3D(): JSX.Element {
         issues: state.review.frameIssues as Issue[],
         newPosition: state.review.newIssue.position,
         newSource: state.review.newIssue.source,
+        newObjectClientID: state.review.newIssue.objectClientID,
         hidden: state.review.issuesHidden,
         resolvedHidden: state.review.issuesResolvedHidden,
         activeIssueId: state.review.activeIssueId,
@@ -82,16 +87,54 @@ export default function Review3D(): JSX.Element {
         frame: state.annotation.player.frame.number,
         job: state.annotation.job.instance,
         navigationBlocked: state.annotation.player.navigationBlocked,
+        objects: state.annotation.annotations.states,
+        workspace: state.annotation.workspace,
     }), shallowEqual);
     const [dialogContainer, setDialogContainer] = useState<HTMLDivElement | null>(null);
     const [placements, setPlacements] = useState<Placement[]>([]);
     const lastDialogPlacement = useRef<Placement | null>(null);
     const [creating, setCreating] = useState(false);
+    const [draftView, setDraftView] = useState(ViewType.PERSPECTIVE);
+    const [hoveredResolvedIssueId, setHoveredResolvedIssueId] = useState<number | null>(null);
     const [preview, setPreview] = useState<{ drag: MarkerDrag; position: number[] } | null>(null);
     const dragRef = useRef<MarkerDrag | null>(null);
     const navigationOwner = useRef<MarkerDrag | null>(null);
     const suppressClick = useRef({ id: -1, until: 0 });
     const isMounted = useIsMounted();
+
+    useEffect(() => {
+        if (!newPosition) setDraftView(ViewType.PERSPECTIVE);
+    }, [newPosition]);
+
+    useEffect(() => {
+        setHoveredResolvedIssueId(null);
+    }, [frame, job]);
+
+    useEffect(() => {
+        const regions: Record<number, { highlighted: boolean }> = {};
+        if (ready && !hidden) {
+            for (const issue of issues) {
+                const highlighted = issue.id === highlightedIssueId;
+                if (issue.objectID === null || (issue.resolved &&
+                    (resolvedHidden || (!highlighted && issue.id !== hoveredResolvedIssueId)))) continue;
+                const object = objects.find((candidate) => !candidate.isGroundTruth && !candidate.outside &&
+                    !candidate.hidden && candidate.shapeType === ShapeType.CUBOID &&
+                    candidate.serverID === issue.objectID && candidate.objectType === issue.objectType);
+                if (object) {
+                    regions[object.clientID] = { highlighted: highlighted || !!regions[object.clientID]?.highlighted };
+                }
+            }
+        }
+        if (ready && newPosition && newObjectClientID !== null) {
+            regions[newObjectClientID] = regions[newObjectClientID] || { highlighted: false };
+        }
+        canvas.setupIssueRegions(regions);
+    }, [
+        canvas, ready, issues, objects, hidden, resolvedHidden, highlightedIssueId, hoveredResolvedIssueId,
+        newPosition, newObjectClientID,
+    ]);
+
+    useEffect(() => () => canvas.setupIssueRegions({}), [canvas]);
 
     const beginDrag = (event: React.PointerEvent<HTMLElement>, id: number, view: ViewType): void => {
         if (event.button !== 0 || view === ViewType.PERSPECTIVE || !ready || creating || fetching ||
@@ -163,6 +206,7 @@ export default function Review3D(): JSX.Element {
         const onKeyDown = (event: KeyboardEvent): void => {
             if (event.key === 'Escape' && dragRef.current) {
                 event.preventDefault();
+                event.stopPropagation();
                 cancel();
             }
         };
@@ -170,13 +214,14 @@ export default function Review3D(): JSX.Element {
         window.addEventListener('pointerup', up);
         window.addEventListener('pointercancel', cancel);
         window.addEventListener('blur', cancel);
-        window.addEventListener('keydown', onKeyDown);
+        // Cancel the drag before workspace shortcuts can consume Escape.
+        window.addEventListener('keydown', onKeyDown, true);
         return () => {
             window.removeEventListener('pointermove', move);
             window.removeEventListener('pointerup', up);
             window.removeEventListener('pointercancel', cancel);
             window.removeEventListener('blur', cancel);
-            window.removeEventListener('keydown', onKeyDown);
+            window.removeEventListener('keydown', onKeyDown, true);
             dragRef.current = null;
             setPreview(null);
             if (navigationOwner.current) releaseNavigation(navigationOwner.current);
@@ -185,10 +230,12 @@ export default function Review3D(): JSX.Element {
 
     useEffect(() => {
         if (!ready) return undefined;
-        const { perspective } = canvas.html();
+        const views = canvas.html();
+        let sourceView: ViewType | null = null;
         let start: [number, number] | null = null;
         let dragged = false;
-        const onPointerDown = (event: MouseEvent): void => {
+        const onPointerDown = (view: ViewType, event: MouseEvent): void => {
+            sourceView = view;
             start = event.button === 0 ? [event.clientX, event.clientY] : null;
             dragged = false;
         };
@@ -197,27 +244,57 @@ export default function Review3D(): JSX.Element {
                 dragged = true;
             }
         };
-        const onClick = (event: MouseEvent): void => {
+        const onClick = (view: ViewType, event: MouseEvent): void => {
             const origin = start;
             start = null;
-            if (activeControl !== ActiveControl.OPEN_ISSUE || !origin || dragged ||
+            if (view === ViewType.PERSPECTIVE || activeControl !== ActiveControl.OPEN_ISSUE ||
+                sourceView !== view || !origin || dragged ||
                 Math.hypot(event.clientX - origin[0], event.clientY - origin[1]) > 5) return;
-            const position = canvas.pickPosition(event.clientX, event.clientY);
-            if (position) {
+            const pick = canvas.pick(event.clientX, event.clientY, view);
+            if (pick) {
                 canvas.selectRegion(false);
-                dispatch(updateActiveControl(ActiveControl.CURSOR));
-                dispatch(reviewActions.startIssue(position));
+                setDraftView(view);
+                dispatch(updateActiveControl(ActiveControl.CURSOR, true));
+                dispatch(reviewActions.startIssue(
+                    pick.position, NewIssueSource.ISSUE_TOOL, null, canvas.getReviewView(),
+                ));
             }
         };
-        perspective.addEventListener('mousedown', onPointerDown);
-        window.addEventListener('mousemove', onPointerMove);
-        perspective.addEventListener('click', onClick);
-        return () => {
-            perspective.removeEventListener('mousedown', onPointerDown);
-            window.removeEventListener('mousemove', onPointerMove);
-            perspective.removeEventListener('click', onClick);
+        const onContextMenu = (view: ViewType, event: MouseEvent): void => {
+            if (workspace !== Workspace.REVIEW) return;
+            event.preventDefault();
+            event.stopImmediatePropagation();
+            if (activeControl !== ActiveControl.CURSOR || navigationBlocked) return;
+            const pick = canvas.pick(event.clientX, event.clientY, view);
+            const object = objects.find((candidate) => candidate.clientID === pick?.clientID &&
+                !candidate.isGroundTruth && !candidate.outside && !candidate.hidden &&
+                candidate.shapeType === ShapeType.CUBOID &&
+                [ObjectType.SHAPE, ObjectType.TRACK].includes(candidate.objectType));
+            dispatch(activateObject(object?.clientID ?? null, null, null));
+            setDraftView(view);
+            dispatch(updateCanvasContextMenu(
+                !!object, event.clientX, event.clientY, null, ContextMenuType.CANVAS_SHAPE,
+            ));
         };
-    }, [canvas, ready, activeControl]);
+        const listeners = Object.values(ViewType).map((view) => {
+            const down = (event: MouseEvent): void => onPointerDown(view, event);
+            const click = (event: MouseEvent): void => onClick(view, event);
+            const contextMenu = (event: MouseEvent): void => onContextMenu(view, event);
+            views[view].addEventListener('mousedown', down);
+            views[view].addEventListener('click', click);
+            views[view].addEventListener('contextmenu', contextMenu, true);
+            return () => {
+                views[view].removeEventListener('mousedown', down);
+                views[view].removeEventListener('click', click);
+                views[view].removeEventListener('contextmenu', contextMenu, true);
+            };
+        });
+        window.addEventListener('mousemove', onPointerMove);
+        return () => {
+            listeners.forEach((remove) => remove());
+            window.removeEventListener('mousemove', onPointerMove);
+        };
+    }, [canvas, ready, activeControl, objects, workspace, navigationBlocked]);
 
     useEffect(() => {
         if (!ready) {
@@ -275,14 +352,31 @@ export default function Review3D(): JSX.Element {
 
     const visibleIssues = hidden ? [] : issues.filter((issue) => !resolvedHidden || !issue.resolved);
     const activeIssue = visibleIssues.find((issue) => issue.id === activeIssueId);
+    useEffect(() => {
+        if (!ready || !activeIssue || activeControl !== ActiveControl.CURSOR) return;
+        const object = activeIssue.objectID === null ? null : objects.find((candidate) => (
+            !candidate.isGroundTruth && !candidate.outside && !candidate.hidden &&
+            candidate.shapeType === ShapeType.CUBOID && candidate.serverID === activeIssue.objectID &&
+            candidate.objectType === activeIssue.objectType
+        ));
+        // Reuse selection so the linked cuboid is highlighted in every 3D view.
+        dispatch(activateObject(object?.clientID ?? null, null, null));
+    }, [activeIssue, activeControl, objects, ready]);
+
     const dialogId = newPosition ? 0 : activeIssueId;
+    const preferredView = newPosition ? draftView : ViewType.PERSPECTIVE;
     const activePlacement = placements.find(({ id, view, expanded }) => (
-        id === dialogId && (view === ViewType.PERSPECTIVE || expanded)
+        id === dialogId && (view === preferredView || expanded)
     ));
     useEffect(() => {
         if (activePlacement) lastDialogPlacement.current = activePlacement;
     }, [activePlacement]);
     const dialogPlacement = activePlacement || lastDialogPlacement.current;
+    // The creation form can be taller or wider than a docked orthographic pane.
+    // Allow it to extend over the grid while keeping its anchor in the clicked view.
+    const draftBounds = newPosition && dialogPlacement && !dialogPlacement.expanded &&
+        dialogPlacement.view !== ViewType.PERSPECTIVE ?
+        canvas.html()[dialogPlacement.view].closest('.cvat-canvas-grid-root')?.getBoundingClientRect() : null;
     const dialogPosition = dialogPlacement && {
         container: dialogContainer,
         top: dialogPlacement.y + 15,
@@ -290,9 +384,15 @@ export default function Review3D(): JSX.Element {
         angle: 0,
         scale: 1,
         clientCoordinates: [dialogPlacement.x + 15, dialogPlacement.y + 15] as [number, number],
-        canvasRect: dialogPlacement.canvasRect,
+        canvasRect: draftBounds || dialogPlacement.canvasRect,
     };
     const showRegion = (issue: Issue, show: boolean): void => {
+        if (issue.resolved) {
+            setHoveredResolvedIssueId((current) => {
+                if (show) return issue.id;
+                return current === issue.id ? null : current;
+            });
+        }
         window.document.querySelectorAll<HTMLElement>(
             `.cvat-canvas3d-issue-region[data-issue-id="${issue.id}"]`,
         ).forEach((element) => {

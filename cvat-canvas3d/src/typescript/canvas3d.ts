@@ -3,6 +3,7 @@
 //
 // SPDX-License-Identifier: MIT
 
+import type { IssueView } from 'cvat-core/src/issue';
 import { Canvas3dController, Canvas3dControllerImpl } from './canvas3dController';
 import {
     Canvas3dModel,
@@ -17,9 +18,10 @@ import {
     MergeData,
 } from './canvas3dModel';
 import {
-    Canvas3dView, Canvas3dViewImpl, ViewsDOM, CameraAction,
+    Canvas3dView, Canvas3dViewImpl, ViewsDOM, CameraAction, PickResult,
 } from './canvas3dView';
 import { Master } from './master';
+import type { IssueRegion } from './issueRegion';
 
 interface Canvas3d {
     html(): ViewsDOM;
@@ -36,10 +38,14 @@ interface Canvas3d {
     fitCanvas(): void;
     fit(): void;
     focus(clientID: number): void;
+    setupIssueRegions(regions: Record<number, IssueRegion>): void;
     selectRegion(enabled: boolean): void;
-    pickPosition(clientX: number, clientY: number): number[] | null;
+    pick(clientX: number, clientY: number, view?: ViewType): PickResult | null;
+    pickPosition(clientX: number, clientY: number, view?: ViewType): number[] | null;
     projectPosition(position: number[], view: ViewType): [number, number] | null;
     focusPosition(position: number[]): void;
+    getReviewView(): IssueView | null;
+    restoreReviewView(view: IssueView): void;
     movePosition(position: number[], view: ViewType, from: [number, number], to: [number, number]): number[] | null;
     group(groupData: GroupData): void;
     merge(mergeData: MergeData): void;
@@ -118,12 +124,20 @@ class Canvas3dImpl implements Canvas3d {
         this.view.focusObjectByClientId(clientID, true);
     }
 
+    public setupIssueRegions(regions: Record<number, IssueRegion>): void {
+        this.view.setupIssueRegions(regions);
+    }
+
     public selectRegion(enabled: boolean): void {
         this.model.mode = enabled ? Mode.SELECT_REGION : Mode.IDLE;
     }
 
-    public pickPosition(clientX: number, clientY: number): number[] | null {
-        return this.view.pickPosition(clientX, clientY);
+    public pick(clientX: number, clientY: number, view: ViewType = ViewType.PERSPECTIVE): PickResult | null {
+        return this.view.pick(clientX, clientY, view);
+    }
+
+    public pickPosition(clientX: number, clientY: number, view: ViewType = ViewType.PERSPECTIVE): number[] | null {
+        return this.view.pickPosition(clientX, clientY, view);
     }
 
     public projectPosition(position: number[], view: ViewType): [number, number] | null {
@@ -132,6 +146,14 @@ class Canvas3dImpl implements Canvas3d {
 
     public focusPosition(position: number[]): void {
         this.view.focusPosition(position);
+    }
+
+    public getReviewView(): IssueView | null {
+        return this.view.getReviewView();
+    }
+
+    public restoreReviewView(view: IssueView): void {
+        this.view.restoreReviewView(view);
     }
 
     public movePosition(
@@ -158,4 +180,4 @@ export {
     Canvas3dImpl as Canvas3d, ViewType, MouseInteraction, CameraAction, Mode as CanvasMode,
 };
 
-export type { ViewsDOM };
+export type { ViewsDOM, PickResult };

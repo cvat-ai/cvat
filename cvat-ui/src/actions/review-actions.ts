@@ -5,7 +5,7 @@
 
 import { ActionUnion, createAction, ThunkAction } from 'utils/redux';
 import {
-    getCore, Issue, ObjectType, ObjectState,
+    getCore, Issue, IssueView, ObjectType, ObjectState,
 } from 'cvat-core-wrapper';
 import { NewIssueSource } from 'reducers';
 import { saveAnnotationsAsync } from './annotation-actions';
@@ -44,9 +44,12 @@ export enum ReviewActionTypes {
 
 export const reviewActions = {
     createIssue: () => createAction(ReviewActionTypes.CREATE_ISSUE, {}),
-    startIssue: (position: number[], source = NewIssueSource.ISSUE_TOOL, objectClientID: number | null = null) => (
+    startIssue: (
+        position: number[], source = NewIssueSource.ISSUE_TOOL,
+        objectClientID: number | null = null, view: IssueView | null = null,
+    ) => (
         createAction(ReviewActionTypes.START_ISSUE, {
-            position: cvat.classes.Issue.hull(position), source, objectClientID,
+            position: cvat.classes.Issue.hull(position), source, objectClientID, view,
         })
     ),
     selectIssue: (issueId: number | null) => createAction(ReviewActionTypes.SELECT_ISSUE, { issueId }),
@@ -98,15 +101,7 @@ export const moveIssueAsync = (issue: Issue, position: number[]): ThunkAction =>
     }
 };
 
-export interface NewIssueContext {
-    objectClientID?: number | null;
-    startFrame?: number;
-    endFrame?: number;
-}
-
-export const finishIssueAsync = (message: string, context: NewIssueContext = {}): ThunkAction => async (
-    dispatch, getState,
-) => {
+export const finishIssueAsync = (message: string): ThunkAction => async (dispatch, getState) => {
     const state = getState();
     const {
         annotation: {
@@ -120,13 +115,13 @@ export const finishIssueAsync = (message: string, context: NewIssueContext = {})
         review: {
             newIssue: {
                 position: newIssuePosition,
-                objectClientID: defaultObjectClientID,
+                objectClientID,
+                view,
             },
         },
     } = state;
 
     try {
-        const objectClientID = context.objectClientID === undefined ? defaultObjectClientID : context.objectClientID;
         let object: ObjectState | null = null;
         if (objectClientID !== null) {
             const findObject = async (): Promise<ObjectState | undefined> => (
@@ -147,11 +142,12 @@ export const finishIssueAsync = (message: string, context: NewIssueContext = {})
         if (object) objectType = object.objectType === ObjectType.TRACK ? ObjectType.TRACK : ObjectType.SHAPE;
         const issue = new cvat.classes.Issue({
             job: jobInstance.id,
-            frame: context.startFrame ?? frameNumber,
-            end_frame: context.endFrame ?? null,
+            frame: frameNumber,
+            end_frame: null,
             object_id: object?.serverID ?? null,
             object_type: objectType,
             position: newIssuePosition,
+            view,
         });
 
         const savedIssue = await jobInstance.openIssue(issue, message);

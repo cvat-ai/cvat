@@ -8,6 +8,7 @@ import { AnnotationActionTypes } from 'actions/annotation-actions';
 import { ReviewActionTypes } from 'actions/review-actions';
 import { AuthActionTypes } from 'actions/auth-actions';
 import { QualityConflict, DimensionType } from 'cvat-core-wrapper';
+import { isQuickIssuePresetMessage } from 'utils/review/quick-issues';
 import { ReviewState } from '.';
 
 const defaultState: ReviewState = {
@@ -22,6 +23,7 @@ const defaultState: ReviewState = {
         position: null,
         source: null,
         objectClientID: null,
+        view: null,
     },
     issuesHidden: false,
     issuesResolvedHidden: false,
@@ -74,6 +76,7 @@ export default function (state: ReviewState = defaultState, action: any): Review
                     position: null,
                     source: null,
                     objectClientID: null,
+                    view: null,
                 },
             };
         }
@@ -113,7 +116,9 @@ export default function (state: ReviewState = defaultState, action: any): Review
             };
         }
         case ReviewActionTypes.START_ISSUE: {
-            const { position, source, objectClientID } = action.payload;
+            const {
+                position, source, objectClientID, view,
+            } = action.payload;
             return {
                 ...state,
                 activeIssueId: null,
@@ -122,6 +127,7 @@ export default function (state: ReviewState = defaultState, action: any): Review
                     position,
                     source,
                     objectClientID,
+                    view,
                 },
             };
         }
@@ -139,10 +145,7 @@ export default function (state: ReviewState = defaultState, action: any): Review
                     Array.from(
                         new Set(
                             [...state.latestComments, issue.comments[0].message].filter(
-                                (message: string): boolean => ![
-                                    config.QUICK_ISSUE_INCORRECT_POSITION_TEXT,
-                                    config.QUICK_ISSUE_INCORRECT_ATTRIBUTE_TEXT,
-                                ].includes(message),
+                                (message: string): boolean => !isQuickIssuePresetMessage(message),
                             ),
                         ),
                     ).slice(-config.LATEST_COMMENTS_SHOWN_QUICK_ISSUE),
@@ -152,6 +155,7 @@ export default function (state: ReviewState = defaultState, action: any): Review
                     position: null,
                     source: null,
                     objectClientID: null,
+                    view: null,
                 },
             };
         }

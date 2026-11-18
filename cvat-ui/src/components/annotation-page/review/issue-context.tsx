@@ -9,7 +9,7 @@ import Text from 'antd/lib/typography/Text';
 import { activateObject } from 'actions/annotation-actions';
 import { Canvas3d } from 'cvat-canvas3d-wrapper';
 import { DimensionType, Issue, ObjectType } from 'cvat-core-wrapper';
-import { CombinedState } from 'reducers';
+import { ActiveControl, CombinedState } from 'reducers';
 import { shallowEqual } from 'utils/redux';
 
 export default function IssueContext({ issue, interactive = false }: {
@@ -17,10 +17,15 @@ export default function IssueContext({ issue, interactive = false }: {
     interactive?: boolean;
 }): JSX.Element | null {
     const dispatch = useDispatch();
-    const { objects, canvas, is3D } = useSelector((state: CombinedState) => ({
+    const {
+        objects, canvas, is3D, ready, activeControl, navigationBlocked,
+    } = useSelector((state: CombinedState) => ({
         objects: state.annotation.annotations.states,
         canvas: state.annotation.canvas.instance,
         is3D: state.annotation.job.instance.dimension === DimensionType.DIMENSION_3D,
+        ready: state.annotation.canvas.ready,
+        activeControl: state.annotation.canvas.activeControl,
+        navigationBlocked: state.annotation.player.navigationBlocked,
     }), shallowEqual);
     if (!is3D) return null;
 
@@ -49,6 +54,20 @@ export default function IssueContext({ issue, interactive = false }: {
                     {`Select ${target}`}
                 </Button>
             ) : <Text type='secondary'>{target}</Text>)}
+            {interactive && issue.view && canvas instanceof Canvas3d && (
+                <Button
+                    className='cvat-issue-restore-view'
+                    type='link'
+                    size='small'
+                    disabled={!ready || activeControl !== ActiveControl.CURSOR || navigationBlocked}
+                    onClick={(event) => {
+                        event.stopPropagation();
+                        canvas.restoreReviewView(issue.view);
+                    }}
+                >
+                    Restore review view
+                </Button>
+            )}
         </div>
     );
 }

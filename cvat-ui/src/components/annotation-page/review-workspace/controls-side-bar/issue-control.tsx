@@ -69,7 +69,10 @@ function CreateIssueControl(props: Props): JSX.Element {
                     keyMap={subKeyMap(componentShortcuts, keyMap)}
                     handlers={handlers}
                 />
-                <CVATTooltip title='Open an issue' placement='right'>
+                <CVATTooltip
+                    title={canvasInstance instanceof Canvas3d ? 'Open an issue in Top, Side, or Front' : 'Open an issue'}
+                    placement='right'
+                >
                     <Icon
                         component={IssueIcon}
                         className={
