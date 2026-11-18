@@ -2202,6 +2202,19 @@ class TaskCloudStorageTestCase(_CloudStorageTestBase, ExportApiTestBase, ImportA
                 path = f"{prefix}/{entry.filename}" if prefix else entry.filename
                 self.mock_aws.create_file(path, archive.read(entry))
 
+    def _upload_image_manifest(self, path: str, entries: Sequence[dict[str, object]]) -> None:
+        self.mock_aws.create_file(
+            path,
+            "\n".join(
+                json.dumps(entry, separators=(",", ":"))
+                for entry in (
+                    {"version": "1.1"},
+                    {"type": "images"},
+                    *entries,
+                )
+            ).encode(),
+        )
+
     @override_settings(MEDIA_CACHE_ALLOW_STATIC_CACHE=True)
     def test_create_local_3d_task_with_calibrated_related_image(self):
         self._upload_pointcloud_pcd_dataset()
@@ -2294,27 +2307,51 @@ class TaskCloudStorageTestCase(_CloudStorageTestBase, ExportApiTestBase, ImportA
         sidecar_path = "test_pointcloud_pcd/related_images/000001_pcd/000001.png.json"
         related_image_path = sidecar_path.removesuffix(".json")
         manifest_intrinsic_matrix = [1, 0, 0, 0, 1, 0, 0, 0, 1]
+        self._upload_image_manifest(
+            "manifest.jsonl",
+            [
+                {
+                    "name": "test_pointcloud_pcd/pointcloud/000001",
+                    "extension": ".pcd",
+                    "width": 100,
+                    "height": 1,
+                    "meta": {
+                        "related_images": [related_image_path],
+                        "auxiliary_files": [sidecar_path],
+                        "related_image_metadata": {
+                            related_image_path: {
+                                "intrinsic_matrix": manifest_intrinsic_matrix,
+                                "extrinsic_matrix": [1, 0, 0, 0, 0, 1, 0, 0, 0, 0, 1, 1.7],
+                            },
+                        },
+                    },
+                },
+            ],
+        )
+
+        task = self._create_task(
+            {"name": "Cached 3D task with calibration"},
+            {
+                "server_files[0]": "manifest.jsonl",
+                "server_files[1]": "test_pointcloud_pcd/",
+                "image_quality": 100,
+                "cloud_storage_id": cloud_storage_id,
+                "use_cache": True,
+            },
+        )
+        db_data = Task.objects.get(pk=task["id"]).require_data()
+        source_related_file = RelatedFile.objects.get(data=db_data, path=related_image_path)
+        manifest = ImageManifestManager(db_data.get_manifest_path())
+        manifest_entry = next(iter(manifest))[1]
+        self.assertEqual(
+            manifest_entry["meta"]["related_image_metadata"][related_image_path][
+                "intrinsic_matrix"
+            ],
+            source_related_file.intrinsic_matrix,
+        )
 
         for lightweight in (True, False):
             with self.subTest(lightweight=lightweight):
-                task = self._create_task(
-                    {"name": "Cached 3D task with calibration"},
-                    {
-                        "server_files[0]": "test_pointcloud_pcd/",
-                        "image_quality": 100,
-                        "cloud_storage_id": cloud_storage_id,
-                        "use_cache": True,
-                    },
-                )
-                db_data = Task.objects.get(pk=task["id"]).require_data()
-                source_related_file = RelatedFile.objects.get(data=db_data, path=related_image_path)
-                manifest = ImageManifestManager(db_data.get_manifest_path())
-                manifest_entries = [dict(entry) for _, entry in manifest]
-                manifest_entries[0]["meta"]["related_image_metadata"][related_image_path][
-                    "intrinsic_matrix"
-                ] = manifest_intrinsic_matrix
-                manifest.create(manifest_entries)
-
                 response = self._export_task_backup(
                     self.owner,
                     task["id"],
@@ -2336,12 +2373,68 @@ class TaskCloudStorageTestCase(_CloudStorageTestBase, ExportApiTestBase, ImportA
                 )
                 self.assertEqual(
                     restored_related_file.intrinsic_matrix,
-                    (
-                        manifest_intrinsic_matrix
-                        if lightweight
-                        else source_related_file.intrinsic_matrix
-                    ),
+                    source_related_file.intrinsic_matrix,
                 )
+
+    def test_import_lightweight_cloud_3d_task_backup_with_manifest_sidecar(self):
+        self._upload_pointcloud_pcd_dataset()
+        cloud_storage_id = self._create_cloud_storage()
+        related_image_path = "test_pointcloud_pcd/related_images/000001_pcd/000001.png"
+        sidecar_path = f"{related_image_path}.json"
+        calibration = {
+            "intrinsic_matrix": [721.5, 0, 609.6, 0, 721.5, 172.9, 0, 0, 1],
+            "extrinsic_matrix": [1, 0, 0, 0.2, 0, 1, 0, 0, 0, 0, 1, 1.7],
+        }
+        self._upload_image_manifest(
+            "manifest.jsonl",
+            [
+                {
+                    "name": "test_pointcloud_pcd/pointcloud/000001",
+                    "extension": ".pcd",
+                    "width": 100,
+                    "height": 1,
+                    "meta": {
+                        "related_images": [related_image_path],
+                        "auxiliary_files": [sidecar_path],
+                    },
+                },
+            ],
+        )
+        task = self._create_task(
+            {"name": "Cached 3D task with manifest sidecar"},
+            {
+                "server_files[0]": "manifest.jsonl",
+                "server_files[1]": "test_pointcloud_pcd/",
+                "image_quality": 100,
+                "cloud_storage_id": cloud_storage_id,
+                "use_cache": True,
+            },
+        )
+        db_data = Task.objects.get(pk=task["id"]).require_data()
+        manifest_entry = next(iter(ImageManifestManager(db_data.get_manifest_path())))[1]
+        self.assertEqual(
+            manifest_entry["meta"]["related_image_metadata"],
+            {related_image_path: calibration},
+        )
+
+        response = self._export_task_backup(
+            self.owner,
+            task["id"],
+            query_params={"lightweight": True},
+        )
+        backup_file = io.BytesIO(b"".join(response.streaming_content))
+        with zipfile.ZipFile(backup_file) as backup_zip:
+            self.assertNotIn(f"data/{sidecar_path}", backup_zip.namelist())
+        backup_file.seek(0)
+        backup_file.name = "task-backup.zip"
+        restored_task_id = self._import_task_backup(self.owner, backup_file)
+
+        restored_related_file = RelatedFile.objects.get(
+            data=Task.objects.get(pk=restored_task_id).require_data(),
+            path=related_image_path,
+        )
+        self.assertEqual(restored_related_file.intrinsic_matrix, calibration["intrinsic_matrix"])
+        self.assertEqual(restored_related_file.extrinsic_matrix, calibration["extrinsic_matrix"])
 
     @override_settings(MEDIA_CACHE_ALLOW_STATIC_CACHE=True)
     def test_create_3d_task_with_calibration_referenced_by_manifest(self):
@@ -2380,22 +2473,17 @@ class TaskCloudStorageTestCase(_CloudStorageTestBase, ExportApiTestBase, ImportA
             if include_calibration:
                 metadata["related_image_metadata"] = {related_image_path: calibration}
 
-            self.mock_aws.create_file(
+            self._upload_image_manifest(
                 f"{prefix}/manifest.jsonl" if prefix else "manifest.jsonl",
-                "\n".join(
-                    json.dumps(entry, separators=(",", ":"))
-                    for entry in (
-                        {"version": "1.1"},
-                        {"type": "images"},
-                        {
-                            "name": "test_pointcloud_pcd/pointcloud/000001",
-                            "extension": ".pcd",
-                            "width": 100,
-                            "height": 1,
-                            "meta": metadata,
-                        },
-                    )
-                ).encode(),
+                [
+                    {
+                        "name": "test_pointcloud_pcd/pointcloud/000001",
+                        "extension": ".pcd",
+                        "width": 100,
+                        "height": 1,
+                        "meta": metadata,
+                    },
+                ],
             )
             self.mock_aws.create_file(
                 f"{prefix}/{unrelated_json_path}" if prefix else unrelated_json_path,

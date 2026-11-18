@@ -29,9 +29,8 @@ from pathlib import Path
 
 from dataset_manifest.core import ImageManifestManager, VideoManifestManager
 from dataset_manifest.utils import (
-    AUXILIARY_FILES_MANIFEST_KEY,
-    RELATED_IMAGES_MANIFEST_KEY,
     SortingMethod,
+    build_related_images_manifest_meta,
     find_related_images,
     is_image,
     is_video,
@@ -101,6 +100,7 @@ def main():
         while re.search(r"[*?\[\]]", os.fspath(abs_root)):
             abs_root = abs_root.parent
 
+        # TODO: properly support calibration and 3D tasks manifest generation with this script
         scene_paths, related_images, _, related_image_auxiliary_files = find_related_images(
             sources,
             root_path=abs_root,
@@ -108,19 +108,15 @@ def main():
             is_scene_path=(lambda p: not "related_images" in p.parts),
         )
         sources = [p for p in sources if p.relative_to(abs_root) in scene_paths]
-        meta = {}
-        for scene_path, scene_related_images in related_images.items():
-            related_image_paths = [
-                related_image.as_posix() for related_image in scene_related_images
-            ]
-            auxiliary_files = [
-                auxiliary_file.as_posix()
-                for auxiliary_file in related_image_auxiliary_files.get(scene_path, [])
+        auxiliary_files = {
+            scene_path: [
+                auxiliary_file
+                for auxiliary_file in scene_auxiliary_files
                 if (abs_root / auxiliary_file).is_file()
             ]
-            meta[os.fspath(scene_path)] = {RELATED_IMAGES_MANIFEST_KEY: related_image_paths}
-            if auxiliary_files:
-                meta[os.fspath(scene_path)][AUXILIARY_FILES_MANIFEST_KEY] = auxiliary_files
+            for scene_path, scene_auxiliary_files in related_image_auxiliary_files.items()
+        }
+        meta = build_related_images_manifest_meta(related_images, {}, auxiliary_files)
         try:
             assert len(sources), "A images was not found"
             manifest = ImageManifestManager(manifest_path=manifest_directory)

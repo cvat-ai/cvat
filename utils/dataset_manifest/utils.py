@@ -10,7 +10,7 @@ import mimetypes
 import os
 import re
 import struct
-from collections.abc import Callable, Iterable, Sequence
+from collections.abc import Callable, Iterable, Mapping, Sequence
 from dataclasses import dataclass
 from enum import Enum
 from functools import partial
@@ -263,6 +263,41 @@ def serialize_related_image_metadata(metadata: RelatedImageMetadata) -> dict[str
         "intrinsic_matrix": metadata.intrinsic_matrix,
         "extrinsic_matrix": metadata.extrinsic_matrix,
     }
+
+
+def build_related_images_manifest_meta(
+    related_images: Mapping[str | PurePath, Sequence[str | PurePath]],
+    source_related_image_metadata: Mapping[str | PurePath, RelatedImageMetadata],
+    auxiliary_files: Mapping[str | PurePath, Sequence[str | PurePath]],
+) -> dict[str, dict[str, Any]]:
+    def format_manifest_path(path: str | PurePath) -> str:
+        if isinstance(path, PurePath):
+            return path.as_posix()
+
+        return path
+
+    manifest_meta = {}
+    for scene_path, scene_related_images in related_images.items():
+        related_image_paths = [format_manifest_path(path) for path in scene_related_images]
+        related_image_metadata = {
+            related_image_path: serialize_related_image_metadata(
+                source_related_image_metadata[related_image]
+            )
+            for related_image, related_image_path in zip(scene_related_images, related_image_paths)
+            if related_image in source_related_image_metadata
+        }
+        manifest_scene_path = format_manifest_path(scene_path)
+        manifest_meta[manifest_scene_path] = {RELATED_IMAGES_MANIFEST_KEY: related_image_paths}
+        if scene_auxiliary_files := auxiliary_files.get(scene_path):
+            manifest_meta[manifest_scene_path][AUXILIARY_FILES_MANIFEST_KEY] = [
+                format_manifest_path(auxiliary_file) for auxiliary_file in scene_auxiliary_files
+            ]
+        if related_image_metadata:
+            manifest_meta[manifest_scene_path][
+                RELATED_IMAGE_METADATA_MANIFEST_KEY
+            ] = related_image_metadata
+
+    return manifest_meta
 
 
 def parse_related_image_metadata_from_manifest(

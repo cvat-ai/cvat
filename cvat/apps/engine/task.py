@@ -74,6 +74,7 @@ from utils.dataset_manifest.utils import (
     OpenableGetter,
     RelatedImageMetadata,
     RelatedImageMetadataLoader,
+    build_related_images_manifest_meta,
     find_related_images,
     parse_related_image_metadata_from_manifest,
     serialize_related_image_metadata,
@@ -780,7 +781,7 @@ def _create_task_manifest_from_cloud_data(
 
     manifest.link(
         sources=content_generator,
-        meta=_build_related_images_manifest_meta(
+        meta=build_related_images_manifest_meta(
             related_images,
             source_related_image_metadata,
             auxiliary_files,
@@ -834,34 +835,6 @@ def _find_and_filter_related_images(
     )
 
 
-def _build_related_images_manifest_meta(
-    related_images: Mapping[Any, Sequence[Any]],
-    source_related_image_metadata: Mapping[Any, RelatedImageMetadata],
-    auxiliary_files: Mapping[Any, Sequence[Any]],
-) -> dict[str, dict[str, object]]:
-    manifest_meta = {}
-    for scene_path, scene_related_images in related_images.items():
-        related_image_paths = [os.fspath(path) for path in scene_related_images]
-        related_image_metadata = {
-            related_image_path: serialize_related_image_metadata(
-                source_related_image_metadata[related_image]
-            )
-            for related_image, related_image_path in zip(scene_related_images, related_image_paths)
-            if related_image in source_related_image_metadata
-        }
-        manifest_meta[os.fspath(scene_path)] = {RELATED_IMAGES_MANIFEST_KEY: related_image_paths}
-        if scene_auxiliary_files := auxiliary_files.get(scene_path):
-            manifest_meta[os.fspath(scene_path)][AUXILIARY_FILES_MANIFEST_KEY] = [
-                os.fspath(auxiliary_file) for auxiliary_file in scene_auxiliary_files
-            ]
-        if related_image_metadata:
-            manifest_meta[os.fspath(scene_path)][
-                RELATED_IMAGE_METADATA_MANIFEST_KEY
-            ] = related_image_metadata
-
-    return manifest_meta
-
-
 def _load_related_image_metadata_from_manifest(
     manifest: ImageManifestManager,
     *,
@@ -903,6 +876,55 @@ def _load_related_image_metadata_from_manifest(
                 ) from exc
 
     return manifest_related_image_metadata
+
+
+def _persist_related_image_metadata_in_manifest(
+    manifest: ImageManifestManager,
+    *,
+    related_images: Mapping[str, Sequence[str]],
+    source_related_image_metadata: Mapping[str, RelatedImageMetadata],
+) -> None:
+    if not source_related_image_metadata:
+        return
+
+    manifest_entries = []
+    is_manifest_updated = False
+    for _, manifest_entry in manifest:
+        entry = dict(manifest_entry)
+        source_metadata = {
+            related_image_path: serialize_related_image_metadata(
+                source_related_image_metadata[related_image_path]
+            )
+            for related_image_path in related_images.get(manifest_entry.full_name, [])
+            if related_image_path in source_related_image_metadata
+        }
+        if not source_metadata:
+            manifest_entries.append(entry)
+            continue
+
+        metadata = entry.get("meta", {})
+        if not isinstance(metadata, dict):
+            manifest_entries.append(entry)
+            continue
+
+        existing_metadata = metadata.get(RELATED_IMAGE_METADATA_MANIFEST_KEY, {})
+        if not isinstance(existing_metadata, dict):
+            existing_metadata = {}
+
+        merged_metadata = {
+            **existing_metadata,
+            **source_metadata,
+        }
+        if existing_metadata != merged_metadata:
+            metadata = dict(metadata)
+            metadata[RELATED_IMAGE_METADATA_MANIFEST_KEY] = merged_metadata
+            entry["meta"] = metadata
+            is_manifest_updated = True
+
+        manifest_entries.append(entry)
+
+    if is_manifest_updated:
+        manifest.create(manifest_entries)
 
 
 def _allocate_honeypots(
@@ -1681,7 +1703,7 @@ def _collect_image_dataset_descriptors(
         # or copying them from the attached share (when using copy_data).
         manifest.link(
             sources=extractor.absolute_source_paths,
-            meta=_build_related_images_manifest_meta(
+            meta=build_related_images_manifest_meta(
                 related_images,
                 source_related_image_metadata,
                 auxiliary_files,
@@ -1702,6 +1724,13 @@ def _collect_image_dataset_descriptors(
             **manifest_related_image_metadata,
             **source_related_image_metadata,
         }
+        # Lightweight backups contain the task manifest but omit auxiliary files.
+        # Persist the source metadata used for the task as the manifest fallback.
+        _persist_related_image_metadata_in_manifest(
+            manifest,
+            related_images=related_images,
+            source_related_image_metadata=source_related_image_metadata,
+        )
 
     images: list[models.Image] = []
     for frame_id in extractor.frame_range:
