@@ -350,11 +350,14 @@ class _Agent:
         )
 
     def _watch_queue(self) -> None:
-        while not self._queue_watcher_should_stop.is_set():
+        while True:
             # Until we can (re)connect to the event stream, poll more frequently.
             self._polling_interval = _POLLING_INTERVAL_MEAN_FREQUENT
 
             with self._queue_watch_response_lock:
+                if self._queue_watcher_should_stop.is_set():
+                    break
+
                 self._client.logger.info("Attempting to watch the function's queue...")
 
                 try:
@@ -435,16 +438,11 @@ class _Agent:
 
                 with self._queue_watch_response_lock:
                     if self._queue_watch_response:
+                        # Force the watcher thread to exit immediately by stopping the event stream.
+                        # If this happens after the watcher calls `release_conn`, `shutdown` will
+                        # raise, so we have to suppress that exception (in this case, the watcher
+                        # will exit as soon as it checks `_queue_watcher_should_stop`).
                         with contextlib.suppress(Exception):
-                            # shutdown() requires urllib3 2.3.0, whereas we only require 1.25
-                            # (via the SDK). The reason we can't bump the requirement is that
-                            # the testsuite depends on botocore, which is incompatible with urllib3
-                            # 2.x on Python 3.9 and earlier.
-                            # Since pip will, by default, install the latest dependency versions,
-                            # most users should not be affected. For the ones that are, shutdown
-                            # will be broken, but everything else should still work fine.
-                            # This should be revisited once we drop Python 3.9 support.
-                            # TODO: check in newer versions
                             self._queue_watch_response.shutdown()
 
                 watcher.join()
