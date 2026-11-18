@@ -79,6 +79,7 @@ export interface Configuration {
     outlinedBorders: string | false;
     selectedShapeOpacity: number;
     controlPointsSize: number;
+    pointCloudSize: number;
     focusedObjectPadding: number;
     orientationVisibility: OrientationVisibility;
 }
@@ -200,6 +201,7 @@ export class Canvas3dModelImpl extends MasterImpl implements Canvas3dModel {
                 selectedShapeOpacity: 60,
                 focusedObjectPadding: 50,
                 controlPointsSize: consts.BASE_POINT_SIZE,
+                pointCloudSize: consts.POINT_CLOUD_SIZE,
                 orientationVisibility: {
                     x: false,
                     y: false,
@@ -422,6 +424,10 @@ export class Canvas3dModelImpl extends MasterImpl implements Canvas3dModel {
 
         if (typeof configuration.controlPointsSize === 'number') {
             this.data.configuration.controlPointsSize = configuration.controlPointsSize;
+        }
+
+        if (typeof configuration.pointCloudSize === 'number' && configuration.pointCloudSize > 0) {
+            this.data.configuration.pointCloudSize = configuration.pointCloudSize;
         }
 
         if (typeof configuration.orientationVisibility === 'object') {

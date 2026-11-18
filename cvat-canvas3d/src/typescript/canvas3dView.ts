@@ -1523,6 +1523,8 @@ export class Canvas3dViewImpl implements Canvas3dView, Listener {
                 // in case of changing control points size, need to update all helper points size
                 this.updateHelperPointsSize(view);
             });
+
+            this.updatePointCloudSize();
         } else if (reason === UpdateReasons.SHAPE_ACTIVATED) {
             this.deactivateObject();
             this.activateObject();
@@ -1756,6 +1758,18 @@ export class Canvas3dViewImpl implements Canvas3dView, Listener {
         return helperWorldSize;
     }
 
+    private updatePointCloudSize(): void {
+        const { pointCloudSize } = this.model.data.configuration;
+        Object.values(ViewType).forEach((view) => {
+            // the point cloud is always the first child of each scene
+            const cloud = this.views[view].scene.children[0];
+            if (cloud instanceof THREE.Points) {
+                (cloud.material as THREE.PointsMaterial).size = view === ViewType.PERSPECTIVE ?
+                    pointCloudSize : pointCloudSize * consts.ORTHO_POINT_CLOUD_SIZE_FACTOR;
+            }
+        });
+    }
+
     private onSceneImageLoaded(points: any): void {
         const getCameraSettingsToFitScene = (
             camera: THREE.PerspectiveCamera,
@@ -1795,8 +1809,9 @@ export class Canvas3dViewImpl implements Canvas3dView, Listener {
             };
         };
 
+        const { pointCloudSize } = this.model.data.configuration;
         // eslint-disable-next-line no-param-reassign
-        points.material.size = 0.05;
+        points.material.size = pointCloudSize;
         points.material.color.set(new THREE.Color(0xffffff));
 
         const { controls } = this.views.perspective;
@@ -1848,7 +1863,7 @@ export class Canvas3dViewImpl implements Canvas3dView, Listener {
         (topScenePlane as any).verticesNeedUpdate = true;
         // eslint-disable-next-line no-param-reassign
         points.material = material;
-        material.size = 0.5;
+        material.size = pointCloudSize * consts.ORTHO_POINT_CLOUD_SIZE_FACTOR;
         const topCloud = points.clone();
         this.views.top.scene.add(topCloud);
         this.views.top.scene.add(topScenePlane);
