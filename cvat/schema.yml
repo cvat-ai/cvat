@@ -7931,46 +7931,6 @@ paths:
               schema:
                 $ref: '#/components/schemas/UpdatesState'
           description: ''
-  /api/whats-new/content:
-    get:
-      operationId: whats_new_retrieve_content
-      summary: Get a published release note or announcement body
-      parameters:
-      - in: query
-        name: id
-        schema:
-          type: string
-          minLength: 1
-          maxLength: 128
-        required: true
-      - in: query
-        name: kind
-        schema:
-          enum:
-          - release-notes
-          - announcements
-          type: string
-          minLength: 1
-        description: |-
-          * `release-notes` - release-notes
-          * `announcements` - announcements
-        required: true
-      tags:
-      - whats-new
-      security:
-      - tokenAuth: []
-      - accessTokenAuth: []
-      - sessionAuth: []
-        csrfAuth: []
-        csrfHeaderAuth: []
-      - basicAuth: []
-      responses:
-        '200':
-          content:
-            application/vnd.cvat+json:
-              schema:
-                $ref: '#/components/schemas/UpdatesContent'
-          description: ''
 components:
   schemas:
     About:
@@ -14237,17 +14197,6 @@ components:
         announcements_seen_at:
           type: string
           format: date-time
-    UpdatesContent:
-      type: object
-      properties:
-        body:
-          type: string
-        baseURL:
-          type: string
-          format: uri
-      required:
-      - baseURL
-      - body
     UpdatesIndex:
       type: object
       properties:

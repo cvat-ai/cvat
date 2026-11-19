@@ -21,13 +21,12 @@ from django.core.cache import cache
 from django.utils.dateparse import parse_datetime
 from django.utils.module_loading import import_string
 from django.utils.timezone import now
-from rest_framework.exceptions import APIException, NotFound
+from rest_framework.exceptions import APIException
 
 from cvat import VERSION
 from cvat.apps.engine.log import ServerLogManager
 from cvat.utils.http import make_requests_session
 
-from . import release_sections
 from .models import UserGrowthData
 from .sources import HTTP_TIMEOUT, STALE_TTL, read_response_text
 from .types import (
@@ -442,31 +441,3 @@ def index(growth_data: UserGrowthData) -> dict[str, Any]:
     result["announcementHistoryURL"] = _public_url("announcements/")
     result["updatesHistoryURL"] = _public_url("updates/")
     return result
-
-
-def content(kind: ContentKind, identifier: str) -> dict[str, str]:
-    match kind:
-        case ContentKind.RELEASE_NOTES:
-            key = "version"
-        case ContentKind.ANNOUNCEMENTS:
-            key = "id"
-        case _:
-            raise AssertionError(f"Unexpected content kind: {kind}")
-    entry = next((entry for entry in entries(kind) if entry[key] == identifier), None)
-    if not entry:
-        raise NotFound("This content is not available.")
-
-    def decode(body):
-        if not body.strip() or re.search(r"<!doctype\s+html|<html[\s>]", body, re.IGNORECASE):
-            raise ValueError("Expected Markdown")
-        if kind == ContentKind.RELEASE_NOTES and entry["hasEditionSections"]:
-            release_sections.validate(body)
-        return body
-
-    # Keep the shared source intact in the cache; filter only the response body.
-    body = _document(entry["contentPath"], decode)
-    if kind == ContentKind.RELEASE_NOTES and entry["hasEditionSections"]:
-        body = release_sections.for_edition(body, edition())
-        if body is None:
-            raise NotFound("This release has no sections for the current edition.")
-    return {"body": body, "baseURL": entry["markdownURL"]}

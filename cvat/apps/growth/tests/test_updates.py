@@ -157,25 +157,15 @@ class UpdatesApiTestCase(UpdatesApiTestBase):
         self.release["editions"] = [custom_edition]
         self.release["highlights"][0]["editions"] = [custom_edition]
         self.announcement["editions"] = [custom_edition]
-        self.documents[self.release["markdownURL"]] = (
-            f'<section data-cvat-editions="{custom_edition}"><h2>Matching change</h2></section>'
-            '<section data-cvat-editions="other-edition"><h2>Other change</h2></section>'
-        )
 
         with self.settings(CVAT_NEWS_EDITION=custom_edition):
             response = self.client.get("/api/whats-new")
-            content = self.client.get(
-                "/api/whats-new/content", {"kind": "release-notes", "id": "2.0.0"}
-            )
 
         self.assertEqual(response.status_code, HTTPStatus.OK)
         self.assertEqual(response.data["edition"], custom_edition)
         self.assertEqual(response.data["errors"], [])
         self.assertEqual(response.data["releases"][0]["highlights"], ["Shared change"])
         self.assertEqual(response.data["announcements"][0]["id"], "guide")
-        self.assertEqual(content.status_code, HTTPStatus.OK)
-        self.assertIn("Matching change", content.data["body"])
-        self.assertNotIn("Other change", content.data["body"])
 
     @override_settings(CVAT_NEWS_EDITION="invalid/edition")
     def test_invalid_edition_configuration_does_not_fetch_content(self) -> None:
@@ -204,13 +194,6 @@ class UpdatesApiTestCase(UpdatesApiTestBase):
         self.assertEqual(response.status_code, HTTPStatus.NOT_FOUND)
         self.session.get.assert_not_called()
 
-    def test_content_request_validates_kind_before_fetching(self) -> None:
-        response = self.client.get("/api/whats-new/content", {"kind": "unknown", "id": "guide"})
-
-        self.assertEqual(response.status_code, HTTPStatus.BAD_REQUEST)
-        self.assertIn("kind", response.data)
-        self.session.get.assert_not_called()
-
     def test_invalid_preview_media_keeps_announcement_state_unread(self) -> None:
         self.announcement["imageURL"] = 0
 
@@ -223,22 +206,6 @@ class UpdatesApiTestCase(UpdatesApiTestBase):
             response.data["state"]["last_seen_announcements_date"],
             self.initial_announcements_cutoff,
         )
-
-    def test_can_read_only_matching_release_sections(self) -> None:
-        self.documents[self.release["markdownURL"]] = (
-            f'<section data-cvat-editions="{self.edition}"><h2>Current edition change</h2>'
-            '<p data-cvat-availability="true">Available in: Current edition</p><p>Details</p></section>'
-            '<section data-cvat-editions="other-edition"><h2>Other edition change</h2></section>'
-        )
-
-        response = self.client.get(
-            "/api/whats-new/content", {"kind": "release-notes", "id": "2.0.0"}
-        )
-
-        self.assertEqual(response.status_code, HTTPStatus.OK)
-        self.assertIn("Current edition change", response.data["body"])
-        self.assertNotIn("Other edition change", response.data["body"])
-        self.assertNotIn("Available in", response.data["body"])
 
     def test_can_reuse_cached_source_documents(self) -> None:
         first = self.client.get("/api/whats-new")

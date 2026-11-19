@@ -21,13 +21,10 @@ from .models import UserGrowthData
 from .permissions import UpdatesPermission, UserGrowthDataPermission
 from .serializers import (
     UpdatesAcknowledgementSerializer,
-    UpdatesContentQuerySerializer,
-    UpdatesContentSerializer,
     UpdatesIndexSerializer,
     UpdatesStateSerializer,
     UserGrowthDataSerializer,
 )
-from .types import ContentKind
 
 
 @extend_schema(tags=["growth"])
@@ -91,21 +88,6 @@ class UpdatesViewSet(viewsets.ViewSet):
     )
     def list(self, request: Request) -> Response:
         return Response(updates_service.index(UserGrowthData.for_user(request.user)))
-
-    @extend_schema(
-        summary="Get a published release note or announcement body",
-        parameters=[UpdatesContentQuerySerializer],
-        responses={200: UpdatesContentSerializer},
-    )
-    @action(detail=False, methods=["GET"])
-    def content(self, request: Request) -> Response:
-        query = UpdatesContentQuerySerializer(data=request.query_params)
-        query.is_valid(raise_exception=True)
-        return Response(
-            updates_service.content(
-                ContentKind(query.validated_data["kind"]), query.validated_data["id"]
-            )
-        )
 
     @extend_schema(
         summary="Acknowledge displayed updates for the current user",

@@ -16,7 +16,6 @@ from .types import (
     EDITION_PATTERN,
     RELEASE_VERSION_PATTERN,
     AnnouncementSource,
-    ContentKind,
     UpdateSource,
 )
 
@@ -101,11 +100,6 @@ class UpdatesStateSerializer(serializers.Serializer):
     promotion_notifications_allowed = serializers.BooleanField()
 
 
-class UpdatesContentQuerySerializer(serializers.Serializer):
-    kind = serializers.ChoiceField(choices=ContentKind)
-    id = serializers.CharField(max_length=128)
-
-
 class ReleaseNoteSerializer(serializers.Serializer):
     version = serializers.CharField()
     title = serializers.CharField()
@@ -147,8 +141,3 @@ class UpdatesIndexSerializer(serializers.Serializer):
     releaseHistoryURL = serializers.URLField()
     announcementHistoryURL = serializers.URLField()
     updatesHistoryURL = serializers.URLField()
-
-
-class UpdatesContentSerializer(serializers.Serializer):
-    body = serializers.CharField()
-    baseURL = serializers.URLField()

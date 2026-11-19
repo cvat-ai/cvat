@@ -23,7 +23,6 @@ class UpdatesPermissionTestCase(SimpleTestCase):
         }
         for action, scope in (
             ("list", UserGrowthDataPermission.Scopes.VIEW),
-            ("content", UserGrowthDataPermission.Scopes.VIEW),
             ("acknowledge", UserGrowthDataPermission.Scopes.UPDATE),
         ):
             with self.subTest(action=action):
