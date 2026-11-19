@@ -861,7 +861,10 @@ export class Canvas3dViewImpl implements Canvas3dView, Listener {
                 memoized: number | null,
             ): number => (memoized !== null ? memoized : Math.max(
                 consts.SIDE_VIEWS_MIN_ZOOM,
-                Math.min(computed, consts.SIDE_VIEWS_MAX_ZOOM),
+                Math.min(
+                    computed * consts.FOCUSED_OBJECT_ZOOM_FACTOR,
+                    consts.SIDE_VIEWS_MAX_ZOOM,
+                ),
             ));
 
             const { renderer: { domElement: canvasTop }, camera: cameraTop } = top;
@@ -1795,44 +1798,6 @@ export class Canvas3dViewImpl implements Canvas3dView, Listener {
     }
 
     private onSceneImageLoaded(points: any): void {
-        const getCameraSettingsToFitScene = (
-            camera: THREE.PerspectiveCamera,
-            boundingBox: THREE.Box3,
-        ): {
-            position: [number, number, number],
-            lookAt: [number, number, number],
-        } => {
-            const width = boundingBox.max.x - boundingBox.min.x;
-            const height = boundingBox.max.y - boundingBox.min.y;
-            const depth = boundingBox.max.z - boundingBox.min.z;
-
-            // Center of the scene
-            const centerX = boundingBox.min.x + width / 2;
-            const centerY = boundingBox.min.y + height / 2;
-            const centerZ = boundingBox.min.z + depth / 2;
-
-            // Calculate distance to fit the scene: distance = (size / 2) / tan(fov / 2)
-            const maxDim = Math.max(width, height, depth);
-            const fovRadians = camera.fov * (Math.PI / 180);
-            const cameraDistance = (maxDim / 2) / Math.tan(fovRadians / 2);
-
-            // Position camera above and slightly offset from center
-            const offset = 5;
-
-            return {
-                position: [
-                    centerX + offset,
-                    centerY + offset,
-                    centerZ + cameraDistance + offset,
-                ],
-                lookAt: [
-                    centerX,
-                    centerY,
-                    centerZ,
-                ],
-            };
-        };
-
         // eslint-disable-next-line no-param-reassign
         points.material.size = 0.05;
         points.material.color.set(new THREE.Color(0xffffff));
@@ -1843,28 +1808,20 @@ export class Canvas3dViewImpl implements Canvas3dView, Listener {
         const material = points.material.clone();
         if (!this.views.perspective.camera) return;
 
-        // updating correct camera settings
-        points.geometry.computeBoundingBox();
-        const { position, lookAt } = getCameraSettingsToFitScene(
-            this.views.perspective.camera as THREE.PerspectiveCamera, points.geometry.boundingBox,
-        );
-
-        this.cameraSettings.perspective.position = position;
+        // Start at the maximum reachable distance, 45 degrees above EGO in the negative X/negative Y quadrant.
+        const horizontalDistance = consts.MAX_DISTANCE / Math.sqrt(2);
+        const distanceAlongAxis = horizontalDistance / Math.sqrt(2);
+        this.cameraSettings.perspective.position = [
+            -distanceAlongAxis,
+            -distanceAlongAxis,
+            horizontalDistance,
+        ];
+        this.cameraSettings.perspective.lookAt = [0, 0, 0];
         this.sceneBBox = new THREE.Box3().setFromObject(points);
         const perspectiveCloud = points.clone();
         this.views.perspective.scene.add(perspectiveCloud);
 
-        const origin = new THREE.Vector3(0, 0, 0);
-        const isOriginInScene = this.sceneBBox.containsPoint(origin);
         const axesHelper = new THREE.AxesHelper(5);
-        if (isOriginInScene) {
-            this.cameraSettings.perspective.lookAt = [0, 0, 0];
-            axesHelper.position.set(0, 0, 0);
-        } else {
-            this.cameraSettings.perspective.lookAt = lookAt;
-            axesHelper.position.set(lookAt[0], lookAt[1], lookAt[2]);
-        }
-
         this.views.perspective.scene.add(axesHelper);
         // Setup TopView
         const canvasTopView = this.views.top.renderer.domElement;
@@ -1963,7 +1920,7 @@ export class Canvas3dViewImpl implements Canvas3dView, Listener {
                     z + this.cameraSettings[cameraType].position[2],
                 );
                 camera.lookAt(x, y, z);
-                camera.zoom = consts.FOV_DEFAULT;
+                camera.zoom = consts.SIDE_VIEWS_MIN_ZOOM;
             }
         }
     }
