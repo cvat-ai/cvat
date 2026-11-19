@@ -861,10 +861,7 @@ export class Canvas3dViewImpl implements Canvas3dView, Listener {
                 memoized: number | null,
             ): number => (memoized !== null ? memoized : Math.max(
                 consts.SIDE_VIEWS_MIN_ZOOM,
-                Math.min(
-                    computed * consts.FOCUSED_OBJECT_ZOOM_FACTOR,
-                    consts.SIDE_VIEWS_MAX_ZOOM,
-                ),
+                Math.min(computed, consts.SIDE_VIEWS_MAX_ZOOM),
             ));
 
             const { renderer: { domElement: canvasTop }, camera: cameraTop } = top;
@@ -1808,20 +1805,24 @@ export class Canvas3dViewImpl implements Canvas3dView, Listener {
         const material = points.material.clone();
         if (!this.views.perspective.camera) return;
 
-        // Start at the maximum reachable distance, 45 degrees above EGO in the negative X/negative Y quadrant.
+        this.sceneBBox = new THREE.Box3().setFromObject(points);
+        const origin = new THREE.Vector3(0, 0, 0);
+        const target = this.sceneBBox.containsPoint(origin) ? origin : this.sceneBBox.getCenter(new THREE.Vector3());
+
+        // Start at the maximum reachable distance, 45 degrees above the target in the negative X/negative Y quadrant.
         const horizontalDistance = consts.MAX_DISTANCE / Math.sqrt(2);
         const distanceAlongAxis = horizontalDistance / Math.sqrt(2);
         this.cameraSettings.perspective.position = [
-            -distanceAlongAxis,
-            -distanceAlongAxis,
-            horizontalDistance,
+            target.x - distanceAlongAxis,
+            target.y - distanceAlongAxis,
+            target.z + horizontalDistance,
         ];
-        this.cameraSettings.perspective.lookAt = [0, 0, 0];
-        this.sceneBBox = new THREE.Box3().setFromObject(points);
+        this.cameraSettings.perspective.lookAt = [target.x, target.y, target.z];
         const perspectiveCloud = points.clone();
         this.views.perspective.scene.add(perspectiveCloud);
 
         const axesHelper = new THREE.AxesHelper(5);
+        axesHelper.position.copy(target);
         this.views.perspective.scene.add(axesHelper);
         // Setup TopView
         const canvasTopView = this.views.top.renderer.domElement;
