@@ -3,7 +3,9 @@
 // SPDX-License-Identifier: MIT
 
 import { getCore } from 'cvat-core-wrapper';
-import { SeenState, Updates, UpdatesAcknowledgement } from './feed';
+import {
+    ReleaseNote, SeenState, Updates, UpdatesAcknowledgement,
+} from './feed';
 
 interface SerializedSeenState {
     last_seen_release_notes_version: string;
@@ -11,8 +13,10 @@ interface SerializedSeenState {
     promotion_notifications_allowed: boolean;
 }
 
-interface SerializedUpdates extends Omit<Updates, 'state'> {
+interface SerializedUpdates extends Omit<Updates, 'state' | 'latestRelease' | 'latestAnnouncedRelease'> {
     state: SerializedSeenState;
+    latest_release: ReleaseNote | null;
+    latest_announced_release: ReleaseNote | null;
 }
 
 interface SerializedUpdatesAcknowledgement {
@@ -34,7 +38,12 @@ export async function fetchUpdates(signal: AbortSignal): Promise<Updates> {
     const response = await core.server.request('/api/whats-new', {
         method: 'GET', params: { org: '' }, signal, timeout: 25000,
     }) as { data: SerializedUpdates };
-    return { ...response.data, state: deserializeSeenState(response.data.state) };
+    const {
+        state, latest_release: latestRelease, latest_announced_release: latestAnnouncedRelease, ...summary
+    } = response.data;
+    return {
+        ...summary, state: deserializeSeenState(state), latestRelease, latestAnnouncedRelease,
+    };
 }
 
 export async function acknowledge(

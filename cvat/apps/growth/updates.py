@@ -423,14 +423,19 @@ def index(growth_data: UserGrowthData) -> dict[str, Any]:
         "edition": edition(),
         "state": state(growth_data),
         "errors": [],
-        "releases": [],
+        "latest_release": None,
+        "latest_announced_release": None,
         "announcements": [],
     }
     try:
-        result["releases"] = [
+        releases = [
             {key: value for key, value in item.items() if key != "contentPath"}
             for item in entries(ContentKind.RELEASE_NOTES)
         ]
+        result["latest_release"] = releases[0] if releases else None
+        result["latest_announced_release"] = next(
+            (release for release in releases if release["announce"]), None
+        )
     except UpdatesUnavailable:
         result["errors"].append(UpdateSource.RELEASE_NOTES)
     result["announcements"], announcement_errors = announcement_feed()

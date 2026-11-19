@@ -7889,7 +7889,7 @@ paths:
   /api/whats-new:
     get:
       operationId: whats_new_list
-      summary: Get release notes, announcements and the current user's seen state
+      summary: Get the What's New popup summary and the current user's seen state
       tags:
       - whats-new
       security:
@@ -14205,10 +14205,14 @@ components:
           pattern: ^[a-z][a-z0-9-]*$
         state:
           $ref: '#/components/schemas/UpdatesState'
-        releases:
-          type: array
-          items:
-            $ref: '#/components/schemas/ReleaseNote'
+        latest_release:
+          allOf:
+          - $ref: '#/components/schemas/ReleaseNote'
+          nullable: true
+        latest_announced_release:
+          allOf:
+          - $ref: '#/components/schemas/ReleaseNote'
+          nullable: true
         announcements:
           type: array
           items:
@@ -14234,8 +14238,9 @@ components:
       - canAcknowledgeAnnouncements
       - edition
       - errors
+      - latest_announced_release
+      - latest_release
       - releaseHistoryURL
-      - releases
       - state
       - updatesHistoryURL
     UpdatesState:

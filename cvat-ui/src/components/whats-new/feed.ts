@@ -71,7 +71,8 @@ export interface UpdatesAcknowledgement {
 
 export interface Updates {
     edition: string;
-    releases: ReleaseNote[];
+    latestRelease: ReleaseNote | null;
+    latestAnnouncedRelease: ReleaseNote | null;
     announcements: Announcement[];
     canAcknowledgeAnnouncements: boolean;
     state: SeenState;

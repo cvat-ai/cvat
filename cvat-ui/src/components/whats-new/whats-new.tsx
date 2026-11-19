@@ -86,7 +86,7 @@ export default function WhatsNew(props: Props): JSX.Element {
     const unreadAnnouncements = unseenAnnouncements(
         announcements, seen?.lastSeenAnnouncementsDate || null,
     ).length > 0;
-    const latestAnnouncedRelease = updates?.releases.find((release) => release.announce);
+    const latestAnnouncedRelease = updates?.latestAnnouncedRelease;
     const unreadRelease = !!latestAnnouncedRelease && isNewVersion(
         latestAnnouncedRelease.version, seen?.lastSeenReleaseNotesVersion || '',
     );
@@ -110,7 +110,7 @@ export default function WhatsNew(props: Props): JSX.Element {
             if (!controller.signal.aborted) {
                 setUpdates(result);
                 setSeen((current) => mergeSeenState(current, result.state));
-                setSelectedRelease(result.releases[0] || null);
+                setSelectedRelease(result.latestRelease);
                 setAckError(false);
             }
         }).catch(() => {
@@ -150,12 +150,12 @@ export default function WhatsNew(props: Props): JSX.Element {
             automaticPopupController.offer('whats-new', null);
             return;
         }
-        const release = updates.releases.find((item) => item.announce &&
-            isNewVersion(item.version, updates.state.lastSeenReleaseNotesVersion));
+        const release = updates.latestAnnouncedRelease;
+        const promoteRelease = !!release && isNewVersion(release.version, updates.state.lastSeenReleaseNotesVersion);
         const promoteAnnouncements = unseenAnnouncements(
             announcements, updates.state.lastSeenAnnouncementsDate,
         ).some((item) => item.announce);
-        if (!release && !promoteAnnouncements) {
+        if (!promoteRelease && !promoteAnnouncements) {
             automaticPopupController.offer('whats-new', null);
             return;
         }
@@ -166,7 +166,7 @@ export default function WhatsNew(props: Props): JSX.Element {
             }
             if (blockedRef.current) return false;
             setOpeningSeen(seenRef.current || updates.state);
-            setSelectedRelease(release || updates.releases.find((item) => item.announce) || null);
+            setSelectedRelease(release);
             setOpen(true);
             return true;
         });
@@ -219,7 +219,7 @@ export default function WhatsNew(props: Props): JSX.Element {
                         manuallyOpened.current = true;
                         automaticPopupController.consume();
                         setOpeningSeen(seen || updates?.state || null);
-                        setSelectedRelease(updates?.releases[0] || null);
+                        setSelectedRelease(updates?.latestRelease || null);
                         setOpen(true);
                     }}
                 />

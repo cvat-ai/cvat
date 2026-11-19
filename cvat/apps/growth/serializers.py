@@ -2,6 +2,7 @@
 #
 # SPDX-License-Identifier: MIT
 
+from datetime import datetime
 from typing import Any
 
 from django.utils.timezone import now
@@ -86,6 +87,11 @@ class UpdatesAcknowledgementSerializer(serializers.Serializer):
     release_version = serializers.RegexField(RELEASE_VERSION_PATTERN, required=False, max_length=64)
     announcements_seen_at = serializers.DateTimeField(required=False)
 
+    def validate_announcements_seen_at(self, value: datetime) -> datetime:
+        if value > now():
+            raise serializers.ValidationError("This timestamp cannot be in the future.")
+        return value
+
     def validate(self, attrs: dict[str, Any]) -> dict[str, Any]:
         if not attrs:
             raise serializers.ValidationError(
@@ -134,7 +140,8 @@ class AnnouncementPreviewSerializer(serializers.Serializer):
 class UpdatesIndexSerializer(serializers.Serializer):
     edition = serializers.RegexField(EDITION_PATTERN)
     state = UpdatesStateSerializer()
-    releases = ReleaseNoteSerializer(many=True)
+    latest_release = ReleaseNoteSerializer(allow_null=True)
+    latest_announced_release = ReleaseNoteSerializer(allow_null=True)
     announcements = AnnouncementPreviewSerializer(many=True)
     canAcknowledgeAnnouncements = serializers.BooleanField()
     errors = serializers.ListField(child=serializers.ChoiceField(choices=UpdateSource))

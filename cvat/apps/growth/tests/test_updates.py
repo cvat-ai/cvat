@@ -148,9 +148,72 @@ class UpdatesApiTestCase(UpdatesApiTestBase):
         response = self.client.get("/api/whats-new")
 
         self.assertEqual(response.status_code, HTTPStatus.OK)
-        self.assertEqual([item["version"] for item in response.data["releases"]], ["2.0.0"])
-        self.assertEqual(response.data["releases"][0]["highlights"], ["Shared change"])
+        self.assertEqual(response.data["latest_release"]["version"], "2.0.0")
+        self.assertEqual(response.data["latest_announced_release"]["version"], "2.0.0")
+        self.assertEqual(response.data["latest_release"]["highlights"], ["Shared change"])
         self.assertEqual(response["Cache-Control"], "private, no-store")
+
+    def test_summary_keeps_only_latest_and_latest_announced_releases(self) -> None:
+        self.documents["https://docs.example.com/release-notes/index.json"]["entries"] = [
+            {**self.release, "version": f"2.0.{patch}", "announce": patch == 1}
+            for patch in range(1, 21)
+        ]
+        UserGrowthData.objects.filter(user=self.user).update(
+            last_seen_release_notes_version="2.0.0"
+        )
+
+        response = self.client.get("/api/whats-new")
+
+        self.assertEqual(response.status_code, HTTPStatus.OK)
+        self.assertNotIn("releases", response.data)
+        self.assertEqual(response.data["latest_release"]["version"], "2.0.20")
+        self.assertFalse(response.data["latest_release"]["announce"])
+        self.assertEqual(response.data["latest_announced_release"]["version"], "2.0.1")
+        self.assertTrue(response.data["latest_announced_release"]["announce"])
+        self.assertEqual(response.data["state"]["last_seen_release_notes_version"], "2.0.0")
+        self.assertNotIn("contentPath", response.data["latest_release"])
+        self.assertNotIn("contentPath", response.data["latest_announced_release"])
+
+        acknowledged = self.client.post(
+            "/api/whats-new/acknowledge", {"release_version": "2.0.1"}, format="json"
+        )
+
+        self.assertEqual(acknowledged.status_code, HTTPStatus.OK)
+        self.assertEqual(acknowledged.data["last_seen_release_notes_version"], "2.0.1")
+
+    def test_summary_without_announced_release_keeps_latest_release_for_manual_opening(
+        self,
+    ) -> None:
+        self.release["announce"] = False
+
+        response = self.client.get("/api/whats-new")
+
+        self.assertEqual(response.status_code, HTTPStatus.OK)
+        self.assertEqual(response.data["latest_release"]["version"], self.release["version"])
+        self.assertIsNone(response.data["latest_announced_release"])
+        self.assertEqual(response.data["errors"], [])
+
+    def test_summary_without_eligible_releases_keeps_announcements_available(self) -> None:
+        self.release["editions"] = ["other-edition"]
+
+        response = self.client.get("/api/whats-new")
+
+        self.assertEqual(response.status_code, HTTPStatus.OK)
+        self.assertIsNone(response.data["latest_release"])
+        self.assertIsNone(response.data["latest_announced_release"])
+        self.assertEqual(response.data["announcements"][0]["id"], "guide")
+        self.assertEqual(response.data["errors"], [])
+
+    def test_failed_release_source_keeps_announcements_available(self) -> None:
+        self.documents["https://docs.example.com/release-notes/index.json"] = "invalid JSON"
+
+        response = self.client.get("/api/whats-new")
+
+        self.assertEqual(response.status_code, HTTPStatus.OK)
+        self.assertIsNone(response.data["latest_release"])
+        self.assertIsNone(response.data["latest_announced_release"])
+        self.assertEqual(response.data["announcements"][0]["id"], "guide")
+        self.assertEqual(response.data["errors"], ["release-notes"])
 
     def test_deployment_can_supply_its_own_edition_identifier(self) -> None:
         custom_edition = "custom-edition"
@@ -164,7 +227,7 @@ class UpdatesApiTestCase(UpdatesApiTestBase):
         self.assertEqual(response.status_code, HTTPStatus.OK)
         self.assertEqual(response.data["edition"], custom_edition)
         self.assertEqual(response.data["errors"], [])
-        self.assertEqual(response.data["releases"][0]["highlights"], ["Shared change"])
+        self.assertEqual(response.data["latest_release"]["highlights"], ["Shared change"])
         self.assertEqual(response.data["announcements"][0]["id"], "guide")
 
     @override_settings(CVAT_NEWS_EDITION="invalid/edition")
@@ -219,26 +282,77 @@ class UpdatesApiTestCase(UpdatesApiTestBase):
         self.assertEqual(second.data, first.data)
 
     @override_settings(CVAT_NEWS_CACHE_TTL=0)
-    def test_stale_announcements_cannot_advance_seen_marker(self) -> None:
+    def test_stale_announcements_disable_acknowledgement_in_the_summary(self) -> None:
         initial = self.client.get("/api/whats-new")
         self.assertTrue(initial.data["canAcknowledgeAnnouncements"])
         self.session.get.side_effect = requests.ConnectionError("Source is unavailable")
 
         stale = self.client.get("/api/whats-new")
-        acknowledged = self.client.post(
+        self.assertEqual(stale.status_code, HTTPStatus.OK)
+        self.assertEqual(stale.data["announcements"][0]["id"], "guide")
+        self.assertFalse(stale.data["canAcknowledgeAnnouncements"])
+        self.assertEqual(
+            UserGrowthData.objects.get(user=self.user).last_seen_announcements_date,
+            self.initial_announcements_cutoff,
+        )
+
+    def test_can_acknowledge_displayed_announcements_after_the_source_becomes_unavailable(
+        self,
+    ) -> None:
+        initial = self.client.get("/api/whats-new")
+        self.assertTrue(initial.data["canAcknowledgeAnnouncements"])
+        self.session.get.reset_mock()
+        self.session.get.side_effect = requests.ConnectionError("Source is unavailable")
+
+        with patch(
+            "cvat.apps.growth.updates.announcement_feed",
+            side_effect=AssertionError("Acknowledgement must not reload the feed"),
+        ):
+            response = self.client.post(
+                "/api/whats-new/acknowledge",
+                {"announcements_seen_at": initial.data["announcements"][0]["publishedAt"]},
+                format="json",
+            )
+
+        self.assertEqual(response.status_code, HTTPStatus.OK)
+        self.assertEqual(
+            UserGrowthData.objects.get(user=self.user).last_seen_announcements_date,
+            datetime(2000, 1, 2, tzinfo=timezone.utc),
+        )
+        self.session.get.assert_not_called()
+
+    def test_can_save_the_seen_timestamp_when_the_entry_is_no_longer_in_the_feed(self) -> None:
+        self.documents["https://docs.example.com/announcements/index.json"]["entries"] = []
+
+        response = self.client.post(
             "/api/whats-new/acknowledge",
             {"announcements_seen_at": self.announcement["publishedAt"]},
             format="json",
         )
 
-        self.assertEqual(stale.status_code, HTTPStatus.OK)
-        self.assertEqual(stale.data["announcements"][0]["id"], "guide")
-        self.assertFalse(stale.data["canAcknowledgeAnnouncements"])
-        self.assertEqual(acknowledged.status_code, HTTPStatus.SERVICE_UNAVAILABLE)
+        self.assertEqual(response.status_code, HTTPStatus.OK)
         self.assertEqual(
             UserGrowthData.objects.get(user=self.user).last_seen_announcements_date,
-            self.initial_announcements_cutoff,
+            datetime(2000, 1, 2, tzinfo=timezone.utc),
         )
+        self.session.get.assert_not_called()
+
+    def test_cannot_save_invalid_or_future_seen_timestamps(self) -> None:
+        for timestamp in ("invalid", None, "9999-01-01T00:00:00Z"):
+            with self.subTest(timestamp=timestamp):
+                response = self.client.post(
+                    "/api/whats-new/acknowledge",
+                    {"announcements_seen_at": timestamp},
+                    format="json",
+                )
+
+                self.assertEqual(response.status_code, HTTPStatus.BAD_REQUEST)
+                self.assertIn("announcements_seen_at", response.data)
+                self.assertEqual(
+                    UserGrowthData.objects.get(user=self.user).last_seen_announcements_date,
+                    self.initial_announcements_cutoff,
+                )
+        self.session.get.assert_not_called()
 
     def test_seen_markers_cannot_move_backwards(self) -> None:
         entries = self.documents["https://docs.example.com/release-notes/index.json"]["entries"]

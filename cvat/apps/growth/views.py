@@ -83,7 +83,7 @@ class UpdatesViewSet(viewsets.ViewSet):
         return response
 
     @extend_schema(
-        summary="Get release notes, announcements and the current user's seen state",
+        summary="Get the What's New popup summary and the current user's seen state",
         responses={200: UpdatesIndexSerializer},
     )
     def list(self, request: Request) -> Response:
@@ -107,21 +107,6 @@ class UpdatesViewSet(viewsets.ViewSet):
                     "release_version": "This release is not available for the current edition.",
                 }
             )
-        if seen_at is not None:
-            batch, errors = updates_service.announcement_feed()
-            if errors:
-                raise updates_service.UpdatesUnavailable(
-                    "The complete announcement feed is unavailable. Seen status was not advanced."
-                )
-            if not any(
-                updates_service.publication_date(item["publishedAt"]) == seen_at for item in batch
-            ):
-                raise ValidationError(
-                    {
-                        "announcements_seen_at": "Use the publication timestamp of the loaded batch.",
-                    }
-                )
-
         current = UserGrowthData.for_user(request.user)
         # Older tabs cannot move either marker backwards.
         with transaction.atomic():
