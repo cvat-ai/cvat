@@ -55,6 +55,8 @@ export interface SerializedUserGrowthData {
     github_prompt_support_clicked: boolean;
     github_prompt_enabled: boolean;
     promotion_notifications_allowed: boolean;
+    last_seen_release_notes_version: string;
+    last_seen_announcements_date: string | null;
 }
 
 interface SerializedStorage {

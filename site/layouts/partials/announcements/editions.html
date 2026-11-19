@@ -1,0 +1,20 @@
+{{- $editions := slice "community" "enterprise" "saas" -}}
+{{- if isset .Params "editions" -}}
+  {{- $editions = .Params.editions -}}
+{{- end -}}
+{{- if not (reflect.IsSlice $editions) -}}
+  {{- errorf "Announcement %s must specify editions as a list" .File.Path -}}
+  {{- $editions = slice -}}
+{{- end -}}
+{{- if not $editions -}}
+  {{- errorf "Announcement %s must target at least one edition" .File.Path -}}
+{{- end -}}
+{{- $seen := slice -}}
+{{- range $editions -}}
+  {{- if not (in (slice "community" "enterprise" "saas") .) -}}
+    {{- errorf "Unknown announcement edition: %v" . -}}
+  {{- end -}}
+  {{- if in $seen . -}}{{- errorf "Duplicate announcement edition: %v" . -}}{{- end -}}
+  {{- $seen = $seen | append . -}}
+{{- end -}}
+{{- return $editions -}}

@@ -1,0 +1,9 @@
+{{- $entries := slice -}}
+{{- range slice "release-notes" "announcements" -}}
+  {{- with $.Site.GetPage (printf "/%s" .) -}}
+    {{- range partial "release-notes/pages.html" . -}}
+      {{- $entries = $entries | append . -}}
+    {{- end -}}
+  {{- end -}}
+{{- end -}}
+{{- return (sort $entries "Date" "desc") -}}

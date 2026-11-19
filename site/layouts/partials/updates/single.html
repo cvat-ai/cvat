@@ -1,0 +1,33 @@
+{{ $content := .Content }}
+{{ $headings := slice }}
+{{/* Rendered headings include release-section titles that Hugo's built-in ToC omits. */}}
+{{ range findRE `(?s)<h[2-6]\b[^>]*>.*?</h[2-6]>` $content }}
+  {{ $heading := . }}
+  {{ with findRE `\bid="[^"]+"` $heading 1 }}
+    {{ $id := htmlUnescape (replaceRE `^id="([^"]+)"$` "$1" (index . 0)) }}
+    {{ $headings = $headings | append (dict "ID" $id "Title" (htmlUnescape (plainify $heading))) }}
+  {{ end }}
+{{ end }}
+<div class="container cvat-release-notes-page cvat-updates-page">
+<div class="cvat-updates-layout">
+<article class="td-content cvat-updates-content cvat-release-note">
+  <p><a href="{{ printf "/%s/" .Section | absURL }}">← All {{ if eq .Section "release-notes" }}release notes{{ else }}announcements{{ end }}</a></p>
+  <h1>{{ .Title }}</h1>
+  {{ if eq .Section "announcements" }}{{ partial "announcements/availability.html" . }}{{ end }}
+  <p class="text-muted">Published {{ .Date.Format "January 2, 2006" }}</p>
+  {{ if $headings }}
+  <details class="cvat-updates-mobile-toc">
+    <summary>On this page</summary>
+    {{ partial "updates/article-toc.html" (dict "Headings" $headings "ID" "UpdatesMobileTableOfContents") }}
+  </details>
+  {{ end }}
+  {{ $content | safeHTML }}
+</article>
+{{ if $headings }}
+<aside class="cvat-updates-toc">
+  <h2>On this page</h2>
+  {{ partial "updates/article-toc.html" (dict "Headings" $headings "ID" "TableOfContents") }}
+</aside>
+{{ end }}
+</div>
+</div>

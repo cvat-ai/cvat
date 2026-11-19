@@ -44,6 +44,7 @@ import GlobalHotKeys, { KeyMap } from 'utils/mousetrap-react';
 import { ShortcutScope } from 'utils/enums';
 import { subKeyMap } from 'utils/component-subkeymap';
 import SettingsModal from './settings-modal/settings-modal';
+import WhatsNew from '../whats-new/whats-new';
 
 interface StateToProps {
     user: any;
@@ -55,6 +56,7 @@ interface StateToProps {
     changePasswordDialogShown: boolean;
     logoutFetching: boolean;
     isAnalyticsPluginActive: boolean;
+    whatsNewEnabled: boolean;
     organizationFetching: boolean;
     currentOrganization: any | null;
     organizationsList: Organization[];
@@ -121,6 +123,7 @@ function mapStateToProps(state: CombinedState): StateToProps {
         changePasswordDialogShown,
         logoutFetching,
         isAnalyticsPluginActive: list.ANALYTICS,
+        whatsNewEnabled: list.WHATS_NEW,
         organizationFetching,
         currentOrganization,
         organizationsList,
@@ -150,7 +153,7 @@ function mapDispatchToProps(dispatch: any): DispatchToProps {
     };
 }
 
-type Props = StateToProps & DispatchToProps;
+type Props = StateToProps & DispatchToProps & { whatsNewAutoOpenBlocked?: boolean };
 
 function HeaderComponent(props: Props): JSX.Element {
     const {
@@ -491,6 +494,13 @@ function HeaderComponent(props: Props): JSX.Element {
                 ) : null}
             </div>
             <div className='cvat-right-header'>
+                {props.whatsNewEnabled && (
+                    <WhatsNew
+                        userId={user.id}
+                        autoOpenBlocked={!!props.whatsNewAutoOpenBlocked || settingsModalVisible ||
+                            shortcutsModalVisible || props.changePasswordDialogShown}
+                    />
+                )}
                 <CVATTooltip overlay='Click to open repository'>
                     <Button
                         icon={<GithubOutlined />}

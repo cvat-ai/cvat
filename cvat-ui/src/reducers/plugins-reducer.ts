@@ -11,6 +11,7 @@ const defaultState: PluginsState = {
     initialized: false,
     list: {
         ANALYTICS: false,
+        WHATS_NEW: false,
     },
     current: {},
     callbacks: {

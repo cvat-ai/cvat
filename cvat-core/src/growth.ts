@@ -19,6 +19,8 @@ export default class UserGrowthData {
     #githubPromptSupportClicked: boolean;
     #githubPromptEnabled: boolean;
     #promotionNotificationsAllowed: boolean;
+    #lastSeenReleaseNotesVersion: string;
+    #lastSeenAnnouncementsDate: string | null;
 
     constructor(initialData: SerializedUserGrowthData) {
         this.#id = initialData.id;
@@ -27,6 +29,8 @@ export default class UserGrowthData {
         this.#githubPromptSupportClicked = initialData.github_prompt_support_clicked;
         this.#githubPromptEnabled = initialData.github_prompt_enabled;
         this.#promotionNotificationsAllowed = initialData.promotion_notifications_allowed;
+        this.#lastSeenReleaseNotesVersion = initialData.last_seen_release_notes_version;
+        this.#lastSeenAnnouncementsDate = initialData.last_seen_announcements_date ?? null;
     }
 
     get id(): number {
@@ -51,6 +55,14 @@ export default class UserGrowthData {
 
     get promotionNotificationsAllowed(): boolean {
         return this.#promotionNotificationsAllowed;
+    }
+
+    get lastSeenReleaseNotesVersion(): string {
+        return this.#lastSeenReleaseNotesVersion;
+    }
+
+    get lastSeenAnnouncementsDate(): string | null {
+        return this.#lastSeenAnnouncementsDate;
     }
 
     public async save(fields: UserGrowthDataModifiableFields = {}): Promise<UserGrowthData> {

@@ -1,0 +1,36 @@
+{{- $entries := slice -}}
+{{- $ids := slice -}}
+{{- $dates := slice -}}
+{{- range partial "release-notes/pages.html" . -}}
+  {{- $id := .Params.id -}}
+  {{- if or (not $id) (ne (len (findRE `^[a-z0-9][a-z0-9_-]{0,127}$` $id)) 1) -}}
+    {{- errorf "Announcement %s must specify a stable lowercase id" .File.Path -}}
+  {{- end -}}
+  {{- if in $ids $id -}}{{- errorf "Duplicate announcement id: %s" $id -}}{{- end -}}
+  {{- $ids = $ids | append $id -}}
+  {{- if .Date.IsZero -}}{{- errorf "Announcement %s must specify its publication timestamp" .File.Path -}}{{- end -}}
+  {{- $published := .Date.Format "2006-01-02T15:04:05Z07:00" -}}
+  {{- if in $dates $published -}}{{- errorf "Announcement %s needs a unique publication timestamp" .File.Path -}}{{- end -}}
+  {{- $dates = $dates | append $published -}}
+  {{- $markdown := .OutputFormats.Get "ReleaseMarkdown" -}}
+  {{- $editions := partial "announcements/editions.html" . -}}
+  {{- $imageURL := "" -}}
+  {{- with .Params.image -}}{{- $imageURL = . | absURL -}}{{- end -}}
+  {{- $videoURL := "" -}}
+  {{- with .Params.video -}}{{- $videoURL = . | absURL -}}{{- end -}}
+  {{- $entries = $entries | append (dict
+    "id" $id
+    "title" .Title
+    "description" .Description
+    "publishedAt" $published
+    "announce" (.Params.announce | default false)
+    "editions" $editions
+    "url" .Permalink
+    "markdownURL" $markdown.Permalink
+    "imageURL" $imageURL
+    "videoURL" $videoURL
+    "imageAlt" (.Params.image_alt | default .Title)
+    "cta" (.Params.cta | default "Read announcement")
+  ) -}}
+{{- end -}}
+{{- dict "schemaVersion" 1 "entries" $entries | jsonify -}}

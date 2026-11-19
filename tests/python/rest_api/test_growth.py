@@ -32,7 +32,11 @@ class TestGrowthData:
             "github_prompt_support_clicked",
             "github_prompt_enabled",
             "promotion_notifications_allowed",
+            "last_seen_release_notes_version",
+            "last_seen_announcements_date",
         }
+        assert growth_data["last_seen_release_notes_version"] == ""
+        assert growth_data["last_seen_announcements_date"] is None
         assert isinstance(growth_data["id"], int)
         assert growth_data["owner"]["id"] == user["id"]
         assert growth_data["owner"]["username"] == user["username"]

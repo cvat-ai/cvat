@@ -1,0 +1,20 @@
+{{- $highlights := slice -}}
+{{- $allEditions := slice "community" "enterprise" "saas" -}}
+{{- $sections := slice (dict "content" .Content "editions" $allEditions) -}}
+{{- if .HasShortcode "release-section" -}}
+  {{- $sections = slice -}}
+  {{- range findRE `(?s)<section data-cvat-editions="[^"]+"[^>]*>.*?</section>` .Content -}}
+    {{- $editions := split (replaceRE `(?s)^<section data-cvat-editions="([^"]+)".*$` "$1" .) "," -}}
+    {{- $sections = $sections | append (dict "content" . "editions" $editions) -}}
+  {{- end -}}
+{{- end -}}
+{{- range $sections -}}
+  {{- $editions := .editions -}}
+  {{- range findRE `(?s)<h[2-6]\b[^>]*>.*?</h[2-6]>` .content -}}
+    {{- $text := trim (replaceRE `\s+` " " (htmlUnescape (plainify .))) " \t\r\n" -}}
+    {{- if $text -}}
+      {{- $highlights = $highlights | append (dict "editions" $editions "text" $text) -}}
+    {{- end -}}
+  {{- end -}}
+{{- end -}}
+{{- return $highlights -}}

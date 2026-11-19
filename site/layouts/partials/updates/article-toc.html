@@ -1,0 +1,7 @@
+<nav id="{{ .ID }}" class="cvat-updates-toc-nav" aria-label="Article table of contents">
+  <ul>
+    {{ range .Headings }}
+    <li><a class="nav-link" href="#{{ .ID }}">{{ .Title }}</a></li>
+    {{ end }}
+  </ul>
+</nav>

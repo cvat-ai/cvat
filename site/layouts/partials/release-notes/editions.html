@@ -1,0 +1,15 @@
+{{- /* Read generated section attributes, never freely written availability labels. */ -}}
+{{- $editions := slice "community" "enterprise" "saas" -}}
+{{- if .HasShortcode "release-section" -}}
+  {{- $editions = slice -}}
+  {{- range findRE `<section data-cvat-editions="[^"]+"[^>]*>` .Content -}}
+    {{- $values := replaceRE `^<section data-cvat-editions="([^"]+)"[^>]*>$` "$1" . -}}
+    {{- range split $values "," -}}
+      {{- if not (in $editions .) -}}{{- $editions = $editions | append . -}}{{- end -}}
+    {{- end -}}
+  {{- end -}}
+  {{- if not $editions -}}
+    {{- errorf "Release note %s has no rendered edition sections" .File.Path -}}
+  {{- end -}}
+{{- end -}}
+{{- return $editions -}}

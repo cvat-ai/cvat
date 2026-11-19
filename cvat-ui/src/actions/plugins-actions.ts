@@ -69,6 +69,7 @@ export const getPluginsAsync = (): ThunkAction => async (dispatch): Promise<void
         const installedApps = await core.server.installedApps();
         dispatch(pluginActions.checkPluginsSuccess({
             [SupportedPlugins.ANALYTICS]: installedApps[SupportedPlugins.ANALYTICS] ?? false,
+            [SupportedPlugins.WHATS_NEW]: installedApps[SupportedPlugins.WHATS_NEW] ?? false,
         }));
     } catch (error) {
         dispatch(pluginActions.checkPluginsFailed(error));

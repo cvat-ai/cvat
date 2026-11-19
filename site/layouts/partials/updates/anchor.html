@@ -1,0 +1,5 @@
+{{- $identifier := .Params.id -}}
+{{- if eq .Section "release-notes" -}}
+  {{- $identifier = printf "v%s" .Params.version -}}
+{{- end -}}
+{{- return (printf "update-%s-%s" .Section (replace ($identifier | anchorize) "." "-")) -}}

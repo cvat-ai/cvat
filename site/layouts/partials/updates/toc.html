@@ -1,0 +1,22 @@
+<nav id="{{ .ID }}" class="cvat-updates-toc-nav" aria-label="Updates table of contents">
+  <ul>
+    {{ $month := "" }}
+    {{ range .Entries }}
+      {{ $entryMonth := .Date.Format "2006-01" }}
+      {{ if ne $month $entryMonth }}
+        {{ if $month }}</ul></li>{{ end }}
+        {{ $month = $entryMonth }}
+        <li>
+          <a class="nav-link cvat-updates-toc-month" href="#updates-{{ $month }}">{{ .Date.Format "January 2006" }}</a>
+          <ul>
+      {{ end }}
+      <li>
+        <a class="nav-link" href="#{{ partial "updates/anchor.html" . }}">
+          <span class="cvat-updates-toc-date">{{ .Date.Format "Jan 2" }} · {{ if eq .Section "release-notes" }}Release v{{ .Params.version }}{{ else }}Announcement{{ end }}</span>
+          <span>{{ .Title }}</span>
+        </a>
+      </li>
+    {{ end }}
+    {{ if $month }}</ul></li>{{ end }}
+  </ul>
+</nav>
