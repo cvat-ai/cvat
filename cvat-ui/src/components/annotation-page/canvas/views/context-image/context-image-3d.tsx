@@ -11,8 +11,8 @@ import ContextImage from './context-image';
 import type { ContextImageOverlayProps } from './context-image';
 import ContextImageSVGOverlay, { SVGObjectType } from './context-image-svg-overlay';
 import type { SVGObject } from './context-image-svg-overlay';
-import useCameraRay from './hooks/use-camera-ray';
-import useCuboidProjections from './hooks/use-cuboid-projections';
+import use3dCameraRay from './hooks/use-3d-camera-ray';
+import use3dCuboidProjections from './hooks/use-3d-cuboid-projections';
 
 interface Props {
     offset: number[];
@@ -28,13 +28,13 @@ function ContextImage3DOverlay({
         objects: cameraRayObjects,
         onImageClick,
         onObjectClick: onCameraRayClick,
-    } = useCameraRay({ contextImageName });
+    } = use3dCameraRay({ contextImageName });
     const {
         objects: cuboidProjectionObjects,
         onObjectClick: onCuboidProjectionClick,
         onObjectMouseEnter: onCuboidProjectionMouseEnter,
         onObjectDoubleClick: onCuboidProjectionDoubleClick,
-    } = useCuboidProjections({ contextImageName });
+    } = use3dCuboidProjections({ contextImageName });
 
     const onBackgroundClick = useCallback((point: [number, number]): void => {
         dispatch(activateObject(null, null, null));
