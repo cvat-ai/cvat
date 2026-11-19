@@ -100,7 +100,6 @@
         min-height: 0;
         max-height: 100%;
         overflow-y: auto;
-        overscroll-behavior: contain;
         padding: $grid-unit-size * 0.75 0;
         overflow-wrap: anywhere;
 
@@ -316,7 +315,6 @@
         height: $grid-unit-size * 32.5;
         flex-shrink: 0;
         overflow-y: auto;
-        overscroll-behavior: contain;
         border: 1px solid var(--cvat-updates-border);
         border-radius: 12px;
     }
