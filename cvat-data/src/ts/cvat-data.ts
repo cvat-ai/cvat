@@ -50,7 +50,9 @@ export function decodeContextImages(
                 }
 
                 const { data, fileName } = event.data;
-                result[fileName.split('.')[0]] = data;
+                const extensionIndex = fileName.lastIndexOf('.');
+                const imageName = extensionIndex === -1 ? fileName : fileName.slice(0, extensionIndex);
+                result[imageName] = data;
                 decoded++;
 
                 if (decoded === end) {
