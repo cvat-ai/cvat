@@ -10,7 +10,8 @@ from attr.converters import to_bool
 GITHUB_STAR_PROMPT_COOLDOWN = timedelta(days=30)
 GITHUB_STAR_PROMPT_POLICY = "cvat.apps.growth.policies.EnabledGitHubStarPromptPolicy"
 
-# Content is fetched at runtime; publishing documentation does not deploy CVAT.
+# Content is fetched from the docs site at runtime.
+# Publishing new content does not require redeploying CVAT.
 CVAT_NEWS_ENABLED = to_bool(os.getenv("CVAT_NEWS_ENABLED", False))
 CVAT_NEWS_SOURCE_URL = os.getenv("CVAT_NEWS_SOURCE_URL", "https://docs.cvat.ai/")
 CVAT_NEWS_PUBLIC_URL = os.getenv("CVAT_NEWS_PUBLIC_URL", CVAT_NEWS_SOURCE_URL)

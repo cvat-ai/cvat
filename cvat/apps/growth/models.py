@@ -2,6 +2,8 @@
 #
 # SPDX-License-Identifier: MIT
 
+from datetime import timedelta, timezone
+
 from django.conf import settings
 from django.db import models
 
@@ -22,9 +24,16 @@ class UserGrowthData(models.Model):
 
     @classmethod
     def for_user(cls, user: User) -> "UserGrowthData":
-        """Return shared user state, initializing it for accounts without a record."""
+        """Get or create the growth data record for this user."""
+        registration_day = user.date_joined.astimezone(timezone.utc).replace(
+            hour=0, minute=0, second=0, microsecond=0
+        )
         growth_data, _ = cls.objects.get_or_create(
             user=user,
-            defaults={"github_prompt_shown_at": user.date_joined},
+            defaults={
+                "github_prompt_shown_at": user.date_joined,
+                # Seen markers are exclusive; include posts published exactly at midnight.
+                "last_seen_announcements_date": registration_day - timedelta(microseconds=1),
+            },
         )
         return growth_data

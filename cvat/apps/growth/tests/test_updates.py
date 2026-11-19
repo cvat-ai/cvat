@@ -5,6 +5,7 @@
 """Updates API regression coverage for https://github.com/cvat-ai/cvat/pull/11436."""
 
 import json
+from datetime import datetime, timezone
 from http import HTTPStatus
 from typing import Any
 from unittest.mock import MagicMock, patch
@@ -38,7 +39,12 @@ def sample_provider(
 class UpdatesApiTestBase(ApiTestBase):
     def setUp(self) -> None:
         super().setUp()
-        self.user = User.objects.create_user(username="updates-user", password="password")
+        self.user = User.objects.create_user(
+            username="updates-user",
+            password="password",
+            date_joined=datetime(2000, 1, 2, 12, tzinfo=timezone.utc),
+        )
+        self.initial_announcements_cutoff = datetime(2000, 1, 1, 23, 59, 59, 999999, timezone.utc)
         self.client.force_authenticate(user=self.user)
         self.edition = settings.CVAT_NEWS_EDITION
         self.release = {
@@ -98,12 +104,36 @@ class UpdatesApiTestBase(ApiTestBase):
 
 
 class UpdatesApiTestCase(UpdatesApiTestBase):
-    def test_new_user_has_empty_release_version(self) -> None:
+    def test_new_user_starts_from_registration_day_and_has_empty_release_version(self) -> None:
         response = self.client.get("/api/whats-new")
 
         self.assertEqual(response.status_code, HTTPStatus.OK)
         self.assertEqual(response.data["state"]["last_seen_release_notes_version"], "")
-        self.assertIsNone(response.data["state"]["last_seen_announcements_date"])
+        self.assertEqual(
+            response.data["state"]["last_seen_announcements_date"],
+            self.initial_announcements_cutoff,
+        )
+
+    def test_registration_cutoff_keeps_older_announcement_previews_available(self) -> None:
+        self.documents["https://docs.example.com/announcements/index.json"]["entries"].append(
+            {
+                **self.announcement,
+                "id": "older",
+                "publishedAt": "2000-01-01T12:00:00Z",
+                "markdownURL": "https://docs.example.com/announcements/older/index.md",
+            }
+        )
+
+        response = self.client.get("/api/whats-new")
+
+        self.assertEqual(response.status_code, HTTPStatus.OK)
+        self.assertEqual(
+            [item["id"] for item in response.data["announcements"]], ["guide", "older"]
+        )
+        self.assertEqual(
+            response.data["state"]["last_seen_announcements_date"],
+            self.initial_announcements_cutoff,
+        )
 
     def test_can_filter_release_previews_by_edition_and_version(self) -> None:
         assert VERSION[:3] >= (2, 0, 0)
@@ -162,7 +192,10 @@ class UpdatesApiTestCase(UpdatesApiTestBase):
         self.assertEqual(response.status_code, HTTPStatus.OK)
         self.assertIn("announcements", response.data["errors"])
         self.assertFalse(response.data["canAcknowledgeAnnouncements"])
-        self.assertIsNone(response.data["state"]["last_seen_announcements_date"])
+        self.assertEqual(
+            response.data["state"]["last_seen_announcements_date"],
+            self.initial_announcements_cutoff,
+        )
 
     @override_settings(CVAT_NEWS_ENABLED=False)
     def test_disabled_feature_does_not_fetch_content(self) -> None:
@@ -186,7 +219,10 @@ class UpdatesApiTestCase(UpdatesApiTestBase):
         self.assertEqual(response.status_code, HTTPStatus.OK)
         self.assertIn("announcements", response.data["errors"])
         self.assertFalse(response.data["canAcknowledgeAnnouncements"])
-        self.assertIsNone(response.data["state"]["last_seen_announcements_date"])
+        self.assertEqual(
+            response.data["state"]["last_seen_announcements_date"],
+            self.initial_announcements_cutoff,
+        )
 
     def test_can_read_only_matching_release_sections(self) -> None:
         self.documents[self.release["markdownURL"]] = (
@@ -232,7 +268,10 @@ class UpdatesApiTestCase(UpdatesApiTestBase):
         self.assertEqual(stale.data["announcements"][0]["id"], "guide")
         self.assertFalse(stale.data["canAcknowledgeAnnouncements"])
         self.assertEqual(acknowledged.status_code, HTTPStatus.SERVICE_UNAVAILABLE)
-        self.assertIsNone(UserGrowthData.objects.get(user=self.user).last_seen_announcements_date)
+        self.assertEqual(
+            UserGrowthData.objects.get(user=self.user).last_seen_announcements_date,
+            self.initial_announcements_cutoff,
+        )
 
     def test_seen_markers_cannot_move_backwards(self) -> None:
         entries = self.documents["https://docs.example.com/release-notes/index.json"]["entries"]
