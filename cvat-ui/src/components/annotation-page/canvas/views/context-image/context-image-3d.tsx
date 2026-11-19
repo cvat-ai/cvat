@@ -3,7 +3,10 @@
 // SPDX-License-Identifier: MIT
 
 import React, { useCallback } from 'react';
+import { useDispatch } from 'react-redux';
 
+import { activateObject } from 'actions/annotation-actions';
+import { ThunkDispatch } from 'utils/redux';
 import ContextImage from './context-image';
 import type { ContextImageOverlayProps } from './context-image';
 import ContextImageSVGOverlay, { SVGObjectType } from './context-image-svg-overlay';
@@ -20,26 +23,35 @@ function ContextImage3DOverlay({
     contextImageName,
     scale,
 }: ContextImageOverlayProps): JSX.Element {
+    const dispatch = useDispatch<ThunkDispatch>();
     const {
         objects: cameraRayObjects,
         onImageClick,
-        onMarkerClick,
+        onObjectClick: onCameraRayClick,
     } = useCameraRay({ contextImageName });
     const {
         objects: cuboidProjectionObjects,
+        onObjectClick: onCuboidProjectionClick,
         onObjectMouseEnter: onCuboidProjectionMouseEnter,
         onObjectDoubleClick: onCuboidProjectionDoubleClick,
     } = useCuboidProjections({ contextImageName });
 
     const onBackgroundClick = useCallback((point: [number, number]): void => {
+        dispatch(activateObject(null, null, null));
         onImageClick(point);
-    }, [onImageClick]);
+    }, [dispatch, onImageClick]);
     const onObjectClick = useCallback((object: SVGObject, event: React.MouseEvent<SVGGElement>): void => {
-        if (object.type === SVGObjectType.CAMERA_RAY) {
-            event.stopPropagation();
-            onMarkerClick(object.id, event.shiftKey);
+        switch (object.type) {
+            case SVGObjectType.CAMERA_RAY:
+                onCameraRayClick(object, event);
+                break;
+            case SVGObjectType.CUBOID_PROJECTION:
+                onCuboidProjectionClick(object, event);
+                break;
+            default:
+                break;
         }
-    }, [onMarkerClick]);
+    }, [onCameraRayClick, onCuboidProjectionClick]);
     const onObjectMouseEnter = useCallback((object: SVGObject): void => {
         onCuboidProjectionMouseEnter(object);
     }, [onCuboidProjectionMouseEnter]);

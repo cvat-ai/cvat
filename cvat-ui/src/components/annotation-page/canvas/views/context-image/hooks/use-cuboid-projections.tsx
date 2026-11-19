@@ -27,6 +27,7 @@ interface Params {
 
 interface CuboidProjectionInteraction {
     objects: SVGObject[];
+    onObjectClick(object: SVGObject, event: React.MouseEvent<SVGGElement>): void;
     onObjectMouseEnter(object: SVGObject): void;
     onObjectDoubleClick(object: SVGObject): void;
 }
@@ -120,6 +121,13 @@ export default function useCuboidProjections({ contextImageName }: Params): Cubo
         }, []);
     }, [activatedStateID, annotations, calibration, colorBy, opacity, outlineColor, outlined, selectedOpacity]);
 
+    const onObjectClick = useCallback((object: SVGObject, event: React.MouseEvent<SVGGElement>): void => {
+        if (object.type !== SVGObjectType.CUBOID_PROJECTION) {
+            return;
+        }
+
+        event.stopPropagation();
+    }, []);
     const onObjectMouseEnter = useCallback((object: SVGObject): void => {
         if (
             object.type !== SVGObjectType.CUBOID_PROJECTION ||
@@ -148,6 +156,7 @@ export default function useCuboidProjections({ contextImageName }: Params): Cubo
 
     return {
         objects,
+        onObjectClick,
         onObjectMouseEnter,
         onObjectDoubleClick,
     };

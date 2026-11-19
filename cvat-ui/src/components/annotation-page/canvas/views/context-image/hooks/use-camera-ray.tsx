@@ -26,7 +26,7 @@ interface Params {
 interface CameraRayInteraction {
     objects: SVGObject[];
     onImageClick(point: [number, number]): void;
-    onMarkerClick(id: string, removeAll: boolean): void;
+    onObjectClick(object: SVGObject, event: React.MouseEvent<SVGGElement>): void;
 }
 
 const cameraRayMarkerTooltip = (
@@ -77,18 +77,23 @@ export default function useCameraRay({ contextImageName }: Params): CameraRayInt
         }
     }, [contextImageName, dispatch]);
 
-    const onMarkerClick = useCallback((id: string, removeAll: boolean): void => {
-        if (removeAll && contextImageName) {
+    const onObjectClick = useCallback((object: SVGObject, event: React.MouseEvent<SVGGElement>): void => {
+        if (object.type !== SVGObjectType.CAMERA_RAY) {
+            return;
+        }
+
+        event.stopPropagation();
+        if (event.shiftKey && contextImageName) {
             dispatch(clearContextImageCameraRays(contextImageName));
             return;
         }
 
-        dispatch(removeCameraRay(id));
+        dispatch(removeCameraRay(object.id));
     }, [contextImageName, dispatch]);
 
     return {
         objects,
         onImageClick,
-        onMarkerClick,
+        onObjectClick,
     };
 }
