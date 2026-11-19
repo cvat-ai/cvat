@@ -5,9 +5,17 @@
 import React, { useCallback } from 'react';
 import classNames from 'classnames';
 
+import type { ObjectState } from 'cvat-core-wrapper';
+
+export enum SVGObjectType {
+    CAMERA_RAY = 'camera-ray',
+    CUBOID_PROJECTION = 'cuboid-projection',
+}
+
 export type SVGObject = {
     id: string;
-    type: string;
+    type: SVGObjectType;
+    state?: ObjectState;
     className?: string;
     render(scale: number): React.ReactNode;
 };
@@ -23,7 +31,9 @@ interface Props {
     objects: SVGObject[];
     className?: string;
     onBackgroundClick(point: [number, number]): void;
-    onObjectClick(object: SVGObject, isShiftKeyDown: boolean): void;
+    onObjectClick(object: SVGObject, event: React.MouseEvent<SVGGElement>): void;
+    onObjectMouseEnter(object: SVGObject): void;
+    onObjectDoubleClick(object: SVGObject): void;
 }
 
 function ContextImageSVGOverlay(props: Props): JSX.Element {
@@ -34,6 +44,8 @@ function ContextImageSVGOverlay(props: Props): JSX.Element {
         className,
         onBackgroundClick,
         onObjectClick,
+        onObjectMouseEnter,
+        onObjectDoubleClick,
     } = props;
     const onOverlayClick = useCallback((event: React.MouseEvent<SVGSVGElement>): void => {
         const { currentTarget, clientX, clientY } = event;
@@ -62,8 +74,13 @@ function ContextImageSVGOverlay(props: Props): JSX.Element {
                     key={object.id}
                     className={object.className}
                     onClick={(event) => {
-                        event.stopPropagation();
-                        onObjectClick(object, event.shiftKey);
+                        onObjectClick(object, event);
+                    }}
+                    onMouseEnter={() => {
+                        onObjectMouseEnter(object);
+                    }}
+                    onDoubleClick={() => {
+                        onObjectDoubleClick(object);
                     }}
                 >
                     {object.render(scale)}

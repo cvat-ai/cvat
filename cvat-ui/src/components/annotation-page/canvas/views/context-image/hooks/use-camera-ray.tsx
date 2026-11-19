@@ -16,6 +16,7 @@ import { CombinedState } from 'reducers';
 import type { CameraRayPoint } from 'reducers';
 import { shallowEqual, ThunkDispatch } from 'utils/redux';
 import CameraRayMarker from '../camera-ray-marker';
+import { SVGObjectType } from '../context-image-svg-overlay';
 import type { SVGObject } from '../context-image-svg-overlay';
 
 interface Params {
@@ -47,7 +48,7 @@ export default function useCameraRay({ contextImageName }: Params): CameraRayInt
 
         return cameraRays.filter((cameraRay) => cameraRay.relatedImageName === contextImageName).map((cameraRay) => ({
             id: cameraRay.id,
-            type: 'camera-ray',
+            type: SVGObjectType.CAMERA_RAY,
             className: 'cvat-context-image-camera-ray-marker',
             render: (scale): JSX.Element => (
                 <CVATTooltip title={cameraRayMarkerTooltip} mouseEnterDelay={0.5}>
