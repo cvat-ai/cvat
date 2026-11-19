@@ -8205,7 +8205,7 @@ components:
           type: string
         description:
           type: string
-        publishedAt:
+        published_at:
           type: string
           format: date-time
         announce:
@@ -8220,19 +8220,19 @@ components:
           format: uri
         source:
           $ref: '#/components/schemas/SourceEnum'
-        imageURL:
+        image_url:
           type: string
           format: uri
-        videoURL:
+        video_url:
           type: string
           format: uri
-        imageAlt:
+        image_alt:
           type: string
         cta:
           type: string
         label:
           type: string
-        markdownURL:
+        markdown_url:
           type: string
           format: uri
       required:
@@ -8240,7 +8240,7 @@ components:
       - description
       - editions
       - id
-      - publishedAt
+      - published_at
       - source
       - title
       - url
@@ -13289,7 +13289,7 @@ components:
           type: string
         description:
           type: string
-        publishedAt:
+        published_at:
           type: string
           format: date-time
         announce:
@@ -13302,10 +13302,10 @@ components:
         url:
           type: string
           format: uri
-        markdownURL:
+        markdown_url:
           type: string
           format: uri
-        hasEditionSections:
+        has_edition_sections:
           type: boolean
         highlights:
           type: array
@@ -13315,10 +13315,10 @@ components:
       - announce
       - description
       - editions
-      - hasEditionSections
+      - has_edition_sections
       - highlights
-      - markdownURL
-      - publishedAt
+      - markdown_url
+      - published_at
       - title
       - url
       - version
@@ -14217,32 +14217,32 @@ components:
           type: array
           items:
             $ref: '#/components/schemas/AnnouncementPreview'
-        canAcknowledgeAnnouncements:
+        can_acknowledge_announcements:
           type: boolean
         errors:
           type: array
           items:
             $ref: '#/components/schemas/ErrorsEnum'
-        releaseHistoryURL:
+        release_history_url:
           type: string
           format: uri
-        announcementHistoryURL:
+        announcement_history_url:
           type: string
           format: uri
-        updatesHistoryURL:
+        updates_history_url:
           type: string
           format: uri
       required:
-      - announcementHistoryURL
+      - announcement_history_url
       - announcements
-      - canAcknowledgeAnnouncements
+      - can_acknowledge_announcements
       - edition
       - errors
       - latest_announced_release
       - latest_release
-      - releaseHistoryURL
+      - release_history_url
       - state
-      - updatesHistoryURL
+      - updates_history_url
     UpdatesState:
       type: object
       properties:

@@ -4,7 +4,7 @@
 
 import { getCore } from 'cvat-core-wrapper';
 import {
-    ReleaseNote, SeenState, Updates, UpdatesAcknowledgement,
+    Announcement, ReleaseNote, SeenState, Updates, UpdatesAcknowledgement,
 } from './feed';
 
 interface SerializedSeenState {
@@ -13,10 +13,32 @@ interface SerializedSeenState {
     promotion_notifications_allowed: boolean;
 }
 
-interface SerializedUpdates extends Omit<Updates, 'state' | 'latestRelease' | 'latestAnnouncedRelease'> {
+interface SerializedReleaseNote extends Omit<ReleaseNote, 'publishedAt' | 'markdownURL' | 'hasEditionSections'> {
+    published_at: string;
+    markdown_url: string;
+    has_edition_sections: boolean;
+}
+
+interface SerializedAnnouncement extends Omit<Announcement, 'publishedAt' | 'imageURL' | 'videoURL' | 'imageAlt' | 'markdownURL'> {
+    published_at: string;
+    image_url?: string;
+    video_url?: string;
+    image_alt?: string;
+    markdown_url?: string;
+}
+
+interface SerializedUpdates extends Omit<Updates,
+    'state' | 'latestRelease' | 'latestAnnouncedRelease' | 'announcements' | 'canAcknowledgeAnnouncements' |
+    'releaseHistoryURL' | 'announcementHistoryURL' | 'updatesHistoryURL'
+> {
     state: SerializedSeenState;
-    latest_release: ReleaseNote | null;
-    latest_announced_release: ReleaseNote | null;
+    latest_release: SerializedReleaseNote | null;
+    latest_announced_release: SerializedReleaseNote | null;
+    announcements: SerializedAnnouncement[];
+    can_acknowledge_announcements: boolean;
+    release_history_url: string;
+    announcement_history_url: string;
+    updates_history_url: string;
 }
 
 interface SerializedUpdatesAcknowledgement {
@@ -34,15 +56,42 @@ function deserializeSeenState(state: SerializedSeenState): SeenState {
     };
 }
 
+function deserializeRelease(release: SerializedReleaseNote | null): ReleaseNote | null {
+    if (!release) return null;
+    const {
+        published_at: publishedAt, markdown_url: markdownURL, has_edition_sections: hasEditionSections, ...rest
+    } = release;
+    return {
+        ...rest, publishedAt, markdownURL, hasEditionSections,
+    };
+}
+
+function deserializeAnnouncement(announcement: SerializedAnnouncement): Announcement {
+    const {
+        published_at: publishedAt, image_url: imageURL, video_url: videoURL,
+        image_alt: imageAlt, markdown_url: markdownURL, ...rest
+    } = announcement;
+    return {
+        ...rest, publishedAt, imageURL, videoURL, imageAlt, markdownURL,
+    };
+}
+
 export async function fetchUpdates(signal: AbortSignal): Promise<Updates> {
     const response = await core.server.request('/api/whats-new', {
         method: 'GET', params: { org: '' }, signal, timeout: 25000,
     }) as { data: SerializedUpdates };
-    const {
-        state, latest_release: latestRelease, latest_announced_release: latestAnnouncedRelease, ...summary
-    } = response.data;
+    const summary = response.data;
     return {
-        ...summary, state: deserializeSeenState(state), latestRelease, latestAnnouncedRelease,
+        edition: summary.edition,
+        state: deserializeSeenState(summary.state),
+        latestRelease: deserializeRelease(summary.latest_release),
+        latestAnnouncedRelease: deserializeRelease(summary.latest_announced_release),
+        announcements: summary.announcements.map(deserializeAnnouncement),
+        canAcknowledgeAnnouncements: summary.can_acknowledge_announcements,
+        errors: summary.errors,
+        releaseHistoryURL: summary.release_history_url,
+        announcementHistoryURL: summary.announcement_history_url,
+        updatesHistoryURL: summary.updates_history_url,
     };
 }
 

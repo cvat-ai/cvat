@@ -87,7 +87,10 @@ class UpdatesViewSet(viewsets.ViewSet):
         responses={200: UpdatesIndexSerializer},
     )
     def list(self, request: Request) -> Response:
-        return Response(updates_service.index(UserGrowthData.for_user(request.user)))
+        serializer = UpdatesIndexSerializer(
+            updates_service.index(UserGrowthData.for_user(request.user))
+        )
+        return Response(serializer.data)
 
     @extend_schema(
         summary="Acknowledge displayed updates for the current user",

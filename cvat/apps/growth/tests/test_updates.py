@@ -104,13 +104,49 @@ class UpdatesApiTestBase(ApiTestBase):
 
 
 class UpdatesApiTestCase(UpdatesApiTestBase):
+    def test_api_uses_snake_case_without_changing_the_hugo_feed(self) -> None:
+        self.announcement.update(
+            imageURL="https://docs.example.com/images/preview.png",
+            videoURL="https://docs.example.com/videos/preview.mp4",
+            imageAlt="Announcement preview",
+        )
+
+        response = self.client.get("/api/whats-new")
+
+        self.assertEqual(response.status_code, HTTPStatus.OK)
+        release = response.data["latest_release"]
+        announcement = response.data["announcements"][0]
+        self.assertEqual(
+            datetime.fromisoformat(release["published_at"]),
+            datetime.fromisoformat(self.release["publishedAt"]),
+        )
+        self.assertEqual(release["markdown_url"], self.release["markdownURL"])
+        self.assertTrue(release["has_edition_sections"])
+        self.assertEqual(
+            datetime.fromisoformat(announcement["published_at"]),
+            datetime.fromisoformat(self.announcement["publishedAt"]),
+        )
+        self.assertEqual(announcement["markdown_url"], self.announcement["markdownURL"])
+        self.assertEqual(announcement["image_url"], self.announcement["imageURL"])
+        self.assertEqual(announcement["video_url"], self.announcement["videoURL"])
+        self.assertEqual(announcement["image_alt"], self.announcement["imageAlt"])
+        self.assertTrue(response.data["can_acknowledge_announcements"])
+        for key, path in (
+            ("release_history_url", "release-notes/"),
+            ("announcement_history_url", "announcements/"),
+            ("updates_history_url", "updates/"),
+        ):
+            self.assertEqual(response.data[key], f"https://docs.example.com/{path}")
+        for item in (response.data, response.data["state"], release, announcement):
+            self.assertTrue(all(key == key.lower() for key in item), item)
+
     def test_new_user_starts_from_registration_day_and_has_empty_release_version(self) -> None:
         response = self.client.get("/api/whats-new")
 
         self.assertEqual(response.status_code, HTTPStatus.OK)
         self.assertEqual(response.data["state"]["last_seen_release_notes_version"], "")
         self.assertEqual(
-            response.data["state"]["last_seen_announcements_date"],
+            datetime.fromisoformat(response.data["state"]["last_seen_announcements_date"]),
             self.initial_announcements_cutoff,
         )
 
@@ -131,7 +167,7 @@ class UpdatesApiTestCase(UpdatesApiTestBase):
             [item["id"] for item in response.data["announcements"]], ["guide", "older"]
         )
         self.assertEqual(
-            response.data["state"]["last_seen_announcements_date"],
+            datetime.fromisoformat(response.data["state"]["last_seen_announcements_date"]),
             self.initial_announcements_cutoff,
         )
 
@@ -244,9 +280,9 @@ class UpdatesApiTestCase(UpdatesApiTestBase):
 
         self.assertEqual(response.status_code, HTTPStatus.OK)
         self.assertIn("announcements", response.data["errors"])
-        self.assertFalse(response.data["canAcknowledgeAnnouncements"])
+        self.assertFalse(response.data["can_acknowledge_announcements"])
         self.assertEqual(
-            response.data["state"]["last_seen_announcements_date"],
+            datetime.fromisoformat(response.data["state"]["last_seen_announcements_date"]),
             self.initial_announcements_cutoff,
         )
 
@@ -264,9 +300,9 @@ class UpdatesApiTestCase(UpdatesApiTestBase):
 
         self.assertEqual(response.status_code, HTTPStatus.OK)
         self.assertIn("announcements", response.data["errors"])
-        self.assertFalse(response.data["canAcknowledgeAnnouncements"])
+        self.assertFalse(response.data["can_acknowledge_announcements"])
         self.assertEqual(
-            response.data["state"]["last_seen_announcements_date"],
+            datetime.fromisoformat(response.data["state"]["last_seen_announcements_date"]),
             self.initial_announcements_cutoff,
         )
 
@@ -284,13 +320,13 @@ class UpdatesApiTestCase(UpdatesApiTestBase):
     @override_settings(CVAT_NEWS_CACHE_TTL=0)
     def test_stale_announcements_disable_acknowledgement_in_the_summary(self) -> None:
         initial = self.client.get("/api/whats-new")
-        self.assertTrue(initial.data["canAcknowledgeAnnouncements"])
+        self.assertTrue(initial.data["can_acknowledge_announcements"])
         self.session.get.side_effect = requests.ConnectionError("Source is unavailable")
 
         stale = self.client.get("/api/whats-new")
         self.assertEqual(stale.status_code, HTTPStatus.OK)
         self.assertEqual(stale.data["announcements"][0]["id"], "guide")
-        self.assertFalse(stale.data["canAcknowledgeAnnouncements"])
+        self.assertFalse(stale.data["can_acknowledge_announcements"])
         self.assertEqual(
             UserGrowthData.objects.get(user=self.user).last_seen_announcements_date,
             self.initial_announcements_cutoff,
@@ -300,7 +336,7 @@ class UpdatesApiTestCase(UpdatesApiTestBase):
         self,
     ) -> None:
         initial = self.client.get("/api/whats-new")
-        self.assertTrue(initial.data["canAcknowledgeAnnouncements"])
+        self.assertTrue(initial.data["can_acknowledge_announcements"])
         self.session.get.reset_mock()
         self.session.get.side_effect = requests.ConnectionError("Source is unavailable")
 
@@ -310,7 +346,7 @@ class UpdatesApiTestCase(UpdatesApiTestBase):
         ):
             response = self.client.post(
                 "/api/whats-new/acknowledge",
-                {"announcements_seen_at": initial.data["announcements"][0]["publishedAt"]},
+                {"announcements_seen_at": initial.data["announcements"][0]["published_at"]},
                 format="json",
             )
 
@@ -482,7 +518,7 @@ class UpdatesApiTestCase(UpdatesApiTestBase):
         self.assertEqual(len(response.data["announcements"]), 1)
         self.assertEqual(response.data["announcements"][0]["id"], "guide")
         self.assertEqual(response.data["announcements"][0]["source"], "hugo")
-        self.assertEqual(response.data["announcements"][0]["publishedAt"], preview["publishedAt"])
+        self.assertEqual(response.data["announcements"][0]["published_at"], preview["publishedAt"])
         self.assertTrue(response.data["announcements"][0]["announce"])
 
     @override_settings(
@@ -495,4 +531,4 @@ class UpdatesApiTestCase(UpdatesApiTestBase):
         self.assertEqual(response.status_code, HTTPStatus.OK)
         self.assertEqual(response.data["errors"], ["external-announcements"])
         self.assertEqual(response.data["announcements"][0]["id"], "guide")
-        self.assertFalse(response.data["canAcknowledgeAnnouncements"])
+        self.assertFalse(response.data["can_acknowledge_announcements"])
