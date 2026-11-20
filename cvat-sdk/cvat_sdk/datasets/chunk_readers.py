@@ -4,8 +4,6 @@
 
 from __future__ import annotations
 
-import contextlib
-import importlib
 import zipfile
 from abc import ABC, abstractmethod
 from collections.abc import Generator
@@ -13,10 +11,7 @@ from pathlib import Path
 
 import PIL.Image
 
-from cvat_sdk.core.exceptions import (
-    ChunkAccessModeNotSupportedException,
-    ChunkReaderUnavailableException,
-)
+from cvat_sdk.core.exceptions import ChunkAccessModeNotSupportedException
 
 
 class IChunkReader(ABC):
@@ -30,8 +25,8 @@ class IChunkReader(ABC):
     @classmethod
     def ensure_available(cls) -> None:
         """
-        Raises an exception if chunks cannot be read with this reader in the current environment,
-        for example, because an optional dependency is not installed.
+        Raises ChunkReaderUnavailableException if chunks cannot be read with this reader
+        in the current environment, for example, because a required library is missing.
         """
 
     @abstractmethod
@@ -73,12 +68,8 @@ class ZipChunkReader(IChunkReader):
 class VideoMp4ChunkReader(IChunkReader):
     @classmethod
     def ensure_available(cls) -> None:
-        try:
-            importlib.import_module("cvat_mp4_h264")
-        except ImportError as e:
-            raise ChunkReaderUnavailableException(
-                "Reading video chunks requires the video extra: pip install 'cvat-sdk[video]'"
-            ) from e
+        # The check that the OpenH264 library can be loaded will be added in a follow-up PR.
+        pass
 
     def __getitem__(self, index: int) -> PIL.Image.Image:
         raise ChunkAccessModeNotSupportedException(
@@ -86,9 +77,5 @@ class VideoMp4ChunkReader(IChunkReader):
         )
 
     def __iter__(self) -> Generator[PIL.Image.Image, None, None]:
-        import cvat_mp4_h264
-
-        reader = cvat_mp4_h264.VideoMp4ChunkReader(path=self._chunk_path)
-        with contextlib.closing(iter(reader)) as frames:
-            for frame in frames:
-                yield frame.to_image()
+        # Decoding will be added in a follow-up PR.
+        raise NotImplementedError

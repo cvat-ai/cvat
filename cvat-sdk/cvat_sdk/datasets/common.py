@@ -70,14 +70,16 @@ class MediaDownloadPolicy(Enum):
     """
     Download and cache all media data when the dataset object is created.
 
-    Tasks whose original chunks are videos require the `video` extra.
+    This requires the task's original chunks to be image sets, meaning that each chunk
+    contains individual images. Tasks created from video may still satisfy this requirement.
     """
 
     FETCH_CHUNKS_ON_DEMAND = auto()
     """
-    Download chunks lazily as they are needed and cache them locally.
+    Download image-set chunks lazily as they are needed and cache them locally.
 
-    Tasks whose original chunks are videos require the `video` extra.
+    This requires the task's original chunks to be image sets, meaning that each chunk
+    contains individual images. Tasks created from video may still satisfy this requirement.
     """
 
     FETCH_FRAMES_ON_DEMAND = auto()
