@@ -25,5 +25,9 @@ class ChunkReaderUnavailableException(CvatSdkException):
     """Indicates that task chunks of some type cannot be read in the current environment"""
 
 
+class ChunkAccessModeNotSupportedException(CvatSdkException):
+    """Indicates that a chunk reader does not support the requested access mode"""
+
+
 class AuthStoreError(CvatSdkException):
     """Raised when auth store operations fail."""
