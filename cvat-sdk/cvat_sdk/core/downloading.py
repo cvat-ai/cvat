@@ -110,6 +110,9 @@ class Downloader:
             except ValueError:
                 file_size = None
 
+            if response.headers.get("Content-Encoding", "identity").lower() != "identity":
+                file_size = None
+
             if output_path.is_dir():
                 output_path /= self._get_server_filename(response)
                 if output_path.exists():
@@ -126,7 +129,7 @@ class Downloader:
                 ),
             ):
                 while True:
-                    chunk = response.read(amt=CHUNK_SIZE, decode_content=False)
+                    chunk = response.read(amt=CHUNK_SIZE, decode_content=True)
                     if not chunk:
                         break
 
