@@ -10,6 +10,7 @@ import torchvision.datasets
 
 import cvat_sdk.core
 from cvat_sdk.datasets.caching import UpdatePolicy, make_cache_manager
+from cvat_sdk.datasets.common import UnsupportedDatasetError
 from cvat_sdk.datasets.task_dataset import TaskDataset
 from cvat_sdk.pytorch.common import Target
 
@@ -70,9 +71,19 @@ class TaskVisionDataset(torchvision.datasets.VisionDataset):
         `update_policy` determines when and if the local cache will be updated.
         """
 
-        self._underlying = TaskDataset(client, task_id, update_policy=update_policy)
-
         cache_manager = make_cache_manager(client, update_policy)
+
+        task = cache_manager.retrieve_task(task_id=task_id)
+        if not task.size or not task.data_chunk_size:
+            raise UnsupportedDatasetError("The task has no data")
+
+        if task.data_original_chunk_type != "imageset":
+            raise UnsupportedDatasetError(
+                "Only tasks whose original chunks are image sets are supported; "
+                f"the original chunk type of task {task_id} is {task.data_original_chunk_type!r}"
+            )
+
+        self._underlying = TaskDataset(client, task_id, update_policy=update_policy)
 
         super().__init__(
             os.fspath(cache_manager.task_dir(task_id)),

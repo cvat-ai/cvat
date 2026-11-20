@@ -26,7 +26,7 @@ except ModuleNotFoundError as e:
 
     cvatpt = None
 
-from shared.utils.helpers import generate_image_files
+from shared.utils.helpers import generate_image_files, generate_video_file
 
 from .util import restrict_api_requests
 
@@ -352,6 +352,23 @@ class TestTaskVisionDataset:
 
         assert isinstance(dataset[0][0], cvatpt.Target)
         assert isinstance(dataset[0][1], PIL.Image.Image)
+
+    def test_video_task_is_rejected(self, tmp_path: Path):
+        video_file = generate_video_file(4)
+        video_path = tmp_path / video_file.name
+        video_path.write_bytes(video_file.getbuffer())
+
+        video_task = self.client.tasks.create_from_data(
+            models.TaskWriteRequest(
+                "PyTorch integration video task",
+                labels=[models.PatchedLabelRequest(name="person")],
+            ),
+            resource_type=ResourceType.LOCAL,
+            resources=[video_path],
+        )
+
+        with pytest.raises(cvatpt.UnsupportedDatasetError, match="image sets"):
+            cvatpt.TaskVisionDataset(self.client, video_task.id)
 
     def test_custom_label_mapping(self):
         label_name_to_id = {label.name: label.id for label in self.task.get_labels()}
