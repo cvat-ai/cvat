@@ -59,6 +59,26 @@ To upgrade CVAT, follow these steps:
   docker logs cvat_server -f
   ```
 
+## Upgrade to v2.76.0 or later
+
+In CVAT 2.76, the Helm subchart for Traefik was updated to v41.0.x. This version updates
+the Custom Resources Definitions (CRDs) for Traefik resources. If you deploy CVAT via the Helm
+chart and use Traefik as the ingress controller, then before deploying this release,
+update the Traefik CRDs in your cluster by running the following:
+
+```shell
+# assuming the current directory is the CVAT source directory
+cd helm-chart
+helm dependency update
+helm show crds . | kubectl apply --server-side --force-conflicts -f -
+```
+
+In addition, note that the value schema has changed between the version of this subchart used
+by previous releases and v41. If in your deployment you set any custom values related to Traefik
+(e.g. `--set traefik.[...]`), consult the
+[upstream documentation](https://github.com/traefik/traefik-helm-chart/blob/v41.0.2/traefik/values.yaml)
+to see if there are any changes you need to make.
+
 ## Upgrade to v2.72.0 or later
 
 Version 2.72.0 moves CVAT application source files from `/home/django` to
