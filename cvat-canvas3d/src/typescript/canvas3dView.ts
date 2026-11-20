@@ -751,6 +751,46 @@ export class Canvas3dViewImpl implements Canvas3dView, Listener {
         this.updateCameraFrustumPlane();
     }
 
+    private getDefaultSideViewZoom(viewType: ViewType): number {
+        const { camera, renderer } = this.views[viewType];
+        if (this.sceneBBox.isEmpty() || !(camera instanceof THREE.OrthographicCamera)) {
+            return consts.SIDE_VIEWS_MIN_ZOOM;
+        }
+
+        const sceneSize = this.sceneBBox.getSize(new THREE.Vector3());
+        const canvas = renderer.domElement;
+        const canvasWToHRatio = canvas.clientWidth / canvas.clientHeight;
+        let projectionWidth: number;
+        let projectionHeight: number;
+
+        if (viewType === ViewType.TOP) {
+            projectionWidth = sceneSize.x;
+            projectionHeight = sceneSize.y;
+        } else if (viewType === ViewType.SIDE) {
+            projectionWidth = sceneSize.x;
+            projectionHeight = sceneSize.z;
+        } else {
+            projectionWidth = sceneSize.y;
+            projectionHeight = sceneSize.z;
+        }
+
+        const marginRatio = 1.3;
+        const visibleProjectionHeight = Math.min(
+            consts.MAX_DISTANCE,
+            Math.max(projectionHeight, projectionWidth / canvasWToHRatio) * marginRatio,
+        );
+
+        if (visibleProjectionHeight < Number.EPSILON) {
+            return consts.SIDE_VIEWS_MAX_ZOOM;
+        }
+
+        return THREE.MathUtils.clamp(
+            consts.ORTHO_FRUSTUM_HEIGHT / visibleProjectionHeight,
+            consts.SIDE_VIEWS_MIN_ZOOM,
+            consts.SIDE_VIEWS_MAX_ZOOM,
+        );
+    }
+
     private getAllVisibleCuboids(view: ViewType = ViewType.PERSPECTIVE): THREE.Mesh[] {
         return Object.values(this.drawnObjects)
             .map(({ cuboid }) => cuboid[view]).filter((mesh: THREE.Mesh) => mesh.visible);
@@ -1809,8 +1849,24 @@ export class Canvas3dViewImpl implements Canvas3dView, Listener {
         const origin = new THREE.Vector3(0, 0, 0);
         const target = this.sceneBBox.containsPoint(origin) ? origin : this.sceneBBox.getCenter(new THREE.Vector3());
 
-        // Start at the maximum reachable distance, 45 degrees above the target in the negative X/negative Y quadrant.
-        const horizontalDistance = consts.MAX_DISTANCE / Math.sqrt(2);
+        const boundingSphere = this.sceneBBox.getBoundingSphere(new THREE.Sphere());
+        const perspectiveCamera = this.views.perspective.camera as THREE.PerspectiveCamera;
+        const verticalFOV = THREE.MathUtils.degToRad(perspectiveCamera.fov);
+        const horizontalFOV = 2 * Math.atan(Math.tan(verticalFOV / 2) * perspectiveCamera.aspect);
+        const targetEnclosingRadius = boundingSphere.radius + boundingSphere.center.distanceTo(target);
+        // when drawing a sphere with its center in the target and radius equal to the targetEnclosingRadius
+        // it must fully enclose the scene
+        const cameraToTargetDistance = targetEnclosingRadius /
+            Math.sin(Math.min(verticalFOV, horizontalFOV) / 2);
+        const marginRatio = 1.3;
+        const distance = THREE.MathUtils.clamp(
+            cameraToTargetDistance * marginRatio,
+            consts.MIN_DISTANCE,
+            consts.MAX_DISTANCE,
+        );
+
+        // Start 45 degrees above the target in the negative X/negative Y quadrant.
+        const horizontalDistance = distance / Math.sqrt(2);
         const distanceAlongAxis = horizontalDistance / Math.sqrt(2);
         this.cameraSettings.perspective.position = [
             target.x - distanceAlongAxis,
@@ -1921,7 +1977,8 @@ export class Canvas3dViewImpl implements Canvas3dView, Listener {
                     z + this.cameraSettings[cameraType].position[2],
                 );
                 camera.lookAt(x, y, z);
-                camera.zoom = consts.SIDE_VIEWS_MIN_ZOOM;
+                camera.zoom = this.getDefaultSideViewZoom(cameraType);
+                camera.updateProjectionMatrix();
             }
         }
     }
