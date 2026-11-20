@@ -86,8 +86,9 @@ python dataset_incremental_download.py --host 'https://app.cvat.ai' --token '<yo
 Run it twice: the second run reports `cache grew by 0 B`, and the SDK's log
 shows the annotations and chunks coming from the cache rather than the network.
 
-Video tasks are skipped with a message — `TaskDataset` supports tasks whose
-media can be read as images.
+Tasks that `TaskDataset` can't read are skipped with a message, for example,
+tasks with no data, or video tasks when the OpenH264 library is not set up
+(see {{< ilink "/docs/api_sdk/sdk#installation" "Installation" >}}).
 
 ### The script
 

@@ -38,7 +38,7 @@ from shared.utils.config import (
     MOTO_SECRET_KEY,
     USER_PASS,
 )
-from shared.utils.helpers import generate_image_file, generate_video_file
+from shared.utils.helpers import generate_image_file
 
 EXAMPLES_DIR = Path(__file__).parents[3] / "cvat-sdk" / "examples"
 
@@ -374,7 +374,7 @@ class TestExampleHelpers:
         monkeypatch: pytest.MonkeyPatch,
         capsys: pytest.CaptureFixture,
     ):
-        # A project can hold tasks TaskDataset does not support (video, or no
+        # A project can hold tasks TaskDataset does not support (e.g. with no
         # data at all); one of them must not cost the caller the other tasks.
         recipe = load_recipe("dataset_incremental_download.py")
         cache_dir = tmp_path / "cache"
@@ -528,18 +528,6 @@ class TestExamples:
             resources=sorted(self.make_image_dir().iterdir()),
         )
 
-    def make_video_task_in_project(
-        self, project: Project, *, num_frames: int = 4, name: str = "Recipe video task"
-    ) -> Task:
-        video = generate_video_file(num_frames)
-        path = self.tmp_path / video.name
-        path.write_bytes(video.getbuffer())
-        return self.client.tasks.create_from_data(
-            spec=models.TaskWriteRequest(name=name, project_id=project.id),
-            resource_type=ResourceType.LOCAL,
-            resources=[path],
-        )
-
     def make_project_with_task(self) -> Project:
         project = self.make_project()
         self.make_task_in_project(project)
@@ -627,17 +615,6 @@ class TestExamples:
         result = self.run_incremental(["--task-id", str(task.id), "--offline"], expect_failure=True)
 
         assert f"Skipped task {task.id}: not in the cache" in result.stdout
-        assert "0 of 1 task(s) available locally" in result.stdout
-
-    def test_incremental_download_skips_a_video_task(self):
-        project = self.make_project()
-        video = self.make_video_task_in_project(project)
-
-        # Nothing was cached, so the recipe also fails: a pipeline reading the
-        # cache afterwards would find nothing to read.
-        result = self.run_incremental(["--project-id", str(project.id)], expect_failure=True)
-
-        assert f"Skipped task {video.id}" in result.stdout
         assert "0 of 1 task(s) available locally" in result.stdout
 
     def read_manifest(self, name: str) -> list[dict]:

@@ -22,6 +22,7 @@ from cvat_sdk.datasets.chunk_readers import (
     ChunkReadError,
     ChunkReaderUnavailableError,
     IChunkReader,
+    VideoMp4ChunkReader,
     ZipChunkReader,
 )
 from cvat_sdk.datasets.common import (
@@ -48,12 +49,14 @@ class TaskDataset:
 
     Limitations:
 
-    * Only tasks whose media can be accessed as images are supported at the moment.
+    * Media of tasks whose original chunks are videos can only be read through `iter_samples`,
+      unless `media_download_policy` is `FETCH_FRAMES_ON_DEMAND`.
     * Track annotations are currently not accessible.
     """
 
     _READER_CLASSES: dict[str, type[IChunkReader]] = {
         "imageset": ZipChunkReader,
+        "video": VideoMp4ChunkReader,
     }
 
     class _TaskMediaElement(MediaElement):
@@ -238,6 +241,9 @@ class TaskDataset:
         If `temporary_chunks` is true and `media_download_policy` is `FETCH_CHUNKS_ON_DEMAND`,
         chunk files are materialized in a temporary directory separate from the shared cache
         and deleted after the iterator advances past them.
+
+        Media of tasks whose original chunks are videos can only be read through this method,
+        unless `media_download_policy` is `FETCH_FRAMES_ON_DEMAND`.
 
         WARNING: Callers should finish using each sample's media data before advancing the iterator.
         Keeping references to previous samples after requesting the next sample is unsupported.

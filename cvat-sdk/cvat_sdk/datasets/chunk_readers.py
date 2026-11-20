@@ -15,6 +15,11 @@ from typing import TypeVar
 
 import PIL.Image
 
+from cvat_sdk.datasets._video_chunks.exceptions import VideoDecoderError
+from cvat_sdk.datasets._video_chunks.mp4_demuxer.services import Mp4ChunkDemuxer
+from cvat_sdk.datasets._video_chunks.openh264.exceptions import VideoDecoderUnavailableError
+from cvat_sdk.datasets._video_chunks.openh264.services import OpenH264Decoder, load_library
+
 
 class ChunkReaderUnavailableError(Exception):
     """Indicates that task chunks of some type cannot be read in the current environment"""
@@ -118,14 +123,25 @@ class ZipChunkReader(IChunkReader):
 
 
 class VideoMp4ChunkReader(IChunkReader):
+    def __init__(self, chunk_path: Path) -> None:
+        super().__init__(chunk_path)
+        self._library_info = load_library()
+
     @classmethod
     def ensure_available(cls) -> None:
-        # The check that the OpenH264 library can be loaded will be added in a follow-up PR.
-        pass
+        try:
+            load_library()
+        except VideoDecoderUnavailableError as e:
+            raise ChunkReaderUnavailableError(str(e)) from e
 
     def __getitem__(self, index: int) -> PIL.Image.Image:
         raise ChunkAccessModeNotSupportedError("Random access is not supported for video chunks")
 
+    @wrap_read_errors(VideoDecoderError)
     def __iter__(self) -> Generator[PIL.Image.Image, None, None]:
-        # Decoding will be added in a follow-up PR.
-        raise NotImplementedError
+        with self._chunk_path.open("rb") as chunk_file:
+            demuxer = Mp4ChunkDemuxer(chunk_file)
+
+            with OpenH264Decoder(self._library_info.library) as decoder:
+                for access_unit in demuxer:
+                    yield decoder.decode(access_unit).to_image()
