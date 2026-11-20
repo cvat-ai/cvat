@@ -13,7 +13,10 @@ from pathlib import Path
 
 import PIL.Image
 
-from cvat_sdk.core.exceptions import ChunkReaderUnavailableException
+from cvat_sdk.core.exceptions import (
+    ChunkAccessModeNotSupportedException,
+    ChunkReaderUnavailableException,
+)
 
 
 class IChunkReader(ABC):
@@ -32,7 +35,22 @@ class IChunkReader(ABC):
         """
 
     @abstractmethod
-    def __iter__(self) -> Generator[PIL.Image.Image, None, None]: ...
+    def __iter__(self) -> Generator[PIL.Image.Image, None, None]:
+        """
+        Yields all frames of the chunk sequentially.
+
+        Raises ChunkAccessModeNotSupportedException if the reader doesn't support
+        sequential reading (yet).
+        """
+
+    @abstractmethod
+    def __getitem__(self, index: int) -> PIL.Image.Image:
+        """
+        Returns the frame at the given position in the chunk.
+
+        Raises ChunkAccessModeNotSupportedException if the reader doesn't support
+        random access (yet).
+        """
 
 
 class ZipChunkReader(IChunkReader):
@@ -61,6 +79,11 @@ class VideoMp4ChunkReader(IChunkReader):
             raise ChunkReaderUnavailableException(
                 "Reading video chunks requires the video extra: pip install 'cvat-sdk[video]'"
             ) from e
+
+    def __getitem__(self, index: int) -> PIL.Image.Image:
+        raise ChunkAccessModeNotSupportedException(
+            "Random access is not supported for video chunks"
+        )
 
     def __iter__(self) -> Generator[PIL.Image.Image, None, None]:
         import cvat_mp4_h264
