@@ -26,6 +26,12 @@ def shape_bbox(shape: models.LabeledShape) -> tuple[float, float, float, float]:
         x1, y1, x2, y2 = shape.points[-4:]
         return x1, y1, x2 + 1, y2 + 1
 
+    if shape.type.value == "ellipse":
+        # Ellipses store the center and the right/top radius endpoints, not box corners.
+        cx, cy, edge_x, edge_y = shape.points
+        rx, ry = abs(edge_x - cx), abs(edge_y - cy)
+        return cx - rx, cy - ry, cx + rx, cy + ry
+
     x_coords = shape.points[0::2]
     y_coords = shape.points[1::2]
 
