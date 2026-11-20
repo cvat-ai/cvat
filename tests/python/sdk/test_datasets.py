@@ -3,7 +3,6 @@
 # SPDX-License-Identifier: MIT
 
 import io
-import sys
 import tempfile
 import threading
 from logging import Logger
@@ -370,57 +369,32 @@ class TestTaskDataset:
             with dataset.iter_samples(temporary_chunks=True):
                 pass
 
-    def _create_video_task(self) -> int:
+    def test_non_imageset_video_task_is_unsupported_for_chunk_based_media_access(self):
         video_file = generate_video_file(4)
         video_path = self.tmp_path / video_file.name
         video_path.write_bytes(video_file.getbuffer())
 
-        return self.client.tasks.create_from_data(
+        video_task = self.client.tasks.create_from_data(
             models.TaskWriteRequest(
                 "Dataset layer video task",
                 labels=[models.PatchedLabelRequest(name="video-object")],
             ),
             resource_type=ResourceType.LOCAL,
             resources=[video_path],
-        ).id
-
-    @pytest.mark.parametrize(
-        "media_download_policy",
-        [
-            cvatds.MediaDownloadPolicy.PRELOAD_ALL,
-            cvatds.MediaDownloadPolicy.FETCH_CHUNKS_ON_DEMAND,
-        ],
-    )
-    def test_video_task_without_video_extra_is_rejected_for_chunk_based_media_access(
-        self,
-        monkeypatch: pytest.MonkeyPatch,
-        media_download_policy: cvatds.MediaDownloadPolicy,
-    ):
-        video_task_id = self._create_video_task()
-        monkeypatch.setitem(sys.modules, "cvat_mp4_h264", None)
-
-        with pytest.raises(cvatds.UnsupportedDatasetError, match=r"cvat-sdk\[video\]"):
-            cvatds.TaskDataset(
-                self.client,
-                video_task_id,
-                load_annotations=False,
-                media_download_policy=media_download_policy,
-            )
-
-    def test_video_task_without_video_extra_works_with_fetch_frames_on_demand(
-        self, monkeypatch: pytest.MonkeyPatch
-    ):
-        video_task_id = self._create_video_task()
-        monkeypatch.setitem(sys.modules, "cvat_mp4_h264", None)
-
-        dataset = cvatds.TaskDataset(
-            self.client,
-            video_task_id,
-            load_annotations=False,
-            media_download_policy=cvatds.MediaDownloadPolicy.FETCH_FRAMES_ON_DEMAND,
         )
 
-        assert len(dataset.samples) == 4
+        assert video_task.data_original_chunk_type != "imageset"
+
+        with pytest.raises(
+            cvatds.UnsupportedDatasetError,
+            match="Chunk-based media access is not supported",
+        ):
+            cvatds.TaskDataset(
+                self.client,
+                video_task.id,
+                load_annotations=False,
+                media_download_policy=cvatds.MediaDownloadPolicy.FETCH_CHUNKS_ON_DEMAND,
+            )
 
     @pytest.mark.parametrize(
         "media_download_policy",
