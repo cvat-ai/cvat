@@ -19,15 +19,16 @@ context('Canvas 3D functionality. Cuboid context menu.', () => {
         cy.prepareUserSession();
         cy.openTask(taskName);
         cy.openJob();
-        // eslint-disable-next-line cypress/no-unnecessary-waiting
         cy.wait(1000); // Waiting for the point cloud to display
         cy.create3DCuboid(cuboidCreationParams);
     });
 
     describe(`Testing case "${caseId}"`, () => {
         it('Right click on the cuboid. Context menu should exist.', () => {
-            cy.get('.cvat-canvas3d-perspective canvas').trigger('mousemove', 340, 310);
-            cy.get('.cvat-canvas3d-perspective').rightclick(340, 310);
+            cy.get('.cvat-canvas3d-perspective canvas').trigger(
+                'mousemove', cuboidCreationParams.x, cuboidCreationParams.y,
+            );
+            cy.get('.cvat-canvas3d-perspective').rightclick(cuboidCreationParams.x, cuboidCreationParams.y);
             cy.get('.cvat-canvas-context-menu').should('exist');
         });
 

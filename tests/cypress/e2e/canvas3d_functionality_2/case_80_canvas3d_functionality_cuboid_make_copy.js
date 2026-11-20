@@ -36,10 +36,10 @@ context('Canvas 3D functionality. Make a copy.', () => {
                 .find('.cvat-objects-sidebar-state-item-label-selector')
                 .trigger('mouseout');
             cy.interactAnnotationObjectMenu('#cvat-objects-sidebar-state-item-1', 'Make a copy');
-            cy.get('.cvat-canvas3d-perspective').trigger('mousemove', 360, 270);
+            cy.get('.cvat-canvas3d-perspective').trigger('mousemove', 360, 160);
 
             cy.wait(500); // Waiting for mousemove have effect
-            cy.get('.cvat-canvas3d-perspective').dblclick(360, 270);
+            cy.get('.cvat-canvas3d-perspective').dblclick(360, 160);
             cy.get('#cvat-objects-sidebar-state-item-1')
                 .invoke('attr', 'style')
                 .then((bgColor) => {
@@ -48,15 +48,15 @@ context('Canvas 3D functionality. Make a copy.', () => {
         });
 
         it('Make a copy via hot keys.', () => {
-            cy.get('.cvat-canvas3d-perspective').trigger('mousemove', 360, 270);
+            cy.get('.cvat-canvas3d-perspective').trigger('mousemove', 360, 160);
 
             cy.wait(500); // Waiting for mousemove have effect
             cy.pressWithPlatformModifier('c');
             cy.pressWithPlatformModifier('v');
-            cy.get('.cvat-canvas3d-perspective').trigger('mousemove', 360, 200);
+            cy.get('.cvat-canvas3d-perspective').trigger('mousemove', 240, 400);
 
             cy.wait(500); // Waiting for mousemove have effect
-            cy.get('.cvat-canvas3d-perspective').dblclick(360, 200);
+            cy.get('.cvat-canvas3d-perspective').dblclick(240, 400);
             cy.get('.cvat-objects-sidebar-state-item').then((sideBarItems) => {
                 expect(sideBarItems.length).to.be.equal(3);
             });
@@ -68,7 +68,7 @@ context('Canvas 3D functionality. Make a copy.', () => {
         });
 
         it('Copy a cuboid to an another frame.', () => {
-            cy.get('.cvat-canvas3d-perspective').trigger('mousemove', 360, 270);
+            cy.get('.cvat-canvas3d-perspective').trigger('mousemove', 360, 160);
 
             cy.wait(500); // Waiting for mousemove have effect
             cy.get('#cvat-objects-sidebar-state-item-2').should('have.class', 'cvat-objects-sidebar-state-active-item');

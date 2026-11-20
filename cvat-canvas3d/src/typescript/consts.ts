@@ -15,7 +15,6 @@ const CUBOID_EDGE_NAME = 'edges';
 const ROTATION_HELPER_NAME = '2DRotationHelper';
 const PLANE_ROTATION_HELPER = 'planeRotationHelper';
 const RESIZE_HELPER_NAME = '2DResizeHelper';
-const FOV_DEFAULT = 1;
 const SIDE_VIEWS_MAX_ZOOM = 20;
 const SIDE_VIEWS_MIN_ZOOM = 0.01;
 const DEFAULT_GROUP_COLOR = '#e0e0e0';
@@ -38,7 +37,6 @@ export default {
     ROTATION_HELPER_NAME,
     PLANE_ROTATION_HELPER,
     RESIZE_HELPER_NAME,
-    FOV_DEFAULT,
     SIDE_VIEWS_MAX_ZOOM,
     SIDE_VIEWS_MIN_ZOOM,
     DEFAULT_GROUP_COLOR,

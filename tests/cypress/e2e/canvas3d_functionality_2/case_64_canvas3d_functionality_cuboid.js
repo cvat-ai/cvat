@@ -60,14 +60,15 @@ context('Canvas 3D functionality. Add cuboid.', () => {
         });
 
         it('Cuboid interaction by mouse.', () => {
-            cy.get('.cvat-canvas3d-perspective').trigger('mousemove', 300, 200);
-            cy.get('.cvat-canvas3d-perspective').click(300, 200); // Deactivate the cuboid
+            cy.get('.cvat-canvas3d-perspective canvas').trigger('mousemove', 1, 1);
+            cy.get('.cvat-canvas3d-perspective canvas').click(1, 1); // Deactivate the cuboid
             cy.customScreenshot('.cvat-canvas3d-perspective', 'canvas3d_perspective_deactivate_cuboid');
             ['topview', 'sideview', 'frontview'].forEach((view) => {
                 cy.customScreenshot(`.cvat-canvas3d-${view}`, `canvas3d_${view}_deactivate_cuboid`);
             });
-            cy.get('.cvat-canvas3d-perspective').trigger('mousemove', 300, 200); // Interacting with the canvas before interacting with the cuboid.
-            cy.get('.cvat-canvas3d-perspective').trigger('mousemove'); // Move cursor to cuboid
+            cy.get('.cvat-canvas3d-perspective canvas').trigger(
+                'mousemove', cuboidCreationParams.x, cuboidCreationParams.y,
+            );
             cy.wait(1000); // Waiting for the reaction of the cuboid to interact with the mouse cursor
             cy.customScreenshot('.cvat-canvas3d-perspective', 'canvas3d_perspective_after_cursor_movements_to_cuboid');
             cy.compareImagesAndCheckResult(
