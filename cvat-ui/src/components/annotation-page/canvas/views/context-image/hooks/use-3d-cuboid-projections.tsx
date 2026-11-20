@@ -8,13 +8,13 @@ import { useDispatch, useSelector } from 'react-redux';
 import { activateObject, collapseObjectItems } from 'actions/annotation-actions';
 import {
     Canvas3d,
-    CUBOID_EDGES,
-    CUBOID_FACES,
     projectCuboid,
 } from 'cvat-canvas3d-wrapper';
+import type { CameraCalibration } from 'cvat-canvas3d-wrapper';
 import { ObjectState, ShapeType } from 'cvat-core-wrapper';
 import { getObjectStateColor } from 'components/annotation-page/standard-workspace/objects-side-bar/shared';
 import { CombinedState } from 'reducers';
+import getHiddenZLayers from 'utils/get-hidden-z-layers';
 import { shallowEqual, ThunkDispatch } from 'utils/redux';
 import { getRelatedImageMetadata } from 'utils/related-image-calibrations';
 import { focusObject } from 'utils/annotation';
@@ -32,6 +32,68 @@ interface CuboidProjectionInteraction {
     onObjectDoubleClick(object: SVGObject): void;
 }
 
+interface CuboidProjectionProps {
+    calibration: CameraCalibration;
+    cuboidPoints: number[];
+    color: string;
+    opacity: number;
+    outlined: boolean;
+    outlineColor: string;
+    occluded: boolean;
+    scale: number;
+}
+
+const CuboidProjection = React.memo(({
+    calibration,
+    cuboidPoints,
+    color,
+    opacity,
+    outlined,
+    outlineColor,
+    occluded,
+    scale,
+}: CuboidProjectionProps): JSX.Element | null => {
+    const [x, y, z, rotationX, rotationY, rotationZ, width, height, depth] = cuboidPoints;
+    const projection = useMemo(
+        () => projectCuboid(
+            calibration,
+            [x, y, z, rotationX, rotationY, rotationZ, width, height, depth],
+        ),
+        [calibration, x, y, z, rotationX, rotationY, rotationZ, width, height, depth],
+    );
+
+    if (!projection) {
+        return null;
+    }
+
+    return (
+        <g
+            fill={color}
+            fillOpacity={opacity}
+            stroke={outlined ? outlineColor || 'black' : color}
+            strokeDasharray={occluded ? `${4 / scale} ${4 / scale}` : undefined}
+            strokeWidth={1 / scale}
+        >
+            {projection.faces.map((face, index) => (
+                <polygon
+                    key={`face-${index}`}
+                    points={face.map((point) => point.join(',')).join(' ')}
+                    stroke='none'
+                />
+            ))}
+            {projection.edges.map(([from, to], index) => (
+                <line
+                    key={`edge-${index}`}
+                    x1={from[0]}
+                    x2={to[0]}
+                    y1={from[1]}
+                    y2={to[1]}
+                />
+            ))}
+        </g>
+    );
+});
+
 export default function useCuboidProjections({ contextImageName }: Params): CuboidProjectionInteraction {
     const dispatch = useDispatch<ThunkDispatch>();
     const {
@@ -44,6 +106,7 @@ export default function useCuboidProjections({ contextImageName }: Params): Cubo
         selectedOpacity,
         outlined,
         outlineColor,
+        hiddenZLayers,
     } = useSelector((state: CombinedState) => {
         const calibratedRelatedImagesMetadata = state.annotation.player.frame.data?.calibratedRelatedImagesMetadata;
         const { shapes } = state.settings;
@@ -57,6 +120,7 @@ export default function useCuboidProjections({ contextImageName }: Params): Cubo
             selectedOpacity: shapes.selectedOpacity / 100,
             outlined: shapes.outlined,
             outlineColor: shapes.outlineColor,
+            hiddenZLayers: getHiddenZLayers(state),
             calibration: contextImageName && calibratedRelatedImagesMetadata?.length ?
                 getRelatedImageMetadata(calibratedRelatedImagesMetadata, contextImageName) :
                 null,
@@ -73,13 +137,9 @@ export default function useCuboidProjections({ contextImageName }: Params): Cubo
                 annotation.shapeType !== ShapeType.CUBOID ||
                 !annotation.points ||
                 annotation.hidden ||
+                hiddenZLayers.has(annotation.zOrder) ||
                 annotation.outside
             ) {
-                return projectionObjects;
-            }
-
-            const projection = projectCuboid(calibration, annotation.points);
-            if (!projection) {
                 return projectionObjects;
             }
 
@@ -91,35 +151,32 @@ export default function useCuboidProjections({ contextImageName }: Params): Cubo
                 state: annotation,
                 className: 'cvat-context-image-cuboid-projection',
                 render: (scale): JSX.Element => (
-                    <g
-                        fill={color}
-                        fillOpacity={isActive ? selectedOpacity : opacity}
-                        stroke={outlined ? outlineColor || 'black' : color}
-                        strokeDasharray={annotation.occluded ? `${4 / scale} ${4 / scale}` : undefined}
-                        strokeWidth={1 / scale}
-                    >
-                        {CUBOID_FACES.map((face) => (
-                            <polygon
-                                key={face.join('-')}
-                                points={face.map((index) => projection[index].join(',')).join(' ')}
-                            />
-                        ))}
-                        {CUBOID_EDGES.map(([from, to]) => (
-                            <line
-                                key={`${from}-${to}`}
-                                x1={projection[from][0]}
-                                x2={projection[to][0]}
-                                y1={projection[from][1]}
-                                y2={projection[to][1]}
-                            />
-                        ))}
-                    </g>
+                    <CuboidProjection
+                        calibration={calibration}
+                        cuboidPoints={annotation.points!}
+                        color={color}
+                        opacity={isActive ? selectedOpacity : opacity}
+                        outlined={outlined}
+                        outlineColor={outlineColor}
+                        occluded={annotation.occluded}
+                        scale={scale}
+                    />
                 ),
             });
 
             return projectionObjects;
         }, []);
-    }, [activatedStateID, annotations, calibration, colorBy, opacity, outlineColor, outlined, selectedOpacity]);
+    }, [
+        activatedStateID,
+        annotations,
+        calibration,
+        colorBy,
+        hiddenZLayers,
+        opacity,
+        outlineColor,
+        outlined,
+        selectedOpacity,
+    ]);
 
     const onObjectClick = useCallback((object: SVGObject, event: React.MouseEvent<SVGGElement>): void => {
         if (object.type !== SVGObjectType.CUBOID_PROJECTION) {
