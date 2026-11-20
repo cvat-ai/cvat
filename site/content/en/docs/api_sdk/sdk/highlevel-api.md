@@ -79,6 +79,83 @@ with make_client("http://localhost", credentials=('user', 'password')) as client
     task2.remove()
 ```
 
+## Cloud Storage Example
+
+Below is a complete example of creating a task whose data comes from a
+pre-configured cloud storage (e.g. Azure Blob Storage, AWS S3, or Google Cloud
+Storage). The cloud storage must first be set up in the CVAT UI or via the API
+so that CVAT can access the bucket. You will need the numeric `cloud_storage_id`
+(visible in the CVAT UI under **Cloud Storages**) and the exact file paths
+inside the bucket.
+
+```python
+from cvat_sdk import make_client
+from cvat_sdk.core.proxies.tasks import ResourceType
+
+with make_client("https://app.cvat.ai", credentials=("user", "password")) as client:
+    # If you are working within an organization, set the organization slug.
+    # This ensures the task is created inside that org context.
+    client.organization_slug = "my-org"
+
+    # Define the task specification.
+    # source_storage tells CVAT where the input data lives — in this case
+    # a cloud storage that has already been connected in the CVAT UI.
+    task_spec = {
+        "name": "cloud-data-task",
+        "labels": [{"name": "car"}, {"name": "pedestrian"}],
+        "source_storage": {
+            "location": "cloud_storage",
+            "cloud_storage_id": 1,  # replace with your cloud storage ID
+        },
+    }
+
+    # List the files in the cloud storage bucket that should be used.
+    # These paths are relative to the bucket prefix configured in CVAT.
+    cloud_files = [
+        "images/frame_001.jpg",
+        "images/frame_002.jpg",
+        "images/frame_003.jpg",
+    ]
+
+    # Create the task and attach data in one call.
+    # Key parameters:
+    #   resource_type  – ResourceType.SHARE tells the SDK that the files
+    #                    are already on the server side (cloud storage).
+    #   use_cache      – True keeps the data in cloud storage and streams
+    #                    frames on demand instead of copying everything.
+    #   sorting_method – "predefined" preserves the exact file order you
+    #                    provide, which matters for video-frame sequences.
+    #   cloud_storage_id – must match the source_storage ID so that the
+    #                      data-upload request reaches the right bucket.
+    task = client.tasks.create_from_data(
+        spec=task_spec,
+        resource_type=ResourceType.SHARE,
+        resources=cloud_files,
+        data_params={
+            "use_cache": True,
+            "sorting_method": "predefined",
+            "cloud_storage_id": 1,  # same as source_storage above
+            "image_quality": 70,
+        },
+    )
+
+    print(f"Created task {task.id} with {task.size} frames")
+```
+
+{{% alert title="Tip" color="info" %}}
+When `use_cache` is `True`, CVAT does **not** download the data to its own
+storage. Instead it reads frames directly from the cloud bucket each time
+they are needed. This is the recommended approach for large datasets stored
+in the cloud.
+{{% /alert %}}
+
+{{% alert title="Note" color="primary" %}}
+The `sorting_method` parameter accepts these values:
+`"lexicographical"` (default), `"natural"`, `"predefined"`, and `"random"`.
+Use `"predefined"` when the order of `resources` matters (e.g. ordered video
+frames) and you want CVAT to keep that exact order.
+{{% /alert %}}
+
 ## Client
 
 The `cvat_sdk.core.client.Client` class provides session management, implements
