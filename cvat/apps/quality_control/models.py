@@ -16,16 +16,10 @@ from django.db import models
 from django.forms.models import model_to_dict
 
 from cvat.apps.engine.models import Job, JobType, Project, ShapeType, Task, TimestampedModel
-from cvat.apps.quality_control.utils import is_current_report_data
 from cvat.utils import django_database as db_utils
 
 if TYPE_CHECKING:
     from cvat.apps.organizations.models import Organization
-
-
-# QualityReport.data contains a serialized JSON object stored as a JSON string. PostgreSQL's
-# text representation can therefore contain escaped or unescaped quotes around object keys.
-CURRENT_REPORT_DATA_REGEX = r'\\?"groups\\?"\s*:'
 
 
 class AnnotationConflictType(str, Enum):
@@ -79,6 +73,16 @@ class QualityReportTarget(str, Enum):
     @classmethod
     def choices(cls):
         return tuple((x.value, x.name) for x in cls)
+
+
+class QualityReportVersion(models.TextChoices):
+    "The format of QualityReport.data"
+
+    LEGACY = "1.0"
+    "Before the quality requirements were introduced"
+
+    GENERALIZED = "2.0"
+    "Results are grouped by quality requirements"
 
 
 class QualityMetric(str, Enum):
@@ -190,6 +194,11 @@ class QualityReport(models.Model):
     assignee_last_updated = models.DateTimeField(null=True)
 
     data = models.JSONField()
+    version = models.CharField(
+        max_length=32,
+        choices=QualityReportVersion.choices,
+        default=QualityReportVersion.GENERALIZED,
+    )
 
     conflicts: models.manager.RelatedManager[AnnotationConflict]
 
@@ -252,17 +261,6 @@ class QualityReport(models.Model):
             "parameters",
             "comparison_summary",
         }.issubset(report_data)
-
-    @property
-    def has_current_data_format(self) -> bool:
-        from datumaro.util import parse_json
-
-        try:
-            report_data = parse_json(self.data)
-        except (TypeError, ValueError):
-            return False
-
-        return is_current_report_data(report_data)
 
     def get_task(self) -> Task | None:
         if self.task:
