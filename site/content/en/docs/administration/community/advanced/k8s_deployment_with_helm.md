@@ -381,16 +381,13 @@ Pods can be scheduled on different nodes, the backing volume must support the
 `ReadWriteMany` (RWX) access mode. `ReadWriteOnce` (RWO) can be used only when all
 Pods using the claim are scheduled on the same node.
 For details [see](https://kubernetes.io/docs/concepts/storage/persistent-volumes).
-Add these values in the `values.override.yaml`:
+Add these values in the `values.override.yaml`
+(the chart then doesn't create its own claim):
 ```yaml
 cvat:
   backend:
     permissionFix:
       enabled: false
     defaultStorage:
-      enabled: false
-    additionalVolumes:
-      - name: cvat-backend-data
-        persistentVolumeClaim:
-          claimName: my-claim-name
+      existingClaimName: my-claim-name
 ```
