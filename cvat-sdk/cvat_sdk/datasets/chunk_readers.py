@@ -4,14 +4,62 @@
 
 from __future__ import annotations
 
+import functools
+import inspect
 import zipfile
+import zlib
 from abc import ABC, abstractmethod
-from collections.abc import Generator
+from collections.abc import Callable, Generator
 from pathlib import Path
+from typing import TypeVar
 
 import PIL.Image
 
-from cvat_sdk.core.exceptions import ChunkAccessModeNotSupportedException
+
+class ChunkReaderUnavailableError(Exception):
+    """Indicates that task chunks of some type cannot be read in the current environment"""
+
+
+class ChunkAccessModeNotSupportedError(Exception):
+    """Indicates that a chunk reader does not support the requested access mode"""
+
+
+class ChunkReadError(Exception):
+    """Indicates that the contents of a chunk could not be read"""
+
+
+_MethodT = TypeVar("_MethodT", bound=Callable)
+
+
+def wrap_read_errors(*exception_types: type[Exception]) -> Callable[[_MethodT], _MethodT]:
+    """
+    Makes a chunk reader method raise ChunkReadError in place of the given exceptions.
+
+    Works with both regular methods and generator methods.
+    """
+
+    def decorator(method: _MethodT) -> _MethodT:
+        if inspect.isgeneratorfunction(method):
+
+            @functools.wraps(method)
+            def wrapper(*args, **kwargs):
+                try:
+                    yield from method(*args, **kwargs)
+                except exception_types as e:
+                    raise ChunkReadError(str(e)) from e
+
+        else:
+
+            @functools.wraps(method)
+            def wrapper(*args, **kwargs):
+                try:
+                    return method(*args, **kwargs)
+                except exception_types as e:
+                    raise ChunkReadError(str(e)) from e
+
+        return wrapper
+
+    return decorator
 
 
 class IChunkReader(ABC):
@@ -25,7 +73,7 @@ class IChunkReader(ABC):
     @classmethod
     def ensure_available(cls) -> None:
         """
-        Raises ChunkReaderUnavailableException if chunks cannot be read with this reader
+        Raises ChunkReaderUnavailableError if chunks cannot be read with this reader
         in the current environment, for example, because a required library is missing.
         """
 
@@ -34,8 +82,8 @@ class IChunkReader(ABC):
         """
         Yields all frames of the chunk sequentially.
 
-        Raises ChunkAccessModeNotSupportedException if the reader doesn't support
-        sequential reading (yet).
+        Raises ChunkAccessModeNotSupportedError if the reader doesn't support
+        sequential reading (yet), and ChunkReadError if the chunk cannot be read.
         """
 
     @abstractmethod
@@ -43,12 +91,15 @@ class IChunkReader(ABC):
         """
         Returns the frame at the given position in the chunk.
 
-        Raises ChunkAccessModeNotSupportedException if the reader doesn't support
-        random access (yet).
+        Raises ChunkAccessModeNotSupportedError if the reader doesn't support
+        random access (yet), and ChunkReadError if the chunk cannot be read.
         """
 
 
 class ZipChunkReader(IChunkReader):
+    _READ_ERRORS = (zipfile.BadZipFile, zlib.error, OSError)
+
+    @wrap_read_errors(*_READ_ERRORS)
     def __getitem__(self, index: int) -> PIL.Image.Image:
         with zipfile.ZipFile(self._chunk_path) as chunk_zip:
             with chunk_zip.open(chunk_zip.infolist()[index]) as member:
@@ -56,6 +107,7 @@ class ZipChunkReader(IChunkReader):
                 image.load()
         return image
 
+    @wrap_read_errors(*_READ_ERRORS)
     def __iter__(self) -> Generator[PIL.Image.Image, None, None]:
         with zipfile.ZipFile(self._chunk_path) as chunk_zip:
             for member_info in chunk_zip.infolist():
@@ -72,9 +124,7 @@ class VideoMp4ChunkReader(IChunkReader):
         pass
 
     def __getitem__(self, index: int) -> PIL.Image.Image:
-        raise ChunkAccessModeNotSupportedException(
-            "Random access is not supported for video chunks"
-        )
+        raise ChunkAccessModeNotSupportedError("Random access is not supported for video chunks")
 
     def __iter__(self) -> Generator[PIL.Image.Image, None, None]:
         # Decoding will be added in a follow-up PR.

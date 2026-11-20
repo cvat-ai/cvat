@@ -16,17 +16,20 @@ import PIL.Image
 
 import cvat_sdk.core
 import cvat_sdk.models as models
-from cvat_sdk.core.exceptions import (
-    ChunkAccessModeNotSupportedException,
-    ChunkReaderUnavailableException,
-)
 from cvat_sdk.datasets.caching import CacheManager, UpdatePolicy, make_cache_manager
-from cvat_sdk.datasets.chunk_readers import IChunkReader, ZipChunkReader
+from cvat_sdk.datasets.chunk_readers import (
+    ChunkAccessModeNotSupportedError,
+    ChunkReadError,
+    ChunkReaderUnavailableError,
+    IChunkReader,
+    ZipChunkReader,
+)
 from cvat_sdk.datasets.common import (
     FrameAnnotations,
     MediaDownloadPolicy,
     MediaElement,
     Sample,
+    UnreadableMediaError,
     UnsupportedDatasetError,
 )
 
@@ -162,7 +165,7 @@ class TaskDataset:
 
         try:
             self._READER_CLASSES[self._task.data_original_chunk_type].ensure_available()
-        except ChunkReaderUnavailableException as e:
+        except ChunkReaderUnavailableError as e:
             raise UnsupportedDatasetError(str(e)) from e
 
         self._cache_manager.chunk_dir(task_id=self._task.id).mkdir(exist_ok=True, parents=True)
@@ -319,11 +322,21 @@ class TaskDataset:
         )
         reader = self._READER_CLASSES[self._task.data_original_chunk_type](chunk_path=chunk_path)
 
-        with contextlib.closing(iter(reader)) as images:
-            for frame_index, image in zip(frame_indexes, images, strict=True):
-                sample = self._samples_by_frame_index.get(frame_index)
-                if sample is not None:
-                    yield attrs.evolve(sample, media=self._TaskLoadedMediaElement(image=image))
+        try:
+            with contextlib.closing(iter(reader)) as images:
+                for frame_index, image in zip(frame_indexes, images, strict=True):
+                    sample = self._samples_by_frame_index.get(frame_index)
+                    if sample is not None:
+                        yield attrs.evolve(sample, media=self._TaskLoadedMediaElement(image=image))
+        except ChunkAccessModeNotSupportedError as e:
+            raise UnsupportedDatasetError(
+                "Media of tasks whose original chunk type is "
+                f"{self._task.data_original_chunk_type!r} cannot be read through iter_samples"
+            ) from e
+        except ChunkReadError as e:
+            raise UnreadableMediaError(
+                f"Failed to read chunk {chunk_index} of task {self._task.id}: {e}"
+            ) from e
 
     def _load_frame_image_from_cache(self, frame_index: int) -> PIL.Image:
         assert frame_index in self._frame_annotations
@@ -335,10 +348,14 @@ class TaskDataset:
 
         try:
             return reader[member_index]
-        except ChunkAccessModeNotSupportedException as e:
+        except ChunkAccessModeNotSupportedError as e:
             raise UnsupportedDatasetError(
                 "Media of tasks whose original chunk type is "
                 f"{self._task.data_original_chunk_type!r} can only be read through iter_samples"
+            ) from e
+        except ChunkReadError as e:
+            raise UnreadableMediaError(
+                f"Failed to read chunk {chunk_index} of task {self._task.id}: {e}"
             ) from e
 
     def _load_frame_image_from_server(self, frame_index: int) -> PIL.Image:
