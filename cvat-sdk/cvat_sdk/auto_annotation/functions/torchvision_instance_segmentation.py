@@ -35,9 +35,12 @@ def _generate_shapes(
         # Since we treat mask values of exactly LEVEL as true, we'd like them
         # to also be considered high by find_contours. And for that, the level
         # parameter must be slightly less than LEVEL.
-        contours = measure.find_contours(mask[0].detach().numpy(), level=math.nextafter(LEVEL, 0))
+        # A background border closes contours that touch an image edge.
+        padded_mask = np.pad(mask[0].detach().numpy(), 1, constant_values=0)
+        contours = measure.find_contours(padded_mask, level=math.nextafter(LEVEL, 0))
 
         for contour in contours:
+            contour -= 1
             if len(contour) < 3 or _is_positively_oriented(contour):
                 continue
 
