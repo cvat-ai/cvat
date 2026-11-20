@@ -48,5 +48,30 @@ context('Rotate all images feature.', () => {
             cy.checkFrameNum(1);
             checkDegRotate(180);
         });
+
+        it('Keeps rotation when deleting a frame and advancing to the next one.', () => {
+            imageRotate('anticlockwise', 90);
+            cy.clickDeleteFrameAnnotationView();
+            cy.checkFrameNum(2);
+            checkDegRotate(90);
+        });
+
+        it('Shows a deleted frame upright and keeps the next frame rotated.', () => {
+            cy.checkDeletedFrameVisibility();
+            cy.goCheckFrameNumber(1);
+            cy.get('.cvat-player-restore-frame').should('be.visible');
+            checkDegRotate(0);
+
+            cy.get('.cvat-player-next-button').click();
+            cy.checkFrameNum(2);
+            checkDegRotate(90);
+        });
+
+        it('Restores the rotation when restoring a deleted frame.', () => {
+            cy.goCheckFrameNumber(1);
+            cy.get('.cvat-player-restore-frame').click();
+            cy.get('.cvat-player-restore-frame').should('not.exist');
+            checkDegRotate(90);
+        });
     });
 });
