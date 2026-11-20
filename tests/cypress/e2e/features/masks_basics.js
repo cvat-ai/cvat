@@ -539,6 +539,214 @@ context('Manipulations with masks', { scrollBehavior: false }, () => {
             cy.finishMaskDrawing();
         });
 
+        it('Underlying masks are subtracted from a drawn mask on enabling "Subtract underlying masks" tool', () => {
+            const firstMask = [{
+                method: 'brush-size',
+                value: 100,
+            }, {
+                method: 'brush',
+                coordinates: [[350, 350]],
+            }];
+            const secondMask = [{
+                method: 'brush',
+                coordinates: [[350, 350], [500, 350]],
+            }, {
+                method: 'subtract-underlying-masks',
+                value: true,
+            }];
+
+            cy.startMaskDrawing();
+            cy.drawMask(firstMask);
+            cy.get('.cvat-brush-tools-continue').click();
+            cy.hideTooltips();
+
+            cy.drawMask(secondMask);
+            cy.finishMaskDrawing();
+
+            cy.get('#cvat_canvas_shape_1').should('exist').and('be.visible');
+            cy.get('#cvat_canvas_shape_2').should('exist').and('be.visible');
+            cy.get('.cvat-empty-subtracted-mask-notification').should('not.exist');
+
+            cy.get('#cvat-objects-sidebar-state-item-1').within(() => {
+                cy.get('.cvat-object-item-button-hidden').click();
+            });
+
+            cy.get('.cvat-canvas-container').then(([$canvas]) => {
+                // pixels covered by the first mask were subtracted from the second one
+                cy.wrap($canvas).trigger('mousemove', { clientX: 350, clientY: 350 });
+                cy.get('#cvat_canvas_shape_2').should('not.have.class', 'cvat_canvas_shape_activated');
+
+                cy.wrap($canvas).trigger('mousemove', { clientX: 500, clientY: 350 });
+                cy.get('#cvat_canvas_shape_2').should('have.class', 'cvat_canvas_shape_activated');
+            });
+
+            cy.hideTooltips();
+            cy.startMaskDrawing();
+            cy.drawMask([{ method: 'subtract-underlying-masks', value: false }]);
+            cy.finishMaskDrawing();
+        });
+
+        it('A mask fully covered by underlying masks is discarded on enabling "Subtract underlying masks" tool', () => {
+            const firstMask = [{
+                method: 'brush-size',
+                value: 100,
+            }, {
+                method: 'brush',
+                coordinates: [[350, 350]],
+            }];
+            const secondMask = [{
+                method: 'brush',
+                coordinates: [[350, 350]],
+            }, {
+                method: 'subtract-underlying-masks',
+                value: true,
+            }];
+
+            cy.startMaskDrawing();
+            cy.drawMask(firstMask);
+            cy.get('.cvat-brush-tools-continue').click();
+            cy.hideTooltips();
+
+            cy.drawMask(secondMask);
+            cy.finishMaskDrawing();
+
+            cy.get('#cvat_canvas_shape_1').should('exist').and('be.visible');
+            cy.get('#cvat_canvas_shape_2').should('not.exist');
+            cy.get('.cvat-empty-subtracted-mask-notification').should('be.visible');
+            cy.closeNotification('.cvat-empty-subtracted-mask-notification');
+
+            cy.startMaskDrawing();
+            cy.drawMask([{ method: 'subtract-underlying-masks', value: false }]);
+            cy.finishMaskDrawing();
+        });
+
+        it('Underlying masks are not subtracted when a mask is dragged', () => {
+            const firstMask = [{
+                method: 'brush-size',
+                value: 100,
+            }, {
+                method: 'brush',
+                coordinates: [[350, 350]],
+            }];
+            const secondMask = [{
+                method: 'brush',
+                coordinates: [[650, 350]],
+            }, {
+                method: 'subtract-underlying-masks',
+                value: true,
+            }];
+
+            cy.startMaskDrawing();
+            cy.drawMask(firstMask);
+            cy.get('.cvat-brush-tools-continue').click();
+            cy.hideTooltips();
+            cy.drawMask(secondMask);
+            cy.finishMaskDrawing();
+
+            readMaskSvgBox('#cvat_canvas_shape_2').then((before) => {
+                cy.get('#cvat_canvas_shape_1').then(([$firstMask]) => {
+                    const firstMaskBox = $firstMask.getBoundingClientRect();
+                    const target = {
+                        x: firstMaskBox.left + firstMaskBox.width / 2,
+                        y: firstMaskBox.top + firstMaskBox.height / 2,
+                    };
+
+                    cy.get('#cvat_canvas_shape_2').then(([$secondMask]) => {
+                        const secondMaskBox = $secondMask.getBoundingClientRect();
+                        const start = {
+                            x: secondMaskBox.left + secondMaskBox.width / 2,
+                            y: secondMaskBox.top + secondMaskBox.height / 2,
+                        };
+
+                        cy.wrap($secondMask).trigger('mousemove', {
+                            clientX: start.x, clientY: start.y, bubbles: true,
+                        });
+                        cy.wrap($secondMask).trigger('mousedown', {
+                            clientX: start.x, clientY: start.y, button: 0, bubbles: true,
+                        });
+                        cy.get('.cvat-canvas-container').trigger('mousemove', {
+                            clientX: target.x, clientY: target.y, bubbles: true,
+                        });
+                        cy.get('.cvat-canvas-container').trigger('mouseup', {
+                            clientX: target.x, clientY: target.y, bubbles: true,
+                        });
+                    });
+                });
+
+                cy.get('#cvat_canvas_shape_2').should('exist').and('be.visible').and(($el) => {
+                    expect(+$el.attr('width')).to.be.closeTo(before.width, 1);
+                    expect(+$el.attr('height')).to.be.closeTo(before.height, 1);
+                });
+                cy.get('.cvat-empty-subtracted-mask-notification').should('not.exist');
+            });
+
+            cy.startMaskDrawing();
+            cy.drawMask([{ method: 'subtract-underlying-masks', value: false }]);
+            cy.finishMaskDrawing();
+        });
+
+        it('Underlying masks are subtracted when a mask is redrawn, with undo and redo', () => {
+            const firstMask = [{
+                method: 'brush-size',
+                value: 100,
+            }, {
+                method: 'brush',
+                coordinates: [[350, 350]],
+            }];
+            const secondMask = [{
+                method: 'brush',
+                coordinates: [[650, 350]],
+            }, {
+                method: 'subtract-underlying-masks',
+                value: true,
+            }];
+
+            cy.startMaskDrawing();
+            cy.drawMask(firstMask);
+            cy.get('.cvat-brush-tools-continue').click();
+            cy.hideTooltips();
+            cy.drawMask(secondMask);
+            cy.finishMaskDrawing();
+
+            readMaskSvgBox('#cvat_canvas_shape_2').then((before) => {
+                // the added circle partially overlaps the first mask, the overlap must be subtracted
+                cy.interactAnnotationObjectMenu('#cvat-objects-sidebar-state-item-2', 'Edit');
+                cy.drawMask([{
+                    method: 'brush',
+                    coordinates: [[420, 350]],
+                }]);
+                cy.finishMaskDrawing();
+
+                cy.get('#cvat_canvas_shape_1').should('exist').and('be.visible');
+                cy.get('.cvat-empty-subtracted-mask-notification').should('not.exist');
+                cy.get('#cvat_canvas_shape_2').should('exist').and('be.visible').and(($el) => {
+                    const width = +$el.attr('width');
+                    // without subtraction the mask would span from 370 to 700 (3.3 diameters)
+                    expect(width).to.be.gt(before.width);
+                    expect(width).to.be.lessThan(3.2 * before.width);
+                }).then(($el) => {
+                    const redrawnWidth = +$el.attr('width');
+
+                    cy.hideTooltips();
+                    cy.contains('.cvat-annotation-header-button', 'Undo').click();
+                    cy.get('#cvat_canvas_shape_2').should(($undone) => {
+                        expect(+$undone.attr('width')).to.be.closeTo(before.width, 1);
+                        expect(+$undone.attr('height')).to.be.closeTo(before.height, 1);
+                    });
+
+                    cy.contains('.cvat-annotation-header-button', 'Redo').click();
+                    cy.get('#cvat_canvas_shape_2').should(($redone) => {
+                        expect(+$redone.attr('width')).to.be.closeTo(redrawnWidth, 1);
+                    });
+                });
+            });
+
+            cy.hideTooltips();
+            cy.startMaskDrawing();
+            cy.drawMask([{ method: 'subtract-underlying-masks', value: false }]);
+            cy.finishMaskDrawing();
+        });
+
         it('Check brush tools shortcuts', () => {
             const mask1 = [{
                 method: 'brush',
