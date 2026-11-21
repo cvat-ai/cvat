@@ -1,4 +1,4 @@
-# Copyright (C) 2018-2022 Intel Corporation
+﻿# Copyright (C) 2018-2022 Intel Corporation
 # Copyright (C) CVAT.ai Corporation
 #
 # SPDX-License-Identifier: MIT
@@ -1205,6 +1205,16 @@ class TaskViewSet(
 
         return queryset
 
+    @action(detail=True, methods=["GET"], url_path="annotation-analytics")
+    def annotation_analytics(self, request, pk=None):
+        task = self.get_object()
+
+        from cvat.apps.test.views import get_annotation_counts
+
+        return Response({
+            "task_id": task.id,
+            "counts": get_annotation_counts(task.id),
+        })
     @extend_schema(
         summary="Recreate a task from a backup",
         description=textwrap.dedent("""
@@ -3962,3 +3972,4 @@ def rq_exception_handler(rq_job: RQJob, exc_type: type[Exception], exc_value: Ex
         save_job_failure_metadata(rq_job, exc_type, exc_value)
 
     return True
+

@@ -1,4 +1,4 @@
-# Copyright (C) 2018-2022 Intel Corporation
+﻿# Copyright (C) 2018-2022 Intel Corporation
 # Copyright (C) CVAT.ai Corporation
 #
 # SPDX-License-Identifier: MIT
@@ -138,6 +138,7 @@ INSTALLED_APPS = [
     "cvat.apps.dataset_manager",
     "cvat.apps.organizations",
     "cvat.apps.engine",
+    "cvat.apps.test",
     "cvat.apps.dataset_repo",
     "cvat.apps.lambda_manager",
     "cvat.apps.webhooks",
@@ -877,3 +878,4 @@ USER_LAST_ACTIVITY_UPDATE_MIN_INTERVAL = timedelta(days=1)
 
 # Health check settings
 HEALTH_CHECK = {"DISK_USAGE_MAX": int(os.getenv("CVAT_HEALTH_DISK_USAGE_MAX", 90))}
+

@@ -729,6 +729,7 @@ class TaskPermission(
             ("update", "PUT"): Scopes.UPDATE,
             ("destroy", "DELETE"): Scopes.DELETE,
             ("annotations", "GET"): Scopes.VIEW_ANNOTATIONS,
+            ("annotation_analytics", "GET"): Scopes.VIEW_ANNOTATIONS,
             ("annotations", "PATCH"): Scopes.UPDATE_ANNOTATIONS,
             ("annotations", "DELETE"): Scopes.DELETE_ANNOTATIONS,
             ("annotations", "PUT"): Scopes.UPDATE_ANNOTATIONS,
