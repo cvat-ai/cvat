@@ -7,7 +7,7 @@ and a page that shows them as a graph.
 ## Environment
 - Branch: dev-test01
 - CVAT commit SHA at clone: d4d08dedb5ad7c5e980c0bc7319a7f5587365dad
-- Dataset: COCO 2017 val, 5,000 images (planned; actual count updated after import)
+- Dataset: COCO 2017 val, 500 images in task #4 (`coco-val-500`)
 
 ## Order of work and time budget (8 hours)
 

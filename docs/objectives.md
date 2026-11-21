@@ -9,7 +9,7 @@
 - Docker allocation: 4 CPUs, approximately 5 GB RAM
 - CVAT commit SHA at clone: d4d08dedb5ad7c5e980c0bc7319a7f5587365dad
 - Dataset: COCO 2017 validation
-- Task image count: to be filled after import (planned: up to 5,000)
+- Task image count: 500 (task #4, `coco-val-500`)
 
 ## MO-1: Per-class count endpoint latency
 

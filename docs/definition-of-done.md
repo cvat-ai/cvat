@@ -3,7 +3,7 @@
 Boxes stay unticked until I have evidence for them. No evidence, no tick.
 
 Reference: CVAT commit d4d08dedb5ad7c5e980c0bc7319a7f5587365dad,
-branch dev-test01, objective MO-1 in docs/OBJECTIVES.md.
+branch dev-test01, objective MO-1 in docs/objectives.md.
 
 ## Floor (items 1-4)
 
@@ -65,8 +65,9 @@ existing permission behaviour actually returned.
       Evidence:
 - [ ] Plan changes during the work are noted with the reason.
       Evidence:
-- [ ] Actual image count recorded in Plan and Objectives.
-      Evidence:
+- [x] Actual image count recorded in Plan and Objectives: 500 images in
+      task #4 (`coco-val-500`).
+      Evidence: `engine_data.size=500`; task image count confirmed in CVAT.
 - [ ] Everything I did not finish is listed below, with why.
       Evidence:
 
