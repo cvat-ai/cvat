@@ -11,7 +11,17 @@ branch dev-test01, objective MO-1 in docs/objectives.md.
       read from the database.
       Evidence:
 - [ ] 1a. Counts checked against a known task (compared with what CVAT shows).
-      Evidence:
+      Baseline: task #4 CVAT statistics and a database query both show
+      3,953 shapes (3,916 polygons + 37 masks).
+      Files: docs/evidence/cvat-stats-task4-polygon.png,
+      docs/evidence/cvat-stats-task4-mask.png,
+      docs/evidence/task4-db-counts.txt.
+      The difference from COCO's 3,541 annotations is explained in
+      docs/evidence/coco-polygon-parts.txt (COCO source counts:
+      docs/evidence/expected-counts-coco-500.txt).
+      The endpoint output will be compared with CVAT's own per-class
+      database counts, not with the COCO file.
+      Endpoint comparison: pending.
 - [ ] 2. A page in the web interface calls the endpoint.
       Evidence:
 - [ ] 3. Counts are shown as a graph.
@@ -41,7 +51,7 @@ existing permission behaviour actually returned.
 - [ ] 6b. Median, minimum and maximum reported.
       Evidence:
 - [ ] 6c. Target (median at or below 500 ms) met, or missed with the
-      reason written down in docs/OBJECTIVES.md.
+      reason written down in docs/objectives.md.
       Evidence:
 
 ## Filter or grouping (item 7)
@@ -60,14 +70,16 @@ existing permission behaviour actually returned.
 
 ## Documents and honesty
 
-- [ ] 10. Decision record written at the end of docs/PLAN.md (approach
+- [ ] 10. Decision record written at the end of docs/plan.md (approach
       taken, approach rejected, what rejecting it cost).
       Evidence:
 - [ ] Plan changes during the work are noted with the reason.
       Evidence:
 - [x] Actual image count recorded in Plan and Objectives: 500 images in
       task #4 (`coco-val-500`).
-      Evidence: `engine_data.size=500`; task image count confirmed in CVAT.
+      Evidence: CVAT job #4 page shows frame count 500 (100%), frame range
+      0-499 (docs/evidence/task4-frame-count.png); docs/plan.md and
+      docs/objectives.md both state 500.
 - [ ] Everything I did not finish is listed below, with why.
       Evidence:
 

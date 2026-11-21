@@ -7,7 +7,15 @@ and a page that shows them as a graph.
 ## Environment
 - Branch: dev-test01
 - CVAT commit SHA at clone: d4d08dedb5ad7c5e980c0bc7319a7f5587365dad
-- Dataset: COCO 2017 val, 500 images in task #4 (`coco-val-500`)
+- Dataset: COCO 2017 val, 500 images in task #4 (`coco-val-500`), the first
+  500 images by file name. The official annotation file was filtered to these
+  images (`instances_val2017_500.json`) because CVAT's COCO importer fails on
+  images that are not in the task.
+- Counting definition: one annotation is one persisted CVAT shape record
+  (including polygons and masks), not one source COCO annotation. COCO's
+  3,541 source annotations are 3,504 normal and 37 crowd. The 3,504 normal
+  ones become 3,916 polygon records in CVAT (multi-part segmentations give
+  412 extra), and the 37 crowd ones become 37 masks, for 3,953 shapes total.
 
 ## Order of work and time budget (8 hours)
 
