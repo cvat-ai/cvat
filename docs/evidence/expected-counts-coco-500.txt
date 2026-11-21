@@ -1,0 +1,79 @@
+﻿total annotations: 3541
+person: 1088
+chair: 201
+car: 169
+bottle: 117
+book: 112
+cup: 108
+dining table: 83
+bowl: 60
+tie: 52
+bird: 50
+wine glass: 47
+motorcycle: 46
+backpack: 46
+broccoli: 45
+potted plant: 44
+handbag: 41
+banana: 39
+bench: 38
+boat: 38
+bus: 35
+bicycle: 34
+knife: 34
+tv: 33
+zebra: 31
+laptop: 30
+truck: 29
+carrot: 29
+remote: 29
+traffic light: 29
+horse: 28
+cell phone: 28
+donut: 28
+surfboard: 28
+couch: 27
+skis: 25
+kite: 25
+orange: 23
+spoon: 22
+keyboard: 22
+vase: 22
+sports ball: 22
+suitcase: 22
+tennis racket: 22
+umbrella: 20
+sink: 20
+clock: 20
+bed: 19
+sandwich: 19
+pizza: 19
+oven: 18
+sheep: 18
+cat: 17
+fork: 17
+apple: 17
+toilet: 17
+elephant: 17
+refrigerator: 16
+hot dog: 15
+mouse: 15
+cow: 15
+parking meter: 14
+train: 14
+frisbee: 14
+teddy bear: 14
+cake: 13
+airplane: 12
+skateboard: 12
+fire hydrant: 11
+baseball glove: 10
+dog: 9
+giraffe: 9
+baseball bat: 8
+snowboard: 6
+microwave: 4
+stop sign: 4
+bear: 4
+scissors: 2
+toothbrush: 1

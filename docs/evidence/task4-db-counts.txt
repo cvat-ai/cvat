@@ -1,0 +1,4 @@
+﻿66 objects imported automatically (use -v 2 for details).
+
+total: 3953
+[{'type': 'mask', 'n': 37}, {'type': 'polygon', 'n': 3916}]

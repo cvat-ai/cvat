@@ -1,0 +1,4 @@
+﻿crowd (expected mask): 37
+normal annotations: 3504
+total polygon parts: 3916
+extra polygon parts: 412
