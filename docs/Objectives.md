@@ -1,4 +1,5 @@
-﻿# Objectives
+﻿
+# Objectives
 
 ## Project objective
 
@@ -17,10 +18,20 @@ Build an annotation analytics feature in CVAT that returns the number of annotat
 
 - Metric: API response time for the annotation analytics endpoint.
 - Target: 500 ms or less per request.
-- Measurement method: Run five requests against the imported dataset.
-- Report: All five raw measurements, median response time, and spread (minimum to maximum).
-- Evidence: Save raw command output in `docs/performance-raw.txt`.
-- Status: Not measured yet. Do not report the target as achieved until measurements are collected.
+- Measurement method: Five requests against the imported COCO 2017 validation dataset.
+- Number of requests: 5.
+- Raw measurements:
+  - Request 1: 32.908 ms
+  - Request 2: 24.730 ms
+  - Request 3: 16.902 ms
+  - Request 4: 17.052 ms
+  - Request 5: 13.987 ms
+- Median response time: 17.052 ms.
+- Minimum response time: 13.987 ms.
+- Maximum response time: 32.908 ms.
+- Spread (maximum - minimum): 18.921 ms.
+- Result: All five measured requests were within the 500 ms target.
+- Evidence: `docs/performance-raw.txt`.
 
 ## Test environment
 
@@ -33,18 +44,23 @@ Build an annotation analytics feature in CVAT that returns the number of annotat
 | Logical processors | 8 |
 | RAM | 15.69 GB |
 | CVAT base commit | f2a676c792c99a62182d01243ef1359f4814104b |
-| Dataset | COCO 2017 validation (import pending) |
-| Imported image count | To be recorded after import |
+| Dataset | COCO 2017 validation |
+| Imported image count | 5,000 |
+| Imported label classes | 80 |
 
 ## Annotation count definition
 
-Counts represent top-level annotation records grouped by label name. The implementation must account for the relevant annotation types and must not count individual tracked shapes separately from their parent track records.
+Counts represent top-level annotation records grouped by label name. The implementation accounts for the relevant annotation types: labeled shapes, labeled images, labeled tracks, and labeled intervals. Individual tracked shapes are not counted separately from their parent track records.
 
 ## Evidence
 
-- API response and permission tests.
-- Frontend graph and empty/error state screenshots.
-- Filter or grouping demonstration.
-- Five raw performance measurements, median, and spread.
-- WebSocket update and reconnection demonstration, if completed.
-- Loom walkthrough and pull request link.
+- API response test: successful authenticated request.
+- Authentication test: unauthenticated request returned HTTP 401.
+- Task permission test: user without task access received HTTP 403.
+- Frontend graph showing the top 15 annotation classes.
+- All Classes / Top 15 filter implementation.
+- Empty-data state screenshot.
+- Failed-request state screenshot.
+- Five raw performance measurements, median, and spread in `docs/performance-raw.txt`.
+- WebSocket update and reconnection demonstration, pending.
+- Loom walkthrough and pull request link, pending.

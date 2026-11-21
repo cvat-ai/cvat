@@ -1,0 +1,24 @@
+Annotation Analytics API - Raw Performance Measurements
+Date: 2026-11-21
+Endpoint: GET /api/tasks/1/annotation-analytics
+Target: <= 500 ms
+Number of requests: 5
+
+Raw curl time_total output (seconds):
+0.032908
+0.024730
+0.016902
+0.017052
+0.013987
+
+Converted results (milliseconds):
+32.908
+24.730
+16.902
+17.052
+13.987
+
+Median: 17.052 ms
+Minimum: 13.987 ms
+Maximum: 32.908 ms
+Spread (maximum - minimum): 18.921 ms

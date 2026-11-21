@@ -1,30 +1,32 @@
-﻿# Definition of Done
+﻿
+# Definition of Done
 
 ## Documentation
-- [ ] Plan.md contains the implementation sequence, estimates, skipped work, and decision record.
-- [ ] Objectives.md contains measurable objectives and the actual test environment.
-- [ ] Definition-of-Done.md records completion evidence and unfinished work.
+- [x] Plan.md contains the implementation sequence, estimates, skipped work, and decision record. Evidence: `docs/Plan.md`.
+- [x] Objectives.md contains measurable objectives and the actual test environment. Evidence: `docs/Objectives.md`.
+- [ ] Definition-of-Done.md records completion evidence and unfinished work. Evidence: this document; final review pending.
 
 ## Backend API
-- [ ] New Django app named `test` is implemented.
-- [ ] API returns annotation counts grouped by class for a task.
-- [ ] Counts are read from the database and cover the relevant top-level annotation types.
-- [ ] Unauthenticated requests are rejected.
-- [ ] Users without access to the task are rejected.
-- [ ] API tests cover successful responses and permission failures.
+- [x] New Django app named `test` is implemented.
+- [x] API returns annotation counts grouped by class for a task. Evidence: `GET /api/tasks/1/annotation-analytics` returned HTTP 200.
+- [x] Counts are read from the database and cover the relevant top-level annotation types.
+- [x] Unauthenticated requests are rejected. Evidence: HTTP 401.
+- [x] Users without access to the task are rejected. Evidence: test user received HTTP 403.
+- [ ] Automated API tests cover successful responses and permission failures.
 
 ## Frontend
-- [ ] Frontend requests annotation analytics from the API.
-- [ ] Results are displayed in a graph.
-- [ ] Empty-data state is handled.
-- [ ] Failed-request state is handled.
-- [ ] At least one filter or grouping option beyond plain counts is implemented.
+- [x] Frontend requests annotation analytics from the API.
+- [x] Results are displayed in a graph. Evidence: Task 1 graph screenshot.
+- [x] Empty-data state is handled. Evidence: Task 2 displayed "No annotations available for this task."
+- [x] Failed-request state is handled. Evidence: blocked API request displayed an error message.
+- [x] At least one filter or grouping option beyond plain counts is implemented. Evidence: Top 15 / All Classes buttons.
 
 ## Performance
-- [ ] Five API response-time measurements are recorded.
-- [ ] Raw measurements are saved in `docs/performance-raw.txt`.
-- [ ] Median and minimum-to-maximum spread are reported.
-- [ ] Results are compared with the 500 ms target.
+- [x] Five API response-time measurements are recorded.
+- [x] Raw measurements are saved in `docs/performance-raw.txt`.
+- [x] Median and minimum-to-maximum spread are reported.
+- [x] Results are compared with the 500 ms target.
+- Evidence: five requests; median 17.052 ms; minimum 13.987 ms; maximum 32.908 ms; spread 18.921 ms. All five were within the target.
 
 ## Live updates
 - [ ] WebSocket updates refresh the graph.
@@ -32,10 +34,10 @@
 - [ ] The graph recovers after reconnection.
 
 ## Dataset and environment
-- [ ] CVAT starts successfully using Docker Compose.
-- [ ] COCO 2017 validation dataset is imported.
-- [ ] A task job opens with labelled bounding boxes.
-- [ ] Actual imported image count is recorded.
+- [x] CVAT starts successfully using Docker Compose.
+- [x] COCO 2017 validation dataset is imported.
+- [x] A task job opens with labelled bounding boxes.
+- [x] Actual imported image count is recorded: 5,000 images.
 
 ## Submission
 - [ ] Changes are committed in small, meaningful commits.
@@ -46,4 +48,20 @@
 
 ## Evidence and unfinished work
 
-Record actual test results, screenshots, command output, commit references, and links here. Mark unfinished items honestly; do not claim completion without evidence.
+### Completed evidence
+- Backend endpoint: `GET /api/tasks/1/annotation-analytics`
+- Authenticated API response: HTTP 200.
+- Unauthenticated API response: HTTP 401.
+- User without task access: HTTP 403.
+- Frontend graph: 80 annotation classes returned; Top 15 / All Classes filter implemented.
+- Empty-data test: Task 2 showed the empty-state message.
+- Failed-request test: blocked request showed the error state.
+- Performance: five raw measurements saved in `docs/performance-raw.txt`.
+- Dataset: 5,000 COCO 2017 validation images and 80 label classes imported.
+
+### Unfinished work
+- WebSocket live graph updates.
+- WebSocket reconnection and recovery.
+- Automated API tests.
+- Final Git review and remaining commits.
+- Loom recording and submission links.
