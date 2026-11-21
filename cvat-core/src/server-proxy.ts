@@ -11,24 +11,53 @@ import { ChunkQuality } from 'cvat-data';
 import './axios-config';
 import { axiosTusHttpStack } from './axios-tus';
 import {
-    SerializedLabel, SerializedAnnotationFormats,
-    SerializedProject, SerializedTask, SerializedUser, SerializedOrganization,
-    SerializedAbout, SerializedRemoteFile, SerializedUserAgreement, SerializedFunctionRequest,
-    SerializedRegister, SerializedJob, SerializedGuide, SerializedAsset, SerializedAPISchema,
-    SerializedInvitationData, SerializedCloudStorage, SerializedFramesMetaData, SerializedCollection,
-    SerializedRequest, SerializedJobValidationLayout, SerializedTaskValidationLayout, SerializedConsensusSettingsData,
-    SerializedApiToken, SerializedUserGrowthData,
+    SerializedLabel,
+    SerializedAnnotationFormats,
+    SerializedProject,
+    SerializedTask,
+    SerializedUser,
+    SerializedOrganization,
+    SerializedAbout,
+    SerializedRemoteFile,
+    SerializedUserAgreement,
+    SerializedFunctionRequest,
+    SerializedRegister,
+    SerializedJob,
+    SerializedGuide,
+    SerializedAsset,
+    SerializedAPISchema,
+    SerializedInvitationData,
+    SerializedCloudStorage,
+    SerializedFramesMetaData,
+    SerializedCollection,
+    SerializedRequest,
+    SerializedJobValidationLayout,
+    SerializedTaskValidationLayout,
+    SerializedConsensusSettingsData,
+    SerializedApiToken,
+    SerializedUserGrowthData,
 } from './server-response-types';
 import {
-    SerializedQualityConflictData, SerializedQualityReportData,
-    SerializedQualityRequirementData, SerializedQualityRequirementSaveData,
-    SerializedQualitySettingsData, SerializedQualitySettingsSaveData,
+    SerializedQualityConflictData,
+    SerializedQualityReportData,
+    SerializedQualityRequirementData,
+    SerializedQualityRequirementSaveData,
+    SerializedQualitySettingsData,
+    SerializedQualitySettingsSaveData,
 } from './quality/server-response-types';
 import {
-    APIApiTokenModifiableFields, APIUserGrowthDataModifiableFields,
-    ProjectsFilter, TasksFilter, JobsFilter,
-    APIQualitySettingsFilter, APIQualityConflictsFilter, APIQualityReportsFilter,
-    APIAnalyticsEventsFilter, APIConsensusSettingsFilter, APIApiTokensFilter, APIQualityRequirementsFilter,
+    APIApiTokenModifiableFields,
+    APIUserGrowthDataModifiableFields,
+    ProjectsFilter,
+    TasksFilter,
+    JobsFilter,
+    APIQualitySettingsFilter,
+    APIQualityConflictsFilter,
+    APIQualityReportsFilter,
+    APIAnalyticsEventsFilter,
+    APIConsensusSettingsFilter,
+    APIApiTokensFilter,
+    APIQualityRequirementsFilter,
 } from './server-request-types';
 import { PaginatedResource, SerializedModel, UpdateStatusData } from './core-types';
 import { Storage } from './storage';
@@ -40,14 +69,14 @@ import config from './config';
 import { ServerError } from './exceptions';
 
 type Params = {
-    org: number | string,
-    location?: StorageLocation,
-    cloud_storage_id?: number,
-    format?: string,
-    filename?: string,
-    action?: string,
-    save_images?: boolean,
-    import_mode?: 'replace' | 'append',
+    org: number | string;
+    location?: StorageLocation;
+    cloud_storage_id?: number;
+    format?: string;
+    filename?: string;
+    action?: string;
+    save_images?: boolean;
+    import_mode?: 'replace' | 'append';
 };
 
 type HealthCheckResponse = Record<string, string>;
@@ -80,12 +109,16 @@ function enableOrganization(): { org: string } {
 
 function configureStorage(storage: Storage, useDefaultLocation = false): Partial<Params> {
     return {
-        ...(!useDefaultLocation ? {
-            location: storage.location,
-            ...(storage.cloudStorageId ? {
-                cloud_storage_id: storage.cloudStorageId,
-            } : {}),
-        } : {}),
+        ...(!useDefaultLocation
+            ? {
+                  location: storage.location,
+                  ...(storage.cloudStorageId
+                      ? {
+                            cloud_storage_id: storage.cloudStorageId,
+                        }
+                      : {}),
+              }
+            : {}),
     };
 }
 
@@ -96,7 +129,7 @@ function fetchAll<T extends { id: number | string }>(url, filter = {}): Promise<
         results: new Map<T['id'], T>(),
     };
 
-    function appendToResult(data: { count: number; results: T[] }): { hasMore: boolean; } {
+    function appendToResult(data: { count: number; results: T[] }): { hasMore: boolean } {
         result.count = data.count;
         data.results.forEach((obj: T) => {
             if (!result.results.has(obj.id)) {
@@ -114,17 +147,19 @@ function fetchAll<T extends { id: number | string }>(url, filter = {}): Promise<
                     page_size: pageSize,
                     page,
                 },
-            }).then((response) => {
-                const { hasMore } = appendToResult(response.data);
-                if (hasMore) {
-                    fetchPage(page + 1);
-                } else {
-                    resolve({
-                        count: result.count,
-                        results: [...result.results.values()],
-                    });
-                }
-            }).catch((error) => reject(error));
+            })
+                .then((response) => {
+                    const { hasMore } = appendToResult(response.data);
+                    if (hasMore) {
+                        fetchPage(page + 1);
+                    } else {
+                        resolve({
+                            count: result.count,
+                            results: [...result.results.values()],
+                        });
+                    }
+                })
+                .catch((error) => reject(error));
         };
 
         fetchPage(1);
@@ -132,9 +167,7 @@ function fetchAll<T extends { id: number | string }>(url, filter = {}): Promise<
 }
 
 async function chunkUpload(file: File, uploadConfig): Promise<{ uploadSentSize: number; filename: string }> {
-    const {
-        endpoint, chunkSize, totalSize, onUpdate, metadata, totalSentSize,
-    } = uploadConfig;
+    const { endpoint, chunkSize, totalSize, onUpdate, metadata, totalSentSize } = uploadConfig;
     const uploadResult = { uploadSentSize: 0, filename: file.name };
     return new Promise((resolve, reject) => {
         const upload = new tus.Upload(file, {
@@ -149,8 +182,8 @@ async function chunkUpload(file: File, uploadConfig): Promise<{ uploadSentSize: 
             retryDelays: [2000, 4000, 8000, 16000, 32000, 64000],
             onShouldRetry(err: tus.DetailedError | Error): boolean {
                 if (err instanceof tus.DetailedError) {
-                    const { originalResponse } = (err as tus.DetailedError);
-                    const code = (originalResponse?.getStatus() || 0);
+                    const { originalResponse } = err as tus.DetailedError;
+                    const code = originalResponse?.getStatus() || 0;
 
                     // do not retry if (code >= 400 && code < 500) is default tus behaviour
                     // retry if code === 409 or 423 is default tus behaviour
@@ -238,12 +271,13 @@ function flattenFieldErrors(data: unknown, path: string[] = []): [string, string
 
 function generateError(errorData: AxiosError): ServerError {
     if (errorData.response) {
-        const serverError = (message: string): ServerError => new ServerError(
-            message,
-            errorData.response.status,
-            // Axios may provide either HTTP status text or only its own text code.
-            errorData.response.statusText || errorData.code,
-        );
+        const serverError = (message: string): ServerError =>
+            new ServerError(
+                message,
+                errorData.response.status,
+                // Axios may provide either HTTP status text or only its own text code.
+                errorData.response.statusText || errorData.code,
+            );
 
         if (errorData.response.status >= 500 && typeof errorData.response.data === 'string') {
             return serverError(filterPythonTraceback(errorData.response.data));
@@ -276,9 +310,9 @@ function generateError(errorData: AxiosError): ServerError {
                 }
 
                 // serializers fields
-                const message = flattenFieldErrors(errorData.response.data).map(([key, value]) => (
-                    `**${key}**: ${value}`
-                )).join('\n\n');
+                const message = flattenFieldErrors(errorData.response.data)
+                    .map(([key, value]) => `**${key}**: ${value}`)
+                    .join('\n\n');
                 return serverError(message);
             }
 
@@ -297,8 +331,10 @@ function generateError(errorData: AxiosError): ServerError {
     }
 
     // Server is unavailable (no any response)
-    const message = errorData.message === 'Network Error' ?
-        'Network error. The CVAT server is not reachable.' : `${errorData.message}.`;
+    const message =
+        errorData.message === 'Network Error'
+            ? 'Network error. The CVAT server is not reachable.'
+            : `${errorData.message}.`;
     return new ServerError(message, 0, errorData.code);
 }
 
@@ -425,8 +461,9 @@ Axios.interceptors.request.use((reqConfig) => {
     // we want to get invitations from all organizations
     const { backendAPI } = config;
     const getInvitations = reqConfig.url.endsWith('/invitations') && reqConfig.method === 'get';
-    const acceptDeclineInvitation = reqConfig.url.startsWith(`${backendAPI}/invitations`) &&
-                                    (reqConfig.url.endsWith('/accept') || reqConfig.url.endsWith('/decline'));
+    const acceptDeclineInvitation =
+        reqConfig.url.startsWith(`${backendAPI}/invitations`) &&
+        (reqConfig.url.endsWith('/accept') || reqConfig.url.endsWith('/decline'));
     if (getInvitations || acceptDeclineInvitation) {
         return reqConfig;
     }
@@ -441,7 +478,9 @@ Axios.interceptors.request.use((reqConfig) => {
 });
 
 Axios.interceptors.response.use((response) => {
-    if (isResourceURL(response.config.url) && response.config.method === 'get' &&
+    if (
+        isResourceURL(response.config.url) &&
+        response.config.method === 'get' &&
         'organization' in (response.data || {})
     ) {
         const newOrgId: number | null = response.data.organization;
@@ -530,7 +569,7 @@ async function register(
     lastName: string,
     email: string,
     password: string,
-    confirmations: { name: string; value: boolean; }[],
+    confirmations: { name: string; value: boolean }[],
 ): Promise<SerializedRegister> {
     let response = null;
     try {
@@ -608,9 +647,7 @@ async function resetPassword(newPassword1: string, newPassword2: string, uid: st
     }
 }
 
-async function acceptOrganizationInvitation(
-    key: string,
-): Promise<string> {
+async function acceptOrganizationInvitation(key: string): Promise<string> {
     let response = null;
     let orgSlug = null;
     try {
@@ -689,10 +726,7 @@ async function createApiToken(tokenData: SerializedApiToken): Promise<Serialized
     return response.data;
 }
 
-async function updateApiToken(
-    id: number,
-    tokenData: APIApiTokenModifiableFields,
-): Promise<SerializedApiToken> {
+async function updateApiToken(id: number, tokenData: APIApiTokenModifiableFields): Promise<SerializedApiToken> {
     const { backendAPI } = config;
 
     let response = null;
@@ -740,7 +774,9 @@ async function healthCheck(
         } catch (error) {
             lastError = error;
             if (attempt < adjustedMaxRetries) {
-                await new Promise((resolve) => { setTimeout(resolve, adjustedCheckPeriod); });
+                await new Promise((resolve) => {
+                    setTimeout(resolve, adjustedCheckPeriod);
+                });
             }
         }
     }
@@ -749,10 +785,13 @@ async function healthCheck(
 }
 
 export interface ServerRequestConfig {
-    fetchAll: boolean,
+    fetchAll: boolean;
 }
 
-export const sleep = (time: number): Promise<void> => new Promise((resolve) => { setTimeout(resolve, time); });
+export const sleep = (time: number): Promise<void> =>
+    new Promise((resolve) => {
+        setTimeout(resolve, time);
+    });
 
 const defaultRequestConfig = {
     fetchAll: false,
@@ -787,7 +826,9 @@ async function getRequestStatus(rqID: string): Promise<SerializedRequest> {
             const { response } = errorData;
             if (response && [502, 503, 504].includes(response.status)) {
                 const timeout = retryTimeouts[retryCount];
-                await new Promise((resolve) => { setTimeout(resolve, timeout); });
+                await new Promise((resolve) => {
+                    setTimeout(resolve, timeout);
+                });
                 retryCount++;
             } else {
                 throw generateError(errorData);
@@ -809,7 +850,8 @@ async function cancelRequest(requestID): Promise<void> {
 }
 
 async function serverRequest(
-    url: string, data: object,
+    url: string,
+    data: object,
     requestConfig: ServerRequestConfig = defaultRequestConfig,
 ): Promise<any> {
     try {
@@ -919,10 +961,7 @@ function normaliseTask(task: SerializedTask): SerializedTask {
     };
 }
 
-async function getTasks(
-    filter: TasksFilter = {},
-    aggregate?: boolean,
-): Promise<PaginatedResource<SerializedTask>> {
+async function getTasks(filter: TasksFilter = {}, aggregate?: boolean): Promise<PaginatedResource<SerializedTask>> {
     const { backendAPI } = config;
     let response = null;
     try {
@@ -958,6 +997,24 @@ async function getTasks(
     return results;
 }
 
+async function getTaskAnnotationAnalytics(taskId: number): Promise<{
+    task_id: number;
+    counts: {
+        class_name: string;
+        count: number;
+    }[];
+}> {
+    const { backendAPI } = config;
+
+    try {
+        const response = await Axios.get(`${backendAPI}/tasks/${taskId}/annotation-analytics`);
+
+        return response.data;
+    } catch (errorData) {
+        throw generateError(errorData);
+    }
+}
+
 async function saveTask(id: number, taskData: Record<string, unknown>): Promise<SerializedTask> {
     const { backendAPI } = config;
 
@@ -988,7 +1045,7 @@ async function deleteTask(id: number, organizationID: string | null = null): Pro
 async function mergeConsensusJobs(id: number, instanceType: string): Promise<string> {
     const { backendAPI } = config;
     const url = `${backendAPI}/consensus/merges`;
-    const requestBody = (instanceType === 'task') ? { task_id: id } : { job_id: id };
+    const requestBody = instanceType === 'task' ? { task_id: id } : { job_id: id };
 
     return new Promise<string>((resolve, reject) => {
         async function request() {
@@ -999,11 +1056,13 @@ async function mergeConsensusJobs(id: number, instanceType: string): Promise<str
                 if (status === 202) {
                     resolve(rqID);
                 } else {
-                    reject(new ServerError(
-                        response.statusText || 'Unexpected response while merging consensus jobs',
-                        response.status,
-                        AxiosError.ERR_BAD_RESPONSE,
-                    ));
+                    reject(
+                        new ServerError(
+                            response.statusText || 'Unexpected response while merging consensus jobs',
+                            response.status,
+                            AxiosError.ERR_BAD_RESPONSE,
+                        ),
+                    );
                 }
             } catch (errorData) {
                 reject(generateError(errorData));
@@ -1014,9 +1073,9 @@ async function mergeConsensusJobs(id: number, instanceType: string): Promise<str
 }
 
 async function getLabels(filter: {
-    job_id?: number,
-    task_id?: number,
-    project_id?: number,
+    job_id?: number;
+    task_id?: number;
+    project_id?: number;
 }): Promise<{ results: SerializedLabel[] }> {
     const { backendAPI } = config;
     return fetchAll<SerializedLabel & { id: number }>(`${backendAPI}/labels`, {
@@ -1066,9 +1125,13 @@ function exportDataset(instanceType: 'projects' | 'jobs' | 'tasks') {
         };
         return new Promise<string | void>((resolve, reject) => {
             async function request() {
-                Axios.post(baseURL, {}, {
-                    params,
-                })
+                Axios.post(
+                    baseURL,
+                    {},
+                    {
+                        params,
+                    },
+                )
                     .then((response) => {
                         if (response.status === 202) {
                             resolve(response.data.rq_id);
@@ -1092,8 +1155,8 @@ async function importDataset(
     sourceStorage: Storage,
     file: File | string,
     options: {
-        convMaskToPoly: boolean,
-        updateStatusCallback: (message: string, progress: number) => void,
+        convMaskToPoly: boolean;
+        updateStatusCallback: (message: string, progress: number) => void;
     },
 ): Promise<string> {
     const { backendAPI, origin } = config;
@@ -1110,11 +1173,9 @@ async function importDataset(
 
     try {
         if (isCloudStorage) {
-            const response = await Axios.post(url,
-                new FormData(),
-                {
-                    params,
-                });
+            const response = await Axios.post(url, new FormData(), {
+                params,
+            });
             return response.data.rq_id;
         }
         const uploadConfig = {
@@ -1126,19 +1187,15 @@ async function importDataset(
                 options.updateStatusCallback('The dataset is being uploaded to the server', percentage);
             },
         };
-        await Axios.post(url,
-            new FormData(),
-            {
-                params,
-                headers: { 'Upload-Start': true },
-            });
+        await Axios.post(url, new FormData(), {
+            params,
+            headers: { 'Upload-Start': true },
+        });
         const { filename } = await chunkUpload(file as File, uploadConfig);
-        const response = await Axios.post(url,
-            new FormData(),
-            {
-                params: { ...params, filename },
-                headers: { 'Upload-Finish': true },
-            });
+        const response = await Axios.post(url, new FormData(), {
+            params: { ...params, filename },
+            headers: { 'Upload-Finish': true },
+        });
         return response.data.rq_id;
     } catch (errorData) {
         throw generateError(errorData);
@@ -1164,9 +1221,13 @@ async function backupTask(
     return new Promise<string | void>((resolve, reject) => {
         async function request() {
             try {
-                const response = await Axios.post(url, {}, {
-                    params,
-                });
+                const response = await Axios.post(
+                    url,
+                    {},
+                    {
+                        params,
+                    },
+                );
                 if (response.status === 202) {
                     resolve(response.data.rq_id);
                 }
@@ -1195,11 +1256,9 @@ async function restoreTask(storage: Storage, file: File | string): Promise<strin
     try {
         if (isCloudStorage) {
             params.filename = file as string;
-            response = await Axios.post(url,
-                new FormData(),
-                {
-                    params,
-                });
+            response = await Axios.post(url, new FormData(), {
+                params,
+            });
             return response.data.rq_id;
         }
         const uploadConfig = {
@@ -1208,19 +1267,15 @@ async function restoreTask(storage: Storage, file: File | string): Promise<strin
             totalSentSize: 0,
             totalSize: (file as File).size,
         };
-        await Axios.post(url,
-            new FormData(),
-            {
-                params,
-                headers: { 'Upload-Start': true },
-            });
+        await Axios.post(url, new FormData(), {
+            params,
+            headers: { 'Upload-Start': true },
+        });
         const { filename } = await chunkUpload(file as File, uploadConfig);
-        response = await Axios.post(url,
-            new FormData(),
-            {
-                params: { ...params, filename },
-                headers: { 'Upload-Finish': true },
-            });
+        response = await Axios.post(url, new FormData(), {
+            params: { ...params, filename },
+            headers: { 'Upload-Finish': true },
+        });
         return response.data.rq_id;
     } catch (errorData) {
         throw generateError(errorData);
@@ -1248,9 +1303,13 @@ async function backupProject(
     return new Promise<string | void>((resolve, reject) => {
         async function request() {
             try {
-                const response = await Axios.post(url, {}, {
-                    params,
-                });
+                const response = await Axios.post(
+                    url,
+                    {},
+                    {
+                        params,
+                    },
+                );
                 if (response.status === 202) {
                     resolve(response.data.rq_id);
                 }
@@ -1279,11 +1338,9 @@ async function restoreProject(storage: Storage, file: File | string): Promise<st
     try {
         if (isCloudStorage) {
             params.filename = file as string;
-            response = await Axios.post(url,
-                new FormData(),
-                {
-                    params,
-                });
+            response = await Axios.post(url, new FormData(), {
+                params,
+            });
             return response.data.rq_id;
         }
         const uploadConfig = {
@@ -1292,19 +1349,15 @@ async function restoreProject(storage: Storage, file: File | string): Promise<st
             totalSentSize: 0,
             totalSize: (file as File).size,
         };
-        await Axios.post(url,
-            new FormData(),
-            {
-                params,
-                headers: { 'Upload-Start': true },
-            });
+        await Axios.post(url, new FormData(), {
+            params,
+            headers: { 'Upload-Start': true },
+        });
         const { filename } = await chunkUpload(file as File, uploadConfig);
-        response = await Axios.post(url,
-            new FormData(),
-            {
-                params: { ...params, filename },
-                headers: { 'Upload-Finish': true },
-            });
+        response = await Axios.post(url, new FormData(), {
+            params: { ...params, filename },
+            headers: { 'Upload-Finish': true },
+        });
         return response.data.rq_id;
     } catch (errorData) {
         throw generateError(errorData);
@@ -1315,7 +1368,7 @@ async function createTask(
     taskSpec: Partial<SerializedTask>,
     taskDataSpec: any,
     onUpdate: (updateData: UpdateStatusData) => void,
-): Promise<{ taskID: number, rqID: string }> {
+): Promise<{ taskID: number; rqID: string }> {
     const { backendAPI, origin } = config;
     // keep current default params to 'freeze" them during this request
     const params = enableOrganization();
@@ -1371,16 +1424,19 @@ async function createTask(
     });
 
     async function bulkUpload(taskId, files) {
-        const fileBulks = files.reduce((fileGroups, file) => {
-            const lastBulk = fileGroups[fileGroups.length - 1];
-            if (chunkSize - lastBulk.size >= file.size) {
-                lastBulk.files.push(file);
-                lastBulk.size += file.size;
-            } else {
-                fileGroups.push({ files: [file], size: file.size });
-            }
-            return fileGroups;
-        }, [{ files: [], size: 0 }]);
+        const fileBulks = files.reduce(
+            (fileGroups, file) => {
+                const lastBulk = fileGroups[fileGroups.length - 1];
+                if (chunkSize - lastBulk.size >= file.size) {
+                    lastBulk.files.push(file);
+                    lastBulk.size += file.size;
+                } else {
+                    fileGroups.push({ files: [file], size: file.size });
+                }
+                return fileGroups;
+            },
+            [{ files: [], size: 0 }],
+        );
         const totalBulks = fileBulks.length;
         let currentChunkNumber = 0;
         while (currentChunkNumber < totalBulks) {
@@ -1407,12 +1463,14 @@ async function createTask(
 
     let rqID = null;
     try {
-        await Axios.post(`${backendAPI}/tasks/${response.data.id}/data`,
+        await Axios.post(
+            `${backendAPI}/tasks/${response.data.id}/data`,
             {},
             {
                 ...params,
                 headers: { 'Upload-Start': true },
-            });
+            },
+        );
         const uploadConfig = {
             endpoint: `${origin}${backendAPI}/tasks/${response.data.id}/data/`,
             onUpdate: (percentage) => {
@@ -1433,12 +1491,10 @@ async function createTask(
         if (bulkFiles.length > 0) {
             await bulkUpload(response.data.id, bulkFiles);
         }
-        const dataResponse = await Axios.post(`${backendAPI}/tasks/${response.data.id}/data`,
-            taskDataSpec,
-            {
-                ...params,
-                headers: { 'Upload-Finish': true },
-            });
+        const dataResponse = await Axios.post(`${backendAPI}/tasks/${response.data.id}/data`, taskDataSpec, {
+            ...params,
+            headers: { 'Upload-Finish': true },
+        });
         rqID = dataResponse.data.rq_id;
     } catch (errorData) {
         try {
@@ -1452,10 +1508,7 @@ async function createTask(
     return { taskID: response.data.id, rqID };
 }
 
-async function getJobs(
-    filter: JobsFilter = {},
-    aggregate = false,
-): Promise<SerializedJob[] & { count: number }> {
+async function getJobs(filter: JobsFilter = {}, aggregate = false): Promise<SerializedJob[] & { count: number }> {
     const { backendAPI } = config;
     const id = filter.id || null;
 
@@ -1628,23 +1681,23 @@ async function deleteJob(jobID: number): Promise<void> {
     }
 }
 
-const validationLayout = (instance: 'tasks' | 'jobs') => async (
-    id: number,
-): Promise<SerializedJobValidationLayout | SerializedTaskValidationLayout> => {
-    const { backendAPI } = config;
+const validationLayout =
+    (instance: 'tasks' | 'jobs') =>
+    async (id: number): Promise<SerializedJobValidationLayout | SerializedTaskValidationLayout> => {
+        const { backendAPI } = config;
 
-    try {
-        const response = await Axios.get(`${backendAPI}/${instance}/${id}/validation_layout`, {
-            params: {
-                ...enableOrganization(),
-            },
-        });
+        try {
+            const response = await Axios.get(`${backendAPI}/${instance}/${id}/validation_layout`, {
+                params: {
+                    ...enableOrganization(),
+                },
+            });
 
-        return response.data;
-    } catch (errorData) {
-        throw generateError(errorData);
-    }
-};
+            return response.data;
+        } catch (errorData) {
+            throw generateError(errorData);
+        }
+    };
 
 async function getUsers(filter: Record<string, unknown> = {}): Promise<SerializedUser[]> {
     const { backendAPI } = config;
@@ -1773,8 +1826,8 @@ async function getData(jid: number, chunk: number, quality: ChunkQuality): Promi
             responseType: 'arraybuffer',
         });
 
-        const pageWasVisibleThroughoutDownload = pageWasVisible &&
-            isPageVisible() && pageVisibilityCounter === pageVisibilityVersionAtStart;
+        const pageWasVisibleThroughoutDownload =
+            pageWasVisible && isPageVisible() && pageVisibilityCounter === pageVisibilityVersionAtStart;
 
         if (response.telemetry && pageWasVisibleThroughoutDownload) {
             totalBandwidthInfo.totalDownloadBytes += response.telemetry.chunkSizeBytes;
@@ -1803,11 +1856,7 @@ interface AudioChunkResponse {
     contentOffset: number;
 }
 
-async function getAudioChunk(
-    jid: number,
-    chunk: number,
-    quality: ChunkQuality,
-): Promise<AudioChunkResponse> {
+async function getAudioChunk(jid: number, chunk: number, quality: ChunkQuality): Promise<AudioChunkResponse> {
     const { backendAPI } = config;
 
     try {
@@ -1858,10 +1907,7 @@ async function saveMeta(
     return response.data;
 }
 
-async function getAnnotations(
-    session: 'task' | 'job',
-    id: number,
-): Promise<SerializedCollection> {
+async function getAnnotations(session: 'task' | 'job', id: number): Promise<SerializedCollection> {
     const { backendAPI } = config;
 
     let response = null;
@@ -1909,7 +1955,7 @@ async function uploadAnnotations(
     useDefaultLocation: boolean,
     sourceStorage: Storage,
     file: File | string,
-    options: { convMaskToPoly: boolean, importMode: 'replace' | 'append' },
+    options: { convMaskToPoly: boolean; importMode: 'replace' | 'append' },
 ): Promise<string> {
     const { backendAPI, origin } = config;
     const params: Params & { conv_mask_to_poly: boolean } = {
@@ -1926,11 +1972,9 @@ async function uploadAnnotations(
 
     try {
         if (isCloudStorage) {
-            const response = await Axios.post(url,
-                new FormData(),
-                {
-                    params,
-                });
+            const response = await Axios.post(url, new FormData(), {
+                params,
+            });
             return response.data.rq_id;
         }
         const chunkSize = config.uploadChunkSize * 1024 * 1024;
@@ -1938,38 +1982,43 @@ async function uploadAnnotations(
             chunkSize,
             endpoint: `${origin}${backendAPI}/${session}s/${id}/annotations/`,
         };
-        await Axios.post(url,
-            new FormData(),
-            {
-                params,
-                headers: { 'Upload-Start': true },
-            });
+        await Axios.post(url, new FormData(), {
+            params,
+            headers: { 'Upload-Start': true },
+        });
         const { filename } = await chunkUpload(file as File, uploadConfig);
-        const response = await Axios.post(url,
-            new FormData(),
-            {
-                params: { ...params, filename },
-                headers: { 'Upload-Finish': true },
-            });
+        const response = await Axios.post(url, new FormData(), {
+            params: { ...params, filename },
+            headers: { 'Upload-Finish': true },
+        });
         return response.data.rq_id;
     } catch (errorData) {
         throw generateError(errorData);
     }
 }
 
-async function saveEvents(events: {
-    events: SerializedEvent[];
-    timestamp: string;
-    previous_event?: SerializedEvent;
-}, options: { keepalive?: boolean } = {}): Promise<void> {
+async function saveEvents(
+    events: {
+        events: SerializedEvent[];
+        timestamp: string;
+        previous_event?: SerializedEvent;
+    },
+    options: { keepalive?: boolean } = {},
+): Promise<void> {
     const { backendAPI } = config;
 
     try {
-        await Axios.post(`${backendAPI}/events`, events, options.keepalive ? {
-            // The fetch adapter can keep this best-effort request alive while the page is being unloaded.
-            adapter: 'fetch',
-            fetchOptions: { keepalive: true },
-        } : undefined);
+        await Axios.post(
+            `${backendAPI}/events`,
+            events,
+            options.keepalive
+                ? {
+                      // The fetch adapter can keep this best-effort request alive while the page is being unloaded.
+                      adapter: 'fetch',
+                      fetchOptions: { keepalive: true },
+                  }
+                : undefined,
+        );
     } catch (errorData) {
         throw generateError(errorData);
     }
@@ -1986,32 +2035,36 @@ function exportEvents(params: APIAnalyticsEventsFilter): Promise<string> {
     }
 
     const promise = new Promise<string>((resolve, reject) => {
-        Axios.get(`${backendAPI}/events`, { params }).then((response) => {
-            const paramsWithQuery = {
-                ...params,
-                query_id: response.data.query_id,
-            };
+        Axios.get(`${backendAPI}/events`, { params })
+            .then((response) => {
+                const paramsWithQuery = {
+                    ...params,
+                    query_id: response.data.query_id,
+                };
 
-            const checkCallback = () => {
-                Axios.get(`${backendAPI}/events`, { params: paramsWithQuery }).then((checkResponse) => {
-                    if (checkResponse.status === 202) {
-                        setTimeout(checkCallback, 10000);
-                    } else if (checkResponse.status === 201) {
-                        const paramsObject = new URLSearchParams(paramsWithQuery as any);
-                        paramsObject.set('action', 'download');
-                        resolve(`${backendAPI}/events?${paramsObject.toString()}`);
-                    } else {
-                        reject(new Error(`Unexpected API code received: ${checkResponse.status}`));
-                    }
-                }).catch((error: unknown) => {
-                    reject(error);
-                });
-            };
+                const checkCallback = () => {
+                    Axios.get(`${backendAPI}/events`, { params: paramsWithQuery })
+                        .then((checkResponse) => {
+                            if (checkResponse.status === 202) {
+                                setTimeout(checkCallback, 10000);
+                            } else if (checkResponse.status === 201) {
+                                const paramsObject = new URLSearchParams(paramsWithQuery as any);
+                                paramsObject.set('action', 'download');
+                                resolve(`${backendAPI}/events?${paramsObject.toString()}`);
+                            } else {
+                                reject(new Error(`Unexpected API code received: ${checkResponse.status}`));
+                            }
+                        })
+                        .catch((error: unknown) => {
+                            reject(error);
+                        });
+                };
 
-            setTimeout(checkCallback, 2000);
-        }).catch((error: unknown) => {
-            reject(error);
-        });
+                setTimeout(checkCallback, 2000);
+            })
+            .catch((error: unknown) => {
+                reject(error);
+            });
     });
 
     eventsExportRequests[key] = { promise };
@@ -2165,8 +2218,12 @@ async function getCloudStorages(filter = {}): Promise<SerializedCloudStorage[] &
     }
 }
 
-async function getCloudStorageContent(id: number, path?: string, nextToken?: string, manifestPath?: string):
-Promise<{ content: SerializedRemoteFile[], next: string | null }> {
+async function getCloudStorageContent(
+    id: number,
+    path?: string,
+    nextToken?: string,
+    manifestPath?: string,
+): Promise<{ content: SerializedRemoteFile[]; next: string | null }> {
     const { backendAPI } = config;
 
     let response = null;
@@ -2243,9 +2300,7 @@ async function createOrganization(data: SerializedOrganization): Promise<Seriali
     return response.data;
 }
 
-async function updateOrganization(
-    id: number, data: Partial<SerializedOrganization>,
-): Promise<SerializedOrganization> {
+async function updateOrganization(id: number, data: Partial<SerializedOrganization>): Promise<SerializedOrganization> {
     const { backendAPI } = config;
 
     let response = null;
@@ -2286,13 +2341,10 @@ async function getOrganizationMembers(params = {}) {
 async function inviteOrganizationMembers(orgId, data) {
     const { backendAPI } = config;
     try {
-        await Axios.post(
-            `${backendAPI}/invitations`,
-            {
-                ...data,
-                organization: orgId,
-            },
-        );
+        await Axios.post(`${backendAPI}/invitations`, {
+            ...data,
+            organization: orgId,
+        });
     } catch (errorData) {
         throw generateError(errorData);
     }
@@ -2329,9 +2381,12 @@ async function deleteOrganizationMembership(membershipId: number): Promise<void>
     }
 }
 
-async function getMembershipInvitations(
-    filter: { page?: number, page_size?: number, filter?: string, key?: string },
-): Promise<{ results: SerializedInvitationData[], count: number }> {
+async function getMembershipInvitations(filter: {
+    page?: number;
+    page_size?: number;
+    filter?: string;
+    key?: string;
+}): Promise<{ results: SerializedInvitationData[]; count: number }> {
     const { backendAPI } = config;
 
     let response = null;
@@ -2340,10 +2395,10 @@ async function getMembershipInvitations(
 
         if (key) {
             response = await Axios.get(`${backendAPI}/invitations/${key}`);
-            return ({
+            return {
                 results: [response.data],
                 count: 1,
-            });
+            };
         }
 
         response = await Axios.get(`${backendAPI}/invitations`, {
@@ -2538,12 +2593,10 @@ async function getQualitySettings(
     try {
         if (aggregate) {
             response = {
-                data: await fetchAll<SerializedQualitySettingsData & { id: number }>(
-                    `${backendAPI}/quality/settings`, {
-                        ...filter,
-                        ...enableOrganization(),
-                    },
-                ),
+                data: await fetchAll<SerializedQualitySettingsData & { id: number }>(`${backendAPI}/quality/settings`, {
+                    ...filter,
+                    ...enableOrganization(),
+                }),
             };
         } else {
             response = await Axios.get(`${backendAPI}/quality/settings`, {
@@ -2589,7 +2642,8 @@ async function getQualityRequirements(
         if (aggregate) {
             response = {
                 data: await fetchAll<SerializedQualityRequirementData & { id: number }>(
-                    `${backendAPI}/quality/settings/requirements`, {
+                    `${backendAPI}/quality/settings/requirements`,
+                    {
                         ...filter,
                         ...enableOrganization(),
                     },
@@ -2658,9 +2712,7 @@ async function deleteQualityRequirement(requirementID: number): Promise<void> {
     }
 }
 
-async function getConsensusSettings(
-    filter: APIConsensusSettingsFilter,
-): Promise<SerializedConsensusSettingsData> {
+async function getConsensusSettings(filter: APIConsensusSettingsFilter): Promise<SerializedConsensusSettingsData> {
     const { backendAPI } = config;
 
     try {
@@ -2694,15 +2746,14 @@ async function updateConsensusSettings(
     }
 }
 
-async function getQualityConflicts(
-    filter: APIQualityConflictsFilter,
-): Promise<SerializedQualityConflictData[]> {
+async function getQualityConflicts(filter: APIQualityConflictsFilter): Promise<SerializedQualityConflictData[]> {
     const params = enableOrganization();
     const { backendAPI } = config;
 
     try {
         const response = await fetchAll<SerializedQualityConflictData & { id: number }>(
-            `${backendAPI}/quality/conflicts`, {
+            `${backendAPI}/quality/conflicts`,
+            {
                 ...params,
                 ...filter,
             },
@@ -2724,12 +2775,10 @@ async function getQualityReports(
     try {
         if (aggregate) {
             response = {
-                data: await fetchAll<SerializedQualityReportData & { id: number }>(
-                    `${backendAPI}/quality/reports`, {
-                        ...filter,
-                        ...enableOrganization(),
-                    },
-                ),
+                data: await fetchAll<SerializedQualityReportData & { id: number }>(`${backendAPI}/quality/reports`, {
+                    ...filter,
+                    ...enableOrganization(),
+                }),
             };
         } else {
             response = await Axios.get(`${backendAPI}/quality/reports`, {
@@ -2781,6 +2830,7 @@ export default Object.freeze({
 
     tasks: Object.freeze({
         get: getTasks,
+        annotationAnalytics: getTaskAnnotationAnalytics,
         save: saveTask,
         create: createTask,
         delete: deleteTask,

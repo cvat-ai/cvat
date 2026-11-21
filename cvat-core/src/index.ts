@@ -3,8 +3,13 @@
 // SPDX-License-Identifier: MIT
 
 import {
-    AnalyticsEventsFilter, QualityConflictsFilter, QualityReportsFilter,
-    QualitySettingsFilter, QualityRequirementsFilter, ConsensusSettingsFilter, ApiTokensFilter,
+    AnalyticsEventsFilter,
+    QualityConflictsFilter,
+    QualityReportsFilter,
+    QualitySettingsFilter,
+    QualityRequirementsFilter,
+    ConsensusSettingsFilter,
+    ApiTokensFilter,
 } from './server-request-types';
 import PluginRegistry from './plugins';
 import serverProxy from './server-proxy';
@@ -14,9 +19,7 @@ import logger from './logger';
 import * as enums from './enums';
 import config from './config';
 import { mask2Rle, rle2Mask } from './rle-utils';
-import {
-    cropMask, getVisibleSkeletonElements, propagateShapes, validateAttributeValue,
-} from './object-utils';
+import { cropMask, getVisibleSkeletonElements, propagateShapes, validateAttributeValue } from './object-utils';
 import { createOpenCVInterface } from './opencv/opencv-interface';
 import User from './user';
 import Project from './project';
@@ -32,9 +35,7 @@ import { FrameData, FramesMetaData } from './frames';
 import CloudStorage from './cloud-storage';
 import Organization, { Invitation } from './organization';
 import Webhook from './webhook';
-import {
-    QualityConflict, QualityReport, QualityRequirement, QualitySettings,
-} from './quality';
+import { QualityConflict, QualityReport, QualityRequirement, QualitySettings } from './quality';
 import ConsensusSettings from './consensus-settings';
 import AnnotationGuide from './guide';
 import ApiToken from './api-token';
@@ -52,9 +53,7 @@ import {
 import { BaseCollectionAction } from './annotations-actions/base-collection-action';
 import { BaseShapesAction } from './annotations-actions/base-shapes-action';
 import { setActionMetadata } from './annotations-actions/base-action';
-import {
-    ArgumentError, DataError, Exception, ScriptingError, ServerError,
-} from './exceptions';
+import { ArgumentError, DataError, Exception, ScriptingError, ServerError } from './exceptions';
 import { PaginatedResource } from './core-types';
 import { observe } from './capabilities';
 
@@ -76,15 +75,15 @@ export default interface CVATCore {
     };
     server: {
         about: () => Promise<AboutData>;
-        share: (
-            ...args: Parameters<typeof serverProxy.server.share>
-        ) => Promise<{
-            mimeType: string;
-            name: string;
-            type: enums.ShareFileType;
-        }[]>;
+        share: (...args: Parameters<typeof serverProxy.server.share>) => Promise<
+            {
+                mimeType: string;
+                name: string;
+                type: enums.ShareFileType;
+            }[]
+        >;
         formats: () => Promise<AnnotationFormats>;
-        userAgreements: typeof serverProxy.server.userAgreements,
+        userAgreements: typeof serverProxy.server.userAgreements;
         register: (
             ...args: Parameters<typeof serverProxy.server.register>
         ) => ReturnType<typeof serverProxy.server.register>;
@@ -95,9 +94,7 @@ export default interface CVATCore {
         resetPassword: typeof serverProxy.server.resetPassword;
         authenticated: typeof serverProxy.server.authenticated;
         healthCheck: typeof serverProxy.server.healthCheck;
-        request: <T = unknown>(
-            ...args: Parameters<typeof serverProxy.server.request>
-        ) => Promise<T>;
+        request: <T = unknown>(...args: Parameters<typeof serverProxy.server.request>) => Promise<T>;
         installedApps: () => Promise<Record<string, boolean>>;
         apiSchema: typeof serverProxy.server.apiSchema;
     };
@@ -114,40 +111,52 @@ export default interface CVATCore {
         get: (filter: ApiTokensFilter) => Promise<PaginatedResource<ApiToken>>;
     };
     jobs: {
-        get: (filter: {
-            page?: number;
-            filter?: string;
-            sort?: string;
-            search?: string;
-            jobID?: number;
-            taskID?: number;
-            projectID?: number;
-            type?: string;
-        }, aggregate?: boolean) => Promise<PaginatedResource<Job>>;
-    };
-    tasks: {
-        get: (filter: {
-            page?: number;
-            pageSize?: number;
-            projectId?: number;
-            id?: number;
-            sort?: string;
-            search?: string;
-            filter?: string;
-            ordering?: string;
-        }, aggregate?: boolean) => Promise<PaginatedResource<Task>>;
-    }
-    projects: {
         get: (
             filter: {
-                id?: number;
+                page?: number;
+                filter?: string;
+                sort?: string;
+                search?: string;
+                jobID?: number;
+                taskID?: number;
+                projectID?: number;
+                type?: string;
+            },
+            aggregate?: boolean,
+        ) => Promise<PaginatedResource<Job>>;
+    };
+    tasks: {
+        get: (
+            filter: {
                 page?: number;
                 pageSize?: number;
-                search?: string;
+                projectId?: number;
+                id?: number;
                 sort?: string;
+                search?: string;
                 filter?: string;
-            }
-        ) => Promise<PaginatedResource<Project>>;
+                ordering?: string;
+            },
+            aggregate?: boolean,
+        ) => Promise<PaginatedResource<Task>>;
+
+        annotationAnalytics: (taskId: number) => Promise<{
+            task_id: number;
+            counts: {
+                class_name: string;
+                count: number;
+            }[];
+        }>;
+    };
+    projects: {
+        get: (filter: {
+            id?: number;
+            page?: number;
+            pageSize?: number;
+            search?: string;
+            sort?: string;
+            filter?: string;
+        }) => Promise<PaginatedResource<Project>>;
         searchNames: any;
     };
     cloudStorages: {
@@ -164,10 +173,7 @@ export default interface CVATCore {
         deactivate: () => Promise<void>;
         acceptInvitation: (key: string) => Promise<string>;
         declineInvitation: (key: string) => Promise<void>;
-        invitations: (filter: {
-            page?: number,
-            filter?: string,
-        }) => Promise<Invitation[] & { count: number }>;
+        invitations: (filter: { page?: number; filter?: string }) => Promise<Invitation[] & { count: number }>;
     };
     webhooks: {
         get: any;
@@ -176,7 +182,7 @@ export default interface CVATCore {
         settings: {
             get: (filter: ConsensusSettingsFilter) => Promise<ConsensusSettings>;
         };
-    }
+    };
     analytics: {
         quality: {
             reports: (filter: QualityReportsFilter, aggregate?: boolean) => Promise<PaginatedResource<QualityReport>>;
@@ -206,9 +212,9 @@ export default interface CVATCore {
         listen: (
             rqID: string,
             options: {
-                callback: (request: Request) => void,
-                initialRequest?: Request,
-            }
+                callback: (request: Request) => void;
+                initialRequest?: Request;
+            },
         ) => Promise<Request>;
         cancel: (rqID: string) => Promise<void>;
     };
@@ -237,15 +243,15 @@ export default interface CVATCore {
         requestsStatusDelay: typeof config.requestsStatusDelay;
         jobMetaDataReloadPeriod: typeof config.jobMetaDataReloadPeriod;
         previewPlaceholders: typeof config.previewPlaceholders;
-    },
-    enums,
+    };
+    enums;
     exceptions: {
-        Exception: typeof Exception,
-        ArgumentError: typeof ArgumentError,
-        DataError: typeof DataError,
-        ScriptingError: typeof ScriptingError,
-        ServerError: typeof ServerError,
-    },
+        Exception: typeof Exception;
+        ArgumentError: typeof ArgumentError;
+        DataError: typeof DataError;
+        ScriptingError: typeof ScriptingError;
+        ServerError: typeof ServerError;
+    };
     classes: {
         User: typeof User;
         Project: typeof Project;
@@ -287,5 +293,5 @@ export default interface CVATCore {
     opencv: {
         createOpenCVInterface: typeof createOpenCVInterface;
     };
-// eslint-disable-next-line semi
+    // eslint-disable-next-line semi
 }

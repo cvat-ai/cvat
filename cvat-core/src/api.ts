@@ -24,9 +24,7 @@ import AnnotationGuide from './guide';
 import { BaseAction, setActionMetadata } from './annotations-actions/base-action';
 import { BaseCollectionAction } from './annotations-actions/base-collection-action';
 import { BaseShapesAction } from './annotations-actions/base-shapes-action';
-import {
-    QualityConflict, QualityReport, QualityRequirement, QualitySettings,
-} from './quality';
+import { QualityConflict, QualityReport, QualityRequirement, QualitySettings } from './quality';
 import ApiToken from './api-token';
 import { JobValidationLayout, TaskValidationLayout } from './validation-layout';
 import { Request } from './request';
@@ -34,13 +32,9 @@ import { createOpenCVInterface } from './opencv/opencv-interface';
 
 import * as enums from './enums';
 
-import {
-    Exception, ArgumentError, DataError, ScriptingError, ServerError,
-} from './exceptions';
+import { Exception, ArgumentError, DataError, ScriptingError, ServerError } from './exceptions';
 
-import {
-    cropMask, getVisibleSkeletonElements, propagateShapes, validateAttributeValue,
-} from './object-utils';
+import { cropMask, getVisibleSkeletonElements, propagateShapes, validateAttributeValue } from './object-utils';
 import { mask2Rle, rle2Mask } from './rle-utils';
 import User from './user';
 import config from './config';
@@ -152,6 +146,11 @@ function build(): CVATCore {
                 const result = await PluginRegistry.apiWrapper(cvat.tasks.get, filter, aggregate);
                 return result;
             },
+
+            async annotationAnalytics(taskId: number) {
+                const result = await PluginRegistry.apiWrapper(cvat.tasks.annotationAnalytics, taskId);
+                return result;
+            },
         },
         assets: {
             async create(file: File, guideId: number) {
@@ -228,10 +227,7 @@ function build(): CVATCore {
                 frameFrom: number,
                 frameTo: number,
                 filters: object[],
-                onProgress: (
-                    message: string,
-                    progress: number,
-                ) => void,
+                onProgress: (message: string, progress: number) => void,
                 cancelled: () => boolean,
             ) {
                 const result = await PluginRegistry.apiWrapper(
@@ -253,10 +249,7 @@ function build(): CVATCore {
                 actionsParameters: Record<string, string>,
                 frame: number,
                 states: ObjectState[],
-                onProgress: (
-                    message: string,
-                    progress: number,
-                ) => void,
+                onProgress: (message: string, progress: number) => void,
                 cancelled: () => boolean,
             ) {
                 const result = await PluginRegistry.apiWrapper(
@@ -391,17 +384,11 @@ function build(): CVATCore {
                 return result;
             },
             async acceptInvitation(key) {
-                const result = await PluginRegistry.apiWrapper(
-                    cvat.organizations.acceptInvitation,
-                    key,
-                );
+                const result = await PluginRegistry.apiWrapper(cvat.organizations.acceptInvitation, key);
                 return result;
             },
             async declineInvitation(key) {
-                const result = await PluginRegistry.apiWrapper(
-                    cvat.organizations.declineInvitation,
-                    key,
-                );
+                const result = await PluginRegistry.apiWrapper(cvat.organizations.declineInvitation, key);
                 return result;
             },
             async invitations(filter = {}) {
@@ -473,8 +460,8 @@ function build(): CVATCore {
             async listen(
                 rqID: string,
                 options: {
-                    callback: (request: Request) => void,
-                    initialRequest?: Request,
+                    callback: (request: Request) => void;
+                    initialRequest?: Request;
                 },
             ) {
                 const result = await PluginRegistry.apiWrapper(cvat.requests.listen, rqID, options);
