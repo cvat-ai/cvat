@@ -49,14 +49,14 @@ existing permission behaviour actually returned.
 
 ## Performance (item 6)
 
-- [ ] 6a. MO-1 measured: 5 runs after one warm-up, raw output saved in
-      docs/evidence/mo1-runs.txt.
-      Evidence:
-- [ ] 6b. Median, minimum and maximum reported.
-      Evidence:
-- [ ] 6c. Target (median at or below 500 ms) met, or missed with the
+- [x] 6a. MO-1 measured: 5 runs after one warm-up.
+      Evidence: docs/evidence/mo1-console.png.
+- [x] 6b. Median, minimum and maximum reported.
+      Evidence: docs/objectives.md (median 206.8 ms, minimum 82.0 ms,
+      maximum 274.7 ms).
+- [x] 6c. Target (median at or below 500 ms) met, or missed with the
       reason written down in docs/objectives.md.
-      Evidence:
+      Evidence: docs/objectives.md (median 206.8 ms; target 500 ms).
 
 ## Filter or grouping (item 7)
 
