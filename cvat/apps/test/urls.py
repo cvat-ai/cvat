@@ -1,7 +1,10 @@
 from django.urls import path
 
-from .views import ClassCountView
+from .views import ClassCountViewSet
 
 urlpatterns = [
-    path("test/tasks/<int:task_id>/class-counts", ClassCountView.as_view()),
+    path(
+        "test/tasks/<int:pk>/class-counts",
+        ClassCountViewSet.as_view({"get": "retrieve"}, detail=True),
+    ),
 ]

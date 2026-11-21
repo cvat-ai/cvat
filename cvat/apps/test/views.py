@@ -1,8 +1,35 @@
-from rest_framework import status
+from django.db.models import Count
+from rest_framework import viewsets
 from rest_framework.response import Response
-from rest_framework.views import APIView
+
+from cvat.apps.engine.models import LabeledShape, Task
+
+from cvat.apps.engine.permissions import TaskPermission
 
 
-class ClassCountView(APIView):
-    def get(self, request, task_id):
-        return Response({"detail": "not implemented"}, status=status.HTTP_501_NOT_IMPLEMENTED)
+class ClassCountViewSet(viewsets.GenericViewSet):
+    queryset = Task.objects.all()
+    iam_permission_class = TaskPermission
+    iam_supports_organization_params = False
+    search_fields = ()
+    simple_filters = ()
+    filter_fields = ()
+    ordering_fields = ()
+    ordering = ()
+
+    def retrieve(self, request, pk=None):
+        task = self.get_object()
+        rows = (
+            LabeledShape.objects.filter(job__segment__task_id=task.id)
+            .values("label__name")
+            .annotate(count=Count("id"))
+            .order_by("-count", "label__name")
+        )
+        counts = [{"label": row["label__name"], "count": row["count"]} for row in rows]
+        return Response(
+            {
+                "task_id": task.id,
+                "total": sum(item["count"] for item in counts),
+                "counts": counts,
+            }
+        )

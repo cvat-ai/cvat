@@ -16,6 +16,8 @@ and a page that shows them as a graph.
   3,541 source annotations are 3,504 normal and 37 crowd. The 3,504 normal
   ones become 3,916 polygon records in CVAT (multi-part segmentations give
   412 extra), and the 37 crowd ones become 37 masks, for 3,953 shapes total.
+- Count response includes only labels with at least one shape; labels with
+  zero shapes are omitted.
 
 ## Order of work and time budget (8 hours)
 

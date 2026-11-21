@@ -7,9 +7,10 @@ branch dev-test01, objective MO-1 in docs/objectives.md.
 
 ## Floor (items 1-4)
 
-- [ ] 1. Endpoint returns the number of annotations per class for a task,
+- [x] 1. Endpoint returns the number of annotations per class for a task,
       read from the database.
-      Evidence:
+      Evidence: docs/evidence/endpoint-task4-response.png (HTTP 200,
+      task_id 4, total 3,953).
 - [ ] 1a. Counts checked against a known task (compared with what CVAT shows).
       Baseline: task #4 CVAT statistics and a database query both show
       3,953 shapes (3,916 polygons + 37 masks).
@@ -19,9 +20,8 @@ branch dev-test01, objective MO-1 in docs/objectives.md.
       The difference from COCO's 3,541 annotations is explained in
       docs/evidence/coco-polygon-parts.txt (COCO source counts:
       docs/evidence/expected-counts-coco-500.txt).
-      The endpoint output will be compared with CVAT's own per-class
-      database counts, not with the COCO file.
-      Endpoint comparison: pending.
+      Endpoint comparison: pending CVAT statistics screenshot showing
+      person, chair, and car totals.
 - [ ] 2. A page in the web interface calls the endpoint.
       Evidence:
 - [ ] 3. Counts are shown as a graph.
@@ -36,12 +36,14 @@ branch dev-test01, objective MO-1 in docs/objectives.md.
 Status codes below are what I expect; the evidence must show what CVAT's
 existing permission behaviour actually returned.
 
-- [ ] 5a. Request with no login is refused (expected 401 Unauthorized).
-      Evidence: command and actual status code:
-- [ ] 5b. User without access to the task is refused (expected 403 Forbidden).
-      Evidence: command and actual status code:
-- [ ] 5c. User with access to the task is served (expected 200 OK).
-      Evidence: command and actual status code:
+- [x] 5a. Request with no login is refused (expected 401 Unauthorized).
+      Evidence: docs/evidence/auth-5a-no-token.png (HTTP 401).
+- [x] 5b. User without access to the task is refused (expected 403 Forbidden).
+      Evidence: docs/evidence/auth-tester2-login.png (HTTP 200; secrets
+      redacted) and docs/evidence/auth-5b-no-task-access.png (HTTP 403).
+- [x] 5c. User with access to the task is served (expected 200 OK).
+      Evidence: docs/evidence/endpoint-task4-response.png (HTTP 200,
+      task_id 4, total 3,953).
 
 ## Performance (item 6)
 
