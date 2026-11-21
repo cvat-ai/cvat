@@ -18,6 +18,9 @@ and a page that shows them as a graph.
   412 extra), and the 37 crowd ones become 37 masks, for 3,953 shapes total.
 - Count response includes only labels with at least one shape; labels with
   zero shapes are omitted.
+- The optional `shape_type` filter accepts validated CVAT `ShapeType`
+  values. It was chosen because it separates masks and polygons and makes
+  the 37-mask plus 3,916-polygon split directly verifiable.
 
 ## Order of work and time budget (8 hours)
 

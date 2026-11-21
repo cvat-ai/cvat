@@ -11,7 +11,7 @@ branch dev-test01, objective MO-1 in docs/objectives.md.
       read from the database.
       Evidence: docs/evidence/endpoint-task4-response.png (HTTP 200,
       task_id 4, total 3,953).
-- [ ] 1a. Counts checked against a known task (compared with what CVAT shows).
+- [x] 1a. Counts checked against a known task (compared with what CVAT shows).
       Baseline: task #4 CVAT statistics and a database query both show
       3,953 shapes (3,916 polygons + 37 masks).
       Files: docs/evidence/cvat-stats-task4-polygon.png,
@@ -20,8 +20,10 @@ branch dev-test01, objective MO-1 in docs/objectives.md.
       The difference from COCO's 3,541 annotations is explained in
       docs/evidence/coco-polygon-parts.txt (COCO source counts:
       docs/evidence/expected-counts-coco-500.txt).
-      Endpoint comparison: pending CVAT statistics screenshot showing
-      person, chair, and car totals.
+      Endpoint comparison: docs/evidence/cvat-stats-task4-person-chair-car.png,
+      docs/evidence/cvat-stats-task4-polygon-detail.png, and
+      docs/evidence/cvat-stats-task4-mask-detail.png show the endpoint's
+      person 1217, chair 227, and car 195 totals as CVAT statistics.
 - [x] 2. A page in the web interface calls the endpoint.
       The page is served by the test Django app at /api/test/analytics,
       not inside CVAT's React UI.
@@ -60,10 +62,14 @@ existing permission behaviour actually returned.
 
 ## Filter or grouping (item 7)
 
-- [ ] 7a. One filter or grouping added beyond the plain count.
-      Evidence:
-- [ ] 7b. Reason for choosing it written down.
-      Evidence:
+- [x] 7a. One filter or grouping added beyond the plain count.
+      Evidence: docs/evidence/shape-filter-all.png (no filter: 3953),
+      docs/evidence/shape-filter-mask.png (shape_type=mask: 37),
+      docs/evidence/shape-filter-polygon.png (shape_type=polygon: 3916),
+      and docs/evidence/shape-filter-invalid.png (shape_type=abc: 400).
+- [x] 7b. Reason for choosing it written down.
+      Evidence: docs/plan.md (shape-type filter separates polygon and mask
+      shapes while preserving CVAT's persisted-shape counting definition).
 
 ## Live updates (items 8-9, only if time remains)
 
