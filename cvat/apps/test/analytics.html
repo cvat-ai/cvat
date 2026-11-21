@@ -1,0 +1,90 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<title>Annotation analytics</title>
+<style>
+  body { font-family: sans-serif; margin: 2rem; max-width: 56rem; }
+  .row { display: flex; align-items: center; gap: .5rem; margin: 2px 0; }
+  .name { width: 10rem; text-align: right; font-size: .9rem; }
+  .bar { background: #3b82f6; height: 1.1rem; }
+  .num { font-size: .85rem; }
+  .message { padding: 1rem; border: 1px solid #ccc; border-radius: 6px; }
+  .error { border-color: #dc2626; color: #991b1b; }
+</style>
+</head>
+<body>
+<h1>Annotations per class</h1>
+<label>Task ID <input id="task" type="number" min="1"></label>
+<button id="load">Load</button>
+<p id="summary"></p>
+<div id="out"></div>
+<script>
+const out = document.getElementById("out");
+const summary = document.getElementById("summary");
+const taskInput = document.getElementById("task");
+taskInput.value = new URLSearchParams(location.search).get("task") || "";
+
+function show(text, isError) {
+  out.replaceChildren();
+  const box = document.createElement("div");
+  box.className = "message" + (isError ? " error" : "");
+  box.textContent = text;
+  if (isError) {
+    const retry = document.createElement("button");
+    retry.textContent = "Retry";
+    retry.onclick = load;
+    box.append(" ", retry);
+  }
+  out.append(box);
+}
+
+function draw(counts) {
+  out.replaceChildren();
+  const max = Math.max(...counts.map(c => c.count));
+  for (const c of counts) {
+    const row = document.createElement("div");
+    row.className = "row";
+    const name = document.createElement("span");
+    name.className = "name";
+    name.textContent = c.label;
+    const bar = document.createElement("div");
+    bar.className = "bar";
+    bar.style.width = (c.count / max * 100) + "%";
+    bar.style.minWidth = "2px";
+    const num = document.createElement("span");
+    num.className = "num";
+    num.textContent = c.count;
+    const track = document.createElement("div");
+    track.style.flex = "1";
+    track.append(bar);
+    row.append(name, track, num);
+    out.append(row);
+  }
+}
+
+async function load() {
+  const id = taskInput.value;
+  summary.textContent = "";
+  if (!id) { show("Enter a task ID.", false); return; }
+  show("Loading...", false);
+  try {
+    const res = await fetch("/api/test/tasks/" + encodeURIComponent(id) + "/class-counts",
+                            { credentials: "same-origin" });
+    if (res.status === 401) { show("You are not logged in. Log in to CVAT and reload.", true); return; }
+    if (res.status === 403) { show("You do not have access to this task.", true); return; }
+    if (!res.ok) { show("Request failed with status " + res.status + ".", true); return; }
+    const data = await res.json();
+    if (!data.counts.length) { show("This task has no annotations.", false); return; }
+    summary.textContent = "Task " + data.task_id + ": " + data.total + " annotations in " + data.counts.length + " classes";
+    draw(data.counts);
+  } catch (err) {
+    show("Could not reach the server.", true);
+  }
+}
+
+document.getElementById("load").onclick = load;
+if (taskInput.value) load();
+</script>
+</body>
+</html>

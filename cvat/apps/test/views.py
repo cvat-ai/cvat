@@ -1,4 +1,7 @@
+from pathlib import Path
+
 from django.db.models import Count
+from django.http import HttpResponse
 from rest_framework import viewsets
 from rest_framework.response import Response
 
@@ -33,3 +36,8 @@ class ClassCountViewSet(viewsets.GenericViewSet):
                 "counts": counts,
             }
         )
+
+
+def analytics_page(request):
+    html = (Path(__file__).parent / "analytics.html").read_text(encoding="utf-8")
+    return HttpResponse(html)

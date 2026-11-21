@@ -22,14 +22,16 @@ branch dev-test01, objective MO-1 in docs/objectives.md.
       docs/evidence/expected-counts-coco-500.txt).
       Endpoint comparison: pending CVAT statistics screenshot showing
       person, chair, and car totals.
-- [ ] 2. A page in the web interface calls the endpoint.
-      Evidence:
-- [ ] 3. Counts are shown as a graph.
-      Evidence:
-- [ ] 4a. Empty state (task with no annotations) handled cleanly.
-      Evidence:
-- [ ] 4b. Failed request handled cleanly.
-      Evidence:
+- [x] 2. A page in the web interface calls the endpoint.
+      The page is served by the test Django app at /api/test/analytics,
+      not inside CVAT's React UI.
+      Evidence: docs/evidence/page-chart-task4.png.
+- [x] 3. Counts are shown as a graph.
+      Evidence: docs/evidence/page-chart-task4.png.
+- [x] 4a. Empty state (task with no annotations) handled cleanly.
+      Evidence: docs/evidence/page-empty-task5.png.
+- [x] 4b. Failed request handled cleanly.
+      Evidence: docs/evidence/page-error-404.png (task 9999 returns 404).
 
 ## Access control (item 5)
 
