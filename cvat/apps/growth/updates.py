@@ -75,8 +75,8 @@ def edition() -> str:
     return value
 
 
-def _base_url(public: bool = False) -> str:
-    value = settings.CVAT_NEWS_PUBLIC_URL if public else settings.CVAT_NEWS_SOURCE_URL
+def _base_url() -> str:
+    value = settings.CVAT_NEWS_SOURCE_URL
     parsed = urlsplit(value)
     if (
         parsed.scheme not in ("http", "https")
@@ -88,16 +88,16 @@ def _base_url(public: bool = False) -> str:
     return value.rstrip("/") + "/"
 
 
-def _public_url(path: str) -> str:
-    return urljoin(_base_url(public=True), path)
+def _docs_url(path: str) -> str:
+    return urljoin(_base_url(), path)
 
 
 def _document(
     path: str, decode: Callable[[str], DocumentT], *, on_stale: OnStale | None = None
 ) -> DocumentT:
     """Retain the last valid copy beyond its freshness window and revalidate it."""
-    url = urljoin(_base_url(), path)
-    key = "cvat:updates:" + hashlib.sha256((url + _base_url(public=True)).encode()).hexdigest()
+    url = _docs_url(path)
+    key = "cvat:updates:" + hashlib.sha256(url.encode()).hexdigest()
     saved = cache.get(key)
     if saved and time.time() - saved["checked_at"] < max(0, settings.CVAT_NEWS_CACHE_TTL):
         if saved.get("stale") and on_stale:
@@ -164,17 +164,13 @@ def _content_path(value: Any, kind: ContentKind) -> str:
     """Map a published URL to a path below the configured documentation source."""
     if not isinstance(value, str):
         raise ValueError("Missing Markdown URL")
-    public_base = urlsplit(_base_url(public=True))
     source_base = urlsplit(_base_url())
-    parsed = urlsplit(urljoin(_base_url(public=True), value))
+    parsed = urlsplit(_docs_url(value))
     if parsed.username or parsed.password or parsed.query or parsed.fragment:
         raise ValueError("Invalid Markdown URL")
-    if (parsed.scheme, parsed.netloc) not in {
-        (public_base.scheme, public_base.netloc),
-        (source_base.scheme, source_base.netloc),
-    }:
+    if (parsed.scheme, parsed.netloc) != (source_base.scheme, source_base.netloc):
         raise ValueError("Markdown must belong to the configured source")
-    base_path = public_base.path.rstrip("/") + "/"
+    base_path = source_base.path.rstrip("/") + "/"
     if not parsed.path.startswith(base_path):
         raise ValueError("Invalid Markdown path")
     path = parsed.path[len(base_path) :]
@@ -190,7 +186,7 @@ def _preview_media(value: Any) -> str:
         return ""
     if not isinstance(value, str):
         raise ValueError("Invalid preview media URL")
-    parsed = urlsplit(urljoin(_base_url(public=True), value))
+    parsed = urlsplit(_docs_url(value))
     if (
         parsed.scheme not in ("https", "http")
         or not parsed.netloc
@@ -199,12 +195,9 @@ def _preview_media(value: Any) -> str:
     ):
         raise ValueError("Invalid preview media URL")
     source = urlsplit(_base_url())
-    public = urlsplit(_base_url(public=True))
-    if (parsed.scheme, parsed.netloc) == (source.scheme, source.netloc):
-        parsed = parsed._replace(scheme=public.scheme, netloc=public.netloc)
-    elif parsed.scheme == "http" and (parsed.scheme, parsed.netloc) != (
-        public.scheme,
-        public.netloc,
+    if parsed.scheme == "http" and (parsed.scheme, parsed.netloc) != (
+        source.scheme,
+        source.netloc,
     ):
         raise ValueError("External preview media requires HTTPS")
     return urlunsplit(parsed)
@@ -307,8 +300,8 @@ def _index(body: str, kind: ContentKind) -> list[dict[str, Any]]:
                 "publishedAt": publication_date(raw.get("publishedAt"))
                 .astimezone(timezone.utc)
                 .isoformat(),
-                "markdownURL": _public_url(path),
-                "url": _public_url(path.removesuffix("index.md")),
+                "markdownURL": _docs_url(path),
+                "url": _docs_url(path.removesuffix("index.md")),
                 "contentPath": path,
                 "editions": _editions(raw["editions"]),
                 "announce": raw["announce"],
@@ -442,7 +435,7 @@ def index(growth_data: UserGrowthData) -> dict[str, Any]:
     result["errors"].extend(announcement_errors)
     # A partial feed must not advance a shared watermark past missing content.
     result["canAcknowledgeAnnouncements"] = not announcement_errors
-    result["releaseHistoryURL"] = _public_url("release-notes/")
-    result["announcementHistoryURL"] = _public_url("announcements/")
-    result["updatesHistoryURL"] = _public_url("updates/")
+    result["releaseHistoryURL"] = _docs_url("release-notes/")
+    result["announcementHistoryURL"] = _docs_url("announcements/")
+    result["updatesHistoryURL"] = _docs_url("updates/")
     return result

@@ -32,7 +32,6 @@ def sample_provider(
     CVAT_NEWS_ENABLED=True,
     CVAT_NEWS_EDITION="community",
     CVAT_NEWS_SOURCE_URL="https://docs.example.com/",
-    CVAT_NEWS_PUBLIC_URL="https://docs.example.com/",
     CVAT_NEWS_CACHE_TTL=900,
     CVAT_NEWS_ANNOUNCEMENT_PROVIDER=None,
 )
@@ -316,6 +315,31 @@ class UpdatesApiTestCase(UpdatesApiTestBase):
 
         self.assertEqual(second.status_code, HTTPStatus.OK)
         self.assertEqual(second.data, first.data)
+
+    def test_changing_source_updates_fetches_and_links_without_reusing_the_old_cache(self) -> None:
+        initial = self.client.get("/api/whats-new")
+        self.assertEqual(initial.status_code, HTTPStatus.OK)
+        self.session.get.reset_mock()
+        source = "https://news.example.com/docs/"
+        self.documents = {
+            url.replace("https://docs.example.com/", source): json.loads(
+                json.dumps(document).replace("https://docs.example.com/", source)
+            )
+            for url, document in self.documents.items()
+        }
+
+        with self.settings(CVAT_NEWS_SOURCE_URL=source):
+            response = self.client.get("/api/whats-new")
+
+        self.assertEqual(response.status_code, HTTPStatus.OK)
+        self.assertEqual(response.data["errors"], [])
+        self.assertEqual(self.session.get.call_count, 2)
+        self.assertTrue(
+            all(call.args[0].startswith(source) for call in self.session.get.call_args_list)
+        )
+        self.assertEqual(response.data["updates_history_url"], source + "updates/")
+        self.assertEqual(response.data["latest_release"]["url"], source + "release-notes/2.0.0/")
+        self.assertEqual(response.data["announcements"][0]["url"], source + "announcements/guide/")
 
     @override_settings(CVAT_NEWS_CACHE_TTL=0)
     def test_stale_announcements_disable_acknowledgement_in_the_summary(self) -> None:

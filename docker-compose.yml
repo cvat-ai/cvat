@@ -40,7 +40,6 @@ x-clickhouse-env: &clickhouse-env
 x-updates-env: &updates-env
   CVAT_NEWS_SOURCE_URL:
   CVAT_NEWS_ENABLED:
-  CVAT_NEWS_PUBLIC_URL:
   CVAT_NEWS_CACHE_TTL:
   CVAT_NEWS_EDITION:
 
