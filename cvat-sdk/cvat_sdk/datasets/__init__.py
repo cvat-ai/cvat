@@ -8,6 +8,7 @@ from .common import (
     MediaDownloadPolicy,
     MediaElement,
     Sample,
+    UnreadableMediaError,
     UnsupportedDatasetError,
 )
 from .task_dataset import TaskDataset
@@ -18,6 +19,7 @@ __all__ = [
     "MediaElement",
     "Sample",
     "TaskDataset",
+    "UnreadableMediaError",
     "UnsupportedDatasetError",
     "UpdatePolicy",
 ]
