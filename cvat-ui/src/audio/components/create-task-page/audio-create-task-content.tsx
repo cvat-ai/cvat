@@ -35,7 +35,7 @@ import QualityConfigurationForm, {
     QualityConfiguration,
     ValidationMode,
 } from 'components/create-task-page/quality-configuration-form';
-import { CreateTaskData } from 'components/create-task-page/create-task-content';
+import { CreateTaskData, TaskSelection } from 'components/create-task-page/create-task-content';
 
 type TabName = 'local' | 'share' | 'remote' | 'cloudStorage';
 const core = getCore();
@@ -45,7 +45,7 @@ interface Props {
     projectId: number | null;
 }
 
-type State = CreateTaskData & {
+type State = Omit<CreateTaskData, 'cloudStorageId'> & {
     uploadFileErrorMessages: Record<TabName, string>;
     loading: boolean;
     statusInProgressTask: string;
@@ -72,7 +72,6 @@ const defaultState: State = {
         cloudStorage: [],
     },
     activeFileManagerTab: 'local',
-    cloudStorageId: null,
     uploadFileErrorMessages: {
         local: '',
         share: '',
@@ -142,17 +141,6 @@ class AudioCreateTaskContent extends React.PureComponent<Props & RouteComponentP
             ...defaultState,
             projectId: state.projectId,
         }));
-    };
-
-    private validateFiles = (): boolean => {
-        const { activeFileManagerTab, files } = this.state;
-
-        this.setState({
-            cloudStorageId: activeFileManagerTab === 'cloudStorage' ?
-                this.fileManagerComponent.getCloudStorageId() : null,
-        });
-
-        return files[activeFileManagerTab].length > 0;
     };
 
     private startLoading = (): void => {
@@ -339,10 +327,11 @@ class AudioCreateTaskContent extends React.PureComponent<Props & RouteComponentP
         }
     };
 
-    private validateBlocks = (): Promise<any> => new Promise((resolve, reject) => {
-        const { projectId } = this.state;
+    private validateBlocks = (): Promise<TaskSelection> => new Promise((resolve, reject) => {
+        const { projectId, activeFileManagerTab, files } = this.state;
+        const selectedFiles = files[activeFileManagerTab];
 
-        if (!this.validateFiles()) {
+        if (!selectedFiles.length) {
             notification.error({
                 message: 'Could not create a task',
                 description: 'A task must contain at least one file',
@@ -357,6 +346,18 @@ class AudioCreateTaskContent extends React.PureComponent<Props & RouteComponentP
             return;
         }
 
+        const selection: TaskSelection = {
+            projectId,
+            activeFileManagerTab,
+            files: {
+                ...defaultState.files,
+                [activeFileManagerTab]: selectedFiles,
+            },
+            cloudStorageId: activeFileManagerTab === 'cloudStorage' ?
+                this.fileManagerComponent.getCloudStorageId() : null,
+        };
+
+        this.startLoading();
         this.basicConfigurationComponent.current
             .submit()
             .then(() => {
@@ -391,7 +392,7 @@ class AudioCreateTaskContent extends React.PureComponent<Props & RouteComponentP
                 }
 
                 return Promise.resolve();
-            }).then(resolve)
+            }).then(() => resolve(selection))
             .catch((error: Error | ValidateErrorEntity): void => {
                 notification.error({
                     message: 'Could not create a task',
@@ -411,7 +412,8 @@ class AudioCreateTaskContent extends React.PureComponent<Props & RouteComponentP
                 const { id } = createdTask;
                 history.push(`/tasks/${id}`);
             })
-            .catch(() => {});
+            .catch(() => {})
+            .finally(this.stopLoading);
     };
 
     private handleSubmitAndContinue = (): void => {
@@ -425,25 +427,13 @@ class AudioCreateTaskContent extends React.PureComponent<Props & RouteComponentP
             })
             .then(this.resetState)
             .then(this.focusToForm)
-            .catch(() => {});
+            .catch(() => {})
+            .finally(this.stopLoading);
     };
 
-    private createOneTask = (): Promise<any> => {
+    private createOneTask = (selection: TaskSelection): Promise<any> => {
         const { onCreate } = this.props;
-        const { activeFileManagerTab, files } = this.state;
-        this.startLoading();
-        // Use only the currently selected data source (see #8703). Keep other tab
-        // selections in component state so the user can switch back without losing them.
-        return onCreate({
-            ...this.state,
-            files: {
-                ...defaultState.files,
-                [activeFileManagerTab]: files[activeFileManagerTab],
-            },
-            cloudStorageId: activeFileManagerTab === 'cloudStorage' ?
-                this.fileManagerComponent.getCloudStorageId() : null,
-        }, this.changeStatusInProgressTask)
-            .finally(this.stopLoading);
+        return onCreate({ ...this.state, ...selection }, this.changeStatusInProgressTask);
     };
 
     private renderBasicBlock(): JSX.Element {
@@ -649,7 +639,7 @@ class AudioCreateTaskContent extends React.PureComponent<Props & RouteComponentP
         const uploadFileErrorMessage = uploadFileErrorMessages[activeFileManagerTab];
 
         if (status === 'FAILED' || loading) {
-            return (<Alert message={status} />);
+            return (<Alert message={status || 'Preparing task…'} />);
         }
         return (
             <Row justify='end' gutter={8}>
