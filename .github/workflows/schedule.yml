@@ -155,7 +155,7 @@ jobs:
         if: always()
         uses: actions/upload-artifact@cf430e030ddbb5b0abf93d22962f4752f3646cd9 # v7.0.2
         with:
-          name: allure-results-rest-api
+          name: allure-results-rest-api-docker
           path: tests/python/allure-results
 
       - name: Unit tests
@@ -322,11 +322,12 @@ jobs:
         with:
           name: cvat_container_logs_${{ matrix.specs }}
           path: ${{ github.workspace }}/tests/cvat.log
+
       - name: Upload Allure results as an artifact
         if: always()
         uses: actions/upload-artifact@cf430e030ddbb5b0abf93d22962f4752f3646cd9 # v7.0.2
         with:
-          name: allure-results-e2e-${{ matrix.specs }}
+          name: allure-results-e2e-docker-${{ matrix.specs }}
           path: tests/allure-results-e2e
 
   upload_testops_results:
