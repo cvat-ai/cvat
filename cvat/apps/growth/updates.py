@@ -392,7 +392,7 @@ def announcement_feed() -> tuple[list[AnnouncementPreview], list[AnnouncementSou
             merged[key] = item
     items = sorted(
         merged.values(),
-        key=lambda item: (publication_date(item["publishedAt"]), item["id"]),
+        key=lambda item: (publication_date(item["publishedAt"]), item["source"], item["id"]),
         reverse=True,
     )[:ANNOUNCEMENT_LIMIT]
     return items, sorted(unavailable_sources)

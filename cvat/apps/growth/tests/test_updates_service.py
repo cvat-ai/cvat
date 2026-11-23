@@ -11,6 +11,37 @@ from cvat.apps.growth.types import ContentKind
 
 
 class UpdatesServiceTestCase(SimpleTestCase):
+    def test_announcement_cutoff_uses_source_and_id_to_break_publication_date_ties(self) -> None:
+        hugo = [
+            {
+                "id": identifier,
+                "publishedAt": "2000-01-01T00:00:00Z",
+                "url": f"https://docs.example.com/announcements/{identifier}/",
+            }
+            for identifier in ("a", "b", "c")
+        ]
+        external = [{**item, "url": f"https://website.example.com/{item['id']}/"} for item in hugo]
+
+        for direction in (1, -1):
+            with (
+                self.subTest(direction=direction),
+                patch.object(updates, "entries", return_value=hugo[::direction]),
+                patch.object(updates, "external_announcements", return_value=external[::direction]),
+            ):
+                result, unavailable_sources = updates.announcement_feed()
+
+                self.assertEqual(unavailable_sources, [])
+                self.assertEqual(
+                    [(item["source"], item["id"]) for item in result],
+                    [
+                        ("hugo", "c"),
+                        ("hugo", "b"),
+                        ("hugo", "a"),
+                        ("external", "c"),
+                        ("external", "b"),
+                    ],
+                )
+
     @override_settings(CVAT_NEWS_EDITION="community")
     def test_hugo_announcements_are_limited_after_filtering_and_sorting(self) -> None:
         source = [
