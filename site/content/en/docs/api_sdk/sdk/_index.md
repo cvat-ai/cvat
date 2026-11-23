@@ -57,6 +57,16 @@ request the `pytorch` extra:
 pip install "cvat-sdk[pytorch]"
 ```
 
+To read frames of tasks whose chunks are stored as video files
+(for example, through the dataset API or auto-annotation), the SDK needs the
+[OpenH264](https://github.com/cisco/openh264) 2.x shared library. The SDK doesn't include it.
+Install the library separately and set the `CVAT_OPENH264_LIBRARY` environment variable
+to its path:
+
+```bash
+export CVAT_OPENH264_LIBRARY=/path/to/libopenh264.so
+```
+
 We support Python versions 3.11 and higher.
 
 ## Usage

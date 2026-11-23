@@ -164,6 +164,17 @@ source .venv/bin/activate
 python -m pip install --upgrade pip cvat-cli
 ```
 
+To run a detector on tasks created from video, the agent also needs the
+[OpenH264](https://github.com/cisco/openh264) 2.x shared library,
+built for the operating system and CPU architecture of the agent's machine:
+
+```bash
+export CVAT_OPENH264_LIBRARY=/path/to/libopenh264.so
+```
+
+Without it, the agent still works on image tasks, but requests for video tasks fail
+with an error that says what is missing. Interactors and trackers don't need the library.
+
 Create a {{< ilink "/docs/api_sdk/access_tokens" "Personal Access Token" >}} in CVAT, then configure your connection:
 
 ```bash
