@@ -8230,6 +8230,7 @@ components:
           type: string
         cta:
           type: string
+          description: Call-to-action button label for opening the announcement URL.
         label:
           type: string
         markdown_url:

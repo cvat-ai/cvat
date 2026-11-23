@@ -131,7 +131,10 @@ class AnnouncementPreviewSerializer(serializers.Serializer):
     image_url = serializers.URLField(source="imageURL", required=False, allow_blank=True)
     video_url = serializers.URLField(source="videoURL", required=False, allow_blank=True)
     image_alt = serializers.CharField(source="imageAlt", required=False, allow_blank=True)
-    cta = serializers.CharField(required=False)
+    cta = serializers.CharField(
+        required=False,
+        help_text="Call-to-action button label for opening the announcement URL.",
+    )
     label = serializers.CharField(required=False)
     markdown_url = serializers.URLField(source="markdownURL", required=False)
 
