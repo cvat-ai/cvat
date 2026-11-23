@@ -17,7 +17,6 @@ from .types import (
     EDITION_PATTERN,
     RELEASE_VERSION_PATTERN,
     AnnouncementSource,
-    UpdateSource,
 )
 
 
@@ -147,7 +146,10 @@ class UpdatesIndexSerializer(serializers.Serializer):
     latest_announced_release = ReleaseNoteSerializer(allow_null=True)
     announcements = AnnouncementPreviewSerializer(many=True)
     can_acknowledge_announcements = serializers.BooleanField(source="canAcknowledgeAnnouncements")
-    errors = serializers.ListField(child=serializers.ChoiceField(choices=UpdateSource))
+    unavailable_sources = serializers.ListField(
+        child=serializers.ChoiceField(choices=AnnouncementSource),
+        help_text="Sources that could not be refreshed; their content may be missing or stale.",
+    )
     release_history_url = serializers.URLField(source="releaseHistoryURL")
     announcement_history_url = serializers.URLField(source="announcementHistoryURL")
     updates_history_url = serializers.URLField(source="updatesHistoryURL")

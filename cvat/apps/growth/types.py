@@ -12,12 +12,6 @@ class ContentKind(StrEnum):
     ANNOUNCEMENTS = "announcements"
 
 
-class UpdateSource(StrEnum):
-    RELEASE_NOTES = ContentKind.RELEASE_NOTES
-    ANNOUNCEMENTS = ContentKind.ANNOUNCEMENTS
-    EXTERNAL_ANNOUNCEMENTS = "external-announcements"
-
-
 class AnnouncementSource(StrEnum):
     HUGO = "hugo"
     EXTERNAL = "external"

@@ -37,7 +37,6 @@ from .types import (
     AnnouncementSource,
     ContentKind,
     OnStale,
-    UpdateSource,
 )
 
 slogger = ServerLogManager(__name__)
@@ -363,27 +362,23 @@ def external_announcements(*, on_stale: OnStale | None = None) -> list[Announcem
     return load(edition=edition(), limit=ANNOUNCEMENT_LIMIT, on_stale=on_stale)
 
 
-def announcement_feed() -> tuple[list[AnnouncementPreview], list[UpdateSource]]:
+def announcement_feed() -> tuple[list[AnnouncementPreview], list[AnnouncementSource]]:
     """One edition-filtered batch and one watermark for all announcement sources."""
 
     merged: dict[tuple[str, str], AnnouncementPreview] = {}
-    errors: set[UpdateSource] = set()
+    unavailable_sources: set[AnnouncementSource] = set()
     for source, load in (
-        (UpdateSource.EXTERNAL_ANNOUNCEMENTS, external_announcements),
-        (UpdateSource.ANNOUNCEMENTS, lambda **kwargs: entries(ContentKind.ANNOUNCEMENTS, **kwargs)),
+        (AnnouncementSource.EXTERNAL, external_announcements),
+        (AnnouncementSource.HUGO, lambda **kwargs: entries(ContentKind.ANNOUNCEMENTS, **kwargs)),
     ):
         try:
-            items = load(on_stale=lambda: errors.add(source))
+            items = load(on_stale=lambda: unavailable_sources.add(source))
         except UpdatesUnavailable:
-            errors.add(source)
+            unavailable_sources.add(source)
             continue
         for item in items:
             item = {key: value for key, value in item.items() if key != "contentPath"}
-            item["source"] = (
-                AnnouncementSource.HUGO
-                if source == UpdateSource.ANNOUNCEMENTS
-                else AnnouncementSource.EXTERNAL
-            )
+            item["source"] = source
             key = _article_key(item["url"])
             previous = merged.get(key)
             if previous:
@@ -400,7 +395,7 @@ def announcement_feed() -> tuple[list[AnnouncementPreview], list[UpdateSource]]:
         key=lambda item: (publication_date(item["publishedAt"]), item["id"]),
         reverse=True,
     )[:ANNOUNCEMENT_LIMIT]
-    return items, sorted(errors)
+    return items, sorted(unavailable_sources)
 
 
 def state(growth_data: UserGrowthData) -> dict[str, Any]:
@@ -412,10 +407,10 @@ def state(growth_data: UserGrowthData) -> dict[str, Any]:
 
 
 def index(growth_data: UserGrowthData) -> dict[str, Any]:
+    unavailable_sources: set[AnnouncementSource] = set()
     result = {
         "edition": edition(),
         "state": state(growth_data),
-        "errors": [],
         "latest_release": None,
         "latest_announced_release": None,
         "announcements": [],
@@ -423,18 +418,22 @@ def index(growth_data: UserGrowthData) -> dict[str, Any]:
     try:
         releases = [
             {key: value for key, value in item.items() if key != "contentPath"}
-            for item in entries(ContentKind.RELEASE_NOTES)
+            for item in entries(
+                ContentKind.RELEASE_NOTES,
+                on_stale=lambda: unavailable_sources.add(AnnouncementSource.HUGO),
+            )
         ]
         result["latest_release"] = releases[0] if releases else None
         result["latest_announced_release"] = next(
             (release for release in releases if release["announce"]), None
         )
     except UpdatesUnavailable:
-        result["errors"].append(UpdateSource.RELEASE_NOTES)
-    result["announcements"], announcement_errors = announcement_feed()
-    result["errors"].extend(announcement_errors)
+        unavailable_sources.add(AnnouncementSource.HUGO)
+    result["announcements"], announcement_unavailable_sources = announcement_feed()
+    unavailable_sources.update(announcement_unavailable_sources)
+    result["unavailable_sources"] = sorted(unavailable_sources)
     # A partial feed must not advance a shared watermark past missing content.
-    result["canAcknowledgeAnnouncements"] = not announcement_errors
+    result["canAcknowledgeAnnouncements"] = not announcement_unavailable_sources
     result["releaseHistoryURL"] = _docs_url("release-notes/")
     result["announcementHistoryURL"] = _docs_url("announcements/")
     result["updatesHistoryURL"] = _docs_url("updates/")

@@ -8219,7 +8219,7 @@ components:
           type: string
           format: uri
         source:
-          $ref: '#/components/schemas/SourceEnum'
+          $ref: '#/components/schemas/AnnouncementSource'
         image_url:
           type: string
           format: uri
@@ -8245,6 +8245,14 @@ components:
       - source
       - title
       - url
+    AnnouncementSource:
+      enum:
+      - hugo
+      - external
+      type: string
+      description: |-
+        * `hugo` - hugo
+        * `external` - external
     AssetRead:
       type: object
       properties:
@@ -9087,16 +9095,6 @@ components:
       required:
       - exporters
       - importers
-    ErrorsEnum:
-      enum:
-      - release-notes
-      - announcements
-      - external-announcements
-      type: string
-      description: |-
-        * `release-notes` - release-notes
-        * `announcements` - announcements
-        * `external-announcements` - external-announcements
     Event:
       type: object
       properties:
@@ -13523,14 +13521,6 @@ components:
         * `natural` - NATURAL
         * `predefined` - PREDEFINED
         * `random` - RANDOM
-    SourceEnum:
-      enum:
-      - hugo
-      - external
-      type: string
-      description: |-
-        * `hugo` - hugo
-        * `external` - external
     Storage:
       type: object
       properties:
@@ -14220,10 +14210,12 @@ components:
             $ref: '#/components/schemas/AnnouncementPreview'
         can_acknowledge_announcements:
           type: boolean
-        errors:
+        unavailable_sources:
           type: array
           items:
-            $ref: '#/components/schemas/ErrorsEnum'
+            $ref: '#/components/schemas/AnnouncementSource'
+          description: Sources that could not be refreshed; their content may be missing
+            or stale.
         release_history_url:
           type: string
           format: uri
@@ -14238,11 +14230,11 @@ components:
       - announcements
       - can_acknowledge_announcements
       - edition
-      - errors
       - latest_announced_release
       - latest_release
       - release_history_url
       - state
+      - unavailable_sources
       - updates_history_url
     UpdatesState:
       type: object

@@ -76,7 +76,7 @@ export interface Updates {
     announcements: Announcement[];
     canAcknowledgeAnnouncements: boolean;
     state: SeenState;
-    errors: ('release-notes' | 'announcements' | 'external-announcements')[];
+    unavailableSources: Announcement['source'][];
     releaseHistoryURL: string;
     announcementHistoryURL: string;
     updatesHistoryURL: string;

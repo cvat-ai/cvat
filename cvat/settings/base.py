@@ -29,6 +29,7 @@ from django.core.exceptions import ImproperlyConfigured
 from logstash_async.constants import constants as logstash_async_constants
 
 from cvat import __version__
+from cvat.apps.growth.types import AnnouncementSource
 from cvat.apps.iam.password_validation import DEFAULT_MIN_PASSWORD_LENGTH
 
 # Build paths inside the project like this: BASE_DIR / ...
@@ -735,6 +736,7 @@ SPECTACULAR_SETTINGS = {
     # Required for correct file upload type (bytes)
     "COMPONENT_SPLIT_REQUEST": True,
     "ENUM_NAME_OVERRIDES": {
+        "AnnouncementSource": list(AnnouncementSource),
         "LabelType": "cvat.apps.engine.models.LabelType",
         "ShapeType": "cvat.apps.engine.models.ShapeType",
         "OperationStatus": "cvat.apps.engine.models.StateChoice",

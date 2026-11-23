@@ -278,13 +278,13 @@ export default function WhatsNew(props: Props): JSX.Element {
                                     isNew={newRelease}
                                 />
                             )}
-                            {!hasContent && !updates?.errors.length && (
+                            {!hasContent && !updates?.unavailableSources.length && (
                                 <div className='cvat-release-notes-empty'>
                                     <h2>You’re up to date</h2>
                                     <p>New announcements and release notes will appear here.</p>
                                 </div>
                             )}
-                            {!!updates?.errors.length && (
+                            {!!updates?.unavailableSources.length && (
                                 <Alert
                                     type='warning'
                                     showIcon
