@@ -25,7 +25,7 @@ class UpdatesPermissionTestCase(TestCase):
             "org_role": None,
         }
         for action, scope in (
-            ("list", UserGrowthDataPermission.Scopes.VIEW),
+            ("summary", UserGrowthDataPermission.Scopes.VIEW),
             ("acknowledge", UserGrowthDataPermission.Scopes.UPDATE),
         ):
             with self.subTest(action=action):

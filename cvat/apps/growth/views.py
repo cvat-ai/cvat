@@ -21,8 +21,8 @@ from .models import UserGrowthData
 from .permissions import UpdatesPermission, UserGrowthDataPermission
 from .serializers import (
     UpdatesAcknowledgementSerializer,
-    UpdatesIndexSerializer,
     UpdatesStateSerializer,
+    UpdatesSummarySerializer,
     UserGrowthDataSerializer,
 )
 
@@ -84,11 +84,12 @@ class UpdatesViewSet(viewsets.ViewSet):
 
     @extend_schema(
         summary="Get the What's New popup summary and the current user's seen state",
-        responses={200: UpdatesIndexSerializer},
+        responses={200: UpdatesSummarySerializer},
     )
-    def list(self, request: Request) -> Response:
-        serializer = UpdatesIndexSerializer(
-            updates_service.index(UserGrowthData.for_user(request.user))
+    @action(detail=False, methods=["GET"])
+    def summary(self, request: Request) -> Response:
+        serializer = UpdatesSummarySerializer(
+            updates_service.summary(UserGrowthData.for_user(request.user))
         )
         return Response(serializer.data)
 

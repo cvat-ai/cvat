@@ -78,7 +78,7 @@ function deserializeAnnouncement(announcement: SerializedAnnouncement): Announce
 }
 
 export async function fetchUpdates(signal: AbortSignal): Promise<Updates> {
-    const response = await core.server.request('/api/whats-new', {
+    const response = await core.server.request('/api/whats-new/summary', {
         method: 'GET', params: { org: '' }, signal, timeout: 25000,
     }) as { data: SerializedUpdates };
     const summary = response.data;

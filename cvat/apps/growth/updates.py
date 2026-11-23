@@ -406,7 +406,7 @@ def state(growth_data: UserGrowthData) -> dict[str, Any]:
     }
 
 
-def index(growth_data: UserGrowthData) -> dict[str, Any]:
+def summary(growth_data: UserGrowthData) -> dict[str, Any]:
     unavailable_sources: set[AnnouncementSource] = set()
     result = {
         "edition": edition(),

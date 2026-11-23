@@ -7886,26 +7886,6 @@ paths:
               schema:
                 $ref: '#/components/schemas/Events'
           description: ''
-  /api/whats-new:
-    get:
-      operationId: whats_new_list
-      summary: Get the What's New popup summary and the current user's seen state
-      tags:
-      - whats-new
-      security:
-      - tokenAuth: []
-      - accessTokenAuth: []
-      - sessionAuth: []
-        csrfAuth: []
-        csrfHeaderAuth: []
-      - basicAuth: []
-      responses:
-        '200':
-          content:
-            application/vnd.cvat+json:
-              schema:
-                $ref: '#/components/schemas/UpdatesIndex'
-          description: ''
   /api/whats-new/acknowledge:
     post:
       operationId: whats_new_create_acknowledge
@@ -7930,6 +7910,26 @@ paths:
             application/vnd.cvat+json:
               schema:
                 $ref: '#/components/schemas/UpdatesState'
+          description: ''
+  /api/whats-new/summary:
+    get:
+      operationId: whats_new_retrieve_summary
+      summary: Get the What's New popup summary and the current user's seen state
+      tags:
+      - whats-new
+      security:
+      - tokenAuth: []
+      - accessTokenAuth: []
+      - sessionAuth: []
+        csrfAuth: []
+        csrfHeaderAuth: []
+      - basicAuth: []
+      responses:
+        '200':
+          content:
+            application/vnd.cvat+json:
+              schema:
+                $ref: '#/components/schemas/UpdatesSummary'
           description: ''
 components:
   schemas:
@@ -14188,7 +14188,22 @@ components:
         announcements_seen_at:
           type: string
           format: date-time
-    UpdatesIndex:
+    UpdatesState:
+      type: object
+      properties:
+        last_seen_release_notes_version:
+          type: string
+        last_seen_announcements_date:
+          type: string
+          format: date-time
+          nullable: true
+        promotion_notifications_allowed:
+          type: boolean
+      required:
+      - last_seen_announcements_date
+      - last_seen_release_notes_version
+      - promotion_notifications_allowed
+    UpdatesSummary:
       type: object
       properties:
         edition:
@@ -14236,21 +14251,6 @@ components:
       - state
       - unavailable_sources
       - updates_history_url
-    UpdatesState:
-      type: object
-      properties:
-        last_seen_release_notes_version:
-          type: string
-        last_seen_announcements_date:
-          type: string
-          format: date-time
-          nullable: true
-        promotion_notifications_allowed:
-          type: boolean
-      required:
-      - last_seen_announcements_date
-      - last_seen_release_notes_version
-      - promotion_notifications_allowed
     User:
       type: object
       properties:

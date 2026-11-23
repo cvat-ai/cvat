@@ -107,7 +107,7 @@ class UpdatesApiTestCase(UpdatesApiTestBase):
         self.client.force_authenticate(user=None)
 
         with patch.object(UserGrowthData, "for_user") as for_user:
-            response = self.client.get("/api/whats-new")
+            response = self.client.get("/api/whats-new/summary")
             acknowledged = self.client.post("/api/whats-new/acknowledge", {}, format="json")
 
         self.assertEqual(response.status_code, HTTPStatus.UNAUTHORIZED)
@@ -122,7 +122,7 @@ class UpdatesApiTestCase(UpdatesApiTestBase):
             imageAlt="Announcement preview",
         )
 
-        response = self.client.get("/api/whats-new")
+        response = self.client.get("/api/whats-new/summary")
 
         self.assertEqual(response.status_code, HTTPStatus.OK)
         release = response.data["latest_release"]
@@ -152,7 +152,7 @@ class UpdatesApiTestCase(UpdatesApiTestBase):
             self.assertTrue(all(key == key.lower() for key in item), item)
 
     def test_new_user_starts_from_registration_day_and_has_empty_release_version(self) -> None:
-        response = self.client.get("/api/whats-new")
+        response = self.client.get("/api/whats-new/summary")
 
         self.assertEqual(response.status_code, HTTPStatus.OK)
         self.assertEqual(response.data["state"]["last_seen_release_notes_version"], "")
@@ -171,7 +171,7 @@ class UpdatesApiTestCase(UpdatesApiTestBase):
             }
         )
 
-        response = self.client.get("/api/whats-new")
+        response = self.client.get("/api/whats-new/summary")
 
         self.assertEqual(response.status_code, HTTPStatus.OK)
         self.assertEqual(
@@ -192,7 +192,7 @@ class UpdatesApiTestCase(UpdatesApiTestBase):
             ]
         )
 
-        response = self.client.get("/api/whats-new")
+        response = self.client.get("/api/whats-new/summary")
 
         self.assertEqual(response.status_code, HTTPStatus.OK)
         self.assertEqual(response.data["latest_release"]["version"], "2.0.0")
@@ -209,7 +209,7 @@ class UpdatesApiTestCase(UpdatesApiTestBase):
             last_seen_release_notes_version="2.0.0"
         )
 
-        response = self.client.get("/api/whats-new")
+        response = self.client.get("/api/whats-new/summary")
 
         self.assertEqual(response.status_code, HTTPStatus.OK)
         self.assertNotIn("releases", response.data)
@@ -233,7 +233,7 @@ class UpdatesApiTestCase(UpdatesApiTestBase):
     ) -> None:
         self.release["announce"] = False
 
-        response = self.client.get("/api/whats-new")
+        response = self.client.get("/api/whats-new/summary")
 
         self.assertEqual(response.status_code, HTTPStatus.OK)
         self.assertEqual(response.data["latest_release"]["version"], self.release["version"])
@@ -243,7 +243,7 @@ class UpdatesApiTestCase(UpdatesApiTestBase):
     def test_summary_without_eligible_releases_keeps_announcements_available(self) -> None:
         self.release["editions"] = ["other-edition"]
 
-        response = self.client.get("/api/whats-new")
+        response = self.client.get("/api/whats-new/summary")
 
         self.assertEqual(response.status_code, HTTPStatus.OK)
         self.assertIsNone(response.data["latest_release"])
@@ -254,7 +254,7 @@ class UpdatesApiTestCase(UpdatesApiTestBase):
     def test_failed_release_source_keeps_announcements_available(self) -> None:
         self.documents["https://docs.example.com/release-notes/index.json"] = "invalid JSON"
 
-        response = self.client.get("/api/whats-new")
+        response = self.client.get("/api/whats-new/summary")
 
         self.assertEqual(response.status_code, HTTPStatus.OK)
         self.assertIsNone(response.data["latest_release"])
@@ -267,7 +267,7 @@ class UpdatesApiTestCase(UpdatesApiTestBase):
         self.documents["https://docs.example.com/release-notes/index.json"] = "invalid JSON"
         self.documents["https://docs.example.com/announcements/index.json"] = "invalid JSON"
 
-        response = self.client.get("/api/whats-new")
+        response = self.client.get("/api/whats-new/summary")
 
         self.assertEqual(response.status_code, HTTPStatus.OK)
         self.assertEqual(response.data["unavailable_sources"], ["hugo"])
@@ -282,7 +282,7 @@ class UpdatesApiTestCase(UpdatesApiTestBase):
         preview = {**self.announcement, "id": "website", "url": "https://website.example.com/post/"}
 
         with patch(__name__ + ".sample_provider", return_value=[preview]):
-            response = self.client.get("/api/whats-new")
+            response = self.client.get("/api/whats-new/summary")
 
         self.assertEqual(response.status_code, HTTPStatus.OK)
         self.assertEqual(response.data["unavailable_sources"], ["hugo"])
@@ -297,7 +297,7 @@ class UpdatesApiTestCase(UpdatesApiTestBase):
         self.documents["https://docs.example.com/announcements/index.json"] = "invalid JSON"
 
         with patch(__name__ + ".sample_provider", side_effect=UpdatesUnavailable()):
-            response = self.client.get("/api/whats-new")
+            response = self.client.get("/api/whats-new/summary")
 
         self.assertEqual(response.status_code, HTTPStatus.OK)
         self.assertEqual(response.data["unavailable_sources"], ["external", "hugo"])
@@ -310,7 +310,7 @@ class UpdatesApiTestCase(UpdatesApiTestBase):
         self.announcement["editions"] = [custom_edition]
 
         with self.settings(CVAT_NEWS_EDITION=custom_edition):
-            response = self.client.get("/api/whats-new")
+            response = self.client.get("/api/whats-new/summary")
 
         self.assertEqual(response.status_code, HTTPStatus.OK)
         self.assertEqual(response.data["edition"], custom_edition)
@@ -320,7 +320,7 @@ class UpdatesApiTestCase(UpdatesApiTestBase):
 
     @override_settings(CVAT_NEWS_EDITION="invalid/edition")
     def test_invalid_edition_configuration_does_not_fetch_content(self) -> None:
-        response = self.client.get("/api/whats-new")
+        response = self.client.get("/api/whats-new/summary")
 
         self.assertEqual(response.status_code, HTTPStatus.SERVICE_UNAVAILABLE)
         self.session.get.assert_not_called()
@@ -328,7 +328,7 @@ class UpdatesApiTestCase(UpdatesApiTestBase):
     def test_invalid_content_edition_keeps_announcement_state_unread(self) -> None:
         self.announcement["editions"] = ["invalid/edition"]
 
-        response = self.client.get("/api/whats-new")
+        response = self.client.get("/api/whats-new/summary")
 
         self.assertEqual(response.status_code, HTTPStatus.OK)
         self.assertIn("hugo", response.data["unavailable_sources"])
@@ -340,7 +340,7 @@ class UpdatesApiTestCase(UpdatesApiTestBase):
 
     @override_settings(CVAT_NEWS_ENABLED=False)
     def test_disabled_feature_does_not_fetch_content(self) -> None:
-        response = self.client.get("/api/whats-new")
+        response = self.client.get("/api/whats-new/summary")
 
         self.assertEqual(response.status_code, HTTPStatus.NOT_FOUND)
         self.session.get.assert_not_called()
@@ -348,7 +348,7 @@ class UpdatesApiTestCase(UpdatesApiTestBase):
     def test_invalid_preview_media_keeps_announcement_state_unread(self) -> None:
         self.announcement["imageURL"] = 0
 
-        response = self.client.get("/api/whats-new")
+        response = self.client.get("/api/whats-new/summary")
 
         self.assertEqual(response.status_code, HTTPStatus.OK)
         self.assertIn("hugo", response.data["unavailable_sources"])
@@ -359,18 +359,18 @@ class UpdatesApiTestCase(UpdatesApiTestBase):
         )
 
     def test_can_reuse_cached_source_documents(self) -> None:
-        first = self.client.get("/api/whats-new")
+        first = self.client.get("/api/whats-new/summary")
         self.assertEqual(first.status_code, HTTPStatus.OK)
         self.assertEqual(self.session.get.call_count, 2)
         self.session.get.side_effect = AssertionError("A fresh document must not be fetched again")
 
-        second = self.client.get("/api/whats-new")
+        second = self.client.get("/api/whats-new/summary")
 
         self.assertEqual(second.status_code, HTTPStatus.OK)
         self.assertEqual(second.data, first.data)
 
     def test_changing_source_updates_fetches_and_links_without_reusing_the_old_cache(self) -> None:
-        initial = self.client.get("/api/whats-new")
+        initial = self.client.get("/api/whats-new/summary")
         self.assertEqual(initial.status_code, HTTPStatus.OK)
         self.session.get.reset_mock()
         source = "https://news.example.com/docs/"
@@ -382,7 +382,7 @@ class UpdatesApiTestCase(UpdatesApiTestBase):
         }
 
         with self.settings(CVAT_NEWS_SOURCE_URL=source):
-            response = self.client.get("/api/whats-new")
+            response = self.client.get("/api/whats-new/summary")
 
         self.assertEqual(response.status_code, HTTPStatus.OK)
         self.assertEqual(response.data["unavailable_sources"], [])
@@ -398,7 +398,7 @@ class UpdatesApiTestCase(UpdatesApiTestBase):
     def test_stale_release_notes_report_hugo_without_blocking_announcement_acknowledgement(
         self,
     ) -> None:
-        initial = self.client.get("/api/whats-new")
+        initial = self.client.get("/api/whats-new/summary")
         self.assertEqual(initial.status_code, HTTPStatus.OK)
 
         def source_response(url: str, **kwargs: Any) -> requests.Response:
@@ -408,7 +408,7 @@ class UpdatesApiTestCase(UpdatesApiTestBase):
 
         self.session.get.side_effect = source_response
 
-        response = self.client.get("/api/whats-new")
+        response = self.client.get("/api/whats-new/summary")
 
         self.assertEqual(response.status_code, HTTPStatus.OK)
         self.assertEqual(response.data["unavailable_sources"], ["hugo"])
@@ -417,11 +417,11 @@ class UpdatesApiTestCase(UpdatesApiTestBase):
 
     @override_settings(CVAT_NEWS_CACHE_TTL=0)
     def test_stale_announcements_disable_acknowledgement_in_the_summary(self) -> None:
-        initial = self.client.get("/api/whats-new")
+        initial = self.client.get("/api/whats-new/summary")
         self.assertTrue(initial.data["can_acknowledge_announcements"])
         self.session.get.side_effect = requests.ConnectionError("Source is unavailable")
 
-        stale = self.client.get("/api/whats-new")
+        stale = self.client.get("/api/whats-new/summary")
         self.assertEqual(stale.status_code, HTTPStatus.OK)
         self.assertEqual(stale.data["announcements"][0]["id"], "guide")
         self.assertFalse(stale.data["can_acknowledge_announcements"])
@@ -433,7 +433,7 @@ class UpdatesApiTestCase(UpdatesApiTestBase):
     def test_can_acknowledge_displayed_announcements_after_the_source_becomes_unavailable(
         self,
     ) -> None:
-        initial = self.client.get("/api/whats-new")
+        initial = self.client.get("/api/whats-new/summary")
         self.assertTrue(initial.data["can_acknowledge_announcements"])
         self.session.get.reset_mock()
         self.session.get.side_effect = requests.ConnectionError("Source is unavailable")
@@ -588,7 +588,7 @@ class UpdatesApiTestCase(UpdatesApiTestBase):
         ]
 
         with patch(__name__ + ".sample_provider", return_value=previews):
-            response = self.client.get("/api/whats-new")
+            response = self.client.get("/api/whats-new/summary")
 
         self.assertEqual(response.status_code, HTTPStatus.OK)
         self.assertEqual(
@@ -610,7 +610,7 @@ class UpdatesApiTestCase(UpdatesApiTestBase):
         }
 
         with patch(__name__ + ".sample_provider", return_value=[preview]):
-            response = self.client.get("/api/whats-new")
+            response = self.client.get("/api/whats-new/summary")
 
         self.assertEqual(response.status_code, HTTPStatus.OK)
         self.assertEqual(len(response.data["announcements"]), 1)
@@ -624,7 +624,7 @@ class UpdatesApiTestCase(UpdatesApiTestBase):
     )
     def test_failed_provider_keeps_hugo_announcements_available(self) -> None:
         with patch(__name__ + ".sample_provider", side_effect=UpdatesUnavailable()):
-            response = self.client.get("/api/whats-new")
+            response = self.client.get("/api/whats-new/summary")
 
         self.assertEqual(response.status_code, HTTPStatus.OK)
         self.assertEqual(response.data["unavailable_sources"], ["external"])

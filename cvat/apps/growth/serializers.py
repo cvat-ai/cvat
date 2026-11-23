@@ -139,7 +139,7 @@ class AnnouncementPreviewSerializer(serializers.Serializer):
 
 
 @extend_schema_serializer(many=False)
-class UpdatesIndexSerializer(serializers.Serializer):
+class UpdatesSummarySerializer(serializers.Serializer):
     edition = serializers.RegexField(EDITION_PATTERN)
     state = UpdatesStateSerializer()
     latest_release = ReleaseNoteSerializer(allow_null=True)

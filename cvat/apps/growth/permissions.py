@@ -72,7 +72,7 @@ class UpdatesPermission(OpenPolicyAgentPermission):
     ) -> list[UserGrowthDataPermission.Scopes]:
         Scopes = UserGrowthDataPermission.Scopes
         scopes = {
-            "list": Scopes.VIEW,
+            "summary": Scopes.VIEW,
             "acknowledge": Scopes.UPDATE,
         }
         return [scopes[view.action]]
