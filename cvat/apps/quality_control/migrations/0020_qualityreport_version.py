@@ -4,8 +4,8 @@ from django.db import migrations, models
 from django.utils import timezone as django_timezone
 
 # QualityReport.data format versions at the time of the migration
-LEGACY_VERSION = "1.0"
-GENERALIZED_VERSION = "2.0"
+LEGACY_VERSION = "legacy"
+GENERALIZED_VERSION = "generalized"
 VERSION_CHOICES = [(LEGACY_VERSION, "Legacy"), (GENERALIZED_VERSION, "Generalized")]
 
 # The first release with the generalized format, v2.74.0 (the tagged commit date).

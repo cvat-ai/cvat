@@ -78,11 +78,11 @@ class QualityReportTarget(str, Enum):
 class QualityReportVersion(models.TextChoices):
     "The format of QualityReport.data"
 
-    LEGACY = "1.0"
-    "Before the quality requirements were introduced"
+    LEGACY = "legacy"
+    "The baseline format with mixed results, used before the quality requirements were introduced"
 
-    GENERALIZED = "2.0"
-    "Results are grouped by quality requirements"
+    GENERALIZED = "generalized"
+    "The updated format with results grouped by quality requirements"
 
 
 class QualityMetric(str, Enum):
