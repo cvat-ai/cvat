@@ -11,7 +11,7 @@ aliases:
 Contextual images (or related images) are additional images that provide
 context or additional information related to the primary image.
 
-Use them to add extra contextual about the object to improve the accuracy of annotation.
+Use them to add extra context about the object to improve the accuracy of annotation.
 
 Contextual images are available for 2D and 3D tasks.
 
@@ -61,14 +61,16 @@ root_directory/
 
 Point clouds and related images are put into the same directory. Related files must have the same
 names as the corresponding point clouds. This format is limited by only 1 related image
-per point cloud.
+per point cloud. You can add camera calibration for the related image in an optional sidecar file.
 
 ```
 root_directory/
   pointcloud1.pcd
   pointcloud1.jpg
+  pointcloud1.jpg.json
   pointcloud2.pcd
   pointcloud2.png
+  pointcloud2.png.json
   ...
 ```
 
@@ -76,18 +78,22 @@ root_directory/
 {{% tab header="3D option 2" %}}
 
 Each point cloud is put into a separate directory with matching file name. Related images
-are put next to the corresponding point cloud, the file names and extensions can be arbitrary.
+are put next to the corresponding point cloud, and their file names and extensions can be arbitrary.
+An optional calibration sidecar can be added next to each related image.
 
 ```
 root_directory/
   pointcloud1/
     pointcloud1.pcd
     pointcloud1_ri1.png
+    pointcloud1_ri1.png.json
     pointcloud1_ri2.jpg
+    pointcloud1_ri2.jpg.json
     ...
   pointcloud2/
     pointcloud2.pcd
     pointcloud2_ri1.bmp
+    pointcloud2_ri1.bmp.json
 ```
 
 {{% /tab %}}
@@ -126,6 +132,8 @@ velodyne_points/
 {{% /tab %}}
 {{% tab header="3D task Supervisely format" %}}
 
+For camera calibration, add an optional Supervisely sidecar next to each related image.
+
 ```
 root_directory/
   pointcloud/
@@ -133,9 +141,11 @@ root_directory/
     pointcloud2.pcd
   related_images/
     pointcloud1_pcd/
-      context_image_for_pointclud1.jpg
+      context_image_for_pointcloud1.jpg
+      context_image_for_pointcloud1.jpg.json
     pointcloud2_pcd/
       context_image_for_pointcloud2.jpg
+      context_image_for_pointcloud2.jpg.json
 ```
 
 {{% /tab %}}

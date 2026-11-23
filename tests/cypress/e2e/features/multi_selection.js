@@ -369,7 +369,8 @@ context('Multi-object selection', { scrollBehavior: false }, () => {
 
     it('Replaces objects selected with Mod-click when starting a Shift-drag selection', () => {
         cy.get(`#cvat_canvas_shape_${objectIds.carShape1}`).click({ ...platformModifier, force: true });
-        assertSelection([objectIds.carShape1]);
+        cy.get(`#cvat_canvas_shape_${objectIds.carShape2}`).click({ ...platformModifier, force: true });
+        assertSelection([objectIds.carShape1, objectIds.carShape2]);
 
         cy.get(`#cvat_canvas_shape_${objectIds.carShape2}`).then(($shape) => {
             const box = $shape[0].getBoundingClientRect();
@@ -462,13 +463,13 @@ context('Multi-object selection', { scrollBehavior: false }, () => {
 
     it('Toggles objects with Mod-click and clears them with a plain click in Select mode', () => {
         cy.get('.cvat-select-control').click();
-        cy.get(`#cvat_canvas_shape_${objectIds.carShape1}`).click(platformModifier);
+        cy.get(`#cvat_canvas_shape_${objectIds.carShape1}`).realClick(platformModifier);
         assertSelection([objectIds.carShape1]);
 
-        cy.get(`#cvat_canvas_shape_${objectIds.carShape2}`).click(platformModifier);
+        cy.get(`#cvat_canvas_shape_${objectIds.carShape2}`).realClick(platformModifier);
         assertSelection([objectIds.carShape1, objectIds.carShape2]);
 
-        cy.get(`#cvat_canvas_shape_${objectIds.carShape1}`).click(platformModifier);
+        cy.get(`#cvat_canvas_shape_${objectIds.carShape1}`).realClick(platformModifier);
         assertSelection([objectIds.carShape2]);
         cy.get(`#cvat_canvas_shape_${objectIds.carShape2}`).realClick({ position: 'center' });
         assertSelection([]);
@@ -664,17 +665,21 @@ context('Multi-object selection', { scrollBehavior: false }, () => {
 
     it('Moves a selection as one action and restores it with Undo', () => {
         selectFromSidebar([objectIds.carShape1, objectIds.carShape2]);
-        // Outside Select mode, the selection rectangle itself can move the objects.
-        cy.get('.cvat-select-control').click();
+        cy.get('.cvat-select-control').should('have.class', 'cvat-active-canvas-control');
+        cy.get('.cvat_canvas_selected_objects_box').should('have.css', 'pointer-events', 'all');
         cy.get(`#cvat_canvas_shape_${objectIds.carShape1}`).invoke('attr', 'x').then((initialX) => {
-            dragSelectionBox(30, 20);
+            cy.get('.cvat_canvas_selected_objects_box').realMouseDown();
+            cy.get('.cvat_canvas_selected_objects_box').realMouseMove(30, 20, { position: 'center' });
+            cy.get('.cvat_canvas_selected_objects_box').realMouseUp();
             cy.get(`#cvat_canvas_shape_${objectIds.carShape1}`)
                 .should('not.have.attr', 'x', initialX);
+            assertSelection([objectIds.carShape1, objectIds.carShape2]);
             cy.contains('.cvat-annotation-header-button', 'Undo').click();
             cy.get(`#cvat_canvas_shape_${objectIds.carShape1}`)
                 .should('have.attr', 'x', initialX);
         });
         assertSelection([objectIds.carShape1, objectIds.carShape2]);
+        cy.get('.cvat-select-control').should('have.class', 'cvat-active-canvas-control');
 
         cy.get(`#cvat_canvas_shape_${objectIds.carShape1}`).invoke('attr', 'x').then((initialX) => {
             dragSelectionElement('.cvat_canvas_selected_objects_label_title', 30, 20);

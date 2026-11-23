@@ -196,6 +196,13 @@ The file describes an ordered set of images and 3d point clouds.
 `name` - file basename and leading directories from the dataset root
 `checksum` - `md5` hash sum for the specific image/frame decoded
 
+For point clouds with related images, `meta` can also include:
+
+- `related_images` - paths to the related images for this point cloud.
+- `auxiliary_files` - paths to calibration sidecars for the related images associated with this point cloud.
+- `related_image_metadata` - calibration data for related images, keyed by the same paths used in
+  `related_images`.
+
 ```json
 { "version": <string, version id> }
 { "type": "images" }
@@ -208,6 +215,37 @@ The file describes an ordered set of images and 3d point clouds.
   "checksum": <string, md5 hash, optional>
 } (repeatable)
 ```
+
+#### Camera calibration for related images
+
+For a 3D point cloud entry, use `meta.related_image_metadata` to include calibration data for its
+related images. Each entry contains a row-major, flattened 3x3 `intrinsic_matrix` and 3x4
+`extrinsic_matrix`. The intrinsic matrix must be invertible, and the extrinsic matrix must contain
+a rigid rotation and translation.
+
+```json
+{
+  "name": "pointcloud/000001",
+  "extension": ".pcd",
+  "width": 100,
+  "height": 1,
+  "meta": {
+    "related_images": ["related_images/000001_pcd/front.png"],
+    "auxiliary_files": ["related_images/000001_pcd/front.png.json"],
+    "related_image_metadata": {
+      "related_images/000001_pcd/front.png": {
+        "intrinsic_matrix": [721.5, 0, 609.6, 0, 721.5, 172.9, 0, 0, 1],
+        "extrinsic_matrix": [1, 0, 0, 0.2, 0, 1, 0, 0, 0, 0, 1, 1.7]
+      }
+    }
+  }
+}
+```
+
+All matrix values must be finite numbers. When both calibration metadata and a sidecar listed in
+`auxiliary_files` are provided for a related image, CVAT uses the sidecar calibration. See {{< ilink
+"/docs/workspace/tasks-page#data-formats-for-a-3d-task" "3D data formats" >}} for supported
+sidecar formats.
 
 ### Example files
 

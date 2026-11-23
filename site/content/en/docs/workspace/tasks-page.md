@@ -348,6 +348,7 @@ You can't mix 2D and 3D data in the same task.
       related_images/
         00001_pcd/
           image_01.png # or any other image
+          image_01.png.json # optional camera calibration sidecar
 
 {{< /tab >}}
 {{< tab header="3D Option 1" >}}
@@ -356,6 +357,7 @@ You can't mix 2D and 3D data in the same task.
       data/
         image.pcd
         image.png
+        image.png.json # optional camera calibration sidecar
 
 {{< /tab >}}
 {{< tab header="3D Option 2" >}}
@@ -365,11 +367,58 @@ You can't mix 2D and 3D data in the same task.
         image_1/
             image_1.pcd
             context_1.png # or any other name
+            context_1.png.json # optional camera calibration sidecar
             context_2.jpg
+            context_2.jpg.json # optional camera calibration sidecar
 
 
 {{< /tab >}}
 {{< /tabpane >}}
+
+#### Camera calibration
+
+For the **3D pointcloud** and CVAT 3D formats, you can add optional camera calibration sidecars
+for related images. Name a sidecar by appending `.json` to the related image file name. Calibration
+enables camera rays in the 3D annotation workspace.
+
+For CVAT 3D layouts, sidecars must use the following CVAT format:
+
+```json
+{
+  "format": "cvat-image-meta",
+  "version": 1,
+  "camera": {
+    "intrinsic_matrix": [
+      [721.5, 0, 609.6],
+      [0, 721.5, 172.9],
+      [0, 0, 1]
+    ]
+  },
+  "extrinsic_matrix": [
+    [1, 0, 0, 0.2],
+    [0, 1, 0, 0],
+    [0, 0, 1, 1.7]
+  ]
+}
+```
+
+For the **3D pointcloud** format, CVAT reads calibration from the Supervisely
+`meta.sensorsData` fields:
+
+```json
+{
+  "meta": {
+    "sensorsData": {
+      "intrinsicMatrix": [721.5, 0, 609.6, 0, 721.5, 172.9, 0, 0, 1],
+      "extrinsicMatrix": [1, 0, 0, 0.2, 0, 1, 0, 0, 0, 0, 1, 1.7]
+    }
+  }
+}
+```
+
+In both formats, the intrinsic matrix must be an invertible 3x3 matrix and the extrinsic matrix
+must be a 3x4 matrix with a rigid rotation and translation. All matrix values must be finite
+numbers.
 
 ### Advanced configuration
 

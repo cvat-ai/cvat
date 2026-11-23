@@ -6,7 +6,7 @@
 import { connect } from 'react-redux';
 
 import { Task, Request } from 'cvat-core-wrapper';
-import { CombinedState, ActiveInference, PluginComponent } from 'reducers';
+import { CombinedState, ActiveInference } from 'reducers';
 import TaskItemComponent from 'components/tasks-page/task-item';
 import { updateTaskInState as updateTaskInStateAction, getTaskPreviewAsync } from 'actions/tasks-actions';
 import { cancelInferenceAsync } from 'actions/models-actions';
@@ -16,7 +16,6 @@ interface StateToProps {
     taskInstance: any;
     activeInference: ActiveInference | null;
     activeRequest: Request | null;
-    ribbonPlugins: PluginComponent[];
 }
 
 interface DispatchToProps {
@@ -43,7 +42,6 @@ function mapStateToProps(state: CombinedState, own: OwnProps): StateToProps {
         deleted: id in deletes ? deletes[id] === true : false,
         taskInstance: task,
         activeInference: state.models.inferences[id] || null,
-        ribbonPlugins: state.plugins.components.taskItem.ribbon,
         activeRequest: activeRequest || null,
     };
 }
