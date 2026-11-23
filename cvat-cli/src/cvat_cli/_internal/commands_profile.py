@@ -169,5 +169,6 @@ class ProfileCreate:
             ProfileEntry(server=server, token=token, created_date=get_current_time_iso()),
             set_default=args.set_default,
         )
-        suffix = " (set as default)" if store.get_default_profile()[0] == name else ""
+        default = store.get_default_profile()
+        suffix = " (set as default)" if default is not None and default[0] == name else ""
         print(f"Saved profile '{name}' for {server}{suffix}.")
