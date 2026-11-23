@@ -60,10 +60,9 @@ class UpdatesPermission(OpenPolicyAgentPermission):
         cls, request: Request, view: ViewSetMixin, obj: Any, iam_context: dict[str, Any] | None
     ) -> list[UserGrowthDataPermission]:
         iam_context = iam_context or get_iam_context(request, None)
+        growth_data = UserGrowthData.for_user(request.user)
         return [
-            UserGrowthDataPermission(
-                **iam_context, scope=scope, obj=UserGrowthData(user=request.user)
-            )
+            UserGrowthDataPermission(**iam_context, scope=scope, obj=growth_data)
             for scope in cls.get_scopes(request, view, obj)
         ]
 

@@ -103,6 +103,18 @@ class UpdatesApiTestBase(ApiTestBase):
 
 
 class UpdatesApiTestCase(UpdatesApiTestBase):
+    def test_unauthenticated_requests_do_not_load_or_create_growth_data(self) -> None:
+        self.client.force_authenticate(user=None)
+
+        with patch.object(UserGrowthData, "for_user") as for_user:
+            response = self.client.get("/api/whats-new")
+            acknowledged = self.client.post("/api/whats-new/acknowledge", {}, format="json")
+
+        self.assertEqual(response.status_code, HTTPStatus.UNAUTHORIZED)
+        self.assertEqual(acknowledged.status_code, HTTPStatus.UNAUTHORIZED)
+        for_user.assert_not_called()
+        self.session.get.assert_not_called()
+
     def test_api_uses_snake_case_without_changing_the_hugo_feed(self) -> None:
         self.announcement.update(
             imageURL="https://docs.example.com/images/preview.png",
