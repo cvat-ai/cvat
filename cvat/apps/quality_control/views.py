@@ -500,6 +500,15 @@ class QualityReportViewSet(
         )
         return HttpResponse(report_data, content_type=content_type)
 
+    def _ensure_generalized_report_format(self, report: QualityReport):
+        match report.version:
+            case QualityReportVersion.GENERALIZED:
+                pass
+            case QualityReportVersion.LEGACY:
+                raise NotFound("Confusion matrices are not available for this report format")
+            case _:
+                raise AssertionError(f"Unexpected quality report version {report.version}")
+
     @extend_schema(
         operation_id="quality_retrieve_report_confusion",
         summary="Download quality report confusion matrices",
@@ -513,13 +522,7 @@ class QualityReportViewSet(
     @action(detail=True, methods=["GET"], url_path="confusion", serializer_class=None)
     def confusion(self, request, pk):
         report = self.get_object()  # check permissions
-        match report.version:
-            case QualityReportVersion.GENERALIZED:
-                pass
-            case QualityReportVersion.LEGACY:
-                raise NotFound("Confusion matrices are not available for this report format")
-            case _:
-                raise AssertionError(f"Unexpected quality report version {report.version}")
+        self._ensure_generalized_report_format(report)
 
         archive = prepare_confusion_matrices_archive_for_downloading(report)
         response = HttpResponse(archive, content_type="application/zip")
@@ -560,13 +563,7 @@ class QualityReportViewSet(
     @action(detail=True, methods=["GET"], url_path="confusion/matrix", serializer_class=None)
     def confusion_matrix(self, request, pk):
         report = self.get_object()  # check permissions
-        match report.version:
-            case QualityReportVersion.GENERALIZED:
-                pass
-            case QualityReportVersion.LEGACY:
-                raise NotFound("Confusion matrices are not available for this report format")
-            case _:
-                raise AssertionError(f"Unexpected quality report version {report.version}")
+        self._ensure_generalized_report_format(report)
 
         requirement = request.query_params.get("requirement")
         if not requirement:
