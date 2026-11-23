@@ -11,6 +11,36 @@ from cvat.apps.growth.types import ContentKind
 
 
 class UpdatesServiceTestCase(SimpleTestCase):
+    @override_settings(CVAT_NEWS_EDITION="community")
+    def test_hugo_announcements_are_limited_after_filtering_and_sorting(self) -> None:
+        source = [
+            {
+                "id": f"post-{day}",
+                "publishedAt": f"2000-01-{day:02d}T00:00:00Z",
+                "editions": ["community"],
+            }
+            for day in range(1, 9)
+        ]
+        source.extend(
+            [
+                {"id": "future", "publishedAt": "9999-01-01T00:00:00Z", "editions": ["community"]},
+                {"id": "other", "publishedAt": "2000-01-30T00:00:00Z", "editions": ["enterprise"]},
+            ]
+        )
+
+        for limit in (2, 5):
+            with (
+                self.subTest(limit=limit),
+                patch.object(updates, "_document", return_value=source),
+                patch.object(updates, "ANNOUNCEMENT_LIMIT", limit),
+            ):
+                result = updates.entries(ContentKind.ANNOUNCEMENTS)
+
+                self.assertEqual(
+                    [item["id"] for item in result],
+                    [f"post-{day}" for day in range(8, 8 - limit, -1)],
+                )
+
     @override_settings(CVAT_NEWS_SOURCE_URL="http://docs.cvat.test:1313/docs/")
     def test_docs_urls_use_the_configured_source_and_subpath(self) -> None:
         markdown_url = "http://docs.cvat.test:1313/docs/release-notes/2.0.0/index.md"

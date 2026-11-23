@@ -330,7 +330,7 @@ def entries(kind: ContentKind, *, on_stale: OnStale | None = None) -> list[dict[
         case ContentKind.ANNOUNCEMENTS:
             return sorted(
                 published, key=lambda item: publication_date(item["publishedAt"]), reverse=True
-            )
+            )[:ANNOUNCEMENT_LIMIT]
         case _:
             raise AssertionError(f"Unexpected content kind: {kind}")
 
