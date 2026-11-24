@@ -70,6 +70,7 @@ function drawCircles(): void {
 
     this.set.clear();
 
+    // While drawing, the last point follows the cursor; only preceding points get circles.
     if (array.length <= 1) return;
 
     const matrix = this.parent.node.getScreenCTM().inverse().multiply(this.el.node.getScreenCTM());
