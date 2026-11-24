@@ -2388,7 +2388,6 @@ class ProjectDumpUpload(_DbTestBase):
             for dump_format in dump_formats:
                 if not dump_format.ENABLED or dump_format.DISPLAY_NAME in [
                     "Kitti Raw Format 1.0",
-                    "Sly Point Cloud Format 1.0",
                     "Generic TSV 1.0",
                 ]:
                     continue
@@ -2444,7 +2443,6 @@ class ProjectDumpUpload(_DbTestBase):
             for upload_format in upload_formats:
                 if not dump_format.ENABLED or dump_format.DISPLAY_NAME in [
                     "Kitti Raw Format 1.0",
-                    "Sly Point Cloud Format 1.0",
                 ]:
                     continue
                 upload_format_name = upload_format.DISPLAY_NAME

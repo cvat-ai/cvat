@@ -3,28 +3,45 @@
 // SPDX-License-Identifier: MIT
 
 import './styles.scss';
-import React, { useEffect, useRef, useState } from 'react';
+import React, {
+    useEffect,
+    useRef,
+    useState,
+} from 'react';
 import { useSelector } from 'react-redux';
-import { shallowEqual } from 'utils/redux';
+
 import PropTypes from 'prop-types';
 import notification from 'antd/lib/notification';
 import Spin from 'antd/lib/spin';
 import Text from 'antd/lib/typography/Text';
 import { SettingOutlined } from '@ant-design/icons';
 
+import { shallowEqual } from 'utils/redux';
 import CVATTooltop from 'components/common/cvat-tooltip';
 import { CombinedState } from 'reducers';
 import ContextImageSelector from './context-image-selector';
+import useContextImageViewport from './hooks/use-context-image-viewport';
+
+export interface ContextImageOverlayProps {
+    imageSize: {
+        width: number;
+        height: number;
+    };
+    contextImageName: string;
+    scale: number;
+}
 
 interface Props {
     offset: number[];
+    Overlay?: React.ComponentType<ContextImageOverlayProps>;
 }
 
 function ContextImage(props: Props): JSX.Element {
-    const { offset } = props;
+    const { offset, Overlay } = props;
     const defaultFrameOffset = (offset[0] || 0);
     const defaultContextImageOffset = (offset[1] || 0);
 
+    const [viewportElement, setViewportElement] = useState<HTMLDivElement | null>(null);
     const canvasRef = useRef<HTMLCanvasElement>(null);
     const {
         job,
@@ -35,6 +52,8 @@ function ContextImage(props: Props): JSX.Element {
         frame: state.annotation.player.frame.number,
         relatedFiles: state.annotation.player.frame.relatedFiles,
     }), shallowEqual);
+
+    // context image base
     const frameIndex = frame + defaultFrameOffset;
 
     const [contextImageData, setContextImageData] = useState<Record<string, ImageBitmap>>({});
@@ -89,6 +108,20 @@ function ContextImage(props: Props): JSX.Element {
     }, [contextImageData, contextImageOffset, canvasRef]);
 
     const contextImageName = Object.keys(contextImageData).sort()[contextImageOffset];
+    const contextImage = contextImageData[contextImageName];
+
+    // feature hooks
+    const imageViewport = useContextImageViewport({
+        image: contextImage,
+        viewportElement,
+    });
+
+    // render
+    const imagePlaneTransform = imageViewport ?
+        `translate(${imageViewport.left}px, ${imageViewport.top}px) ` +
+        `scale(${imageViewport.scale})` :
+        undefined;
+
     return (
         <div className='cvat-context-image-wrapper'>
             <div className='cvat-context-image-header'>
@@ -111,7 +144,26 @@ function ContextImage(props: Props): JSX.Element {
             { fetching && <Spin size='small' /> }
             {
                 contextImageOffset < Object.keys(contextImageData).length &&
-                <canvas ref={canvasRef} />
+                <div ref={setViewportElement} className='cvat-context-image-viewport'>
+                    <div
+                        className='cvat-context-image-image-plane'
+                        style={{
+                            width: contextImage.width,
+                            height: contextImage.height,
+                            transform: imagePlaneTransform,
+                            visibility: imageViewport ? undefined : 'hidden',
+                        }}
+                    >
+                        <canvas ref={canvasRef} className='cvat-context-image-canvas' />
+                        {imageViewport && Overlay && contextImage && contextImageName ? (
+                            <Overlay
+                                imageSize={contextImage}
+                                contextImageName={contextImageName}
+                                scale={imageViewport.scale}
+                            />
+                        ) : null}
+                    </div>
+                </div>
             }
             { showSelector && (
                 <ContextImageSelector

@@ -28,7 +28,13 @@ import re
 from pathlib import Path
 
 from dataset_manifest.core import ImageManifestManager, VideoManifestManager
-from dataset_manifest.utils import SortingMethod, find_related_images, is_image, is_video
+from dataset_manifest.utils import (
+    SortingMethod,
+    build_related_images_manifest_meta,
+    find_related_images,
+    is_image,
+    is_video,
+)
 from tqdm import tqdm
 
 
@@ -94,17 +100,23 @@ def main():
         while re.search(r"[*?\[\]]", os.fspath(abs_root)):
             abs_root = abs_root.parent
 
-        scene_paths, related_images = find_related_images(
+        # TODO: properly support calibration and 3D tasks manifest generation with this script
+        scene_paths, related_images, _, related_image_auxiliary_files = find_related_images(
             sources,
             root_path=abs_root,
             # backward compatibility, deprecated in https://github.com/cvat-ai/cvat/pull/9757
             is_scene_path=(lambda p: not "related_images" in p.parts),
         )
         sources = [p for p in sources if p.relative_to(abs_root) in scene_paths]
-        meta = {
-            os.fspath(k): {"related_images": [ri.as_posix() for ri in related_images[k]]}
-            for k in related_images
+        auxiliary_files = {
+            scene_path: [
+                auxiliary_file
+                for auxiliary_file in scene_auxiliary_files
+                if (abs_root / auxiliary_file).is_file()
+            ]
+            for scene_path, scene_auxiliary_files in related_image_auxiliary_files.items()
         }
+        meta = build_related_images_manifest_meta(related_images, {}, auxiliary_files)
         try:
             assert len(sources), "A images was not found"
             manifest = ImageManifestManager(manifest_path=manifest_directory)

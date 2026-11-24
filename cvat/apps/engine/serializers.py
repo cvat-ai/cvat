@@ -33,7 +33,12 @@ from django.db import transaction
 from django.db.models import Count, Prefetch, QuerySet, prefetch_related_objects
 from django.utils import timezone
 from django.utils.functional import cached_property
-from drf_spectacular.utils import OpenApiExample, extend_schema_field, extend_schema_serializer
+from drf_spectacular.utils import (
+    OpenApiExample,
+    PolymorphicProxySerializer,
+    extend_schema_field,
+    extend_schema_serializer,
+)
 from numpy import random
 from PIL import Image
 from rest_framework import exceptions, serializers
@@ -71,6 +76,7 @@ from cvat.apps.webhooks.models import Webhook
 from cvat.utils import django_database as db_utils
 from cvat.utils.paths import problem_with_untrusted_path
 from utils.dataset_manifest import ImageManifestManager
+from utils.dataset_manifest.utils import is_image
 
 slogger = ServerLogManager(__name__)
 
@@ -3873,11 +3879,80 @@ class AboutSerializer(serializers.Serializer):
     subtitle = serializers.CharField(max_length=1024)
 
 
+class FileMetadataSerializer(serializers.Serializer):
+    name = serializers.CharField(max_length=MAX_FILENAME_LENGTH)
+    type = serializers.ChoiceField(choices=["file"], default="file")
+
+
+class RelatedImageMetadataSerializer(FileMetadataSerializer):
+    type = serializers.ChoiceField(choices=["related_image"], default="related_image")
+    intrinsic_matrix = serializers.ListField(
+        child=serializers.ListField(
+            child=serializers.FloatField(),
+            min_length=3,
+            max_length=3,
+        ),
+        min_length=3,
+        max_length=3,
+        required=False,
+    )
+    extrinsic_matrix = serializers.ListField(
+        child=serializers.ListField(
+            child=serializers.FloatField(),
+            min_length=4,
+            max_length=4,
+        ),
+        min_length=3,
+        max_length=3,
+        required=False,
+    )
+
+
+@extend_schema_field(
+    PolymorphicProxySerializer(
+        component_name="RelatedFileMetadata",
+        serializers={
+            "file": FileMetadataSerializer,
+            "related_image": RelatedImageMetadataSerializer,
+        },
+        resource_type_field_name="type",
+    )
+)
+class RelatedFileMetadataField(serializers.Field):
+    def to_representation(self, instance: models.RelatedFile) -> dict[str, Any]:
+        if is_image(Path(instance.path)):
+            metadata: dict[str, Any] = {"name": instance.path}
+            if instance.intrinsic_matrix and instance.extrinsic_matrix:
+                metadata.update(
+                    {
+                        "intrinsic_matrix": [
+                            instance.intrinsic_matrix[:3],
+                            instance.intrinsic_matrix[3:6],
+                            instance.intrinsic_matrix[6:9],
+                        ],
+                        "extrinsic_matrix": [
+                            instance.extrinsic_matrix[:4],
+                            instance.extrinsic_matrix[4:8],
+                            instance.extrinsic_matrix[8:12],
+                        ],
+                    }
+                )
+
+            return RelatedImageMetadataSerializer(metadata).data
+
+        return FileMetadataSerializer({"name": instance.path}).data
+
+
 class FrameMetaSerializer(serializers.Serializer):
     width = serializers.IntegerField(required=False)
     height = serializers.IntegerField(required=False)
     name = serializers.CharField(max_length=MAX_FILENAME_LENGTH)
     related_files = serializers.IntegerField()
+    related_files_metadata = serializers.ListField(
+        child=RelatedFileMetadataField(),
+        required=False,
+        help_text='It is only included in job "meta" responses.',
+    )
 
     # for compatibility with version 2.3.0
     has_related_context = serializers.SerializerMethodField()
