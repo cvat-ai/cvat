@@ -36,6 +36,7 @@ from .utils import (
 
 # how many frames to check after seeking to validate key frame
 SEEK_MISMATCH_UPPER_BOUND = 200
+MANIFEST_INDEX_FILENAME = "index.json"
 
 
 class VideoStreamReader:
@@ -427,7 +428,7 @@ class _Manifest:
 # Needed for faster iteration over the manifest file, will be generated to work inside CVAT
 # and will not be generated when manually creating a manifest
 class _Index:
-    FILE_NAME = "index.json"
+    FILE_NAME = MANIFEST_INDEX_FILENAME
 
     def __init__(self, path: Path) -> None:
         assert path and path.is_dir(), "No index directory path"

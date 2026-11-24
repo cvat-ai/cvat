@@ -17,6 +17,10 @@ class UnsupportedDatasetError(cvat_sdk.core.exceptions.CvatSdkException):
     pass
 
 
+class UnreadableMediaError(cvat_sdk.core.exceptions.CvatSdkException):
+    """Indicates that media data of a task could not be read from its chunk"""
+
+
 @attrs.frozen
 class FrameAnnotations:
     """

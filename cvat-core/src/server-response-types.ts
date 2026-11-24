@@ -373,6 +373,22 @@ export interface SerializedChapter {
     metadata: SerializedChapterMetaData;
 }
 
+export interface SerializedFileMetadata {
+    name: string;
+    type: 'file';
+}
+
+export interface SerializedRelatedImageMetadata {
+    name: string;
+    type: 'related_image';
+    intrinsic_matrix?: number[][]; // 3x3 matrix: camera coordinates to pixel coordinates
+    extrinsic_matrix?: number[][]; // 3x4 matrix: LiDAR coordinates to camera coordinates
+}
+
+export type SerializedRelatedFileMetadata =
+    | SerializedFileMetadata
+    | SerializedRelatedImageMetadata;
+
 export interface SerializedFramesMetaData {
     chunk_size: number;
     chapters: SerializedChapter[] | null
@@ -385,6 +401,7 @@ export interface SerializedFramesMetaData {
         height?: number;
         name: string;
         related_files: number;
+        related_files_metadata?: SerializedRelatedFileMetadata[];
     }[];
     image_quality: number;
     size: number;

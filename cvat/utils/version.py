@@ -14,7 +14,7 @@ import subprocess
 from collections.abc import Sequence
 
 
-def get_version(version: Sequence[int], *, include_sub: bool = True) -> str:
+def get_version(version: Sequence[int]) -> str:
     """Return a PEP 440-compliant version number from VERSION."""
     # Now build the two parts of the version number:
     # main = X.Y.Z

@@ -10,11 +10,26 @@ import {
     CameraAction,
     ViewsDOM,
     CanvasMode,
+    cameraRayFromImagePoint,
+    CUBOID_EDGES,
+    CUBOID_FACES,
+    projectCuboid,
 } from 'cvat-canvas3d/src/typescript/canvas3d';
+import type { CameraCalibration, CameraRayData } from 'cvat-canvas3d/src/typescript/canvas3d';
 import { OrientationVisibility } from 'cvat-canvas3d/src/typescript/canvas3dModel';
 
 export {
-    Canvas3d, MouseInteraction, ViewType, CameraAction, CanvasMode,
+    cameraRayFromImagePoint,
+    CUBOID_EDGES,
+    CUBOID_FACES,
+    projectCuboid,
+    Canvas3d,
+    MouseInteraction,
+    ViewType,
+    CameraAction,
+    CanvasMode,
 };
 
-export type { ViewsDOM, OrientationVisibility };
+export type {
+    ViewsDOM, OrientationVisibility, CameraCalibration, CameraRayData,
+};

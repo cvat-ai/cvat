@@ -3,9 +3,16 @@
 //
 // SPDX-License-Identifier: MIT
 
+import type { Ray } from 'three';
+
 import { ObjectState } from '.';
 import { MasterImpl } from './master';
 import consts from './consts';
+
+export interface CameraRayData {
+    ray: Ray;
+    color: string;
+}
 
 export interface Size {
     width: number;
@@ -95,6 +102,7 @@ export enum UpdateReasons {
     MERGE = 'merge',
     SPLIT = 'split',
     FITTED_CANVAS = 'fitted_canvas',
+    CAMERA_RAY_CHANGED = 'camera_ray_changed',
     CONFIG_UPDATED = 'config_updated',
     DATA_FAILED = 'data_failed',
 }
@@ -124,6 +132,7 @@ export interface Canvas3dDataModel {
     groupData: GroupData;
     mergeData: MergeData;
     splitData: SplitData;
+    cameraRays: CameraRayData[];
     isFrameUpdating: boolean;
     nextSetupRequest: {
         frameData: any;
@@ -151,6 +160,7 @@ export interface Canvas3dModel {
     group(groupData: GroupData): void;
     split(splitData: SplitData): void;
     merge(mergeData: MergeData): void;
+    setCameraRays(cameraRays: CameraRayData[]): void;
     destroy(): void;
     updateCanvasObjects(): void;
     unlockFrameUpdating(): void;
@@ -193,6 +203,7 @@ export class Canvas3dModelImpl extends MasterImpl implements Canvas3dModel {
             splitData: {
                 enabled: false,
             },
+            cameraRays: [],
             configuration: {
                 colorBy: 'Label',
                 shapeOpacity: 40,
@@ -250,6 +261,7 @@ export class Canvas3dModelImpl extends MasterImpl implements Canvas3dModel {
 
         this.data.isFrameUpdating = true;
         this.data.imageID = frameData.number;
+        this.setCameraRays([]);
         frameData
             .data((): void => {
                 this.data.image = null;
@@ -289,6 +301,11 @@ export class Canvas3dModelImpl extends MasterImpl implements Canvas3dModel {
 
     public get objects(): ObjectState[] {
         return [...this.data.objects];
+    }
+
+    public setCameraRays(cameraRays: CameraRayData[]): void {
+        this.data.cameraRays = cameraRays;
+        this.notify(UpdateReasons.CAMERA_RAY_CHANGED);
     }
 
     public isAbleToChangeFrame(): boolean {
