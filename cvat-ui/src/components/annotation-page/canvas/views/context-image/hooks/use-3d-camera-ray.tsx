@@ -12,10 +12,8 @@ import {
     removeCameraRay,
     clearContextImageCameraRays,
 } from 'actions/annotation-actions';
-import { CombinedState } from 'reducers';
-import type { CameraRayPoint } from 'reducers';
+import { ActiveControl, CombinedState } from 'reducers';
 import { shallowEqual, ThunkDispatch } from 'utils/redux';
-import { isMacOS } from 'utils/platform-checker';
 import CameraRayMarker from '../camera-ray-marker';
 import { SVGObjectType } from '../context-image-svg-overlay';
 import type { SVGObject } from '../context-image-svg-overlay';
@@ -25,6 +23,7 @@ interface Params {
 }
 
 interface CameraRayInteraction {
+    isPickingCameraRay: boolean;
     objects: SVGObject[];
     onImageClick(point: [number, number], event: React.MouseEvent<SVGSVGElement>): void;
     onObjectClick(object: SVGObject, event: React.MouseEvent<SVGGElement>): void;
@@ -39,9 +38,10 @@ const cameraRayMarkerTooltip = (
 
 export default function useCameraRay({ contextImageName }: Params): CameraRayInteraction {
     const dispatch = useDispatch<ThunkDispatch>();
-    const cameraRays = useSelector((state: CombinedState): CameraRayPoint[] => (
-        state.annotation.canvas.cameraRays[state.annotation.player.frame.number] || []
-    ), shallowEqual);
+    const { cameraRays, isPickingCameraRay } = useSelector((state: CombinedState) => ({
+        cameraRays: state.annotation.canvas.cameraRays[state.annotation.player.frame.number] || [],
+        isPickingCameraRay: state.annotation.canvas.activeControl === ActiveControl.PICK_CAMERA_RAY,
+    }), shallowEqual);
     const objects = useMemo<SVGObject[]>(() => {
         if (!contextImageName) {
             return [];
@@ -69,9 +69,11 @@ export default function useCameraRay({ contextImageName }: Params): CameraRayInt
         point: [number, number],
         event: React.MouseEvent<SVGSVGElement>,
     ): void => {
-        if (!contextImageName || !(isMacOS() ? event.metaKey : event.ctrlKey)) {
+        if (!contextImageName || !isPickingCameraRay) {
             return;
         }
+
+        event.stopPropagation();
 
         if (!dispatch(addCameraRayFromContextImagePoint(contextImageName, point))) {
             notification.warning({
@@ -79,7 +81,7 @@ export default function useCameraRay({ contextImageName }: Params): CameraRayInt
                 description: 'A 3D camera ray cannot be calculated for this related image.',
             });
         }
-    }, [contextImageName, dispatch]);
+    }, [contextImageName, dispatch, isPickingCameraRay]);
 
     const onObjectClick = useCallback((object: SVGObject, event: React.MouseEvent<SVGGElement>): void => {
         if (object.type !== SVGObjectType.CAMERA_RAY) {
@@ -96,6 +98,7 @@ export default function useCameraRay({ contextImageName }: Params): CameraRayInt
     }, [contextImageName, dispatch]);
 
     return {
+        isPickingCameraRay,
         objects,
         onImageClick,
         onObjectClick,

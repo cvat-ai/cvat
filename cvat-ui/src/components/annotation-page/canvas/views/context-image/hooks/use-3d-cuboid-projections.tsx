@@ -13,7 +13,7 @@ import {
 import type { CameraCalibration, ProjectedPoint } from 'cvat-canvas3d-wrapper';
 import { ObjectState, ShapeType } from 'cvat-core-wrapper';
 import { getObjectStateColor } from 'components/annotation-page/standard-workspace/objects-side-bar/shared';
-import { CombinedState } from 'reducers';
+import { ActiveControl, CombinedState } from 'reducers';
 import getHiddenZLayers from 'utils/get-hidden-z-layers';
 import { shallowEqual, ThunkDispatch } from 'utils/redux';
 import { getRelatedImageMetadata } from 'utils/related-image-calibrations';
@@ -228,6 +228,7 @@ export default function useCuboidProjections({
         annotations,
         canvas,
         calibration,
+        isCursorActive,
         activatedStateID,
         colorBy,
         opacity,
@@ -242,6 +243,7 @@ export default function useCuboidProjections({
         return {
             annotations: state.annotation.annotations.states as ObjectState[],
             canvas: state.annotation.canvas.instance as Canvas3d | null,
+            isCursorActive: state.annotation.canvas.activeControl === ActiveControl.CURSOR,
             activatedStateID: state.annotation.annotations.activatedStateID,
             colorBy: shapes.colorBy,
             opacity: shapes.opacity / 100,
@@ -309,12 +311,12 @@ export default function useCuboidProjections({
     ]);
 
     const onObjectClick = useCallback((object: SVGObject, event: React.MouseEvent<SVGGElement>): void => {
-        if (object.type !== SVGObjectType.CUBOID_PROJECTION) {
+        if (object.type !== SVGObjectType.CUBOID_PROJECTION || !isCursorActive) {
             return;
         }
 
         event.stopPropagation();
-    }, []);
+    }, [isCursorActive]);
     const onObjectMouseEnter = useCallback((object: SVGObject): void => {
         if (
             object.type !== SVGObjectType.CUBOID_PROJECTION ||

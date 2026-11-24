@@ -24,6 +24,7 @@ function ContextImage3DOverlay({
     scale,
 }: ContextImageOverlayProps): JSX.Element {
     const {
+        isPickingCameraRay,
         objects: cameraRayObjects,
         onImageClick,
         onObjectClick: onCameraRayClick,
@@ -65,6 +66,7 @@ function ContextImage3DOverlay({
             imageSize={imageSize}
             scale={scale}
             objects={[...cuboidProjectionObjects, ...cameraRayObjects]}
+            className={isPickingCameraRay ? 'cvat-context-image-camera-ray-picking' : undefined}
             onBackgroundClick={onBackgroundClick}
             onObjectClick={onObjectClick}
             onObjectMouseEnter={onObjectMouseEnter}
