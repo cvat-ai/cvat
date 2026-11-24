@@ -432,8 +432,6 @@ def summary(growth_data: UserGrowthData) -> dict[str, Any]:
     result["announcements"], announcement_unavailable_sources = announcement_feed()
     unavailable_sources.update(announcement_unavailable_sources)
     result["unavailable_sources"] = sorted(unavailable_sources)
-    # A partial feed must not advance a shared watermark past missing content.
-    result["canAcknowledgeAnnouncements"] = not announcement_unavailable_sources
     result["releaseHistoryURL"] = _docs_url("release-notes/")
     result["announcementHistoryURL"] = _docs_url("announcements/")
     result["updatesHistoryURL"] = _docs_url("updates/")

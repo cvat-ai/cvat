@@ -141,7 +141,6 @@ class UpdatesApiTestCase(UpdatesApiTestBase):
         self.assertEqual(announcement["image_url"], self.announcement["imageURL"])
         self.assertEqual(announcement["video_url"], self.announcement["videoURL"])
         self.assertEqual(announcement["image_alt"], self.announcement["imageAlt"])
-        self.assertTrue(response.data["can_acknowledge_announcements"])
         for key, path in (
             ("release_history_url", "release-notes/"),
             ("announcement_history_url", "announcements/"),
@@ -261,7 +260,6 @@ class UpdatesApiTestCase(UpdatesApiTestBase):
         self.assertIsNone(response.data["latest_announced_release"])
         self.assertEqual(response.data["announcements"][0]["id"], "guide")
         self.assertEqual(response.data["unavailable_sources"], ["hugo"])
-        self.assertTrue(response.data["can_acknowledge_announcements"])
 
     def test_failures_of_both_hugo_feeds_report_the_source_once(self) -> None:
         self.documents["https://docs.example.com/release-notes/index.json"] = "invalid JSON"
@@ -272,7 +270,6 @@ class UpdatesApiTestCase(UpdatesApiTestBase):
         self.assertEqual(response.status_code, HTTPStatus.OK)
         self.assertEqual(response.data["unavailable_sources"], ["hugo"])
         self.assertNotIn("errors", response.data)
-        self.assertFalse(response.data["can_acknowledge_announcements"])
 
     @override_settings(
         CVAT_NEWS_ANNOUNCEMENT_PROVIDER="cvat.apps.growth.tests.test_updates.sample_provider"
@@ -287,7 +284,6 @@ class UpdatesApiTestCase(UpdatesApiTestBase):
         self.assertEqual(response.status_code, HTTPStatus.OK)
         self.assertEqual(response.data["unavailable_sources"], ["hugo"])
         self.assertEqual(response.data["announcements"][0]["source"], "external")
-        self.assertFalse(response.data["can_acknowledge_announcements"])
 
     @override_settings(
         CVAT_NEWS_ANNOUNCEMENT_PROVIDER="cvat.apps.growth.tests.test_updates.sample_provider"
@@ -301,7 +297,6 @@ class UpdatesApiTestCase(UpdatesApiTestBase):
 
         self.assertEqual(response.status_code, HTTPStatus.OK)
         self.assertEqual(response.data["unavailable_sources"], ["external", "hugo"])
-        self.assertFalse(response.data["can_acknowledge_announcements"])
 
     def test_deployment_can_supply_its_own_edition_identifier(self) -> None:
         custom_edition = "custom-edition"
@@ -332,7 +327,6 @@ class UpdatesApiTestCase(UpdatesApiTestBase):
 
         self.assertEqual(response.status_code, HTTPStatus.OK)
         self.assertIn("hugo", response.data["unavailable_sources"])
-        self.assertFalse(response.data["can_acknowledge_announcements"])
         self.assertEqual(
             datetime.fromisoformat(response.data["state"]["last_seen_announcements_date"]),
             self.initial_announcements_cutoff,
@@ -352,7 +346,6 @@ class UpdatesApiTestCase(UpdatesApiTestBase):
 
         self.assertEqual(response.status_code, HTTPStatus.OK)
         self.assertIn("hugo", response.data["unavailable_sources"])
-        self.assertFalse(response.data["can_acknowledge_announcements"])
         self.assertEqual(
             datetime.fromisoformat(response.data["state"]["last_seen_announcements_date"]),
             self.initial_announcements_cutoff,
@@ -395,7 +388,7 @@ class UpdatesApiTestCase(UpdatesApiTestBase):
         self.assertEqual(response.data["announcements"][0]["url"], source + "announcements/guide/")
 
     @override_settings(CVAT_NEWS_CACHE_TTL=0)
-    def test_stale_release_notes_report_hugo_without_blocking_announcement_acknowledgement(
+    def test_stale_release_notes_remain_available_and_report_hugo(
         self,
     ) -> None:
         initial = self.client.get("/api/whats-new/summary")
@@ -413,18 +406,17 @@ class UpdatesApiTestCase(UpdatesApiTestBase):
         self.assertEqual(response.status_code, HTTPStatus.OK)
         self.assertEqual(response.data["unavailable_sources"], ["hugo"])
         self.assertEqual(response.data["latest_release"], initial.data["latest_release"])
-        self.assertTrue(response.data["can_acknowledge_announcements"])
 
     @override_settings(CVAT_NEWS_CACHE_TTL=0)
-    def test_stale_announcements_disable_acknowledgement_in_the_summary(self) -> None:
+    def test_stale_announcements_remain_available_and_report_hugo(self) -> None:
         initial = self.client.get("/api/whats-new/summary")
-        self.assertTrue(initial.data["can_acknowledge_announcements"])
+        self.assertEqual(initial.status_code, HTTPStatus.OK)
         self.session.get.side_effect = requests.ConnectionError("Source is unavailable")
 
         stale = self.client.get("/api/whats-new/summary")
         self.assertEqual(stale.status_code, HTTPStatus.OK)
         self.assertEqual(stale.data["announcements"][0]["id"], "guide")
-        self.assertFalse(stale.data["can_acknowledge_announcements"])
+        self.assertEqual(stale.data["unavailable_sources"], ["hugo"])
         self.assertEqual(
             UserGrowthData.objects.get(user=self.user).last_seen_announcements_date,
             self.initial_announcements_cutoff,
@@ -434,7 +426,6 @@ class UpdatesApiTestCase(UpdatesApiTestBase):
         self,
     ) -> None:
         initial = self.client.get("/api/whats-new/summary")
-        self.assertTrue(initial.data["can_acknowledge_announcements"])
         self.session.get.reset_mock()
         self.session.get.side_effect = requests.ConnectionError("Source is unavailable")
 
@@ -629,4 +620,32 @@ class UpdatesApiTestCase(UpdatesApiTestBase):
         self.assertEqual(response.status_code, HTTPStatus.OK)
         self.assertEqual(response.data["unavailable_sources"], ["external"])
         self.assertEqual(response.data["announcements"][0]["id"], "guide")
-        self.assertFalse(response.data["can_acknowledge_announcements"])
+
+    @override_settings(
+        CVAT_NEWS_ANNOUNCEMENT_PROVIDER="cvat.apps.growth.tests.test_updates.sample_provider"
+    )
+    def test_displayed_announcements_can_be_acknowledged_when_another_source_is_unavailable(
+        self,
+    ) -> None:
+        with patch(__name__ + ".sample_provider", side_effect=UpdatesUnavailable()):
+            displayed = self.client.get("/api/whats-new/summary")
+            self.assertEqual(displayed.status_code, HTTPStatus.OK)
+            self.assertEqual(displayed.data["unavailable_sources"], ["external"])
+            timestamp = displayed.data["announcements"][0]["published_at"]
+
+            acknowledged = self.client.post(
+                "/api/whats-new/acknowledge",
+                {"announcements_seen_at": timestamp},
+                format="json",
+            )
+            reloaded = self.client.get("/api/whats-new/summary")
+
+        self.assertEqual(acknowledged.status_code, HTTPStatus.OK)
+        self.assertEqual(reloaded.status_code, HTTPStatus.OK)
+        self.assertEqual(reloaded.data["unavailable_sources"], ["external"])
+        self.assertNotIn("can_acknowledge_announcements", reloaded.data)
+        self.assertEqual(
+            datetime.fromisoformat(reloaded.data["state"]["last_seen_announcements_date"]),
+            datetime.fromisoformat(timestamp),
+        )
+        self.assertEqual(reloaded.data["announcements"], displayed.data["announcements"])

@@ -14223,8 +14223,6 @@ components:
           type: array
           items:
             $ref: '#/components/schemas/AnnouncementPreview'
-        can_acknowledge_announcements:
-          type: boolean
         unavailable_sources:
           type: array
           items:
@@ -14243,7 +14241,6 @@ components:
       required:
       - announcement_history_url
       - announcements
-      - can_acknowledge_announcements
       - edition
       - latest_announced_release
       - latest_release

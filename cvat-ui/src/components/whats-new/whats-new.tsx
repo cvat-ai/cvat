@@ -92,7 +92,6 @@ export default function WhatsNew(props: Props): JSX.Element {
     );
     const ready = !!updates && !loading && !loadError;
     const hasContent = !!selectedRelease || announcements.length > 0;
-    const canAcknowledgeAnnouncements = updates?.canAcknowledgeAnnouncements || false;
     const newAnnouncementKeys = useMemo(() => new Set(unseenAnnouncements(
         announcements, openingSeen?.lastSeenAnnouncementsDate || null,
     ).map(announcementKey)), [announcements, openingSeen]);
@@ -180,7 +179,8 @@ export default function WhatsNew(props: Props): JSX.Element {
         if (selectedRelease && isNewVersion(selectedRelease.version, seen?.lastSeenReleaseNotesVersion || '')) {
             values.releaseVersion = selectedRelease.version;
         }
-        if (announcementsDate && unreadAnnouncements && canAcknowledgeAnnouncements) {
+        // Acknowledge displayed posts even when another source is unavailable.
+        if (announcementsDate && unreadAnnouncements) {
             values.announcementsSeenAt = announcementsDate;
         }
         if (!Object.keys(values).length) return undefined;
@@ -198,7 +198,7 @@ export default function WhatsNew(props: Props): JSX.Element {
         return () => controller.abort();
     }, [
         open, ready, openingSeen, selectedRelease, announcementsDate,
-        unreadAnnouncements, canAcknowledgeAnnouncements, seen, ackRetry,
+        unreadAnnouncements, seen, ackRetry,
     ]);
 
     const close = (): void => {
@@ -289,8 +289,6 @@ export default function WhatsNew(props: Props): JSX.Element {
                                     type='warning'
                                     showIcon
                                     message='Some updates are temporarily unavailable'
-                                    description={!canAcknowledgeAnnouncements ?
-                                        'Updates may appear again. Retry loading to save seen status.' : undefined}
                                     action={(
                                         <Button onClick={() => setRetry((value) => value + 1)}>Retry loading</Button>
                                     )}

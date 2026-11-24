@@ -145,7 +145,6 @@ class UpdatesSummarySerializer(serializers.Serializer):
     latest_release = ReleaseNoteSerializer(allow_null=True)
     latest_announced_release = ReleaseNoteSerializer(allow_null=True)
     announcements = AnnouncementPreviewSerializer(many=True)
-    can_acknowledge_announcements = serializers.BooleanField(source="canAcknowledgeAnnouncements")
     unavailable_sources = serializers.ListField(
         child=serializers.ChoiceField(choices=AnnouncementSource),
         help_text="Sources that could not be refreshed; their content may be missing or stale.",

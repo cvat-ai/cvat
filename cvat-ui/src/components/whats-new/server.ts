@@ -28,14 +28,13 @@ interface SerializedAnnouncement extends Omit<Announcement, 'publishedAt' | 'ima
 }
 
 interface SerializedUpdates extends Omit<Updates,
-    'state' | 'latestRelease' | 'latestAnnouncedRelease' | 'announcements' | 'canAcknowledgeAnnouncements' |
+    'state' | 'latestRelease' | 'latestAnnouncedRelease' | 'announcements' |
     'releaseHistoryURL' | 'announcementHistoryURL' | 'updatesHistoryURL' | 'unavailableSources'
 > {
     state: SerializedSeenState;
     latest_release: SerializedReleaseNote | null;
     latest_announced_release: SerializedReleaseNote | null;
     announcements: SerializedAnnouncement[];
-    can_acknowledge_announcements: boolean;
     unavailable_sources: Announcement['source'][];
     release_history_url: string;
     announcement_history_url: string;
@@ -88,7 +87,6 @@ export async function fetchUpdates(signal: AbortSignal): Promise<Updates> {
         latestRelease: deserializeRelease(summary.latest_release),
         latestAnnouncedRelease: deserializeRelease(summary.latest_announced_release),
         announcements: summary.announcements.map(deserializeAnnouncement),
-        canAcknowledgeAnnouncements: summary.can_acknowledge_announcements,
         unavailableSources: summary.unavailable_sources,
         releaseHistoryURL: summary.release_history_url,
         announcementHistoryURL: summary.announcement_history_url,

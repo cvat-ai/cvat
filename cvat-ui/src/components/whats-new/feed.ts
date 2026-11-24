@@ -74,7 +74,6 @@ export interface Updates {
     latestRelease: ReleaseNote | null;
     latestAnnouncedRelease: ReleaseNote | null;
     announcements: Announcement[];
-    canAcknowledgeAnnouncements: boolean;
     state: SeenState;
     unavailableSources: Announcement['source'][];
     releaseHistoryURL: string;
