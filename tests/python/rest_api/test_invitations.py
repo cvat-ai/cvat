@@ -159,3 +159,19 @@ class TestGetInvitations:
 
         source_inv["owner"] = None
         assert DeepDiff(source_inv, fetched_inv, ignore_order=True) == {}
+
+
+@pytest.mark.usefixtures("restore_db_per_function")
+class TestDeclineInvitations:
+    def test_invitee_cannot_decline_accepted_invitation(self, memberships):
+        membership = next(
+            m for m in memberships if m["is_active"] and m["invitation"] and m["user"]
+        )
+        invitee = membership["user"]["username"]
+
+        response = post_method(invitee, f"invitations/{membership['invitation']}/decline", None)
+
+        assert response.status_code == HTTPStatus.BAD_REQUEST, response.content
+        with make_api_client("admin1") as api_client:
+            fetched_membership, _ = api_client.memberships_api.retrieve(membership["id"])
+        assert fetched_membership.is_active

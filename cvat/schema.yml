@@ -2078,6 +2078,8 @@ paths:
       responses:
         '204':
           description: The invitation has been declined
+        '400':
+          description: The invitation is already accepted
   /api/invitations/{key}/resend:
     post:
       operationId: invitations_resend
