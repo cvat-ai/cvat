@@ -16,6 +16,81 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 <!-- scriv-insert-here -->
 
+<a id='changelog-2.84.0'></a>
+## \[2.84.0\] - 2026-11-24
+
+### Added
+
+- An option to upload camera calibration data for related images of 3D point clouds at
+  task creation. A custom CVAT format and Supervisely JSON sidecars are supported.
+  (<https://github.com/cvat-ai/cvat/pull/11428>)
+- Camera ray visualization in the 3D annotation workspace, enabling users to create
+  a ray by selecting a point in a calibrated related image
+  (<https://github.com/cvat-ai/cvat/pull/11428>)
+
+- Built-in model previews, consistent resource-card layouts and ID overlays, local model search, sorting and
+  filtering, and a model details dialog
+  (<https://github.com/cvat-ai/cvat/pull/11458>)
+
+- Open project and job cards in a new browser tab with the middle mouse button
+  (<https://github.com/cvat-ai/cvat/pull/11458>)
+
+- Project cuboid annotations from a 3D point cloud onto calibrated related 2D images.
+  (<https://github.com/cvat-ai/cvat/pull/11498>)
+
+### Changed
+
+- \[SDK\] The minimum required urllib3 version is now 2.3.0
+  (<https://github.com/cvat-ai/cvat/pull/11495>)
+
+- Updated the illustration in the GitHub star prompt.
+  (<https://github.com/cvat-ai/cvat/pull/11494>)
+
+- \[Compose, Helm\] The default Redis version is updated to 7.2.17
+  (<https://github.com/cvat-ai/cvat/pull/11514>)
+
+### Fixed
+
+- Leaving a job without saving now warns about unsaved deleted/restored frames,
+  not only unsaved annotations
+  (<https://github.com/cvat-ai/cvat/pull/11334>)
+
+- Task creation uses only the currently selected data source when files are selected in multiple tabs
+  (<https://github.com/cvat-ai/cvat/pull/11351>)
+
+- The YOLOv7 ONNX serverless function no longer returns inverted rectangles for
+  detections that fall outside the image
+  (<https://github.com/cvat-ai/cvat/pull/11374>)
+
+- Import of a 3d project with related images ending with an exception
+  (<https://github.com/cvat-ai/cvat/pull/11428>)
+- Missing related images if 3d task is created from a cloud storage by manifest
+  (<https://github.com/cvat-ai/cvat/pull/11428>)
+- Backup-restore 3d task originally created from an archive created on MacOS
+  ending with an exception
+  (<https://github.com/cvat-ai/cvat/pull/11428>)
+
+- Model preview dragging and stale model selections
+  (<https://github.com/cvat-ai/cvat/pull/11458>)
+
+- Model action-menu visibility and bulk selection excluding non-actionable system models
+  (<https://github.com/cvat-ai/cvat/pull/11458>)
+
+- Inconsistent project card preview heights when the project owner is missing
+  (<https://github.com/cvat-ai/cvat/pull/11458>)
+
+- Slow quality report list requests with many quality reports in the database
+  (<https://github.com/cvat-ai/cvat/pull/11490>)
+
+- Restored dragging the selection bounding box while the Select objects tool is active.
+  (<https://github.com/cvat-ai/cvat/pull/11491>)
+
+- \[CLI\] Fixed a possible hang during agent shutdown
+  (<https://github.com/cvat-ai/cvat/pull/11495>)
+
+- Reduced delays when drawing and editing polygons with many vertices.
+  (<https://github.com/cvat-ai/cvat/pull/11497>)
+
 <a id='changelog-2.83.0'></a>
 ## \[2.83.0\] - 2026-11-12
 
