@@ -9,8 +9,8 @@ import {
 } from 'cvat-canvas-wrapper';
 import { OrientationVisibility } from 'cvat-canvas3d-wrapper';
 import {
-    Webhook, MLModel, Organization, Job, Task, Project, Label, User,
-    QualityConflict, QualityConflictRequirement, FramesMetaData, RQStatus, Event, Invitation, SerializedAPISchema,
+    Webhook, MLModel, Organization, Job, Task, Project, Label, User, QualityConflict,
+    QualityConflictRequirement, FramesMetaData, FrameData, RQStatus, Event, Invitation, SerializedAPISchema,
     Request, JobValidationLayout, QualitySettings, TaskValidationLayout, ObjectState,
     ConsensusSettings, AboutData, ShapeType, ObjectType, ApiToken, AudioIntervalState,
     Membership, AnnotationFormats, CloudStorage, UserGrowthData,
@@ -493,11 +493,6 @@ export interface PluginsState {
                 menu: {
                     items: PluginComponent[];
                 };
-                topBar:{
-                    menu: {
-                        items: PluginComponent[];
-                    };
-                };
             };
         };
         projectActions: {
@@ -508,12 +503,6 @@ export interface PluginsState {
         };
         jobActions: {
             items: PluginComponent[];
-        };
-        taskItem: {
-            ribbon: PluginComponent[];
-        };
-        projectItem: {
-            ribbon: PluginComponent[];
         };
         settings: {
             player: PluginComponent[];
@@ -868,6 +857,13 @@ export enum ActiveControl {
     AUDIO_REGION_RECORD = 'audio_region_record',
 }
 
+export interface CameraRayPoint {
+    id: string;
+    relatedImageName: string;
+    pixel: [number, number];
+    color: string;
+}
+
 export enum StatesOrdering {
     ID_DESCENT = 'ID - descent',
     ID_ASCENT = 'ID - ascent',
@@ -906,6 +902,8 @@ export interface AnnotationState {
         };
     };
     canvas: {
+        // Currently, contains individual 2D/3D state,
+        // need refactor later with cleaner separation
         contextMenu: {
             visible: boolean;
             top: number;
@@ -929,6 +927,8 @@ export interface AnnotationState {
         ready: boolean;
         activeControl: ActiveControl;
         activeObjectHidden: boolean;
+        // 3D only
+        cameraRays: Record<number, CameraRayPoint[]>;
     };
     job: {
         openTime: null | number;
@@ -957,7 +957,7 @@ export interface AnnotationState {
             number: number;
             filename: string;
             relatedFiles: number;
-            data: any | null;
+            data: FrameData | null;
             fetching: boolean;
             delay: number;
             changeTime: number | null;

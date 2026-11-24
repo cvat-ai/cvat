@@ -21,6 +21,10 @@ env:
 jobs:
   search_cache:
     if: |
+      (
+        vars.SKIP_DEPENDABOT_CI != 'true' ||
+        github.event.pull_request.user.login != 'dependabot[bot]'
+      ) &&
       github.event.pull_request.draft == false &&
       !startsWith(github.event.pull_request.title, '[WIP]') &&
       !startsWith(github.event.pull_request.title, '[Dependent]')
@@ -249,7 +253,7 @@ jobs:
         if: always()
         uses: actions/upload-artifact@cf430e030ddbb5b0abf93d22962f4752f3646cd9 # v7.0.2
         with:
-          name: "allure-results-tests-api-${{ matrix.pattern }}"
+          name: "allure-results-rest-api-docker-${{ matrix.pattern }}"
           path: tests/python/allure-results
 
   unit_testing:
@@ -449,7 +453,7 @@ jobs:
         if: always()
         uses: actions/upload-artifact@cf430e030ddbb5b0abf93d22962f4752f3646cd9 # v7.0.2
         with:
-          name: allure-results-e2e-${{ matrix.specs }}
+          name: allure-results-e2e-docker-${{ matrix.specs }}
           path: tests/allure-results-e2e
 
   helm_rest_api_testing:
@@ -463,7 +467,7 @@ jobs:
       - uses: actions/setup-python@6d4fd22b20465ccc0f7354476588e8df7c9ca0e0 # v7.1.0
         with:
           # Use the latest stable Python release.
-          python-version: '3.14'
+          python-version: '3.15'
 
       - name: Start minikube
         uses: medyagh/setup-minikube@e9e035a86bbc3caea26a450bd4dbf9d0c453682e # v0.0.21
@@ -493,7 +497,7 @@ jobs:
           docker load --input /tmp/cvat_ui/image.tar
           docker image ls -a
 
-      - uses: azure/setup-helm@9bc31f4ebc9c6b171d7bfbaa5d006ae7abdb4310 # v5.0.1
+      - uses: azure/setup-helm@2f5e7bc67f1f9972ab16657bb795f36d8f04de0e # v5.1.0
 
       - name: Update Helm chart dependencies
         working-directory: helm-chart
@@ -539,7 +543,14 @@ jobs:
         run: |
           kubectl cp tests/mounted_file_share $(kubectl get pods -l component=server -o jsonpath='{.items[0].metadata.name}'):/home/django/share/
           kubectl exec $(kubectl get pods -l component=server -o jsonpath='{.items[0].metadata.name}') -- bash -c "mv /home/django/share/mounted_file_share/* /home/django/share/ && rm -r /home/django/share/mounted_file_share"
-          pytest --timeout 30 --platform=kube -m "not with_external_services" tests/python --log-level INFO
+          pytest --timeout 30 --platform=kube -m "not with_external_services" tests/python --log-level INFO --alluredir=tests/python/allure-results
+
+      - name: Upload Allure results as an artifact
+        if: always()
+        uses: actions/upload-artifact@cf430e030ddbb5b0abf93d22962f4752f3646cd9 # v7.0.2
+        with:
+          name: allure-results-rest-api-helm
+          path: tests/python/allure-results
 
       - name: Creating a log file from "cvat" container logs
         if: failure()
@@ -587,7 +598,7 @@ jobs:
           docker load --input /tmp/cvat_ui/image.tar
 
       - name: Login to Docker Hub
-        uses: docker/login-action@81c6f93d4bc991e510b342a00b419b3bb4efc5c6 # v4.7.0
+        uses: docker/login-action@8aa5831fb8d48d8f76594c7ddde61ae58019f550 # v4.8.0
         with:
           username: ${{ secrets.DOCKERHUB_USERNAME }}
           password: ${{ secrets.DOCKERHUB_TOKEN }}
@@ -629,7 +640,7 @@ jobs:
           token: ${{ secrets.CODECOV_TOKEN }}
 
   upload_testops_results:
-    needs: [rest_api_testing, e2e_testing]
+    needs: [rest_api_testing, e2e_testing, helm_rest_api_testing]
     if: |
       !cancelled() &&
       github.event_name == 'push' &&

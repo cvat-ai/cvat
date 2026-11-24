@@ -67,12 +67,20 @@ class ORIENTATION(IntEnum):
     NORMAL_270_ROTATED = 8
 
 
-def get_mime(name):
-    for type_name, type_def in MEDIA_TYPES.items():
+def _get_file_type(name, type_definitions):
+    for type_name, type_def in type_definitions.items():
         if type_def["has_mime_type"](name):
             return type_name
 
     return "unknown"
+
+
+def get_mime(name):
+    return _get_file_type(name, MEDIA_TYPES)
+
+
+def get_metadata_type(name):
+    return _get_file_type(name, METADATA_TYPES)
 
 
 def create_tmp_dir():
@@ -84,11 +92,9 @@ def delete_tmp_dir(tmp_dir):
         shutil.rmtree(tmp_dir)
 
 
-def files_to_ignore(directory):
+def should_ignore_path(path):
     ignore_files = ("__MSOSX", "._.DS_Store", "__MACOSX", ".DS_Store")
-    if not any(ignore_file in directory for ignore_file in ignore_files):
-        return True
-    return False
+    return any(ignore_file in path for ignore_file in ignore_files)
 
 
 def sort(
@@ -511,7 +517,9 @@ class ZipReader(ImageListReader):
         self._zip_source = zipfile.ZipFile(zip_path, mode="r")
         self.extract_dir = extract_dir
         file_list = [
-            f for f in self._zip_source.namelist() if files_to_ignore(f) and get_mime(f) == "image"
+            f
+            for f in self._zip_source.namelist()
+            if not should_ignore_path(f) and get_mime(f) == "image"
         ]
         super().__init__(
             file_list,
@@ -1519,6 +1527,11 @@ def _is_zip(path):
     return mime_type in supportedArchives or encoding in supportedArchives
 
 
+def _is_json(path):
+    mime = mimetypes.guess_type(path)
+    return mime[0] == "application/json"
+
+
 # 'has_mime_type': function receives 1 argument - path to file.
 #                  Should return True if file has specified media type.
 # 'extractor': class that extracts images from specified media.
@@ -1569,6 +1582,13 @@ MEDIA_TYPES = {
         "extractor": ZipReader,
         "mode": TaskMode.ANNOTATION,
         "unique": True,
+    },
+}
+
+
+METADATA_TYPES = {
+    "json": {
+        "has_mime_type": _is_json,
     },
 }
 
@@ -1624,7 +1644,7 @@ class ValidateDimension:
 
         root = path
         for dirpath, _, filenames in os.walk(root):
-            if not files_to_ignore(dirpath):
+            if should_ignore_path(dirpath):
                 continue
 
             self._process_files(dirpath, root, filenames)

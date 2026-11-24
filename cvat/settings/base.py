@@ -28,7 +28,7 @@ from corsheaders.defaults import default_headers
 from django.core.exceptions import ImproperlyConfigured
 from logstash_async.constants import constants as logstash_async_constants
 
-from cvat import __version__
+from cvat import API_VERSION
 from cvat.apps.iam.password_validation import DEFAULT_MIN_PASSWORD_LENGTH
 
 # Build paths inside the project like this: BASE_DIR / ...
@@ -699,7 +699,7 @@ SPECTACULAR_SETTINGS = {
     # Statically set schema version. May also be an empty string. When used together with
     # view versioning, will become '0.0.0 (v2)' for 'v2' versioned requests.
     # Set VERSION to None if only the request version should be rendered.
-    "VERSION": __version__,
+    "VERSION": API_VERSION,
     "CONTACT": {
         "name": "CVAT.ai team",
         "url": "https://github.com/cvat-ai/cvat",

@@ -46,4 +46,40 @@ jobs:
             exit 0
           fi
 
-          allurectl upload allure-results
+          # Preserve artifact directories and attachments when grouping by deployment.
+          for artifact in allure-results/*/; do
+            [[ -d "$artifact" ]] || continue
+            artifact=${artifact%/}
+            case "${artifact##*/}" in
+              allure-results-rest-api-docker|allure-results-rest-api-docker-*|allure-results-e2e-docker-*|allure-results-e2e-base-*) deployment=docker ;;
+              allure-results-rest-api-helm|allure-results-e2e-helm) deployment=kubernetes ;;
+              *)
+                echo "::error::Unknown Allure artifact: ${artifact##*/}. Add its deployment mapping before uploading."
+                exit 1
+                ;;
+            esac
+            mkdir -p "allure-upload/$deployment"
+            mv "$artifact" "allure-upload/$deployment/"
+          done
+
+          ALLURE_LAUNCH_ID=$(allurectl launch create --format ID --no-header)
+          if [[ ! "$ALLURE_LAUNCH_ID" =~ ^[0-9]+$ ]]; then
+            echo "::error::TestOps did not return a numeric launch ID."
+            exit 1
+          fi
+          upload_status=0
+          for deployment in docker kubernetes; do
+            results="allure-upload/$deployment"
+            if [[ ! -d "$results" ]] || [[ -z "$(find "$results" -type f -name '*-result.json' -print -quit)" ]]; then
+              echo "::notice::Skipping $deployment upload: no Allure test results were produced."
+              continue
+            fi
+
+            # Separate job runs capture each deployment's environment in the shared launch.
+            env -u ALLURE_JOB_RUN_ID TEST_DEPLOYMENT="$deployment" allurectl upload "$results" \
+              --launch-id "$ALLURE_LAUNCH_ID" \
+              --job-uid "$GITHUB_REPOSITORY/$GITHUB_WORKFLOW/$GITHUB_JOB/$deployment" \
+              --job-run-uid "$GITHUB_RUN_ID/$GITHUB_RUN_ATTEMPT/$GITHUB_JOB/$deployment" || upload_status=1
+          done
+          echo "TestOps launch: $ALLURE_LAUNCH_ID" >> "$GITHUB_STEP_SUMMARY"
+          exit "$upload_status"

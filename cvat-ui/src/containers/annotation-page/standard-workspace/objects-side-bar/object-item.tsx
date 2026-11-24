@@ -36,6 +36,7 @@ import { Canvas3d } from 'cvat-canvas3d-wrapper';
 import { filterApplicableLabels } from 'utils/filter-applicable-labels';
 import { toClipboard } from 'utils/to-clipboard';
 import changeObjectOrientation, { type OrientationAngle } from 'utils/change-object-orientation';
+import { focusObject } from 'utils/annotation';
 import { getObjectStateByClientID } from 'utils/objects-sidebar';
 
 interface OwnProps {
@@ -422,14 +423,7 @@ class ObjectItemContainer extends React.PureComponent<Props, State> {
             objectState, canvasInstance, focusedObjectPadding, expandObject,
         } = this.props;
 
-        if (objectState.objectType !== ObjectType.TAG) {
-            if (canvasInstance instanceof Canvas) {
-                canvasInstance.focus(objectState.clientID as number, focusedObjectPadding);
-            } else if (canvasInstance instanceof Canvas3d) {
-                canvasInstance.focus(objectState.clientID as number);
-            }
-        }
-
+        focusObject(objectState, canvasInstance, focusedObjectPadding);
         expandObject(objectState);
     };
 

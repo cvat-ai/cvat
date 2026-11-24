@@ -99,11 +99,6 @@ polyline.cvat_shape_drawing_opacity {
     cursor: move;
 }
 
-.cvat_canvas_selecting_objects .cvat_canvas_selected_objects_box {
-    // Let canvas clicks and box selections pass through; the header still moves the selection.
-    pointer-events: none;
-}
-
 .cvat_canvas_bitmap_enabled .cvat_canvas_selection_overlay {
     display: block;
 }

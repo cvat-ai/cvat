@@ -16,6 +16,7 @@ Use the 3D Annotation tool for labeling 3D objects and scenes, such as vehicles,
 Check out:
 
 - [Navigation](#navigation)
+- [Camera ray](#camera-ray)
 - [Annotation with cuboids](#annotation-with-cuboids)
   - [Annotation with shapes](#annotation-with-shapes)
   - [Tracking with cuboids](#tracking-with-cuboids)
@@ -47,6 +48,23 @@ You can also use keyboard shortcuts to navigate:
 | Left/Right      | **Alt**+**J**/ **Alt**+**L**                  |
 | Up/down         | **Al**t+**U**/ **Alt**+**O**                  |
 | Zoom in/ou      | **Alt**+**K**/ **Alt**+**I**                  |
+
+## Camera ray
+
+![Camera rays](/images/3d_object_annotation_01.webp)
+
+For a 3D task with calibrated contextual images, click a point in a calibrated image to create a
+camera ray. CVAT marks the selected point in the image and displays the corresponding ray in the
+3D canvas. You can add rays from multiple calibrated images for the current frame.
+
+To remove a ray, click its marker in the contextual image. Shift+click a marker to remove all rays
+created from that image, or select **Remove all rays** in the 3D canvas to remove all rays for the
+current frame. If an image has no calibration data, CVAT cannot create a camera ray and displays a
+warning when you click it.
+
+Camera rays persist for the current frame when you move to another frame and are restored when you
+return to it. All camera rays are cleared when you leave the annotation workspace or refresh the
+page.
 
 ## Annotation with cuboids
 
