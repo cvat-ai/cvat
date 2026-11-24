@@ -15,6 +15,7 @@ import {
 import { CombinedState } from 'reducers';
 import type { CameraRayPoint } from 'reducers';
 import { shallowEqual, ThunkDispatch } from 'utils/redux';
+import { isMacOS } from 'utils/platform-checker';
 import CameraRayMarker from '../camera-ray-marker';
 import { SVGObjectType } from '../context-image-svg-overlay';
 import type { SVGObject } from '../context-image-svg-overlay';
@@ -25,7 +26,7 @@ interface Params {
 
 interface CameraRayInteraction {
     objects: SVGObject[];
-    onImageClick(point: [number, number]): void;
+    onImageClick(point: [number, number], event: React.MouseEvent<SVGSVGElement>): void;
     onObjectClick(object: SVGObject, event: React.MouseEvent<SVGGElement>): void;
 }
 
@@ -64,8 +65,11 @@ export default function useCameraRay({ contextImageName }: Params): CameraRayInt
         }));
     }, [cameraRays, contextImageName]);
 
-    const onImageClick = useCallback((point: [number, number]): void => {
-        if (!contextImageName) {
+    const onImageClick = useCallback((
+        point: [number, number],
+        event: React.MouseEvent<SVGSVGElement>,
+    ): void => {
+        if (!contextImageName || !(isMacOS() ? event.metaKey : event.ctrlKey)) {
             return;
         }
 

@@ -14,6 +14,7 @@ context('Canvas 3D functionality. Camera ray.', () => {
     const contextImageTitle = '.cvat-context-image-title';
     const cameraRayMarker = '.cvat-context-image-camera-ray-marker';
     const clearCameraRaysButton = '.cvat-canvas3d-perspective-tools-group button';
+    const platformModifier = Cypress.platform === 'darwin' ? { metaKey: true } : { ctrlKey: true };
 
     function getContextImage(index) {
         return cy.get(contextImage).eq(index);
@@ -26,7 +27,7 @@ context('Canvas 3D functionality. Camera ray.', () => {
     function addCameraRay(contextImageIndex, x, y) {
         getContextImage(contextImageIndex).find(contextImageOverlay).then(($overlay) => {
             const { width, height } = $overlay[0].getBoundingClientRect();
-            cy.wrap($overlay).click(Math.round(width * x), Math.round(height * y));
+            cy.wrap($overlay).click(Math.round(width * x), Math.round(height * y), platformModifier);
         });
     }
 

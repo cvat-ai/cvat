@@ -23,7 +23,6 @@ function ContextImage3DOverlay({
     contextImageName,
     scale,
 }: ContextImageOverlayProps): JSX.Element {
-    const dispatch = useDispatch<ThunkDispatch>();
     const {
         objects: cameraRayObjects,
         onImageClick,
@@ -34,12 +33,14 @@ function ContextImage3DOverlay({
         onObjectClick: onCuboidProjectionClick,
         onObjectMouseEnter: onCuboidProjectionMouseEnter,
         onObjectDoubleClick: onCuboidProjectionDoubleClick,
-    } = use3dCuboidProjections({ contextImageName });
+    } = use3dCuboidProjections({ contextImageName, imageSize });
 
-    const onBackgroundClick = useCallback((point: [number, number]): void => {
-        dispatch(activateObject(null, null, null));
-        onImageClick(point);
-    }, [dispatch, onImageClick]);
+    const onBackgroundClick = useCallback((
+        point: [number, number],
+        event: React.MouseEvent<SVGSVGElement>,
+    ): void => {
+        onImageClick(point, event);
+    }, [onImageClick]);
     const onObjectClick = useCallback((object: SVGObject, event: React.MouseEvent<SVGGElement>): void => {
         switch (object.type) {
             case SVGObjectType.CAMERA_RAY:
@@ -73,7 +74,18 @@ function ContextImage3DOverlay({
 }
 
 function ContextImage3D({ offset }: Props): JSX.Element {
-    return <ContextImage offset={offset} Overlay={ContextImage3DOverlay} />;
+    const dispatch = useDispatch<ThunkDispatch>();
+    const onBackgroundClick = useCallback((): void => {
+        dispatch(activateObject(null, null, null));
+    }, [dispatch]);
+
+    return (
+        <ContextImage
+            offset={offset}
+            Overlay={ContextImage3DOverlay}
+            onClick={onBackgroundClick}
+        />
+    );
 }
 
 export default React.memo(ContextImage3D);
