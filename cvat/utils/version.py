@@ -24,15 +24,14 @@ def get_version(version: Sequence[int]) -> str:
     main = get_main_version(version)
 
     sub = ""
-    if include_sub:
-        if version[3] == "alpha" and version[4] == 0:
-            git_changeset = get_git_changeset()
-            if git_changeset:
-                sub = ".dev%s" % git_changeset
+    if version[3] == "alpha" and version[4] == 0:
+        git_changeset = get_git_changeset()
+        if git_changeset:
+            sub = ".dev%s" % git_changeset
 
-        elif version[3] != "final":
-            mapping = {"alpha": "a", "beta": "b", "rc": "rc"}
-            sub = mapping[version[3]] + str(version[4])
+    elif version[3] != "final":
+        mapping = {"alpha": "a", "beta": "b", "rc": "rc"}
+        sub = mapping[version[3]] + str(version[4])
 
     return main + sub
 
