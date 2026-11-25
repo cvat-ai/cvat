@@ -7,6 +7,7 @@ from enum import StrEnum
 
 from django.conf import settings
 
+from cvat.apps.engine.permissions import UserPermission
 from cvat.apps.iam.permissions import OpenPolicyAgentPermission
 
 from .models import Membership
@@ -18,14 +19,25 @@ class OrganizationPermission(OpenPolicyAgentPermission):
         CREATE = "create"
         DELETE = "delete"
         UPDATE = "update"
+        UPDATE_OWNER = "update:owner"
         VIEW = "view"
 
     @classmethod
     def create(cls, request, view, obj, iam_context):
         permissions = []
+        owner_id = request.data.get("owner_id")
+
         for scope in cls.get_scopes(request, view, obj):
-            self = cls.create_base_perm(request, view, scope, iam_context, obj)
+            params = {}
+            if scope == cls.Scopes.UPDATE_OWNER:
+                params["owner_id"] = owner_id
+
+            self = cls.create_base_perm(request, view, scope, iam_context, obj, **params)
             permissions.append(self)
+
+        if owner_id:
+            perm = UserPermission.create_scope_view(iam_context, owner_id)
+            permissions.append(perm)
 
         return permissions
 
@@ -36,15 +48,32 @@ class OrganizationPermission(OpenPolicyAgentPermission):
     @classmethod
     def _get_scopes(cls, request, view, obj):
         Scopes = cls.Scopes
-        return [
-            {
-                "list": Scopes.LIST,
-                "create": Scopes.CREATE,
-                "destroy": Scopes.DELETE,
-                "partial_update": Scopes.UPDATE,
-                "retrieve": Scopes.VIEW,
-            }[view.action]
-        ]
+        scope = {
+            "list": Scopes.LIST,
+            "create": Scopes.CREATE,
+            "destroy": Scopes.DELETE,
+            "partial_update": Scopes.UPDATE,
+            "retrieve": Scopes.VIEW,
+        }[view.action]
+
+        scopes = []
+        if scope == Scopes.UPDATE:
+            scopes.extend(
+                cls.get_per_field_update_scopes(
+                    request,
+                    {
+                        "slug": Scopes.UPDATE,
+                        "name": Scopes.UPDATE,
+                        "description": Scopes.UPDATE,
+                        "contact": Scopes.UPDATE,
+                        "owner_id": Scopes.UPDATE_OWNER,
+                    },
+                )
+            )
+        else:
+            scopes.append(scope)
+
+        return scopes
 
     def get_resource(self):
         if self.obj:

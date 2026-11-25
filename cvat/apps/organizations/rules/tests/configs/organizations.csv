@@ -5,5 +5,7 @@ view,Organization,N/A,"Worker, Supervisor, Maintainer, Owner",,GET,/organization
 view,Organization,N/A,None,,GET,/organizations/{id},Admin,N/A
 update,Organization,N/A,"Owner, Maintainer",,PATCH,/organizations/{id},Worker,N/A
 update,Organization,N/A,"None, Worker, Supervisor",,PATCH,/organizations/{id},Admin,N/A
+update:owner,Organization,N/A,Owner,,PATCH,/organizations/{id},Worker,N/A
+update:owner,Organization,N/A,"None, Worker, Supervisor, Maintainer",,PATCH,/organizations/{id},Admin,N/A
 delete,Organization,N/A,Owner,,DELETE,/organizations/{id},Worker,N/A
 delete,Organization,N/A,"None, Worker, Supervisor, Maintainer",,DELETE,/organizations/{id},Admin,N/A
