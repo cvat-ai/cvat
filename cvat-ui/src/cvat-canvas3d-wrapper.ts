@@ -14,6 +14,7 @@ import {
     CUBOID_EDGES,
     CUBOID_FACES,
     projectCuboid,
+    projectPoint,
 } from 'cvat-canvas3d/src/typescript/canvas3d';
 import type { CameraCalibration, CameraRayData, IssueSprite } from 'cvat-canvas3d/src/typescript/canvas3d';
 import { OrientationVisibility } from 'cvat-canvas3d/src/typescript/canvas3dModel';
@@ -23,6 +24,7 @@ export {
     CUBOID_EDGES,
     CUBOID_FACES,
     projectCuboid,
+    projectPoint,
     Canvas3d,
     MouseInteraction,
     ViewType,

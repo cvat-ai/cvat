@@ -503,6 +503,40 @@ context('3D spatial review', { browser: '!firefox' }, () => {
         });
     });
 
+    it('projects point and cuboid issues onto calibrated related images without labels', () => {
+        const issueIds = [];
+        // The test camera translates LiDAR coordinates by [0.2, 0, 1.7].
+        const positions = [
+            [-0.2, 0, 8.3],
+            [1.8, 0, 8.3, 0, 0, 0, 2, 2, 2, 0, 0, 0, 0, 0, 0, 0],
+        ];
+        cy.getCookie('csrftoken').then((cookie) => {
+            positions.forEach((position) => cy.request({
+                method: 'POST',
+                url: '/api/issues',
+                headers: { 'X-CSRFToken': cookie.value },
+                body: {
+                    job: jobId, frame: 0, position, message: 'Camera projection issue',
+                },
+            }).then(({ body }) => { issueIds.push(body.id); }));
+        });
+        cy.visit(`/tasks/${taskId}/jobs/${jobId}?defaultWorkspace=review`);
+        cy.then(() => {
+            cy.get(`.cvat-context-image-issue-point[data-issue-id="${issueIds[0]}"]`).first().should(($marker) => {
+                expect(Number($marker.attr('cx'))).to.be.closeTo(609.6, 0.1);
+                expect(Number($marker.attr('cy'))).to.be.closeTo(172.9, 0.1);
+            });
+            cy.get(`.cvat-context-image-issue-cuboid[data-issue-id="${issueIds[1]}"]`).first()
+                .find('polygon').should('have.length', 6);
+        });
+        cy.get('.cvat-context-image-issue-projections').find('text').should('not.exist');
+        cy.getCookie('csrftoken').then((cookie) => {
+            issueIds.forEach((id) => cy.request({
+                method: 'DELETE', url: `/api/issues/${id}`, headers: { 'X-CSRFToken': cookie.value },
+            }));
+        });
+    });
+
     it('clips issue labels to the visible cuboid region in orthographic views', () => {
         const fixtureId = 2147483000;
         const ids = [];

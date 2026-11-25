@@ -22,7 +22,7 @@ import {
     Canvas3dView, Canvas3dViewImpl, ViewsDOM, CameraAction, PickResult,
 } from './canvas3dView';
 import {
-    cameraRayFromImagePoint, projectCuboid,
+    cameraRayFromImagePoint, projectCuboid, projectPoint,
 } from './geometry/camera-projection';
 import { CUBOID_EDGES, CUBOID_FACES } from './cuboid';
 import type { CameraCalibration } from './geometry/camera-projection';
@@ -219,7 +219,7 @@ class Canvas3dImpl implements Canvas3d {
 }
 
 export {
-    cameraRayFromImagePoint, CUBOID_EDGES, CUBOID_FACES, projectCuboid, Canvas3dImpl as Canvas3d,
+    cameraRayFromImagePoint, CUBOID_EDGES, CUBOID_FACES, projectCuboid, projectPoint, Canvas3dImpl as Canvas3d,
     ViewType, MouseInteraction, CameraAction, Mode as CanvasMode,
 };
 

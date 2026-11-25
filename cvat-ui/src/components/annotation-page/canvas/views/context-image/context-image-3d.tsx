@@ -13,6 +13,7 @@ import ContextImageSVGOverlay, { SVGObjectType } from './context-image-svg-overl
 import type { SVGObject } from './context-image-svg-overlay';
 import use3dCameraRay from './hooks/use-3d-camera-ray';
 import use3dCuboidProjections from './hooks/use-3d-cuboid-projections';
+import IssueProjections from './issue-projections';
 
 interface Props {
     offset: number[];
@@ -68,7 +69,9 @@ function ContextImage3DOverlay({
             onObjectClick={onObjectClick}
             onObjectMouseEnter={onObjectMouseEnter}
             onObjectDoubleClick={onObjectDoubleClick}
-        />
+        >
+            <IssueProjections imageSize={imageSize} contextImageName={contextImageName} scale={scale} />
+        </ContextImageSVGOverlay>
     );
 }
 
