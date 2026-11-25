@@ -1,8 +1,10 @@
 ### Added
 
-- Organization owners and admins can transfer ownership to an active maintainer
-  of the organization with `PATCH /api/organizations/{id}` and `owner_id`.
-  The previous owner becomes a maintainer
+- Organization owners can transfer ownership to an active maintainer with
+  the new **Transfer ownership** action on the organization page
+  (<https://github.com/cvat-ai/cvat/pull/11529>)
+- \[Server API\] Organization owners and admins can transfer ownership
+  with `PATCH /api/organizations/{id}` and `owner_id`
   (<https://github.com/cvat-ai/cvat/pull/11529>)
 
 ### Changed
