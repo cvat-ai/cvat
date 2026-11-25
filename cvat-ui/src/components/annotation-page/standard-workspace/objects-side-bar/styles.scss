@@ -201,6 +201,25 @@
         }
     }
 
+    .cvat-objects-sidebar-issue-header {
+        flex-wrap: nowrap;
+        column-gap: $grid-unit-size;
+
+        .cvat-objects-sidebar-issue-id {
+            flex: 1;
+            min-width: 0;
+
+            .ant-typography {
+                display: block;
+            }
+        }
+
+        .cvat-objects-sidebar-issue-created {
+            flex: 0 0 auto;
+            white-space: nowrap;
+        }
+    }
+
     p {
         margin-bottom: 0;
     }

@@ -162,7 +162,7 @@ export default function IssueDialog(props: Props): JSX.Element {
                     </CVATTooltip>
                 </Col>
             </Row>
-            <IssueContext issue={issue} interactive />
+            <IssueContext issue={issue} />
             <Row className='cvat-issue-dialog-chat' justify='start'>
                 {
                     lines.length > 0 ? <Col style={{ display: 'block' }}>{lines}</Col> : (

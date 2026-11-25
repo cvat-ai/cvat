@@ -3,71 +3,41 @@
 // SPDX-License-Identifier: MIT
 
 import React from 'react';
-import { useDispatch, useSelector } from 'react-redux';
+import { useSelector } from 'react-redux';
 import Button from 'antd/lib/button';
-import Text from 'antd/lib/typography/Text';
-import { activateObject } from 'actions/annotation-actions';
 import { Canvas3d } from 'cvat-canvas3d-wrapper';
-import { DimensionType, Issue, ObjectType } from 'cvat-core-wrapper';
+import { DimensionType, Issue } from 'cvat-core-wrapper';
 import { ActiveControl, CombinedState } from 'reducers';
 import { shallowEqual } from 'utils/redux';
 
-export default function IssueContext({ issue, interactive = false }: {
+export default function IssueContext({ issue }: {
     issue: Issue;
-    interactive?: boolean;
 }): JSX.Element | null {
-    const dispatch = useDispatch();
     const {
-        objects, canvas, is3D, ready, activeControl, navigationBlocked,
+        canvas, is3D, ready, activeControl, navigationBlocked,
     } = useSelector((state: CombinedState) => ({
-        objects: state.annotation.annotations.states,
         canvas: state.annotation.canvas.instance,
         is3D: state.annotation.job.instance.dimension === DimensionType.DIMENSION_3D,
         ready: state.annotation.canvas.ready,
         activeControl: state.annotation.canvas.activeControl,
         navigationBlocked: state.annotation.player.navigationBlocked,
     }), shallowEqual);
-    if (!is3D) return null;
-
-    const object = issue.objectID === null ? null : objects.find((candidate) => !candidate.isGroundTruth &&
-        candidate.serverID === issue.objectID && candidate.objectType === issue.objectType && !candidate.outside);
-    const kind = issue.objectType === ObjectType.TRACK ? 'Track' : 'Shape';
-    const target = object ? `${object.label.name} · ${kind} #${object.clientID}` :
-        `Linked ${kind.toLowerCase()} unavailable on this frame`;
+    if (!is3D || !issue.view || !(canvas instanceof Canvas3d)) return null;
 
     return (
         <div className='cvat-issue-context'>
-            <Text type='secondary'>
-                {issue.endFrame === issue.frame ? `Frame ${issue.frame}` : `Frames ${issue.frame}–${issue.endFrame}`}
-            </Text>
-            {issue.objectID !== null && (interactive && object ? (
-                <Button
-                    className='cvat-issue-select-object'
-                    type='link'
-                    size='small'
-                    onClick={(event) => {
-                        event.stopPropagation();
-                        dispatch(activateObject(object.clientID, null, null));
-                        if (canvas instanceof Canvas3d) canvas.focusPosition(object.points.slice(0, 3));
-                    }}
-                >
-                    {`Select ${target}`}
-                </Button>
-            ) : <Text type='secondary'>{target}</Text>)}
-            {interactive && issue.view && canvas instanceof Canvas3d && (
-                <Button
-                    className='cvat-issue-restore-view'
-                    type='link'
-                    size='small'
-                    disabled={!ready || activeControl !== ActiveControl.CURSOR || navigationBlocked}
-                    onClick={(event) => {
-                        event.stopPropagation();
-                        canvas.restoreReviewView(issue.view);
-                    }}
-                >
-                    Restore review view
-                </Button>
-            )}
+            <Button
+                className='cvat-issue-restore-view'
+                type='link'
+                size='small'
+                disabled={!ready || activeControl !== ActiveControl.CURSOR || navigationBlocked}
+                onClick={(event) => {
+                    event.stopPropagation();
+                    canvas.restoreReviewView(issue.view);
+                }}
+            >
+                Restore review view
+            </Button>
         </div>
     );
 }

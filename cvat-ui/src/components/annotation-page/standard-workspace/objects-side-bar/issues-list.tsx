@@ -27,7 +27,6 @@ import {
 import { Canvas3d } from 'cvat-canvas3d-wrapper';
 import { changeShowGroundTruth } from 'actions/settings-actions';
 import { ShowGroundTruthIcon } from 'icons';
-import IssueContext from 'components/annotation-page/review/issue-context';
 import ConflictRequirements from '../../review/conflict-requirements';
 
 export default function IssuesListComponent(): JSX.Element {
@@ -243,19 +242,18 @@ export default function IssuesListComponent(): JSX.Element {
                                     }
                                 }}
                             >
-                                <Row justify='space-between'>
-                                    <Col>
-                                        <Text strong>
-                                            {`#${frameIssue.id} • Issue`}
+                                <Row className='cvat-objects-sidebar-issue-header' align='middle'>
+                                    <Col className='cvat-objects-sidebar-issue-id'>
+                                        <Text strong ellipsis title={`#${frameIssue.id}`}>
+                                            {`#${frameIssue.id}`}
                                         </Text>
                                     </Col>
-                                    <Col offset={1}>
+                                    <Col className='cvat-objects-sidebar-issue-created'>
                                         <Text type='secondary'>
                                             {`created ${dayjs(frameIssue.createdDate).fromNow()}`}
                                         </Text>
                                     </Col>
                                 </Row>
-                                <IssueContext issue={frameIssue} />
                                 <Row>
                                     <Paragraph ellipsis={{ rows: 2 }}>
                                         {!!firstComment?.owner?.username && (
