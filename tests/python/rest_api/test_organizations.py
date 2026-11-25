@@ -14,6 +14,7 @@ from deepdiff import DeepDiff
 from shared.utils.config import (
     delete_method,
     get_method,
+    get_paginated_collection,
     make_api_client,
     options_method,
     patch_method,
@@ -220,6 +221,89 @@ class TestPatchOrganizations:
             )
         else:
             assert response.status_code != HTTPStatus.OK
+
+    def _get_org_roles(self) -> dict[str, str]:
+        memberships = get_paginated_collection("admin1", "memberships", org_id=self._ORG)
+        return {m["user"]["username"]: m["role"] for m in memberships}
+
+    def test_owner_can_transfer_ownership_to_maintainer(self, users_by_name) -> None:
+        response = patch_method(
+            "user7", f"organizations/{self._ORG}", {"owner_id": users_by_name["user8"]["id"]}
+        )
+
+        assert response.status_code == HTTPStatus.OK, response.content
+        assert response.json()["owner"]["username"] == "user8"
+
+        roles = self._get_org_roles()
+        assert roles["user8"] == "owner"
+        assert roles["user7"] == "maintainer"
+        assert list(roles.values()).count("owner") == 1
+
+        response = delete_method("user7", f"organizations/{self._ORG}")
+        assert response.status_code == HTTPStatus.FORBIDDEN
+
+    @pytest.mark.parametrize(
+        "requester, expected_status",
+        [
+            ("admin1", HTTPStatus.OK),
+            ("user4", HTTPStatus.FORBIDDEN),  # maintainer
+            ("user2", HTTPStatus.FORBIDDEN),  # supervisor
+            ("worker2", HTTPStatus.FORBIDDEN),  # worker
+            ("user1", HTTPStatus.FORBIDDEN),  # not a member
+        ],
+    )
+    def test_only_owner_or_admin_can_transfer_ownership(
+        self, requester, expected_status, users_by_name
+    ) -> None:
+        response = patch_method(
+            requester, f"organizations/{self._ORG}", {"owner_id": users_by_name["user8"]["id"]}
+        )
+
+        assert response.status_code == expected_status, response.content
+        if expected_status != HTTPStatus.OK:
+            assert self._get_org_roles()["user7"] == "owner"
+
+    @pytest.mark.parametrize(
+        "owner_id",
+        [
+            pytest.param("user2", id="supervisor"),
+            pytest.param("worker2", id="worker"),
+            pytest.param(None, id="null"),
+            pytest.param(100000, id="nonexistent user"),
+        ],
+    )
+    def test_cannot_transfer_ownership_to_invalid_target(self, owner_id, users_by_name) -> None:
+        if owner_id in users_by_name:
+            owner_id = users_by_name[owner_id]["id"]
+
+        response = patch_method("user7", f"organizations/{self._ORG}", {"owner_id": owner_id})
+
+        assert response.status_code == HTTPStatus.BAD_REQUEST, response.content
+        assert self._get_org_roles()["user7"] == "owner"
+
+    @pytest.mark.parametrize(
+        "requester, expected_status",
+        [("user7", HTTPStatus.FORBIDDEN), ("admin1", HTTPStatus.BAD_REQUEST)],
+    )
+    def test_cannot_transfer_ownership_to_non_member(
+        self, requester, expected_status, users_by_name
+    ) -> None:
+        response = patch_method(
+            requester, f"organizations/{self._ORG}", {"owner_id": users_by_name["user1"]["id"]}
+        )
+
+        assert response.status_code == expected_status, response.content
+
+    def test_transfer_to_current_owner_changes_nothing(self, users_by_name) -> None:
+        roles_before = self._get_org_roles()
+
+        response = patch_method(
+            "user7", f"organizations/{self._ORG}", {"owner_id": users_by_name["user7"]["id"]}
+        )
+
+        assert response.status_code == HTTPStatus.OK, response.content
+        assert response.json()["owner"]["username"] == "user7"
+        assert self._get_org_roles() == roles_before
 
 
 @pytest.mark.usefixtures("restore_db_per_function")

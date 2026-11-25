@@ -43,18 +43,65 @@ class BasicOrganizationSerializer(serializers.ModelSerializer):
 
 
 class OrganizationWriteSerializer(serializers.ModelSerializer):
+    owner_id = serializers.IntegerField(write_only=True, required=False)
+
     def to_representation(self, instance):
         serializer = OrganizationReadSerializer(instance, context=self.context)
         return serializer.data
 
     class Meta:
         model = Organization
-        fields = ["slug", "name", "description", "contact", "owner"]
+        fields = ["slug", "name", "description", "contact", "owner_id"]
 
-        # TODO: at the moment isn't possible to change the owner. It should
-        # be a separate feature. Need to change it together with corresponding
-        # Membership. Also such operation should be well protected.
-        read_only_fields = ["owner"]
+    def validate(self, attrs: dict) -> dict:
+        if self.instance is None and "owner_id" in attrs:
+            raise serializers.ValidationError(
+                {"owner_id": "The owner cannot be set when an organization is created"}
+            )
+
+        return super().validate(attrs)
+
+    @transaction.atomic
+    def update(self, instance: Organization, validated_data: dict) -> Organization:
+        owner_id = validated_data.pop("owner_id", None)
+        if owner_id is not None and owner_id != instance.owner_id:
+            self._transfer_ownership(instance, new_owner_id=owner_id)
+
+        return super().update(instance, validated_data)
+
+    def _transfer_ownership(self, instance: Organization, new_owner_id: int) -> None:
+        current_owner_id = (
+            Organization.objects.select_for_update()
+            .values_list("owner_id", flat=True)
+            .get(pk=instance.pk)
+        )
+        if current_owner_id != instance.owner_id:
+            raise serializers.ValidationError(
+                {"owner_id": "The organization owner has changed. Reload and try again"}
+            )
+
+        new_owner_membership = Membership.objects.filter(
+            organization=instance,
+            user_id=new_owner_id,
+            user__is_active=True,
+            is_active=True,
+            role=Membership.MAINTAINER,
+        ).first()
+        if not new_owner_membership:
+            raise serializers.ValidationError(
+                {"owner_id": "The new owner must be an active maintainer of the organization"}
+            )
+
+        previous_owner_membership = Membership.objects.get(
+            organization=instance, user_id=instance.owner_id
+        )
+        previous_owner_membership.role = Membership.MAINTAINER
+        previous_owner_membership.save(update_fields=["role"])
+
+        new_owner_membership.role = Membership.OWNER
+        new_owner_membership.save(update_fields=["role"])
+
+        instance.owner = new_owner_membership.user
 
     def create(self, validated_data):
         organization = super().create(validated_data)
@@ -176,7 +223,8 @@ class MembershipReadSerializer(serializers.ModelSerializer):
         read_only_fields = fields
         extra_kwargs = {
             "invitation": {
-                "allow_null": True,  # owner of an organization does not have an invitation
+                # the user who created the organization joined it without an invitation
+                "allow_null": True,
             }
         }
 
