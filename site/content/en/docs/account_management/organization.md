@@ -23,6 +23,7 @@ See:
   - [Inviting members to Organization](#inviting-members-to-organization)
   - [Invitations list](#invitations-list)
   - [Resending and removing invitations](#resending-and-removing-invitations)
+- [Transfer organization ownership](#transfer-organization-ownership)
 - [Delete organization](#delete-organization)
 
 ## Personal workspace
@@ -157,7 +158,7 @@ It has the following fields:
 | Field               | Description                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                        |
 | ------------------- | -------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
 | **Email**           | Specifies the email address of the user who is being added to the **Organization**.                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                |
-| Role drop-down list | Defines the role of the user which sets the level of access within the **Organization**: <br><li>**Worker**: Has access only to the tasks, projects, and jobs assigned to them. <li>**Supervisor**: Can create and assign jobs, tasks, and projects to the **Organization** members. <li>**Maintainer**: Has the same capabilities as the **Supervisor**, but with additional visibility over all tasks and projects created by other members, complete access to **Cloud Storages**, and the ability to modify members and their roles. <li>**Owner**: role assigned to the creator of the organization by default. Has maximum capabilities and cannot be changed or assigned to the other user. |
+| Role drop-down list | Defines the role of the user which sets the level of access within the **Organization**: <br><li>**Worker**: Has access only to the tasks, projects, and jobs assigned to them. <li>**Supervisor**: Can create and assign jobs, tasks, and projects to the **Organization** members. <li>**Maintainer**: Has the same capabilities as the **Supervisor**, but with additional visibility over all tasks and projects created by other members, complete access to **Cloud Storages**, and the ability to modify members and their roles. <li>**Owner**: role assigned to the creator of the organization by default. Has maximum capabilities. Can be [transferred](#transfer-organization-ownership) to a maintainer. |
 | **Invite more**     | Button to add another user to the **Organization**.                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                |
 
 Members of **Organization** will appear on the **Organization page**:
@@ -209,9 +210,46 @@ clicking on the three dots, and selecting **Remove invitation**
 
 ![Organization page with opened menu for resending and removing invitations](/images/resend_remove_invitation.png)
 
+## Transfer organization ownership
+
+The owner can hand the organization over to another member.
+The new owner must be an active **Maintainer** of the organization:
+to transfer ownership to someone else, first invite them
+or change their role to **Maintainer**.
+
+{{% alert title="Note" color="primary" %}}
+The transfer counts towards the new owner's organization limit.
+If they already own the maximum number of organizations allowed by their plan,
+the transfer is refused.
+{{< product-badge "online" >}}
+{{% /alert %}}
+
+After the transfer:
+
+- The new owner gets the **Owner** role and full control of the organization,
+  including removing it.
+- You stay in the organization as a **Maintainer**, and can leave it later.
+- Projects, tasks, jobs, cloud storages, and the other members stay as they are.
+
+The transfer takes effect immediately. Only the new owner can transfer the organization back.
+
+For an organization on a paid plan, the subscription moves to the new owner,
+but the billing details do not. Before transferring, read
+{{< ilink "/docs/account_management/subscription-management#transfer-organization-ownership" "what to do first" >}}.
+{{< product-badge "online" >}}
+
+To transfer ownership, do the following:
+
+1. Go to the [**Organization page**](#organization-page).
+2. In the top-right corner, click **Actions** > **Transfer ownership**.
+3. In **New owner**, select a maintainer of the organization.
+   Only active maintainers are listed.
+4. To confirm, enter the short name of the organization.
+5. Click **Transfer ownership**.
+
 ## Delete organization
 
-You can remove an organization that you created.
+You can remove an organization that you own.
 
 {{% alert title="Note" color="primary" %}}
 Removing an organization will delete all related resources (annotations,

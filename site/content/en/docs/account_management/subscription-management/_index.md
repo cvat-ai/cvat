@@ -34,6 +34,7 @@ See:
   - [Paying with bank transfer](#paying-with-bank-transfer)
   - [How to change the payment method?](#how-to-change-the-payment-method)
 - [Adding and removing team members](#adding-and-removing-team-members)
+- [Transfer organization ownership](#transfer-organization-ownership)
 - [Change plan](#change-plan)
   - [How to change the plan from Solo to Team?](#how-to-change-the-plan-from-solo-to-team)
   - [How to switch from a monthly subscription to an annual one?](#how-to-switch-from-a-monthly-subscription-to-an-annual-one)
@@ -168,7 +169,8 @@ In the top right corner, near the nickname, click on the arrow > manage plan.
 You will see the Stripe page.
 At the bottom of the page, you will see the **Invoice History** section with all invoices.
 
-Invoices are automatically sent to the account owner's address used for the registration.
+Invoices are sent to the billing email of the subscription.
+To change it, open **Manage plan** and update the billing information.
 
 To see the invoice click on the **Show Invoice Icon**![Stripe Invoice Icon](/images/invoice-icon.png) icon.
 
@@ -238,6 +240,32 @@ the full payment will be charged.
 In case you **removed the user before the current billing period ends**,
 funds will not be returned to your account,
 but next month you will pay less by the amount of unused funds.
+
+## Transfer organization ownership
+
+The owner of an organization can hand it over to a maintainer, see
+{{< ilink "/docs/account_management/organization#transfer-organization-ownership" "Transfer organization ownership" >}}.
+
+The subscription belongs to the organization, so it moves with it:
+the plan, the seats, and paid access stay as they are.
+The new owner manages the subscription from then on.
+The previous owner loses access to **Manage Team plan**.
+
+The billing details do not change: the saved payment method, the billing email,
+the company and tax details, and the invoice history stay as they were.
+The saved payment method keeps being charged, including for unpaid invoices,
+until someone replaces it.
+
+Before transferring, open **Manage Team plan** and:
+
+- replace the card if it should no longer be charged;
+- update the billing email and company details if they are yours;
+  otherwise invoices keep going to the previous address;
+- download the invoices you need.
+
+After the transfer, the new owner should open **Manage Team plan** and check
+the payment method, the billing email, and the company details.
+The new owner can change them at any time.
 
 ## Change plan
 

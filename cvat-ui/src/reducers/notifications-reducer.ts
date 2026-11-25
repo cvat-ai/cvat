@@ -187,6 +187,7 @@ const defaultState: NotificationsState = {
             updatingMembership: null,
             removingMembership: null,
             deletingInvitation: null,
+            transferringOwnership: null,
         },
         webhooks: {
             fetching: null,
@@ -1827,6 +1828,24 @@ export default function (state = defaultState, action: AnyAction): Notifications
                             reason: action.payload.error,
                             shouldLog: shouldLog(action.payload.error),
                             className: 'cvat-notification-notice-update-organization-failed',
+                        },
+                    },
+                },
+            };
+        }
+        case OrganizationActionsTypes.TRANSFER_ORGANIZATION_OWNERSHIP_FAILED: {
+            const { slug } = action.payload;
+            return {
+                ...state,
+                errors: {
+                    ...state.errors,
+                    organizations: {
+                        ...state.errors.organizations,
+                        transferringOwnership: {
+                            message: `Could not transfer ownership of organization "${slug}"`,
+                            reason: action.payload.error,
+                            shouldLog: shouldLog(action.payload.error),
+                            className: 'cvat-notification-notice-transfer-organization-ownership-failed',
                         },
                     },
                 },

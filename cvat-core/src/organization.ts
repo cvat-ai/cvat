@@ -6,7 +6,9 @@
 import {
     SerializedInvitationData, SerializedOrganization, SerializedOrganizationContact, SerializedUser,
 } from './server-response-types';
-import { OrganizationMembersFilter } from './server-request-types';
+import {
+    APIOrganizationModifiableFields, OrganizationMembersFilter, OrganizationModifiableFields,
+} from './server-request-types';
 import {
     checkFilter, checkObjectType, fieldsToSnakeCase, isEnum, isInteger, isString,
 } from './common';
@@ -32,6 +34,10 @@ function validateName(name: unknown): void {
 
 function validateDescription(description: unknown): void {
     checkObjectType('organization description', description, 'string');
+}
+
+function validateOwnerID(ownerID: unknown): void {
+    checkObjectType('organization owner id', ownerID, 'integer');
 }
 
 function validateContact(contact: unknown): void {
@@ -121,9 +127,7 @@ export default class Organization {
     }
 
     // Method updates organization data if it was created before, or creates a new organization
-    public async save(
-        fields: Partial<Pick<SerializedOrganization, 'name' | 'description' | 'contact'>> = {},
-    ): Promise<Organization> {
+    public async save(fields: OrganizationModifiableFields = {}): Promise<Organization> {
         const result = await PluginRegistry.apiWrapper.call(this, Organization.prototype.save, fields);
         return result;
     }
@@ -280,10 +284,11 @@ Object.defineProperties(Organization.prototype.save, {
             fields: Parameters<typeof Organization.prototype.save>[0],
         ) {
             if (typeof this.id === 'number') {
-                const organizationData = {
+                const organizationData: APIOrganizationModifiableFields = {
                     ...('name' in fields ? { name: fields.name } : {}),
                     ...('description' in fields ? { description: fields.description } : {}),
                     ...('contact' in fields ? { contact: fields.contact } : {}),
+                    ...('ownerId' in fields ? { owner_id: fields.ownerId } : {}),
                 };
 
                 if (Object.hasOwn(organizationData, 'name') && typeof organizationData.name !== 'string') {
@@ -299,6 +304,10 @@ Object.defineProperties(Organization.prototype.save, {
 
                 if (Object.hasOwn(organizationData, 'contact')) {
                     validateContact(organizationData.contact);
+                }
+
+                if (Object.hasOwn(organizationData, 'owner_id')) {
+                    validateOwnerID(organizationData.owner_id);
                 }
 
                 const result = await serverProxy.organizations.update(this.id, organizationData);

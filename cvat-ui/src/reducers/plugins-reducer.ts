@@ -85,6 +85,11 @@ const defaultState: PluginsState = {
                 },
             },
         },
+        organizationPage: {
+            transferOwnershipModal: {
+                extras: [],
+            },
+        },
         modelsPage: {
             topBar: {
                 items: [],
