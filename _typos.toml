@@ -24,6 +24,7 @@ default.extend-ignore-re = [
 
 [default.extend-words]
 AVOD = "AVOD"
+DOTA = "DOTA"
 NAM = "NAM"
 blok = "block"
 cheeck = "check"
