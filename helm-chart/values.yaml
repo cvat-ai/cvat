@@ -445,7 +445,7 @@ redis:
   image:
     registry: docker.io
     repository: library/redis
-    tag: 7.2.11
+    tag: 7.2.17
   external:
     host: 127.0.0.1
   architecture: standalone
