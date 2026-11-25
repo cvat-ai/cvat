@@ -180,7 +180,8 @@ function checkSimpleIssueForm() {
 }
 
 function placeCloudIssuePoint(view = 'top') {
-    cy.get(`.cvat-canvas3d-${view}view canvas`).then(($canvas) => (
+    const pane = view === 'perspective' ? view : `${view}view`;
+    cy.get(`.cvat-canvas3d-${pane} canvas`).then(($canvas) => (
         viewCloudPoint($canvas[0], view).then((point) => ({ canvas: $canvas[0], point }))
     )).then(({ canvas, point }) => { clickReviewPoint(canvas, point); });
 }
@@ -466,6 +467,34 @@ context('3D spatial review', { browser: '!firefox' }, () => {
         cy.getCookie('csrftoken').then((cookie) => cy.request({
             method: 'DELETE', url: `/api/issues/${issueId}`, headers: { 'X-CSRFToken': cookie.value },
         }));
+    });
+
+    it('keeps a newer draft when a previous frame’s issue finishes saving', () => {
+        let releaseResponse;
+        cy.intercept('POST', '/api/issues**', (request) => request.continue(() => (
+            new Cypress.Promise((resolve) => { releaseResponse = resolve; })
+        ))).as('pendingIssue');
+        cy.visit(`/tasks/${taskId}/jobs/${jobId}?defaultWorkspace=review&frame=0`);
+        cy.get('.cvat-issue-point-control').click();
+        placeCloudIssuePoint('perspective');
+        cy.get('#issue_description').type('Issue on the previous frame');
+        cy.get('.cvat-create-issue-dialog-submit-button').click();
+        cy.wrap(null).should(() => expect(releaseResponse).to.be.a('function'));
+
+        cy.get('.cvat-player-next-button').click();
+        cy.checkFrameNum(1);
+        cy.get('.cvat-issue-point-control').click();
+        placeCloudIssuePoint('perspective');
+        cy.get('#issue_description').type('Second draft');
+        cy.then(() => releaseResponse());
+        cy.wait('@pendingIssue').then(({ response }) => {
+            expect(response.statusCode).to.equal(201);
+            cy.getCookie('csrftoken').then((cookie) => cy.request({
+                method: 'DELETE', url: `/api/issues/${response.body.id}`, headers: { 'X-CSRFToken': cookie.value },
+            }));
+        });
+        cy.get('#issue_description').should('have.value', 'Second draft');
+        cy.get('.cvat-create-issue-dialog-cancel-button').click();
     });
 
     it('renders review labels and point markers as sprites while retaining keyboard access', () => {

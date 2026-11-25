@@ -23,7 +23,7 @@ import { ThickArrowHelper } from './thickArrowHelper';
 import { displayPixelRatio, disposeObject3D, disposeScene } from './utils';
 import { IssueRegion, ISSUE_REGION_NAME } from './issueRegion';
 import {
-    IssueCuboid, IssueCuboids, isIssueCuboid, issueCuboidCorners, resizeIssueCuboid,
+    IssueCuboid, IssueCuboids, isIssueCuboid, isIssuePoint, issueCuboidCorners, resizeIssueCuboid,
 } from './issueCuboid';
 import { IssueSprite, IssueSprites } from './issueSprite';
 
@@ -41,7 +41,6 @@ export interface Canvas3dView {
         position: number[], corner: number, view: ViewType, from: [number, number], to: [number, number],
     ): number[] | null;
     pick(clientX: number, clientY: number, view?: ViewType): PickResult | null;
-    pickPosition(clientX: number, clientY: number, view?: ViewType): number[] | null;
     projectPosition(position: number[], view: ViewType): [number, number] | null;
     focusPosition(position: number[]): void;
     getReviewView(): IssueView | null;
@@ -183,10 +182,17 @@ export class Canvas3dViewImpl implements Canvas3dView, Listener {
         this.issueCuboids?.setup(regions);
     }
 
-    public pickIssueCuboid(clientX: number, clientY: number, view: ViewType): number | null {
+    private reviewRay(clientX: number, clientY: number, view: ViewType): {
+        camera: THREE.OrthographicCamera | THREE.PerspectiveCamera;
+        rect: DOMRect;
+        raycaster: THREE.Raycaster;
+        pointer: THREE.Vector2;
+    } | null {
         const { camera, renderer } = this.views[view];
-        if (!camera || !this.issueCuboids) return null;
         const rect = renderer.domElement.getBoundingClientRect();
+        if (!camera || !rect.width || !rect.height || clientX < rect.left || clientX > rect.right ||
+            clientY < rect.top || clientY > rect.bottom) return null;
+
         const pointer = new THREE.Vector2(
             ((clientX - rect.left) / rect.width) * 2 - 1,
             1 - ((clientY - rect.top) / rect.height) * 2,
@@ -194,9 +200,21 @@ export class Canvas3dViewImpl implements Canvas3dView, Listener {
         const raycaster = new THREE.Raycaster();
         raycaster.setFromCamera(pointer, camera);
         if (camera instanceof THREE.OrthographicCamera) {
+            // Start at the near plane because orthographic views can show a slice behind the camera.
             raycaster.ray.origin.copy(new THREE.Vector3(pointer.x, pointer.y, -1).unproject(camera));
             raycaster.far = camera.far - camera.near;
-        } else {
+        }
+        return {
+            camera, rect, raycaster, pointer,
+        };
+    }
+
+    public pickIssueCuboid(clientX: number, clientY: number, view: ViewType): number | null {
+        if (!this.issueCuboids) return null;
+        const hitTest = this.reviewRay(clientX, clientY, view);
+        if (!hitTest) return null;
+        const { camera, raycaster } = hitTest;
+        if (camera instanceof THREE.PerspectiveCamera) {
             raycaster.near = camera.near;
             raycaster.far = camera.far;
         }
@@ -226,23 +244,12 @@ export class Canvas3dViewImpl implements Canvas3dView, Listener {
     }
 
     public pick(clientX: number, clientY: number, view: ViewType = ViewType.PERSPECTIVE): PickResult | null {
-        const { camera, renderer, scene } = this.views[view];
-        const rect = renderer.domElement.getBoundingClientRect();
-        if (!camera || !rect.width || !rect.height || clientX < rect.left || clientX > rect.right ||
-            clientY < rect.top || clientY > rect.bottom) return null;
-
-        const raycaster = new THREE.Raycaster();
-        const pointer = new THREE.Vector2(
-            ((clientX - rect.left) / rect.width) * 2 - 1,
-            -((clientY - rect.top) / rect.height) * 2 + 1,
-        );
-        raycaster.setFromCamera(pointer, camera);
-        if (camera instanceof THREE.OrthographicCamera) {
-            // Start at the near plane, including when it is behind the camera.
-            // Side/front views clip the cloud to the selected cuboid's depth.
-            raycaster.ray.origin.copy(new THREE.Vector3(pointer.x, pointer.y, -1).unproject(camera));
-            raycaster.far = camera.far - camera.near;
-        }
+        const hitTest = this.reviewRay(clientX, clientY, view);
+        if (!hitTest) return null;
+        const { scene } = this.views[view];
+        const {
+            camera, rect, raycaster, pointer,
+        } = hitTest;
         const cuboidHit = raycaster.intersectObjects(this.getAllVisibleCuboids(view), false).find((hit) => (
             Math.abs(hit.point.clone().project(camera).z) <= 1
         ));
@@ -279,15 +286,11 @@ export class Canvas3dViewImpl implements Canvas3dView, Listener {
         return null;
     }
 
-    public pickPosition(clientX: number, clientY: number, view: ViewType = ViewType.PERSPECTIVE): number[] | null {
-        return this.pick(clientX, clientY, view)?.position ?? null;
-    }
-
     public projectPosition(position: number[], view: ViewType): [number, number] | null {
         const { camera, renderer } = this.views[view];
-        if (!camera || (position.length !== 3 && !isIssueCuboid(position)) ||
-            !position.every(Number.isFinite)) return null;
-        if (isIssueCuboid(position)) {
+        const cuboid = isIssueCuboid(position);
+        if (!camera || (!cuboid && !isIssuePoint(position))) return null;
+        if (cuboid) {
             const corners = issueCuboidCorners(position);
             const frustum = new THREE.Frustum().setFromProjectionMatrix(
                 new THREE.Matrix4().multiplyMatrices(camera.projectionMatrix, camera.matrixWorldInverse),
@@ -311,7 +314,7 @@ export class Canvas3dViewImpl implements Canvas3dView, Listener {
     }
 
     public focusPosition(position: number[]): void {
-        if ((position.length !== 3 && !isIssueCuboid(position)) || !position.every(Number.isFinite)) return;
+        if (!isIssuePoint(position) && !isIssueCuboid(position)) return;
         this.views.perspective.controls?.moveTo(position[0], position[1], position[2], true);
         BOTTOM_VIEWS.forEach((view) => {
             const { camera } = this.views[view];

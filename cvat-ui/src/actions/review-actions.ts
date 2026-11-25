@@ -5,9 +5,11 @@
 
 import { ActionUnion, createAction, ThunkAction } from 'utils/redux';
 import {
-    getCore, Issue, IssueView, ObjectType, ObjectState, DimensionType,
+    getCore, Issue, IssueView, ObjectType, ObjectState, DimensionType, User,
 } from 'cvat-core-wrapper';
-import { NewIssueSource } from 'reducers';
+import { NewIssueSource, ReviewState } from 'reducers';
+import { ensureError } from 'utils/error-handling';
+import { isReviewableCuboid } from 'utils/review/reviewable-cuboid';
 import { saveAnnotationsAsync } from './annotation-actions';
 
 const cvat = getCore();
@@ -59,29 +61,44 @@ export const reviewActions = {
     selectIssue: (issueId: number | null) => createAction(ReviewActionTypes.SELECT_ISSUE, { issueId }),
     highlightIssue: (issueId: number | null) => createAction(ReviewActionTypes.HIGHLIGHT_ISSUE, { issueId }),
     moveDraftIssue: (position: number[]) => createAction(ReviewActionTypes.MOVE_DRAFT_ISSUE, { position }),
-    finishIssueSuccess: (frame: number, issue: any) => (
-        createAction(ReviewActionTypes.FINISH_ISSUE_SUCCESS, { frame, issue })
+    finishIssueSuccess: (frame: number, issue: Issue, draft: ReviewState['newIssue']) => (
+        createAction(ReviewActionTypes.FINISH_ISSUE_SUCCESS, { frame, issue, draft })
     ),
-    finishIssueFailed: (error: any) => createAction(ReviewActionTypes.FINISH_ISSUE_FAILED, { error }),
+    finishIssueFailed: (error: unknown) => (
+        createAction(ReviewActionTypes.FINISH_ISSUE_FAILED, { error: ensureError(error) })
+    ),
     cancelIssue: () => createAction(ReviewActionTypes.CANCEL_ISSUE),
     commentIssue: (issueId: number) => createAction(ReviewActionTypes.COMMENT_ISSUE, { issueId }),
     commentIssueSuccess: () => createAction(ReviewActionTypes.COMMENT_ISSUE_SUCCESS),
-    commentIssueFailed: (error: any) => createAction(ReviewActionTypes.COMMENT_ISSUE_FAILED, { error }),
+    commentIssueFailed: (error: unknown) => (
+        createAction(ReviewActionTypes.COMMENT_ISSUE_FAILED, { error: ensureError(error) })
+    ),
     resolveIssue: (issueId: number) => createAction(ReviewActionTypes.RESOLVE_ISSUE, { issueId }),
     resolveIssueSuccess: () => createAction(ReviewActionTypes.RESOLVE_ISSUE_SUCCESS),
-    resolveIssueFailed: (error: any) => createAction(ReviewActionTypes.RESOLVE_ISSUE_FAILED, { error }),
+    resolveIssueFailed: (error: unknown) => (
+        createAction(ReviewActionTypes.RESOLVE_ISSUE_FAILED, { error: ensureError(error) })
+    ),
     reopenIssue: (issueId: number) => createAction(ReviewActionTypes.REOPEN_ISSUE, { issueId }),
     reopenIssueSuccess: () => createAction(ReviewActionTypes.REOPEN_ISSUE_SUCCESS),
-    reopenIssueFailed: (error: any) => createAction(ReviewActionTypes.REOPEN_ISSUE_FAILED, { error }),
+    reopenIssueFailed: (error: unknown) => (
+        createAction(ReviewActionTypes.REOPEN_ISSUE_FAILED, { error: ensureError(error) })
+    ),
+    moveIssue: (issueId: number) => createAction(ReviewActionTypes.MOVE_ISSUE, { issueId }),
+    moveIssueSuccess: () => createAction(ReviewActionTypes.MOVE_ISSUE_SUCCESS),
+    moveIssueFailed: (error: unknown) => (
+        createAction(ReviewActionTypes.MOVE_ISSUE_FAILED, { error: ensureError(error) })
+    ),
     submitReview: (jobId: number) => createAction(ReviewActionTypes.SUBMIT_REVIEW, { jobId }),
     submitReviewSuccess: () => createAction(ReviewActionTypes.SUBMIT_REVIEW_SUCCESS),
-    submitReviewFailed: (error: any, jobId: number) => (
-        createAction(ReviewActionTypes.SUBMIT_REVIEW_FAILED, { error, jobId })
+    submitReviewFailed: (error: unknown, jobId: number) => (
+        createAction(ReviewActionTypes.SUBMIT_REVIEW_FAILED, { error: ensureError(error), jobId })
     ),
     removeIssueSuccess: (issueId: number, frame: number) => (
         createAction(ReviewActionTypes.REMOVE_ISSUE_SUCCESS, { issueId, frame })
     ),
-    removeIssueFailed: (error: any) => createAction(ReviewActionTypes.REMOVE_ISSUE_FAILED, { error }),
+    removeIssueFailed: (error: unknown) => (
+        createAction(ReviewActionTypes.REMOVE_ISSUE_FAILED, { error: ensureError(error) })
+    ),
     switchIssuesHiddenFlag: (hidden: boolean) => createAction(ReviewActionTypes.SWITCH_ISSUES_HIDDEN_FLAG, { hidden }),
     switchIssuesHiddenResolvedFlag: (hidden: boolean) => (
         createAction(ReviewActionTypes.SWITCH_RESOLVED_ISSUES_HIDDEN_FLAG, { hidden })
@@ -90,40 +107,67 @@ export const reviewActions = {
 
 export type ReviewActions = ActionUnion<typeof reviewActions>;
 
-export const moveIssueAsync = (issue: Issue, position: number[]): ThunkAction => async (dispatch, getState) => {
-    const job = getState().annotation.job.instance;
-    dispatch(createAction(ReviewActionTypes.MOVE_ISSUE, { issueId: issue.id }));
-    try {
-        await issue.move(position);
-        if (getState().annotation.job.instance === job) {
-            dispatch(createAction(ReviewActionTypes.MOVE_ISSUE_SUCCESS));
+function updateIssueAsync(
+    issueId: number,
+    update: (issue: Issue, user: User) => Promise<void>,
+    start: (id: number) => ReviewActions,
+    success: () => ReviewActions,
+    failure: (error: unknown) => ReviewActions,
+): ThunkAction {
+    return async (dispatch, getState) => {
+        const state = getState();
+        const { annotation: { job: { instance: job } }, auth: { user } } = state;
+        const issue = state.review.frameIssues.find((item) => item.id === issueId);
+        if (!issue) return;
+
+        dispatch(start(issueId));
+        try {
+            await update(issue, user);
+            if (getState().annotation.job.instance === job) dispatch(success());
+        } catch (error) {
+            if (getState().annotation.job.instance === job) dispatch(failure(error));
         }
-    } catch (error) {
-        if (getState().annotation.job.instance === job) {
-            dispatch(createAction(ReviewActionTypes.MOVE_ISSUE_FAILED, { error }));
-        }
-    }
-};
+    };
+}
+
+export const moveIssueAsync = (issueId: number, position: number[]): ThunkAction => updateIssueAsync(
+    issueId,
+    (issue) => issue.move(position),
+    reviewActions.moveIssue,
+    reviewActions.moveIssueSuccess,
+    reviewActions.moveIssueFailed,
+);
+
+export const commentIssueAsync = (issueId: number, message: string): ThunkAction => updateIssueAsync(
+    issueId,
+    async (issue, user) => { await issue.comment({ message, owner: user }); },
+    reviewActions.commentIssue,
+    reviewActions.commentIssueSuccess,
+    reviewActions.commentIssueFailed,
+);
+
+export const resolveIssueAsync = (issueId: number): ThunkAction => updateIssueAsync(
+    issueId,
+    (issue, user) => issue.resolve(user),
+    reviewActions.resolveIssue,
+    reviewActions.resolveIssueSuccess,
+    reviewActions.resolveIssueFailed,
+);
+
+export const reopenIssueAsync = (issueId: number): ThunkAction => updateIssueAsync(
+    issueId,
+    (issue) => issue.reopen(),
+    reviewActions.reopenIssue,
+    reviewActions.reopenIssueSuccess,
+    reviewActions.reopenIssueFailed,
+);
 
 export const finishIssueAsync = (message: string): ThunkAction => async (dispatch, getState) => {
-    const state = getState();
-    const {
-        annotation: {
-            player: {
-                frame: { number: frameNumber },
-            },
-            job: {
-                instance: jobInstance,
-            },
-        },
-        review: {
-            newIssue: {
-                position: newIssuePosition,
-                objectClientID,
-                view,
-            },
-        },
-    } = state;
+    const { annotation, review: { newIssue: draft } } = getState();
+    const { number: frameNumber } = annotation.player.frame;
+    const { instance: jobInstance } = annotation.job;
+    const { position, objectClientID, view } = draft;
+    if (!position) return;
 
     try {
         let object: ObjectState | null = null;
@@ -131,8 +175,7 @@ export const finishIssueAsync = (message: string): ThunkAction => async (dispatc
             const findObject = async (): Promise<ObjectState | undefined> => (
                 await jobInstance.annotations.get(frameNumber, false, [])
             )
-                .find((candidate) => candidate.clientID === objectClientID && !candidate.isGroundTruth &&
-                    [ObjectType.SHAPE, ObjectType.TRACK].includes(candidate.objectType));
+                .find((candidate) => candidate.clientID === objectClientID && isReviewableCuboid(candidate));
             object = await findObject();
             if (!object) throw new Error('The linked annotation is no longer available');
             if (object.serverID === null) {
@@ -150,90 +193,31 @@ export const finishIssueAsync = (message: string): ThunkAction => async (dispatc
             end_frame: null,
             object_id: object?.serverID ?? null,
             object_type: objectType,
-            position: newIssuePosition,
+            position,
             view,
         });
 
         const savedIssue = await jobInstance.openIssue(issue, message);
         if (getState().annotation.job.instance === jobInstance) {
-            dispatch(reviewActions.finishIssueSuccess(getState().annotation.player.frame.number, savedIssue));
+            dispatch(reviewActions.finishIssueSuccess(getState().annotation.player.frame.number, savedIssue, draft));
         }
     } catch (error) {
         if (getState().annotation.job.instance === jobInstance) dispatch(reviewActions.finishIssueFailed(error));
     }
 };
 
-export const commentIssueAsync = (id: number, message: string): ThunkAction => async (dispatch, getState) => {
-    const state = getState();
-    const {
-        auth: { user },
-        review: { frameIssues },
-    } = state;
+export const deleteIssueAsync = (issueId: number): ThunkAction => async (dispatch, getState) => {
+    const { annotation: { job: { instance: job } }, review: { frameIssues } } = getState();
+    const issue = frameIssues.find((item) => item.id === issueId);
+    if (!issue) return;
 
     try {
-        dispatch(reviewActions.commentIssue(id));
-        const [issue] = frameIssues.filter((_issue: any): boolean => _issue.id === id);
-        await issue.comment({
-            message,
-            owner: user,
-        });
-
-        dispatch(reviewActions.commentIssueSuccess());
-    } catch (error) {
-        dispatch(reviewActions.commentIssueFailed(error));
-    }
-};
-
-export const resolveIssueAsync = (id: number): ThunkAction => async (dispatch, getState) => {
-    const state = getState();
-    const {
-        auth: { user },
-        review: { frameIssues },
-    } = state;
-
-    try {
-        dispatch(reviewActions.resolveIssue(id));
-        const [issue] = frameIssues.filter((_issue: any): boolean => _issue.id === id);
-        await issue.resolve(user);
-        dispatch(reviewActions.resolveIssueSuccess());
-    } catch (error) {
-        dispatch(reviewActions.resolveIssueFailed(error));
-    }
-};
-
-export const reopenIssueAsync = (id: number): ThunkAction => async (dispatch, getState) => {
-    const state = getState();
-    const {
-        auth: { user },
-        review: { frameIssues },
-    } = state;
-
-    try {
-        dispatch(reviewActions.reopenIssue(id));
-        const [issue] = frameIssues.filter((_issue: any): boolean => _issue.id === id);
-        await issue.reopen(user);
-        dispatch(reviewActions.reopenIssueSuccess());
-    } catch (error) {
-        dispatch(reviewActions.reopenIssueFailed(error));
-    }
-};
-
-export const deleteIssueAsync = (id: number): ThunkAction => async (dispatch, getState) => {
-    const state = getState();
-    const {
-        review: { frameIssues },
-        annotation: {
-            player: {
-                frame: { number: frameNumber },
-            },
-        },
-    } = state;
-
-    try {
-        const [issue] = frameIssues.filter((_issue: any): boolean => _issue.id === id);
         await issue.delete();
-        dispatch(reviewActions.removeIssueSuccess(id, frameNumber));
+        const { annotation } = getState();
+        if (annotation.job.instance === job) {
+            dispatch(reviewActions.removeIssueSuccess(issueId, annotation.player.frame.number));
+        }
     } catch (error) {
-        dispatch(reviewActions.removeIssueFailed(error));
+        if (getState().annotation.job.instance === job) dispatch(reviewActions.removeIssueFailed(error));
     }
 };

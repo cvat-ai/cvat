@@ -12,11 +12,25 @@ import { CheckCircleOutlined, CloseCircleOutlined } from '@ant-design/icons';
 
 import { Issue } from 'cvat-core-wrapper';
 import CVATTooltip from 'components/common/cvat-tooltip';
+import { clamp } from 'utils/math';
+
+type Size = { width: number; height: number };
+
+export function getIssueLabelPosition(top: number, left: number, bounds: Size, label: Size): {
+    top: number;
+    left: number;
+} {
+    const margin = 8;
+    return {
+        top: clamp(top, margin, bounds.height - label.height - margin),
+        left: clamp(left, margin, bounds.width - label.width - margin),
+    };
+}
 
 interface Props {
     container?: HTMLElement;
     idSuffix?: string;
-    bounds?: { width: number; height: number };
+    bounds?: Size;
     issue: Issue;
     top: number;
     left: number;
@@ -39,19 +53,11 @@ export default function HiddenIssueLabel(props: Props): ReactPortal {
     const [position, setPosition] = useState({ top, left });
     useLayoutEffect(() => {
         if (!bounds || !ref.current) return;
-        const { width, height } = ref.current.getBoundingClientRect();
-        const margin = 8;
-        setPosition({
-            top: Math.max(margin, Math.min(top, bounds.height - height - margin)),
-            left: Math.max(margin, Math.min(left, bounds.width - width - margin)),
-        });
+        setPosition(getIssueLabelPosition(top, left, bounds, ref.current.getBoundingClientRect()));
     }, [top, left, bounds?.width, bounds?.height, comments[0]?.message]);
     useEffect(() => {
-        if (!resolved) {
-            setTimeout(highlight);
-        } else {
-            setTimeout(blur);
-        }
+        const timeout = window.setTimeout(resolved ? blur : highlight);
+        return () => window.clearTimeout(timeout);
     }, [resolved]);
 
     useEffect(() => {

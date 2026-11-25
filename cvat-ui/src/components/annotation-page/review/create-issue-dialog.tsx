@@ -114,7 +114,7 @@ interface Props {
     scale: number;
     clientCoordinates: [number, number];
     canvasRect: DOMRect | null;
-    onCreateIssue: () => void;
+    onCreateIssue?: () => void;
     onFetchingChange?: (fetching: boolean) => void;
 }
 
@@ -147,7 +147,7 @@ export default function CreateIssueDialog(props: Props): ReactPortal {
                     if (isMounted()) {
                         setFetching(false);
                     }
-                    onCreateIssue();
+                    onCreateIssue?.();
                 });
             }}
             cancel={() => {

@@ -13,7 +13,7 @@ import {
     QualityConflictRequirement, FramesMetaData, FrameData, RQStatus, Event, Invitation, SerializedAPISchema,
     Request, JobValidationLayout, QualitySettings, TaskValidationLayout, ObjectState,
     ConsensusSettings, AboutData, ShapeType, ObjectType, ApiToken, AudioIntervalState,
-    Membership, AnnotationFormats, CloudStorage, UserGrowthData, IssueView,
+    Membership, AnnotationFormats, CloudStorage, UserGrowthData, Issue, IssueView,
 } from 'cvat-core-wrapper';
 
 import type { IntelligentScissors, OpenCVTracker } from 'utils/opencv-wrapper/opencv-wrapper';
@@ -1156,8 +1156,8 @@ export enum NewIssueSource {
 export interface ReviewState {
     activeIssueId: number | null;
     highlightedIssueId: number | null;
-    issues: any[];
-    frameIssues: any[];
+    issues: Issue[];
+    frameIssues: Issue[];
     latestComments: string[];
     newIssue: {
         position: number[] | null;

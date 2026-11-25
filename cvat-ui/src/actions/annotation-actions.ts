@@ -4,7 +4,9 @@
 // SPDX-License-Identifier: MIT
 
 import { AnyAction, Store } from 'redux';
-import { ThunkAction, ThunkDispatch } from 'utils/redux';
+import {
+    ActionWithPayload, createAction, ThunkAction, ThunkDispatch,
+} from 'utils/redux';
 import { isAbleToChangeFrame } from 'utils/annotation';
 import getHiddenZLayers from 'utils/get-hidden-z-layers';
 import { getRelatedImageMetadata } from 'utils/related-image-calibrations';
@@ -1591,14 +1593,10 @@ export function rememberObject(createParams: {
     };
 }
 
-export function updateActiveControl(activeControl: ActiveControl, preserveSelection = false): AnyAction {
-    return {
-        type: AnnotationActionTypes.UPDATE_ACTIVE_CONTROL,
-        payload: {
-            activeControl,
-            preserveSelection,
-        },
-    };
+export function updateActiveControl(activeControl: ActiveControl, preserveSelection = false): ActionWithPayload<
+    AnnotationActionTypes.UPDATE_ACTIVE_CONTROL, { activeControl: ActiveControl; preserveSelection: boolean }
+> {
+    return createAction(AnnotationActionTypes.UPDATE_ACTIVE_CONTROL, { activeControl, preserveSelection });
 }
 
 export function addCameraRayFromContextImagePoint(

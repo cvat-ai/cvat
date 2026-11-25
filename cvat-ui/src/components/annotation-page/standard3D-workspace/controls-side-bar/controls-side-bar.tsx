@@ -34,6 +34,7 @@ import { subKeyMap } from 'utils/component-subkeymap';
 import { ShortcutScope } from 'utils/enums';
 import { registerComponentShortcuts } from 'actions/shortcuts-actions';
 import IssueControl from 'components/annotation-page/review-workspace/controls-side-bar/issue-control';
+import { shallowEqual } from 'utils/redux';
 
 interface Props {
     keyMap: KeyMap;
@@ -41,7 +42,6 @@ interface Props {
     activeControl: ActiveControl;
     normalizedKeyMap: Record<string, string>;
     labels: Label[];
-    jobInstance: any;
     repeatDrawShape(): void;
     redrawShape(): void;
     pasteShape(): void;
@@ -122,7 +122,7 @@ export default function ControlsSideBarComponent(props: Props): JSX.Element {
     const { isReview, frameIsDeleted } = useSelector((state: CombinedState) => ({
         isReview: state.annotation.workspace === Workspace.REVIEW,
         frameIsDeleted: state.annotation.player.frame.data?.deleted,
-    }));
+    }), shallowEqual);
     const preventDefault = (event: KeyboardEvent | undefined): void => {
         if (event) {
             event.preventDefault();

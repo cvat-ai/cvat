@@ -5,10 +5,11 @@
 import React from 'react';
 import { useSelector } from 'react-redux';
 
-import { projectPoint } from 'cvat-canvas3d-wrapper';
+import { isIssueCuboid, projectPoint } from 'cvat-canvas3d-wrapper';
 import { CombinedState } from 'reducers';
 import { getRelatedImageMetadata } from 'utils/related-image-calibrations';
 import { shallowEqual } from 'utils/redux';
+import { showIssueGeometry, visibleFrameIssues } from 'utils/review/issue-visibility';
 import type { ContextImageOverlayProps } from './context-image';
 import { CuboidProjection } from './hooks/use-3d-cuboid-projections';
 
@@ -32,8 +33,8 @@ export default function IssueProjections({
 
     if (!ready || !calibration) return null;
 
-    const issues = issuesHidden ? [] : frameIssues.filter((issue) => (
-        !issue.resolved || (!issuesResolvedHidden && (issue.id === activeIssueId || issue.id === highlightedIssueId))
+    const issues = visibleFrameIssues(frameIssues, issuesHidden, issuesResolvedHidden).filter((issue) => (
+        showIssueGeometry(issue, activeIssueId, highlightedIssueId)
     ));
     const regions = draft ? [...issues, { id: 0, position: draft }] : issues;
     const { width, height } = imageSize;
@@ -42,7 +43,7 @@ export default function IssueProjections({
         <g className='cvat-context-image-issue-projections' pointerEvents='none' aria-hidden='true'>
             {regions.map(({ id, position }) => {
                 const highlighted = id === activeIssueId || id === highlightedIssueId;
-                if (position.length === 16) {
+                if (isIssueCuboid(position)) {
                     const color = highlighted ? 'yellow' : 'red';
                     return (
                         <g className='cvat-context-image-issue-cuboid' key={id} data-issue-id={id}>

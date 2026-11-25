@@ -159,7 +159,9 @@ export default function AnnotationPageComponent(props: Props): JSX.Element {
                 <AnnotationTopBarContainer />
             </Layout.Header>
             <Layout.Content className='cvat-annotation-layout-content'>
-                {job.dimension === DimensionType.DIMENSION_3D && <StandardWorkspace3DComponent />}
+                {(workspace === Workspace.STANDARD3D ||
+                    (workspace === Workspace.REVIEW && job.dimension === DimensionType.DIMENSION_3D)) &&
+                    <StandardWorkspace3DComponent />}
                 {workspace === Workspace.STANDARD && <StandardWorkspaceComponent />}
                 {workspace === Workspace.SINGLE_SHAPE && <SingleShapeWorkspace />}
                 {workspace === Workspace.ATTRIBUTES && <AttributeAnnotationWorkspace />}

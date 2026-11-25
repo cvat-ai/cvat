@@ -7,6 +7,7 @@ import './styles.scss';
 import React, { useState, useEffect, useCallback } from 'react';
 import { useSelector, useDispatch } from 'react-redux';
 import { shallowEqual } from 'utils/redux';
+import { visibleFrameIssues } from 'utils/review/issue-visibility';
 import getHiddenZLayers from 'utils/get-hidden-z-layers';
 
 import { ActiveControl, CombinedState, NewIssueSource } from 'reducers';
@@ -129,15 +130,14 @@ export default function IssueAggregatorComponent(): JSX.Element | null {
     useEffect(() => {
         if (canvasReady) {
             type IssueRegionSet = Record<number, { hidden: boolean; points: number[] }>;
-            const regions = !issuesHidden ? frameIssues
-                .filter((_issue: any) => !issuesResolvedHidden || !_issue.resolved)
-                .reduce((acc: IssueRegionSet, issue: any): IssueRegionSet => {
+            const regions = visibleFrameIssues(frameIssues, issuesHidden, issuesResolvedHidden)
+                .reduce<IssueRegionSet>((acc, issue) => {
                     acc[issue.id] = {
                         points: issue.position,
                         hidden: issue.resolved,
                     };
                     return acc;
-                }, {}) : {};
+                }, {});
 
             if (newIssuePosition) {
                 // regions[0] is always empty because key is an id of an issue (<0, >0 are possible)

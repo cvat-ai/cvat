@@ -6,6 +6,8 @@
 import { connect } from 'react-redux';
 import { KeyMap } from 'utils/mousetrap-react';
 import { Canvas3d } from 'cvat-canvas3d-wrapper';
+import type { Label } from 'cvat-core-wrapper';
+import type { ThunkDispatch } from 'utils/redux';
 import {
     updateActiveControl as updateActiveControlAction,
     pasteShapeAsync,
@@ -21,8 +23,7 @@ interface StateToProps {
     activeControl: ActiveControl;
     keyMap: KeyMap;
     normalizedKeyMap: Record<string, string>;
-    labels: any[];
-    jobInstance: any;
+    labels: Label[];
 }
 
 interface DispatchToProps {
@@ -37,7 +38,7 @@ function mapStateToProps(state: CombinedState): StateToProps {
     const {
         annotation: {
             canvas: { instance: canvasInstance, activeControl },
-            job: { labels, instance: jobInstance },
+            job: { labels },
         },
         shortcuts: { keyMap, normalizedKeyMap },
     } = state;
@@ -48,11 +49,10 @@ function mapStateToProps(state: CombinedState): StateToProps {
         normalizedKeyMap,
         keyMap,
         labels,
-        jobInstance,
     };
 }
 
-function dispatchToProps(dispatch: any): DispatchToProps {
+function dispatchToProps(dispatch: ThunkDispatch): DispatchToProps {
     return {
         repeatDrawShape(): void {
             dispatch(repeatDrawShapeAsync());

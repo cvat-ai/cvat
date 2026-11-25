@@ -56,7 +56,6 @@ interface Canvas3d {
     ): number[] | null;
     selectRegion(enabled: boolean): void;
     pick(clientX: number, clientY: number, view?: ViewType): PickResult | null;
-    pickPosition(clientX: number, clientY: number, view?: ViewType): number[] | null;
     projectPosition(position: number[], view: ViewType): [number, number] | null;
     focusPosition(position: number[]): void;
     getReviewView(): IssueView | null;
@@ -178,10 +177,6 @@ class Canvas3dImpl implements Canvas3d {
         return this.view.pick(clientX, clientY, view);
     }
 
-    public pickPosition(clientX: number, clientY: number, view: ViewType = ViewType.PERSPECTIVE): number[] | null {
-        return this.view.pickPosition(clientX, clientY, view);
-    }
-
     public projectPosition(position: number[], view: ViewType): [number, number] | null {
         return this.view.projectPosition(position, view);
     }
@@ -226,3 +221,5 @@ export {
 export type {
     ViewsDOM, PickResult, CameraCalibration, CameraRayData, IssueCuboid, IssueSprite,
 };
+
+export { isIssueCuboid, isIssuePoint } from './issueCuboid';

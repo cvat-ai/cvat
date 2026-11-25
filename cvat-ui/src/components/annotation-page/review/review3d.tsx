@@ -4,18 +4,16 @@
 
 import './styles.scss';
 import React, {
-    ReactNode, useEffect, useRef, useState,
+    ReactNode, useCallback, useEffect, useMemo, useRef, useState,
 } from 'react';
 import { useDispatch, useSelector } from 'react-redux';
 import {
     CombinedState, ActiveControl, ContextMenuType, NewIssueSource, Workspace,
 } from 'reducers';
 import {
-    Canvas3d, CanvasMode, ViewType, IssueSprite,
+    Canvas3d, CanvasMode, ViewType, IssueSprite, isIssueCuboid, isIssuePoint,
 } from 'cvat-canvas3d-wrapper';
-import {
-    Issue, ObjectType, ShapeType, DimensionType,
-} from 'cvat-core-wrapper';
+import { Issue, DimensionType } from 'cvat-core-wrapper';
 import {
     commentIssueAsync, moveIssueAsync, reopenIssueAsync, resolveIssueAsync, reviewActions,
 } from 'actions/review-actions';
@@ -24,8 +22,11 @@ import {
 } from 'actions/annotation-actions';
 import { ThunkDispatch, shallowEqual } from 'utils/redux';
 import { useIsMounted } from 'utils/hooks';
+import { clamp } from 'utils/math';
+import { findLinkedCuboid, isReviewableCuboid } from 'utils/review/reviewable-cuboid';
+import { showIssueGeometry, visibleFrameIssues } from 'utils/review/issue-visibility';
 import CreateIssueDialog from './create-issue-dialog';
-import HiddenIssueLabel from './hidden-issue-label';
+import HiddenIssueLabel, { getIssueLabelPosition } from './hidden-issue-label';
 import IssueDialog from './issue-dialog';
 
 interface Placement {
@@ -35,12 +36,12 @@ interface Placement {
     y: number;
     canvasRect: DOMRect;
     expanded: boolean;
+    cuboid: boolean;
     corners: ([number, number] | null)[];
 }
 
 interface MarkerDrag {
     id: number;
-    issue: Issue | null;
     view: ViewType;
     pointerId: number;
     start: [number, number];
@@ -71,17 +72,16 @@ function ViewOverlay({ canvasRect, children }: {
     );
 }
 
-export default function Review3D(): JSX.Element {
+function IssueOverlays({ canvas }: { canvas: Canvas3d }): JSX.Element {
     const dispatch = useDispatch<ThunkDispatch>();
     const {
-        canvas, ready, activeControl, issues, newPosition, newSource, newObjectClientID,
+        ready, activeControl, issues, newPosition, newSource, newObjectClientID,
         hidden, resolvedHidden, activeIssueId, highlightedIssueId, fetching,
         frame, job, navigationBlocked, objects, workspace,
     } = useSelector((state: CombinedState) => ({
-        canvas: state.annotation.canvas.instance as Canvas3d,
         ready: state.annotation.canvas.ready,
         activeControl: state.annotation.canvas.activeControl,
-        issues: state.review.frameIssues as Issue[],
+        issues: state.review.frameIssues,
         newPosition: state.review.newIssue.position,
         newSource: state.review.newIssue.source,
         newObjectClientID: state.review.newIssue.objectClientID,
@@ -107,6 +107,12 @@ export default function Review3D(): JSX.Element {
     const navigationOwner = useRef<MarkerDrag | null>(null);
     const suppressClick = useRef({ id: -1, until: 0 });
     const isMounted = useIsMounted();
+    const visibleIssues = useMemo(() => visibleFrameIssues(issues, hidden, resolvedHidden), [
+        issues, hidden, resolvedHidden,
+    ]);
+    const visibleIssuesById = useMemo(() => new Map(visibleIssues.map((issue) => [issue.id, issue])), [visibleIssues]);
+    const activeIssue = visibleIssuesById.get(activeIssueId);
+    const geometryHighlightId = highlightedIssueId ?? hoveredResolvedIssueId;
 
     useEffect(() => {
         if (!newPosition) setDraftView(ViewType.PERSPECTIVE);
@@ -118,14 +124,11 @@ export default function Review3D(): JSX.Element {
 
     useEffect(() => {
         const regions: Record<number, { highlighted: boolean }> = {};
-        if (ready && !hidden) {
-            for (const issue of issues) {
+        if (ready) {
+            for (const issue of visibleIssues) {
+                if (!showIssueGeometry(issue, activeIssueId, geometryHighlightId)) continue;
                 const highlighted = issue.id === highlightedIssueId;
-                if (issue.objectID === null || (issue.resolved &&
-                    (resolvedHidden || (!highlighted && issue.id !== hoveredResolvedIssueId)))) continue;
-                const object = objects.find((candidate) => !candidate.isGroundTruth && !candidate.outside &&
-                    !candidate.hidden && candidate.shapeType === ShapeType.CUBOID &&
-                    candidate.serverID === issue.objectID && candidate.objectType === issue.objectType);
+                const object = findLinkedCuboid(objects, issue);
                 if (object) {
                     regions[object.clientID] = { highlighted: highlighted || !!regions[object.clientID]?.highlighted };
                 }
@@ -136,32 +139,31 @@ export default function Review3D(): JSX.Element {
         }
         canvas.setupIssueRegions(regions);
     }, [
-        canvas, ready, issues, objects, hidden, resolvedHidden, highlightedIssueId, hoveredResolvedIssueId,
+        canvas, ready, visibleIssues, objects, activeIssueId, highlightedIssueId, geometryHighlightId,
         newPosition, newObjectClientID,
     ]);
 
     useEffect(() => () => canvas.setupIssueRegions({}), [canvas]);
 
     useEffect(() => {
-        const regions = ready && !hidden ? issues.filter((issue) => issue.position.length === 16 &&
-            (!issue.resolved || (!resolvedHidden &&
-                (issue.id === highlightedIssueId || issue.id === hoveredResolvedIssueId))))
+        const regions = ready ? visibleIssues.filter((issue) => (
+            isIssueCuboid(issue.position) && showIssueGeometry(issue, activeIssueId, geometryHighlightId)
+        ))
             .map((issue) => ({
                 id: issue.id,
                 position: preview?.drag.id === issue.id ? preview.position : issue.position,
                 highlighted: issue.id === highlightedIssueId || preview?.drag.id === issue.id,
             })) : [];
-        if (ready && newPosition?.length === 16) {
+        if (ready && isIssueCuboid(newPosition)) {
             regions.push({
                 id: 0,
                 position: preview?.drag.id === 0 ? preview.position : newPosition,
                 highlighted: false,
             });
         }
-        canvas.setupIssueCuboids(regions, newPosition?.length === 16 ? 0 : activeIssueId);
+        canvas.setupIssueCuboids(regions, isIssueCuboid(newPosition) ? 0 : activeIssueId);
     }, [
-        canvas, ready, issues, hidden, resolvedHidden, highlightedIssueId, hoveredResolvedIssueId,
-        newPosition, preview, activeIssueId,
+        canvas, ready, visibleIssues, highlightedIssueId, geometryHighlightId, newPosition, preview, activeIssueId,
     ]);
 
     useEffect(() => () => canvas.setupIssueCuboids([]), [canvas]);
@@ -172,14 +174,13 @@ export default function Review3D(): JSX.Element {
     ): void => {
         if (event.button !== 0 || view === ViewType.PERSPECTIVE || !ready || creating || fetching ||
             activeControl !== ActiveControl.CURSOR || navigationBlocked || dragRef.current) return;
-        const issue = issues.find((item) => item.id === id) || null;
+        const issue = visibleIssuesById.get(id);
         const origin = id === 0 ? newPosition : issue?.position;
-        if (!origin || ![3, 16].includes(origin.length)) return;
+        if (!isIssuePoint(origin) && !isIssueCuboid(origin)) return;
         event.preventDefault();
         event.stopPropagation();
         const drag: MarkerDrag = {
             id,
-            issue,
             view,
             pointerId: event.pointerId,
             start: [event.clientX, event.clientY],
@@ -209,7 +210,7 @@ export default function Review3D(): JSX.Element {
             if (drag.moved) suppressClick.current = { id: drag.id, until: Date.now() + 250 };
             try {
                 if (!cancel && drag.moved && drag.position.some((value, index) => value !== drag.origin[index])) {
-                    if (drag.issue) await dispatch(moveIssueAsync(drag.issue, drag.position));
+                    if (drag.id) await dispatch(moveIssueAsync(drag.id, drag.position));
                     else dispatch(reviewActions.moveDraftIssue(drag.position));
                 }
             } finally {
@@ -224,8 +225,8 @@ export default function Review3D(): JSX.Element {
             event.preventDefault();
             const rect = canvas.html()[drag.view].getBoundingClientRect();
             const destination: [number, number] = [
-                Math.max(rect.left, Math.min(event.clientX, rect.right)),
-                Math.max(rect.top, Math.min(event.clientY, rect.bottom)),
+                clamp(event.clientX, rect.left, rect.right),
+                clamp(event.clientY, rect.top, rect.bottom),
             ];
             const next = drag.corner === null ? canvas.movePosition(drag.origin, drag.view, drag.start, destination) :
                 canvas.resizeIssueCuboid(drag.origin, drag.corner, drag.view, drag.start, destination);
@@ -264,24 +265,28 @@ export default function Review3D(): JSX.Element {
         };
     }, [canvas, ready, frame, job]);
 
+    const startDraft = useCallback((view: ViewType, position: number[]): void => {
+        setDraftView(view);
+        dispatch(updateActiveControl(ActiveControl.CURSOR, true));
+        dispatch(reviewActions.startIssue(
+            position,
+            NewIssueSource.ISSUE_TOOL,
+            null,
+            canvas.getReviewView(),
+            DimensionType.DIMENSION_3D,
+        ));
+    }, [canvas, dispatch]);
+
     useEffect(() => {
         const { perspective } = canvas.html();
         const drawn = (event: CustomEvent<{ position: number[] }>): void => {
-            setDraftView(ViewType.PERSPECTIVE);
             dispatch(activateObject(null, null, null));
-            dispatch(updateActiveControl(ActiveControl.CURSOR, true));
-            dispatch(reviewActions.startIssue(
-                event.detail.position,
-                NewIssueSource.ISSUE_TOOL,
-                null,
-                canvas.getReviewView(),
-                DimensionType.DIMENSION_3D,
-            ));
+            startDraft(ViewType.PERSPECTIVE, event.detail.position);
             canvas.focusPosition(event.detail.position);
         };
         perspective.addEventListener('canvas.issueregiondrawn', drawn as EventListener);
         return () => perspective.removeEventListener('canvas.issueregiondrawn', drawn as EventListener);
-    }, [canvas]);
+    }, [canvas, dispatch, startDraft]);
 
     const openIssue = (issue: Issue): void => {
         if (suppressClick.current.id === issue.id && Date.now() < suppressClick.current.until) return;
@@ -319,20 +324,12 @@ export default function Review3D(): JSX.Element {
                 event.preventDefault();
                 event.stopImmediatePropagation();
                 canvas.selectRegion(false);
-                setDraftView(view);
-                dispatch(updateActiveControl(ActiveControl.CURSOR, true));
-                dispatch(reviewActions.startIssue(
-                    pick.position,
-                    NewIssueSource.ISSUE_TOOL,
-                    null,
-                    canvas.getReviewView(),
-                    DimensionType.DIMENSION_3D,
-                ));
+                startDraft(view, pick.position);
             }
         };
         const onDoubleClick = (event: MouseEvent): void => {
             if (canvas.mode() !== CanvasMode.DRAW &&
-                (activeControl === ActiveControl.OPEN_ISSUE || newPosition?.length === 3)) {
+                (activeControl === ActiveControl.OPEN_ISSUE || isIssuePoint(newPosition))) {
                 // A second click must not fit the scene after the first one opens the point form.
                 event.preventDefault();
                 event.stopImmediatePropagation();
@@ -344,10 +341,9 @@ export default function Review3D(): JSX.Element {
             event.stopImmediatePropagation();
             if (activeControl !== ActiveControl.CURSOR || navigationBlocked) return;
             const pick = canvas.pick(event.clientX, event.clientY, view);
-            const object = objects.find((candidate) => candidate.clientID === pick?.clientID &&
-                !candidate.isGroundTruth && !candidate.outside && !candidate.hidden &&
-                candidate.shapeType === ShapeType.CUBOID &&
-                [ObjectType.SHAPE, ObjectType.TRACK].includes(candidate.objectType));
+            const object = objects.find((candidate) => (
+                candidate.clientID === pick?.clientID && isReviewableCuboid(candidate)
+            ));
             dispatch(activateObject(object?.clientID ?? null, null, null));
             setDraftView(view);
             dispatch(updateCanvasContextMenu(
@@ -369,14 +365,14 @@ export default function Review3D(): JSX.Element {
             };
             const regionClick = (event: MouseEvent): void => {
                 if (activeControl !== ActiveControl.CURSOR || dragged) return;
-                if (newPosition?.length === 16) {
+                if (isIssueCuboid(newPosition)) {
                     event.stopImmediatePropagation();
                     return;
                 }
                 const id = canvas.pickIssueCuboid(event.clientX, event.clientY, view);
-                const issue = issues.find((item) => item.id === id);
+                const issue = visibleIssuesById.get(id);
                 if (!issue) {
-                    if (issues.find((item) => item.id === activeIssueId)?.position.length === 16) {
+                    if (isIssueCuboid(activeIssue?.position)) {
                         dispatch(reviewActions.selectIssue(null));
                     }
                     return;
@@ -406,7 +402,7 @@ export default function Review3D(): JSX.Element {
         };
     }, [
         canvas, ready, activeControl, objects, workspace, navigationBlocked,
-        issues, newPosition, creating, fetching, activeIssueId,
+        visibleIssuesById, newPosition, creating, fetching, activeIssue, startDraft,
     ]);
 
     useEffect(() => {
@@ -416,14 +412,18 @@ export default function Review3D(): JSX.Element {
             return undefined;
         }
         const pins = [
-            ...issues.map((issue) => ({
+            ...visibleIssues.map((issue) => ({
                 id: issue.id,
+                issue,
                 position: preview?.drag.id === issue.id ? preview.position : issue.position,
             })),
-            ...(newPosition ? [{ id: 0, position: preview?.drag.id === 0 ? preview.position : newPosition }] : []),
-        ];
+            ...(newPosition ? [{
+                id: 0, issue: null, position: preview?.drag.id === 0 ? preview.position : newPosition,
+            }] : []),
+        ].map((pin) => ({ ...pin, cuboid: isIssueCuboid(pin.position) }));
         let animationFrame: number;
         let previous: string | null = null;
+        let previousSprites: string | null = null;
         const updatePositions = (): void => {
             const next: Placement[] = [];
             const sprites: IssueSprite[] = [];
@@ -445,14 +445,14 @@ export default function Review3D(): JSX.Element {
                             y: Math.round((canvasRect.top + point[1]) * 100) / 100,
                             canvasRect,
                             expanded: !!expandedItem,
-                            corners: pin.position.length === 16 ? canvas.projectIssueCuboid(pin.position, view) : [],
+                            cuboid: pin.cuboid,
+                            corners: pin.cuboid && (pin.id === 0 || pin.id === activeIssueId) &&
+                                view !== ViewType.PERSPECTIVE ? canvas.projectIssueCuboid(pin.position, view) : [],
                         });
-                        const issue = issues.find((item) => item.id === pin.id);
-                        if (issue && (hidden || (resolvedHidden && issue.resolved))) return;
-                        if (!issue && !(pin.id === 0 && newPosition)) return;
+                        const { issue } = pin;
                         const highlighted = highlightedIssueId === pin.id || preview?.drag.id === pin.id;
-                        if (pin.position.length === 3 &&
-                            (!issue?.resolved || highlighted || hoveredResolvedIssueId === pin.id)) {
+                        if (isIssuePoint(pin.position) &&
+                            (!issue || showIssueGeometry(issue, activeIssueId, geometryHighlightId))) {
                             sprites.push({
                                 id: pin.id,
                                 view,
@@ -467,6 +467,9 @@ export default function Review3D(): JSX.Element {
                         if (issue && label) {
                             const { width, height } = label.getBoundingClientRect();
                             const style = window.getComputedStyle(label);
+                            const { left, top } = getIssueLabelPosition(
+                                point[1] + 15, point[0] + 15, canvasRect, { width, height },
+                            );
                             sprites.push({
                                 id: pin.id,
                                 view,
@@ -474,10 +477,7 @@ export default function Review3D(): JSX.Element {
                                 highlighted,
                                 width,
                                 height,
-                                offset: [
-                                    Math.max(8, Math.min(point[0] + 15, canvasRect.width - width - 8)) - point[0],
-                                    Math.max(8, Math.min(point[1] + 15, canvasRect.height - height - 8)) - point[1],
-                                ],
+                                offset: [left - point[0], top - point[1]],
                                 label: {
                                     text: issue.comments[0]?.message || '',
                                     resolved: issue.resolved,
@@ -489,11 +489,15 @@ export default function Review3D(): JSX.Element {
                     }
                 });
             });
-            canvas.setupIssueSprites(sprites);
+            const spriteSignature = JSON.stringify([window.devicePixelRatio, sprites]);
+            if (spriteSignature !== previousSprites) {
+                previousSprites = spriteSignature;
+                canvas.setupIssueSprites(sprites);
+            }
             const signature = next.map(({
-                id, view, x, y, canvasRect, expanded, corners,
+                id, view, x, y, canvasRect, expanded, cuboid, corners,
             }) => [
-                id, view, x, y, expanded,
+                id, view, x, y, expanded, cuboid,
                 canvasRect.left, canvasRect.top, canvasRect.width, canvasRect.height,
                 JSON.stringify(corners),
             ].join(':')).join('|');
@@ -506,18 +510,12 @@ export default function Review3D(): JSX.Element {
         updatePositions();
         return () => cancelAnimationFrame(animationFrame);
     }, [
-        canvas, ready, issues, newPosition, preview, hidden, resolvedHidden, highlightedIssueId, hoveredResolvedIssueId,
+        canvas, ready, visibleIssues, newPosition, preview, highlightedIssueId, geometryHighlightId, activeIssueId,
     ]);
 
-    const visibleIssues = hidden ? [] : issues.filter((issue) => !resolvedHidden || !issue.resolved);
-    const activeIssue = visibleIssues.find((issue) => issue.id === activeIssueId);
     useEffect(() => {
         if (!ready || !activeIssue || activeControl !== ActiveControl.CURSOR) return;
-        const object = activeIssue.objectID === null ? null : objects.find((candidate) => (
-            !candidate.isGroundTruth && !candidate.outside && !candidate.hidden &&
-            candidate.shapeType === ShapeType.CUBOID && candidate.serverID === activeIssue.objectID &&
-            candidate.objectType === activeIssue.objectType
-        ));
+        const object = findLinkedCuboid(objects, activeIssue);
         // Reuse selection so the linked cuboid is highlighted in every 3D view.
         dispatch(activateObject(object?.clientID ?? null, null, null));
     }, [activeIssue, activeControl, objects, ready]);
@@ -530,7 +528,8 @@ export default function Review3D(): JSX.Element {
     useEffect(() => {
         if (activePlacement) lastDialogPlacement.current = activePlacement;
     }, [activePlacement]);
-    const dialogPlacement = activePlacement || lastDialogPlacement.current;
+    const previousPlacement = lastDialogPlacement.current;
+    const dialogPlacement = activePlacement || (previousPlacement?.id === dialogId ? previousPlacement : null);
     // The creation form can be taller or wider than a docked orthographic pane.
     // Allow it to extend over the grid while keeping its anchor in the clicked view.
     const draftBounds = newPosition && dialogPlacement && !dialogPlacement.expanded &&
@@ -552,11 +551,6 @@ export default function Review3D(): JSX.Element {
                 return current === issue.id ? null : current;
             });
         }
-        window.document.querySelectorAll<HTMLElement>(
-            `.cvat-canvas3d-issue-region[data-issue-id="${issue.id}"]`,
-        ).forEach((element) => {
-            element.style.visibility = show || !issue.resolved ? 'visible' : 'hidden';
-        });
     };
 
     return (
@@ -570,9 +564,9 @@ export default function Review3D(): JSX.Element {
                     return (
                         <ViewOverlay key={view} canvasRect={canvasRect}>
                             {(container) => viewPlacements.map(({
-                                id, x, y, expanded, corners,
+                                id, x, y, expanded, cuboid, corners,
                             }) => {
-                                const issue = visibleIssues.find((item) => item.id === id);
+                                const issue = visibleIssuesById.get(id);
                                 if (!issue && !(id === 0 && newPosition)) return null;
                                 const draggable = view !== ViewType.PERSPECTIVE && !creating && !fetching &&
                                     activeControl === ActiveControl.CURSOR &&
@@ -590,14 +584,15 @@ export default function Review3D(): JSX.Element {
                                     style: {
                                         left: x - canvasRect.left,
                                         top: y - canvasRect.top,
-                                        visibility: issue?.resolved && !highlighted ?
-                                            'hidden' as const : 'visible' as const,
+                                        visibility: !issue ||
+                                            showIssueGeometry(issue, activeIssueId, geometryHighlightId) ?
+                                            'visible' as const : 'hidden' as const,
                                     },
                                 };
 
                                 return (
                                     <React.Fragment key={id}>
-                                        {!corners.length && (clickable ? (
+                                        {!cuboid && (clickable ? (
                                             <button
                                                 {...regionProps}
                                                 type='button'
@@ -659,7 +654,6 @@ export default function Review3D(): JSX.Element {
                 newPosition && newSource === NewIssueSource.ISSUE_TOOL ? (
                     <CreateIssueDialog
                         {...dialogPosition}
-                        onCreateIssue={() => {}}
                         onFetchingChange={setCreating}
                     />
                 ) : activeIssue && (
@@ -683,4 +677,9 @@ export default function Review3D(): JSX.Element {
             )}
         </>
     );
+}
+
+export default function Review3D(): JSX.Element | null {
+    const canvas = useSelector((state: CombinedState) => state.annotation.canvas.instance);
+    return canvas instanceof Canvas3d ? <IssueOverlays canvas={canvas} /> : null;
 }

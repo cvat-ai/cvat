@@ -11,6 +11,7 @@ import User from './user';
 import { ArgumentError } from './exceptions';
 import serverProxy from './server-proxy';
 import { ObjectType } from './enums';
+import type { SerializedUser } from './server-response-types';
 
 function validatePosition(position: number[]): void {
     if (!Array.isArray(position) || !position.length || !position.every(Number.isFinite)) {
@@ -28,7 +29,7 @@ interface RawIssueData {
     view?: IssueView | null;
     id?: number;
     comments?: RawCommentData[];
-    owner?: any;
+    owner?: SerializedUser | User | null;
     resolved?: boolean;
     created_date?: string;
 }
@@ -39,6 +40,9 @@ export interface IssueView {
     up: number[];
     zoom: number;
 }
+
+type IssueData = Omit<RawIssueData, 'comments' | 'owner'> & { comments: Comment[]; owner?: User | null };
+type IssueWriteData = Omit<RawIssueData, 'owner'> & { owner?: number };
 
 export default class Issue {
     public readonly id?: number;
@@ -53,41 +57,22 @@ export default class Issue {
     public readonly resolved?: boolean;
     public readonly createdDate?: string;
     public position?: number[];
-    private readonly __internal: RawIssueData & { comments: Comment[] };
+    private readonly __internal: IssueData;
 
     constructor(initialData: RawIssueData) {
-        const data: RawIssueData & { comments: Comment[] } = {
-            id: undefined,
-            job: undefined,
-            position: undefined,
-            frame: undefined,
-            end_frame: null,
-            object_id: null,
-            object_type: null,
-            view: null,
-            created_date: undefined,
-            owner: undefined,
-            resolved: undefined,
-            comments: undefined,
+        const { comments, owner, ...fields } = initialData;
+        let issueOwner: User | null = null;
+        if (owner) issueOwner = owner instanceof User ? owner : new User(owner);
+        const data: IssueData = {
+            ...fields,
+            end_frame: fields.end_frame ?? null,
+            object_id: fields.object_id ?? null,
+            object_type: fields.object_type ?? null,
+            view: fields.view ?? null,
+            created_date: fields.created_date ?? new Date().toISOString(),
+            comments: Array.isArray(comments) ? comments.map((comment) => new Comment(comment)) : [],
+            owner: issueOwner,
         };
-
-        for (const property in data) {
-            if (Object.prototype.hasOwnProperty.call(data, property) && property in initialData) {
-                data[property] = initialData[property];
-            }
-        }
-
-        if (data.owner && !(data.owner instanceof User)) data.owner = new User(data.owner);
-
-        if (typeof data.created_date === 'undefined') {
-            data.created_date = new Date().toISOString();
-        }
-
-        if (Array.isArray(initialData.comments)) {
-            data.comments = initialData.comments.map((comment: RawCommentData): Comment => new Comment(comment));
-        } else {
-            data.comments = [];
-        }
 
         Object.defineProperties(
             this,
@@ -97,7 +82,7 @@ export default class Issue {
                 },
                 position: {
                     get: () => data.position,
-                    set: (value) => {
+                    set: (value: number[]) => {
                         validatePosition(value);
                         data.position = [...value];
                     },
@@ -191,8 +176,8 @@ export default class Issue {
         await PluginRegistry.apiWrapper.call(this, Issue.prototype.delete);
     }
 
-    public serialize(): RawIssueData {
-        const data: RawIssueData = {
+    public serialize(): IssueWriteData {
+        const data: IssueWriteData = {
             job: this.job,
             position: this.position,
             frame: this.frame,
@@ -212,7 +197,7 @@ export default class Issue {
             data.resolved = this.resolved;
         }
         if (this.owner instanceof User) {
-            data.owner = this.owner.serialize().id;
+            data.owner = this.owner.id;
         }
 
         return data;

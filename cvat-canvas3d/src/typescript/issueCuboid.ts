@@ -14,9 +14,13 @@ export interface IssueCuboid {
 
 // Use the annotation cuboid format: center, Euler rotation, dimensions, and seven reserved values.
 // Point issues continue to use [x, y, z]. Both live in the shared Issue.position field.
-export function isIssueCuboid(position: number[]): boolean {
+export function isIssueCuboid(position: number[] | null | undefined): boolean {
     return Array.isArray(position) && position.length === 16 && position.every(Number.isFinite) &&
         position.slice(6, 9).every((value) => value > 0);
+}
+
+export function isIssuePoint(position: number[] | null | undefined): boolean {
+    return Array.isArray(position) && position.length === 3 && position.every(Number.isFinite);
 }
 
 export function issueCuboidCorners(position: number[]): THREE.Vector3[] {
