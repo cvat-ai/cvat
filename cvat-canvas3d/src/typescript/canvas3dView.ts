@@ -20,8 +20,12 @@ import {
 } from './cuboid';
 import { ObjectState, ObjectType } from '.';
 import { ThickArrowHelper } from './thickArrowHelper';
-import { disposeObject3D, disposeScene } from './utils';
+import { displayPixelRatio, disposeObject3D, disposeScene } from './utils';
 import { IssueRegion, ISSUE_REGION_NAME } from './issueRegion';
+import {
+    IssueCuboid, IssueCuboids, isIssueCuboid, issueCuboidCorners, resizeIssueCuboid,
+} from './issueCuboid';
+import { IssueSprite, IssueSprites } from './issueSprite';
 
 export interface Canvas3dView {
     html(): ViewsDOM;
@@ -29,6 +33,13 @@ export interface Canvas3dView {
     keyControls(keys: KeyboardEvent): void;
     focusObjectByClientId(clientID: number, animate?: boolean): void;
     setupIssueRegions(regions: Record<number, IssueRegion>): void;
+    setupIssueCuboids(regions: IssueCuboid[], activeID?: number | null): void;
+    setupIssueSprites(sprites: IssueSprite[]): void;
+    pickIssueCuboid(clientX: number, clientY: number, view: ViewType): number | null;
+    projectIssueCuboid(position: number[], view: ViewType): ([number, number] | null)[];
+    resizeIssueCuboid(
+        position: number[], corner: number, view: ViewType, from: [number, number], to: [number, number],
+    ): number[] | null;
     pick(clientX: number, clientY: number, view?: ViewType): PickResult | null;
     pickPosition(clientX: number, clientY: number, view?: ViewType): number[] | null;
     projectPosition(position: number[], view: ViewType): [number, number] | null;
@@ -148,7 +159,64 @@ export class Canvas3dViewImpl implements Canvas3dView, Listener {
     private hoverNeedsUpdate: boolean;
     private cameraRayHelpers: ThickArrowHelper[];
     private issueRegions: Record<number, IssueRegion> = {};
+    private issueCuboids: IssueCuboids | null = null;
+    private issueSprites: IssueSprites | null = null;
+    private activeIssueCuboidID: number | null = null;
     private redrawMaterial: THREE.MeshBasicMaterial | null = null;
+
+    public setupIssueSprites(sprites: IssueSprite[]): void {
+        if (!this.issueSprites && sprites.length && this.views.perspective.scene.children.length) {
+            this.issueSprites = new IssueSprites(Object.fromEntries(
+                Object.values(ViewType).map((view) => [view, this.views[view].scene]),
+            ) as Record<ViewType, THREE.Scene>);
+        }
+        this.issueSprites?.setup(sprites);
+    }
+
+    public setupIssueCuboids(regions: IssueCuboid[], activeID: number | null = null): void {
+        this.activeIssueCuboidID = regions.some((region) => region.id === activeID) ? activeID : null;
+        if (!this.issueCuboids && regions.length && this.views.perspective.scene.children.length) {
+            this.issueCuboids = new IssueCuboids(Object.fromEntries(
+                Object.values(ViewType).map((view) => [view, this.views[view].scene]),
+            ) as Record<ViewType, THREE.Scene>);
+        }
+        this.issueCuboids?.setup(regions);
+    }
+
+    public pickIssueCuboid(clientX: number, clientY: number, view: ViewType): number | null {
+        const { camera, renderer } = this.views[view];
+        if (!camera || !this.issueCuboids) return null;
+        const rect = renderer.domElement.getBoundingClientRect();
+        const pointer = new THREE.Vector2(
+            ((clientX - rect.left) / rect.width) * 2 - 1,
+            1 - ((clientY - rect.top) / rect.height) * 2,
+        );
+        const raycaster = new THREE.Raycaster();
+        raycaster.setFromCamera(pointer, camera);
+        if (camera instanceof THREE.OrthographicCamera) {
+            raycaster.ray.origin.copy(new THREE.Vector3(pointer.x, pointer.y, -1).unproject(camera));
+            raycaster.far = camera.far - camera.near;
+        } else {
+            raycaster.near = camera.near;
+            raycaster.far = camera.far;
+        }
+        return this.issueCuboids.pick(raycaster, view);
+    }
+
+    public projectIssueCuboid(position: number[], view: ViewType): ([number, number] | null)[] {
+        return issueCuboidCorners(position).map((corner) => this.projectPosition(corner.toArray(), view));
+    }
+
+    public resizeIssueCuboid(
+        position: number[], corner: number, view: ViewType, from: [number, number], to: [number, number],
+    ): number[] | null {
+        if (view === ViewType.PERSPECTIVE) return null;
+        const moved = this.movePosition(position.slice(0, 3), view, from, to);
+        return moved ? resizeIssueCuboid(
+            position, corner, new THREE.Vector3(...moved).sub(new THREE.Vector3(...position.slice(0, 3))),
+            this.views[view].camera.getWorldDirection(new THREE.Vector3()),
+        ) : null;
+    }
 
     public setupIssueRegions(regions: Record<number, IssueRegion>): void {
         this.issueRegions = { ...regions };
@@ -175,7 +243,9 @@ export class Canvas3dViewImpl implements Canvas3dView, Listener {
             raycaster.ray.origin.copy(new THREE.Vector3(pointer.x, pointer.y, -1).unproject(camera));
             raycaster.far = camera.far - camera.near;
         }
-        const cuboidHit = raycaster.intersectObjects(this.getAllVisibleCuboids(view), false)[0];
+        const cuboidHit = raycaster.intersectObjects(this.getAllVisibleCuboids(view), false).find((hit) => (
+            Math.abs(hit.point.clone().project(camera).z) <= 1
+        ));
         if (cuboidHit) {
             return {
                 position: cuboidHit.point.toArray(),
@@ -195,7 +265,14 @@ export class Canvas3dViewImpl implements Canvas3dView, Listener {
             const position = new THREE.Vector3().fromBufferAttribute(cloud.geometry.attributes.position, pointHit.index)
                 .applyMatrix4(cloud.matrixWorld);
             const projected = position.clone().project(camera);
-            if (Math.abs(projected.x) <= 1 && Math.abs(projected.y) <= 1 && Math.abs(projected.z) <= 1) {
+            // A world-space tolerance grows on screen when zooming in. Never select
+            // a Perspective cloud point more than five screen pixels from the click.
+            const withinPointer = view !== ViewType.PERSPECTIVE || Math.hypot(
+                ((projected.x - pointer.x) * rect.width) / 2,
+                ((projected.y - pointer.y) * rect.height) / 2,
+            ) <= 5;
+            if (withinPointer && Math.abs(projected.x) <= 1 && Math.abs(projected.y) <= 1 &&
+                Math.abs(projected.z) <= 1) {
                 return { position: position.toArray(), clientID: null };
             }
         }
@@ -208,8 +285,21 @@ export class Canvas3dViewImpl implements Canvas3dView, Listener {
 
     public projectPosition(position: number[], view: ViewType): [number, number] | null {
         const { camera, renderer } = this.views[view];
-        if (!camera || position.length !== 3 || !position.every(Number.isFinite)) return null;
-        const projected = new THREE.Vector3(...position).project(camera);
+        if (!camera || (position.length !== 3 && !isIssueCuboid(position)) ||
+            !position.every(Number.isFinite)) return null;
+        if (isIssueCuboid(position)) {
+            const corners = issueCuboidCorners(position);
+            const frustum = new THREE.Frustum().setFromProjectionMatrix(
+                new THREE.Matrix4().multiplyMatrices(camera.projectionMatrix, camera.matrixWorldInverse),
+            );
+            // The orthographic panes show a depth slice around the selected annotation.
+            // A cuboid's label and handles must disappear with its clipped volume.
+            // Test the whole region so a partially visible cuboid keeps its label.
+            if (frustum.planes.some((plane) => corners.every((corner) => plane.distanceToPoint(corner) < 0))) {
+                return null;
+            }
+        }
+        const projected = new THREE.Vector3(...position.slice(0, 3)).project(camera);
         // Orthographic cloud views may be clipped to the selected cuboid's depth.
         // Review pins remain visible outside that slab so they can still be moved.
         if (Math.abs(projected.x) > 1 || Math.abs(projected.y) > 1 ||
@@ -221,17 +311,35 @@ export class Canvas3dViewImpl implements Canvas3dView, Listener {
     }
 
     public focusPosition(position: number[]): void {
-        if (position.length !== 3 || !position.every(Number.isFinite)) return;
+        if ((position.length !== 3 && !isIssueCuboid(position)) || !position.every(Number.isFinite)) return;
         this.views.perspective.controls?.moveTo(position[0], position[1], position[2], true);
         BOTTOM_VIEWS.forEach((view) => {
             const { camera } = this.views[view];
             if (!camera) return;
-            // Orthographic controls are disabled. Pan the camera in its own plane
-            // without changing its orientation, zoom, or distance along that plane's normal.
-            const anchor = new THREE.Vector3(...position);
+            // Pan point issues without changing depth or zoom. Fit cuboid issues below
+            // so the whole volume and its resize handles are visible in the orthographic views.
+            const anchor = new THREE.Vector3(...position.slice(0, 3));
             const projected = anchor.clone().project(camera);
             const center = new THREE.Vector3(0, 0, projected.z).unproject(camera);
             camera.position.add(anchor.sub(center));
+            if (isIssueCuboid(position)) {
+                const ortho = camera as THREE.OrthographicCamera;
+                const target = new THREE.Vector3(...position.slice(0, 3));
+                const direction = camera.getWorldDirection(new THREE.Vector3());
+                const distance = Math.max(2, new THREE.Vector3(...position.slice(6, 9)).length());
+                camera.position.copy(target.clone().addScaledVector(direction, -distance));
+                ortho.near = 0;
+                ortho.far = distance * 2;
+                const right = new THREE.Vector3(1, 0, 0).applyQuaternion(camera.quaternion);
+                const up = new THREE.Vector3(0, 1, 0).applyQuaternion(camera.quaternion);
+                const corners = issueCuboidCorners(position).map((corner) => corner.sub(target));
+                const width = Math.max(...corners.map((corner) => corner.dot(right))) -
+                    Math.min(...corners.map((corner) => corner.dot(right)));
+                const height = Math.max(...corners.map((corner) => corner.dot(up))) -
+                    Math.min(...corners.map((corner) => corner.dot(up)));
+                ortho.zoom = Math.min((ortho.right - ortho.left) / width, (ortho.top - ortho.bottom) / height) / 1.5;
+                ortho.updateProjectionMatrix();
+            }
             camera.updateMatrixWorld();
         });
     }
@@ -279,11 +387,11 @@ export class Canvas3dViewImpl implements Canvas3dView, Listener {
         const { camera, renderer } = this.views[view];
         const rect = renderer.domElement.getBoundingClientRect();
         if (view === ViewType.PERSPECTIVE || !camera || !rect.width || !rect.height ||
-            position.length !== 3 || !position.every(Number.isFinite)) return null;
+            (position.length !== 3 && !isIssueCuboid(position)) || !position.every(Number.isFinite)) return null;
 
         // Intersect both pointer locations with the screen-parallel plane through the anchor.
         // Taking their difference preserves depth and the original grab offset, even in rotated views.
-        const anchor = new THREE.Vector3(...position);
+        const anchor = new THREE.Vector3(...position.slice(0, 3));
         const normal = camera.getWorldDirection(new THREE.Vector3());
         // lookAt slightly perturbs cameras whose up vector is parallel to the viewing axis.
         // Keep their hidden coordinate exact so repeated drags cannot accumulate depth drift.
@@ -300,7 +408,7 @@ export class Canvas3dViewImpl implements Canvas3dView, Listener {
         };
         const start = intersect(from);
         const end = intersect(to);
-        return start && end ? anchor.add(end.sub(start)).toArray() : null;
+        return start && end ? [...anchor.add(end.sub(start)).toArray(), ...position.slice(3)] : null;
     }
 
     public focusObjectByClientId(clientID: number, animate: boolean = true): void {
@@ -684,8 +792,10 @@ export class Canvas3dViewImpl implements Canvas3dView, Listener {
             const { x: rotationX, y: rotationY, z: rotationZ } = this.cube.perspective.rotation;
             const points = [x, y, z, rotationX, rotationY, rotationZ, width, height, depth, 0, 0, 0, 0, 0, 0, 0];
             const initState = this.model.data.drawData.initialState;
-            const { redraw } = this.model.data.drawData;
-            if (typeof redraw === 'number') {
+            const { redraw, issueRegion } = this.model.data.drawData;
+            if (issueRegion) {
+                this.dispatchEvent(new CustomEvent('canvas.issueregiondrawn', { detail: { position: points } }));
+            } else if (typeof redraw === 'number') {
                 const state = this.model.objects
                     .find((object: ObjectState): boolean => object.clientID === redraw);
                 const { cuboid } = this.drawnObjects[redraw];
@@ -726,6 +836,7 @@ export class Canvas3dViewImpl implements Canvas3dView, Listener {
             }
 
             this.views[ViewType.PERSPECTIVE].scene.children[0].remove(this.cube.perspective);
+            if (issueRegion) this.cube.dispose();
             this.dispatchEvent(new CustomEvent('canvas.canceled'));
         });
 
@@ -1046,7 +1157,7 @@ export class Canvas3dViewImpl implements Canvas3dView, Listener {
                 selectedCuboid.top.scale.y,
                 canvasTop.offsetWidth,
                 canvasTop.offsetHeight,
-                top.renderer.domElement.width / Math.max(top.renderer.domElement.height, 1),
+                canvasTop.offsetWidth / Math.max(canvasTop.offsetHeight, 1),
             );
 
             cameraTop.zoom = defaultOrMemoized(zoomTopDefault, memoizedZoom?.top ?? null);
@@ -1060,7 +1171,7 @@ export class Canvas3dViewImpl implements Canvas3dView, Listener {
                 selectedCuboid.front.scale.z,
                 canvasFront.offsetWidth,
                 canvasFront.offsetHeight,
-                front.renderer.domElement.width / Math.max(front.renderer.domElement.height, 1),
+                canvasFront.offsetWidth / Math.max(canvasFront.offsetHeight, 1),
             );
             cameraFront.zoom = defaultOrMemoized(zoomFrontDefault, memoizedZoom?.front ?? null);
             cameraFront.updateProjectionMatrix();
@@ -1073,7 +1184,7 @@ export class Canvas3dViewImpl implements Canvas3dView, Listener {
                 selectedCuboid.side.scale.z,
                 canvasSide.offsetWidth,
                 canvasSide.offsetHeight,
-                side.renderer.domElement.width / Math.max(side.renderer.domElement.height, 1),
+                canvasSide.offsetWidth / Math.max(canvasSide.offsetHeight, 1),
             );
             cameraSide.zoom = defaultOrMemoized(zoomSideDefault, memoizedZoom?.side ?? null);
             cameraSide.updateProjectionMatrix();
@@ -1738,6 +1849,11 @@ export class Canvas3dViewImpl implements Canvas3dView, Listener {
             }
 
             this.cube.setName('drawTemplate');
+            if (data.issueRegion) {
+                this.cube.setColor('red');
+                this.cube.setOpacity(20);
+                this.cube.setOrientationVisibility({ x: false, y: false, z: false });
+            }
             this.deactivateObject();
             this.views[ViewType.PERSPECTIVE].scene.children[0].add(this.cube.perspective);
         } else if (reason === UpdateReasons.OBJECTS_UPDATED) {
@@ -1777,6 +1893,7 @@ export class Canvas3dViewImpl implements Canvas3dView, Listener {
                 if (template) {
                     scene.remove(template);
                 }
+                if (this.controller.drawData.issueRegion) this.cube.dispose();
             }
 
             if (this.mode === Mode.MERGE) {
@@ -1835,6 +1952,11 @@ export class Canvas3dViewImpl implements Canvas3dView, Listener {
     }
 
     private clearScene(): void {
+        this.issueSprites?.setup([]);
+        this.issueSprites = null;
+        this.issueCuboids?.clear();
+        this.issueCuboids = null;
+        this.activeIssueCuboidID = null;
         Object.entries(this.drawnObjects).forEach(([clientID, { cuboid }]) => {
             this.removeSceneChildren(cuboid, +clientID);
         });
@@ -2158,6 +2280,8 @@ export class Canvas3dViewImpl implements Canvas3dView, Listener {
         const width = canvas.parentElement.clientWidth;
         const height = canvas.parentElement.clientHeight;
         const shouldResize = canvas.clientWidth !== width || canvas.clientHeight !== height;
+        const pixelRatio = displayPixelRatio();
+        if (renderer.getPixelRatio() !== pixelRatio) renderer.setPixelRatio(pixelRatio);
         if (shouldResize && camera && view.camera) {
             if (camera instanceof THREE.PerspectiveCamera) {
                 camera.aspect = width / height;
@@ -2182,6 +2306,7 @@ export class Canvas3dViewImpl implements Canvas3dView, Listener {
     }
 
     private renderRayCaster = (viewType: RenderView): void => {
+        if (this.activeIssueCuboidID !== null && this.mode === Mode.IDLE) return;
         viewType.rayCaster.renderer.setFromCamera(viewType.rayCaster.mouseVector, viewType.camera);
         if (this.mode === Mode.DRAW) {
             const [intersection] = viewType.rayCaster.renderer
@@ -2251,6 +2376,7 @@ export class Canvas3dViewImpl implements Canvas3dView, Listener {
             } else {
                 viewType.camera.updateProjectionMatrix();
             }
+            this.issueSprites?.update(view as ViewType, viewType.camera, viewType.renderer.domElement.clientHeight);
             viewType.renderer.render(viewType.scene, viewType.camera);
             if (view === ViewType.PERSPECTIVE && viewType.scene.children.length !== 0) {
                 this.renderRayCaster(viewType);

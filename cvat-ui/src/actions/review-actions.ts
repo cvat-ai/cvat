@@ -5,7 +5,7 @@
 
 import { ActionUnion, createAction, ThunkAction } from 'utils/redux';
 import {
-    getCore, Issue, IssueView, ObjectType, ObjectState,
+    getCore, Issue, IssueView, ObjectType, ObjectState, DimensionType,
 } from 'cvat-core-wrapper';
 import { NewIssueSource } from 'reducers';
 import { saveAnnotationsAsync } from './annotation-actions';
@@ -47,9 +47,13 @@ export const reviewActions = {
     startIssue: (
         position: number[], source = NewIssueSource.ISSUE_TOOL,
         objectClientID: number | null = null, view: IssueView | null = null,
+        dimension = DimensionType.DIMENSION_2D,
     ) => (
         createAction(ReviewActionTypes.START_ISSUE, {
-            position: cvat.classes.Issue.hull(position), source, objectClientID, view,
+            position: dimension === DimensionType.DIMENSION_3D ? [...position] : cvat.classes.Issue.hull(position),
+            source,
+            objectClientID,
+            view,
         })
     ),
     selectIssue: (issueId: number | null) => createAction(ReviewActionTypes.SELECT_ISSUE, { issueId }),

@@ -84,6 +84,7 @@ export default function HiddenIssueLabel(props: Props): ReactPortal {
                 onClick={onClick}
                 onPointerDown={props.onPointerDown}
                 role='button'
+                aria-label={`${resolved ? 'Resolved' : 'Open'} issue #${id}: ${comments[0]?.message || 'No comments found'}`}
                 tabIndex={0}
                 onKeyDown={(event) => {
                     if (event.key === 'Enter' || event.key === ' ') {

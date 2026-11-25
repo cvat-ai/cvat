@@ -44,6 +44,7 @@ export interface Image {
 
 export interface DrawData {
     enabled: boolean;
+    issueRegion?: boolean;
     initialState?: any;
     redraw?: number;
     shapeType?: string;

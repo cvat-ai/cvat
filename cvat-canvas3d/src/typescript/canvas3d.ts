@@ -28,6 +28,8 @@ import { CUBOID_EDGES, CUBOID_FACES } from './cuboid';
 import type { CameraCalibration } from './geometry/camera-projection';
 import type { Master } from './master';
 import type { IssueRegion } from './issueRegion';
+import type { IssueCuboid } from './issueCuboid';
+import type { IssueSprite } from './issueSprite';
 
 interface Canvas3d {
     html(): ViewsDOM;
@@ -45,6 +47,13 @@ interface Canvas3d {
     fit(): void;
     focus(clientID: number): void;
     setupIssueRegions(regions: Record<number, IssueRegion>): void;
+    setupIssueCuboids(regions: IssueCuboid[], activeID?: number | null): void;
+    setupIssueSprites(sprites: IssueSprite[]): void;
+    pickIssueCuboid(clientX: number, clientY: number, view: ViewType): number | null;
+    projectIssueCuboid(position: number[], view: ViewType): ([number, number] | null)[];
+    resizeIssueCuboid(
+        position: number[], corner: number, view: ViewType, from: [number, number], to: [number, number],
+    ): number[] | null;
     selectRegion(enabled: boolean): void;
     pick(clientX: number, clientY: number, view?: ViewType): PickResult | null;
     pickPosition(clientX: number, clientY: number, view?: ViewType): number[] | null;
@@ -139,6 +148,28 @@ class Canvas3dImpl implements Canvas3d {
         this.view.setupIssueRegions(regions);
     }
 
+    public setupIssueCuboids(regions: IssueCuboid[], activeID: number | null = null): void {
+        this.view.setupIssueCuboids(regions, activeID);
+    }
+
+    public setupIssueSprites(sprites: IssueSprite[]): void {
+        this.view.setupIssueSprites(sprites);
+    }
+
+    public pickIssueCuboid(clientX: number, clientY: number, view: ViewType): number | null {
+        return this.view.pickIssueCuboid(clientX, clientY, view);
+    }
+
+    public projectIssueCuboid(position: number[], view: ViewType): ([number, number] | null)[] {
+        return this.view.projectIssueCuboid(position, view);
+    }
+
+    public resizeIssueCuboid(
+        position: number[], corner: number, view: ViewType, from: [number, number], to: [number, number],
+    ): number[] | null {
+        return this.view.resizeIssueCuboid(position, corner, view, from, to);
+    }
+
     public selectRegion(enabled: boolean): void {
         this.model.mode = enabled ? Mode.SELECT_REGION : Mode.IDLE;
     }
@@ -193,5 +224,5 @@ export {
 };
 
 export type {
-    ViewsDOM, PickResult, CameraCalibration, CameraRayData,
+    ViewsDOM, PickResult, CameraCalibration, CameraRayData, IssueCuboid, IssueSprite,
 };
