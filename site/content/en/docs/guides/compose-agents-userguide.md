@@ -63,8 +63,8 @@ Choose an agent bundle:
 | RF-DETR | `detector/detr/agent` |
 | Hugging Face Transformers | `detector/transformers/agent` |
 | SAM2 tracker | `tracker/sam2/agent` |
-| RT-DETRv2-OBB DOTA | `detector/rio_detr/dota/agent` |
-| RT-DETRv2-OBB DIOR-R | `detector/rio_detr/dior_r/agent` |
+| RT-DETRv2-OBB DOTA | `detector/rtdetrv2_obb/dota/agent` |
+| RT-DETRv2-OBB DIOR-R | `detector/rtdetrv2_obb/dior_r/agent` |
 
 Each directory contains the files needed to build an image or run an available pre-built image.
 Check its `.env` comments and model README for image availability and model-specific parameters.

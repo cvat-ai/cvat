@@ -365,16 +365,16 @@ Python 3.12 is recommended, and Git is required to prepare the pinned upstream s
 1. Install dependencies, prepare the pinned upstream source, and download the default checkpoint:
 
    ```bash
-   python -m pip install -r detector/rio_detr/requirements.txt
-   detector/rio_detr/clone_upstream.sh
-   python detector/rio_detr/common.py --group dota-single-scale --model-size X
+   python -m pip install -r detector/rtdetrv2_obb/requirements.txt
+   detector/rtdetrv2_obb/clone_upstream.sh
+   python detector/rtdetrv2_obb/common.py --group dota-single-scale --model-size X
    ```
 
 2. Register the default DOTA X single-scale model:
 
    ```bash
    cvat-cli --server-host "$CVAT_SERVER_URL" --org "$CVAT_ORG" function create-native "OBB Object Detection - DOTA" \
-     --function-file detector/rio_detr/dota/func.py \
+     --function-file detector/rtdetrv2_obb/dota/func.py \
      -p checkpoint_group=str:dota-single-scale -p model_size=str:X \
      -p conf_threshold=float:0.4 -p device=str:cpu
    ```
@@ -383,7 +383,7 @@ Python 3.12 is recommended, and Git is required to prepare the pinned upstream s
 
    ```bash
    cvat-cli --server-host "$CVAT_SERVER_URL" --org "$CVAT_ORG" function run-agent <function_id> \
-     --function-file detector/rio_detr/dota/func.py \
+     --function-file detector/rtdetrv2_obb/dota/func.py \
      -p checkpoint_group=str:dota-single-scale -p model_size=str:X \
      -p conf_threshold=float:0.4 -p device=str:cpu
    ```
@@ -396,14 +396,14 @@ parentheses with `-p checkpoint_group=str:<value>`.
 
 | Dataset | Model variant | Function file | Supported `model_size` values |
 | ------- | ------------- | ------------- | ----------------------------- |
-| DOTA-v1.0 | Single-scale (`dota-single-scale`) | `detector/rio_detr/dota/func.py` | `str:N`, `str:S`, `str:M`, `str:L`, `str:X` |
-| DOTA-v1.0 | Multi-scale (`dota-multi-scale`) | `detector/rio_detr/dota/func.py` | `str:M`, `str:X` |
-| DIOR-R | Default (`dior-r`) | `detector/rio_detr/dior_r/func.py` | `str:N`, `str:S`, `str:M`, `str:L`, `str:X` |
+| DOTA-v1.0 | Single-scale (`dota-single-scale`) | `detector/rtdetrv2_obb/dota/func.py` | `str:N`, `str:S`, `str:M`, `str:L`, `str:X` |
+| DOTA-v1.0 | Multi-scale (`dota-multi-scale`) | `detector/rtdetrv2_obb/dota/func.py` | `str:M`, `str:X` |
+| DIOR-R | Default (`dior-r`) | `detector/rtdetrv2_obb/dior_r/func.py` | `str:N`, `str:S`, `str:M`, `str:L`, `str:X` |
 
 Register DOTA and DIOR-R as separate functions because their class lists differ. To use a prepared
-checkout in another location, set `RIO_DETR_UPSTREAM_DIR` to its absolute path; it must be at the
+checkout in another location, set `RTDETRV2_OBB_UPSTREAM_DIR` to its absolute path; it must be at the
 supported commit. See the
-[RT-DETRv2-OBB README](https://github.com/cvat-ai/cvat-models/tree/develop/detector/rio_detr)
+[RT-DETRv2-OBB README](https://github.com/cvat-ai/cvat-models/tree/develop/detector/rtdetrv2_obb)
 for checkpoint downloads and local checkpoint parameters. For container deployment, use the
 {{< ilink "/docs/guides/compose-agents-userguide" "Docker Compose agent guide" >}} and select
 the DOTA or DIOR-R agent bundle.
