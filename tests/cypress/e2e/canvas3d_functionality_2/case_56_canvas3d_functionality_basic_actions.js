@@ -110,21 +110,21 @@ context('Canvas 3D functionality. Basic actions.', () => {
                         .should('exist')
                         .and('be.visible')
                         .within(() => {
-                            cy.get('[aria-label="arrow-up"]').should('exist').and('be.visible');
-                            cy.get('[aria-label="arrow-left"]').should('exist').and('be.visible');
-                            cy.get('[aria-label="arrow-down"]').should('exist').and('be.visible');
-                            cy.get('[aria-label="arrow-right"]').should('exist').and('be.visible');
+                            cy.get('.cvat-canvas3d-rotation-icon-vertical-up').should('exist').and('be.visible');
+                            cy.get('.cvat-canvas3d-rotation-icon-horizontal-left').should('exist').and('be.visible');
+                            cy.get('.cvat-canvas3d-rotation-icon-vertical-down').should('exist').and('be.visible');
+                            cy.get('.cvat-canvas3d-rotation-icon-horizontal-right').should('exist').and('be.visible');
                         });
                     cy.get('.cvat-canvas3d-perspective-directions')
                         .should('exist')
                         .and('be.visible')
                         .within(() => {
-                            cy.contains('button', 'U').should('exist').and('be.visible');
-                            cy.contains('button', 'I').should('exist').and('be.visible');
-                            cy.contains('button', 'O').should('exist').and('be.visible');
-                            cy.contains('button', 'J').should('exist').and('be.visible');
-                            cy.contains('button', 'K').should('exist').and('be.visible');
-                            cy.contains('button', 'L').should('exist').and('be.visible');
+                            cy.get('.cvat-canvas3d-perspective-shift-down').should('exist').and('be.visible');
+                            cy.get('.cvat-canvas3d-perspective-zoom-in').should('exist').and('be.visible');
+                            cy.get('.cvat-canvas3d-perspective-shift-up').should('exist').and('be.visible');
+                            cy.get('.cvat-canvas3d-perspective-shift-left').should('exist').and('be.visible');
+                            cy.get('.cvat-canvas3d-perspective-zoom-out').should('exist').and('be.visible');
+                            cy.get('.cvat-canvas3d-perspective-shift-right').should('exist').and('be.visible');
                         });
                 });
             cy.get('.cvat-canvas3d-topview').should('exist').and('be.visible');

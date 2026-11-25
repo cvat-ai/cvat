@@ -6,7 +6,6 @@
 /// <reference types="cypress" />
 
 import { taskName } from '../../support/const_canvas3d';
-import { fullMatch } from '../../support/utils';
 
 context('Canvas 3D functionality. Control button. Mouse interaction.', () => {
     const caseId = '63';
@@ -18,29 +17,15 @@ context('Canvas 3D functionality. Control button. Mouse interaction.', () => {
         expectedTooltipText,
         screenshotNameBefore,
         screenshotNameAfter,
-        arrow,
     ) {
         cy.customScreenshot('.cvat-canvas3d-perspective', screenshotNameBefore);
-        // eslint-disable-next-line cypress/no-unnecessary-waiting
+
         cy.wait(300);
-        if (arrow) {
-            cy.get(button).trigger('mouseover');
-            cy.get(button).click();
-        } else {
-            cy.contains('button', fullMatch(button)).trigger('mouseover');
-            cy.contains('button', fullMatch(button)).click();
-        }
+        cy.get(button).trigger('mouseover');
+        cy.get(button).click();
         cy.contains(expectedTooltipText).should('exist').and('be.visible'); // Check tooltip
-        if (arrow) {
-            cy.get(button).should('exist').click();
-        } else {
-            cy.contains('button', fullMatch(button)).click({ force: true });
-        }
-        if (arrow) {
-            cy.get(button).trigger('mouseout');
-        } else {
-            cy.contains('button', fullMatch(button)).trigger('mouseout');
-        }
+        cy.get(button).should('exist').click({ force: true });
+        cy.get(button).trigger('mouseout');
 
         cy.customScreenshot('.cvat-canvas3d-perspective', screenshotNameAfter);
         cy.compareImagesAndCheckResult(
@@ -57,39 +42,65 @@ context('Canvas 3D functionality. Control button. Mouse interaction.', () => {
     describe(`Testing case "${caseId}"`, () => {
         it('Testing perspective visual regressions by clicking on the buttons with the mouse.', () => {
             testPerspectiveChangeOnButtonClick(
-                '[aria-label="arrow-up"]',
-                'Arrow Up',
+                '.cvat-canvas3d-rotation-icon-vertical-up',
+                'Rotate camera up',
                 'before_click_uparrow',
                 'after_click_uparrow',
-                true,
             );
             testPerspectiveChangeOnButtonClick(
-                '[aria-label="arrow-down"]',
-                'Arrow Down',
+                '.cvat-canvas3d-rotation-icon-vertical-down',
+                'Rotate camera down',
                 'before_click_bottomarrow',
                 'after_click_bottomarrow',
-                true,
             );
             testPerspectiveChangeOnButtonClick(
-                '[aria-label="arrow-left"]',
-                'Arrow Left',
+                '.cvat-canvas3d-rotation-icon-horizontal-left',
+                'Rotate camera left',
                 'before_click_leftarrow',
                 'after_click_leftarrow',
-                true,
             );
             testPerspectiveChangeOnButtonClick(
-                '[aria-label="arrow-right"]',
-                'Arrow Right',
+                '.cvat-canvas3d-rotation-icon-horizontal-right',
+                'Rotate camera right',
                 'before_click_rightarrow',
                 'after_click_rightarrow',
-                true,
             );
-            testPerspectiveChangeOnButtonClick('U', 'Alt+U', 'before_click_move_up', 'after_click_move_up');
-            testPerspectiveChangeOnButtonClick('O', 'Alt+O', 'before_click_move_down', 'after_click_move_down');
-            testPerspectiveChangeOnButtonClick('I', 'Alt+I', 'before_click_zoom_in', 'after_click_zoom_in');
-            testPerspectiveChangeOnButtonClick('K', 'Alt+K', 'before_click_zoom_out', 'after_click_zoom_out');
-            testPerspectiveChangeOnButtonClick('J', 'Alt+J', 'before_click_move_left', 'after_click_move_left');
-            testPerspectiveChangeOnButtonClick('L', 'Alt+L', 'before_click_move_right', 'after_click_move_right');
+            testPerspectiveChangeOnButtonClick(
+                '.cvat-canvas3d-perspective-shift-down',
+                'Move camera down',
+                'before_click_move_up',
+                'after_click_move_up',
+            );
+            testPerspectiveChangeOnButtonClick(
+                '.cvat-canvas3d-perspective-shift-up',
+                'Move camera up',
+                'before_click_move_down',
+                'after_click_move_down',
+            );
+            testPerspectiveChangeOnButtonClick(
+                '.cvat-canvas3d-perspective-zoom-in',
+                'Zoom camera in',
+                'before_click_zoom_in',
+                'after_click_zoom_in',
+            );
+            testPerspectiveChangeOnButtonClick(
+                '.cvat-canvas3d-perspective-zoom-out',
+                'Zoom camera out',
+                'before_click_zoom_out',
+                'after_click_zoom_out',
+            );
+            testPerspectiveChangeOnButtonClick(
+                '.cvat-canvas3d-perspective-shift-left',
+                'Move camera left',
+                'before_click_move_left',
+                'after_click_move_left',
+            );
+            testPerspectiveChangeOnButtonClick(
+                '.cvat-canvas3d-perspective-shift-right',
+                'Move camera right',
+                'before_click_move_right',
+                'after_click_move_right',
+            );
         });
     });
 });
