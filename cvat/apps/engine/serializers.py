@@ -4585,17 +4585,25 @@ class CommentWriteSerializer(WriteOnceMixin, serializers.ModelSerializer):
 
 
 class IssueViewSerializer(serializers.Serializer):
+    """Perspective camera state saved when a 3D issue is created."""
+
     position = serializers.ListField(child=serializers.FloatField(), min_length=3, max_length=3)
     target = serializers.ListField(child=serializers.FloatField(), min_length=3, max_length=3)
     up = serializers.ListField(child=serializers.FloatField(), min_length=3, max_length=3)
     zoom = serializers.FloatField()
 
-    def validate(self, attrs):
+    def validate(self, attrs: dict[str, Any]) -> dict[str, Any]:
         values = [*attrs["position"], *attrs["target"], *attrs["up"], attrs["zoom"]]
-        if not all(math.isfinite(value) for value in values):
+        if not all(map(math.isfinite, values)):
             raise serializers.ValidationError("Camera values must be finite.")
-        if attrs["position"] == attrs["target"] or not any(attrs["up"]) or attrs["zoom"] <= 0:
-            raise serializers.ValidationError("Invalid camera view.")
+        if attrs["position"] == attrs["target"]:
+            raise serializers.ValidationError(
+                {"target": "The target must differ from the camera position."}
+            )
+        if not any(attrs["up"]):
+            raise serializers.ValidationError({"up": "The up direction must be nonzero."})
+        if attrs["zoom"] <= 0:
+            raise serializers.ValidationError({"zoom": "Zoom must be positive."})
         return attrs
 
 
@@ -4632,46 +4640,97 @@ class IssueReadSerializer(serializers.ModelSerializer):
 
 
 class IssueWriteSerializer(WriteOnceMixin, serializers.ModelSerializer):
+    CUBOID_POSITION_LENGTH = 16
+    CUBOID_DIMENSIONS = slice(6, 9)
+
     position = serializers.ListField(
         child=serializers.FloatField(),
         allow_empty=False,
+        help_text="For 3D issues, use [x, y, z] or the 16 values of a CVAT cuboid.",
     )
     message = serializers.CharField(style={"base_template": "textarea.html"})
     view = IssueViewSerializer(required=False, allow_null=True)
+    object_type = serializers.ChoiceField(
+        choices=models.Issue.ObjectType.choices, allow_null=True, required=False
+    )
 
-    def validate(self, attrs):
-        attrs = super().validate(attrs)
-        instance = self.instance
-        job = attrs.get("job", instance.job if instance else None)
-        frame = attrs.get("frame", instance.frame if instance else None)
-        if (
-            attrs.get("view") is not None
-            and job.segment.task.dimension != models.DimensionType.DIM_3D
+    def validate(self, attrs: dict[str, Any]) -> dict[str, Any]:
+        instance: models.Issue | None = self.instance
+        if instance and {"position", "view", "end_frame", "object_id", "object_type"}.isdisjoint(
+            attrs
         ):
+            return attrs
+
+        job = instance.job if instance else attrs["job"]
+        segment = job.segment
+        is_3d = segment.task.dimension == models.DimensionType.DIM_3D
+        if is_3d and "position" in attrs:
+            self._validate_3d_position(attrs["position"])
+        if not is_3d and attrs.get("view") is not None:
             raise serializers.ValidationError(
                 {"view": "Camera views are only supported for 3D issues."}
             )
-        end_frame = attrs.get("end_frame", instance.end_frame if instance else None)
-        if end_frame is not None and (not instance or "end_frame" in attrs):
-            if not job.segment.start_frame <= frame <= end_frame <= job.segment.stop_frame:
-                raise serializers.ValidationError(
-                    {"end_frame": "The frame range must be ordered and within the job."}
-                )
 
-        if not instance or "object_id" in attrs or "object_type" in attrs:
-            object_id = attrs.get("object_id", instance.object_id if instance else None)
-            object_type = attrs.get("object_type", instance.object_type if instance else None)
-            if (object_id is None) != (object_type is None):
-                raise serializers.ValidationError(
-                    {"object_id": "Provide both object_id and object_type, or neither."}
-                )
-            if object_id is not None:
-                model = models.LabeledTrack if object_type == "track" else models.LabeledShape
-                if not model.objects.filter(id=object_id, job=job).exists():
-                    raise serializers.ValidationError(
-                        {"object_id": "The annotation must belong to this job."}
-                    )
+        end_frame = attrs.get("end_frame")
+        if (is_3d and instance is None) or end_frame is not None:
+            frame = instance.frame if instance else attrs["frame"]
+            self._validate_frames(segment, frame, end_frame)
+
+        if "object_id" in attrs or "object_type" in attrs:
+            self._validate_annotation_reference(job, attrs)
+
         return attrs
+
+    @classmethod
+    def _validate_3d_position(cls, position: list[float]) -> None:
+        if len(position) not in (3, cls.CUBOID_POSITION_LENGTH) or not all(
+            map(math.isfinite, position)
+        ):
+            raise serializers.ValidationError(
+                {"position": "Use finite coordinates for a 3D point or cuboid."}
+            )
+        if (
+            len(position) == cls.CUBOID_POSITION_LENGTH
+            and min(position[cls.CUBOID_DIMENSIONS]) <= 0
+        ):
+            raise serializers.ValidationError({"position": "Cuboid dimensions must be positive."})
+
+    @staticmethod
+    def _validate_frames(segment: models.Segment, frame: int, end_frame: int | None) -> None:
+        frame_provider = TaskFrameProvider(segment.task)
+        if not segment.contains_frame(frame_provider.get_abs_frame_number(frame)):
+            raise serializers.ValidationError({"frame": "The frame must belong to the job."})
+        if end_frame is not None and (
+            end_frame < frame
+            or not segment.contains_frame(frame_provider.get_abs_frame_number(end_frame))
+        ):
+            raise serializers.ValidationError(
+                {
+                    "end_frame": "The end frame must be at or after the start frame and belong to the job."
+                }
+            )
+
+    def _validate_annotation_reference(self, job: models.Job, attrs: dict[str, Any]) -> None:
+        instance: models.Issue | None = self.instance
+        object_id = attrs.get("object_id", instance.object_id if instance else None)
+        object_type = attrs.get("object_type", instance.object_type if instance else None)
+        if (object_id is None) != (object_type is None):
+            raise serializers.ValidationError(
+                {"object_id": "Provide both object_id and object_type, or neither."}
+            )
+        if object_id is None:
+            return
+
+        annotation_model = {
+            models.Issue.ObjectType.SHAPE: models.LabeledShape,
+            models.Issue.ObjectType.TRACK: models.LabeledTrack,
+        }.get(object_type)
+        if annotation_model is None:
+            raise serializers.ValidationError({"object_type": "Select a valid annotation type."})
+        if not annotation_model.objects.filter(id=object_id, job=job).exists():
+            raise serializers.ValidationError(
+                {"object_id": "The annotation must belong to this job."}
+            )
 
     def to_representation(self, instance):
         serializer = IssueReadSerializer(instance, context=self.context)

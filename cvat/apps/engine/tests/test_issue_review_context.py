@@ -2,186 +2,223 @@
 #
 # SPDX-License-Identifier: MIT
 
-from types import SimpleNamespace
+from typing import Any
 
-from django.test import TestCase
+from rest_framework import status
+from rest_framework.response import Response
+from rest_framework.test import APITestCase
 
 from cvat.apps.engine import models
-from cvat.apps.engine.serializers import IssueReadSerializer, IssueWriteSerializer
+from cvat.apps.iam.models import User
+
+CUBOID = [1, 2, 3, 0, 0, 0.2, 4, 5, 6, 0, 0, 0, 0, 0, 0, 0]
+CAMERA_VIEW = {"position": [10, -5, 8], "target": [0, 0, 1], "up": [0, 0, 1], "zoom": 1.5}
 
 
-class IssueReviewContextTest(TestCase):
+class IssueReviewContextTest(APITestCase):
     @classmethod
-    def setUpTestData(cls):
-        data = models.Data.objects.create(size=6, stop_frame=5)
-        task = models.Task.objects.create(name="3D review", data=data, dimension="3d")
+    def setUpTestData(cls) -> None:
+        cls.reviewer = User.objects.create_superuser(username="reviewer", email="", password=None)
+        data = models.Data.objects.create(
+            size=6, start_frame=10, stop_frame=20, frame_filter="step=2"
+        )
+        task = models.Task.objects.create(
+            name="3D review",
+            data=data,
+            dimension=models.DimensionType.DIM_3D,
+            media_type=models.MediaType.POINT_CLOUD,
+        )
         segment = models.Segment.objects.create(task=task, start_frame=0, stop_frame=5)
         cls.job = models.Job.objects.create(segment=segment)
         cls.other_job = models.Job.objects.create(segment=segment)
-        label = models.Label.objects.create(task=task, name="car", type="cuboid")
+        label = models.Label.objects.create(task=task, name="car", type=models.ShapeType.CUBOID)
         cls.shape = models.LabeledShape.objects.create(
-            job=cls.job, frame=1, label=label, type="cuboid", points=[0, 0, 1] * 4
+            job=cls.job, frame=1, label=label, type=models.ShapeType.CUBOID, points=CUBOID
         )
         cls.track = models.LabeledTrack.objects.create(job=cls.job, frame=0, label=label)
 
-    def issue_data(self, **context):
-        return {
-            "job": self.job.id,
-            "frame": 1,
-            "position": [0, 0, 1],
-            "message": "Check this object",
-            **context,
-        }
+    def setUp(self) -> None:
+        super().setUp()
+        self.client.force_authenticate(user=self.reviewer)
 
-    def test_legacy_point_issue(self):
-        serializer = IssueWriteSerializer(data=self.issue_data())
-        self.assertTrue(serializer.is_valid(), serializer.errors)
-        issue = serializer.save()
-        self.assertIsNone(issue.end_frame)
-        self.assertIsNone(issue.object_id)
-        self.assertIsNone(issue.object_type)
-        self.assertIsNone(issue.view)
-        self.assertEqual(issue.comments.get().message, "Check this object")
-
-    def camera_view(self, **changes):
-        return {
-            "position": [10, -5, 8],
-            "target": [0, 0, 1],
-            "up": [0, 0, 1],
-            "zoom": 1.5,
-            **changes,
-        }
-
-    def test_review_view_persists_through_issue_updates(self):
-        view = self.camera_view()
-        serializer = IssueWriteSerializer(data=self.issue_data(view=view))
-        self.assertTrue(serializer.is_valid(), serializer.errors)
-        issue = serializer.save()
-        issue.refresh_from_db()
-        self.assertEqual(IssueReadSerializer(issue).data["view"], view)
-
-        update = IssueWriteSerializer(
-            issue,
-            data={"position": [2, 3, 4], "resolved": True, "view": self.camera_view(zoom=2)},
-            partial=True,
-            context={"view": SimpleNamespace(action="partial_update")},
-        )
-        self.assertTrue(update.is_valid(), update.errors)
-        update.save()
-        issue.refresh_from_db()
-        self.assertEqual(issue.view, view)
-        self.assertEqual(list(issue.position), [2, 3, 4])
-        self.assertTrue(issue.resolved)
-
-    def test_invalid_camera_views(self):
-        for view in [
-            {},
-            self.camera_view(position=[1, 2]),
-            self.camera_view(target=[0, 0, 0, 1]),
-            self.camera_view(position=[0, 0, 1]),
-            self.camera_view(up=[0, 0, 0]),
-            self.camera_view(zoom=0),
-            self.camera_view(zoom=-1),
-            self.camera_view(zoom=float("inf")),
-            self.camera_view(position=[float("nan"), 0, 1]),
-        ]:
-            with self.subTest(view=view):
-                serializer = IssueWriteSerializer(data=self.issue_data(view=view))
-                self.assertFalse(serializer.is_valid())
-                self.assertIn("view", serializer.errors)
-
-    def test_2d_issues_do_not_accept_3d_camera_views(self):
-        task = self.job.segment.task
-        task.dimension = "2d"
-        task.save(update_fields=["dimension"])
-        legacy = IssueWriteSerializer(data=self.issue_data(view=None))
-        self.assertTrue(legacy.is_valid(), legacy.errors)
-        invalid = IssueWriteSerializer(data=self.issue_data(view=self.camera_view()))
-        self.assertFalse(invalid.is_valid())
-        self.assertIn("view", invalid.errors)
-
-    def test_shape_and_track_context_round_trip(self):
-        for object_type, annotation in [("shape", self.shape), ("track", self.track)]:
-            with self.subTest(object_type=object_type):
-                serializer = IssueWriteSerializer(
-                    data=self.issue_data(
-                        object_type=object_type, object_id=annotation.id, end_frame=4
-                    )
-                )
-                self.assertTrue(serializer.is_valid(), serializer.errors)
-                issue = serializer.save()
-                issue.refresh_from_db()
-                result = IssueReadSerializer(issue).data
-                self.assertEqual(result["object_type"], object_type)
-                self.assertEqual(result["object_id"], annotation.id)
-                self.assertEqual(result["end_frame"], 4)
-
-    def test_invalid_ranges(self):
-        for end_frame in [-1, 0, 6]:
-            with self.subTest(end_frame=end_frame):
-                serializer = IssueWriteSerializer(data=self.issue_data(end_frame=end_frame))
-                self.assertFalse(serializer.is_valid())
-                self.assertIn("end_frame", serializer.errors)
-
-    def test_invalid_references(self):
-        for context in [
-            {"object_id": self.shape.id},
-            {"object_type": "shape"},
-            {"object_id": self.shape.id, "object_type": "unknown"},
-            {"object_id": self.shape.id, "object_type": "shape", "job": self.other_job.id},
-            {"object_id": self.track.id, "object_type": "track", "job": self.other_job.id},
-        ]:
-            with self.subTest(context=context):
-                serializer = IssueWriteSerializer(data=self.issue_data(**context))
-                self.assertFalse(serializer.is_valid())
-
-    def test_corrections_and_deletions_preserve_feedback(self):
-        serializer = IssueWriteSerializer(
-            data=self.issue_data(object_id=self.shape.id, object_type="shape", end_frame=4)
-        )
-        serializer.is_valid(raise_exception=True)
-        issue = serializer.save()
-        shape_id = self.shape.id
-        # The annotation API replaces rows with the same IDs during corrections.
-        replacement = models.LabeledShape.objects.get(id=shape_id)
-        self.shape.delete()
-        replacement.points = [2, 3, 4] * 4
-        replacement.save(force_insert=True)
-        issue.refresh_from_db()
-        self.assertEqual(issue.object_id, replacement.id)
-        replacement.delete()
-        update = IssueWriteSerializer(
-            issue, data={"position": [1, 2, 3], "resolved": True}, partial=True
-        )
-        self.assertTrue(update.is_valid(), update.errors)
-        update.save()
-        issue.refresh_from_db()
-        self.assertEqual(issue.object_id, shape_id)
-        self.assertEqual(list(issue.position), [1, 2, 3])
-        self.assertEqual(issue.end_frame, 4)
-        self.assertTrue(issue.resolved)
-
-    def test_patch_validates_range_and_allows_unlinking(self):
-        issue = models.Issue.objects.create(
-            job=self.job,
-            frame=1,
-            end_frame=3,
-            position=[0, 0, 1],
-            object_id=self.track.id,
-            object_type="track",
-        )
-        invalid = IssueWriteSerializer(issue, data={"end_frame": 0}, partial=True)
-        self.assertFalse(invalid.is_valid())
-        valid = IssueWriteSerializer(
-            issue,
-            data={
-                "end_frame": 5,
-                "object_id": None,
-                "object_type": None,
+    def create_issue(self, **context: Any) -> Response:
+        return self.client.post(
+            "/api/issues",
+            {
+                "job": self.job.id,
+                "frame": 1,
+                "position": [0, 0, 1],
+                "message": "Check this object",
+                **context,
             },
-            partial=True,
+            format="json",
         )
-        self.assertTrue(valid.is_valid(), valid.errors)
-        valid.save()
-        self.assertIsNone(issue.object_id)
-        self.assertEqual(issue.end_frame, 5)
+
+    def test_can_create_point_issue_on_a_task_relative_frame(self) -> None:
+        response = self.create_issue()
+
+        self.assertEqual(response.status_code, status.HTTP_201_CREATED, response.data)
+        self.assertEqual(response.data["position"], [0, 0, 1])
+        self.assertEqual(response.data["frame"], 1)
+        for field in ("end_frame", "object_id", "object_type", "view"):
+            self.assertIsNone(response.data[field])
+        comments = self.client.get(response.data["comments"]["url"])
+        self.assertEqual(comments.data["results"][0]["message"], "Check this object")
+
+    def test_cannot_create_a_3d_issue_outside_the_job(self) -> None:
+        response = self.create_issue(frame=6)
+
+        self.assertEqual(response.status_code, status.HTTP_400_BAD_REQUEST)
+        self.assertIn("frame", response.data)
+
+    def test_can_move_a_cuboid_issue_without_editing_the_annotation(self) -> None:
+        response = self.create_issue(position=CUBOID)
+        self.assertEqual(response.status_code, status.HTTP_201_CREATED, response.data)
+        self.assertEqual(response.data["position"], CUBOID)
+        self.assertIsNone(response.data["object_id"])
+        updated = [7, 8, 9, *CUBOID[3:]]
+        issue_url = f"/api/issues/{response.data['id']}"
+
+        response = self.client.patch(issue_url, {"position": updated}, format="json")
+
+        self.assertEqual(response.status_code, status.HTTP_200_OK, response.data)
+        self.assertEqual(self.client.get(issue_url).data["position"], updated)
+        self.assertEqual(response.data["comments"]["count"], 1)
+        annotation = self.client.get(f"/api/jobs/{self.job.id}/annotations").data["shapes"][0]
+        self.assertEqual(annotation["points"], CUBOID)
+
+    def test_cannot_save_invalid_3d_positions(self) -> None:
+        for position in ([1, 2], [0, 0, "inf"], [*CUBOID[:6], 0, *CUBOID[7:]]):
+            with self.subTest(position=position):
+                response = self.create_issue(position=position)
+
+                self.assertEqual(response.status_code, status.HTTP_400_BAD_REQUEST)
+                self.assertIn("position", response.data)
+
+    def test_camera_view_is_saved_at_creation(self) -> None:
+        response = self.create_issue(view=CAMERA_VIEW)
+        self.assertEqual(response.status_code, status.HTTP_201_CREATED, response.data)
+        self.assertEqual(response.data["view"], CAMERA_VIEW)
+        issue_url = f"/api/issues/{response.data['id']}"
+
+        response = self.client.patch(
+            issue_url, {"resolved": True, "view": {**CAMERA_VIEW, "zoom": 2}}, format="json"
+        )
+
+        self.assertEqual(response.status_code, status.HTTP_200_OK, response.data)
+        self.assertTrue(response.data["resolved"])
+        self.assertEqual(self.client.get(issue_url).data["view"], CAMERA_VIEW)
+
+    def test_cannot_save_invalid_camera_views(self) -> None:
+        for changes in (
+            {"position": [1, 2]},
+            {"position": CAMERA_VIEW["target"]},
+            {"up": [0, 0, 0]},
+            {"zoom": 0},
+            {"zoom": "inf"},
+        ):
+            with self.subTest(changes=changes):
+                response = self.create_issue(view={**CAMERA_VIEW, **changes})
+
+                self.assertEqual(response.status_code, status.HTTP_400_BAD_REQUEST)
+                self.assertIn("view", response.data)
+
+    def test_camera_view_is_rejected_for_2d_issues(self) -> None:
+        data = models.Data.objects.create(size=2, stop_frame=1)
+        task = models.Task.objects.create(
+            name="2D review", data=data, media_type=models.MediaType.IMAGE
+        )
+        segment = models.Segment.objects.create(task=task, start_frame=0, stop_frame=1)
+        job = models.Job.objects.create(segment=segment)
+
+        response = self.create_issue(job=job.id, position=[0, 0, 1, 1], view=CAMERA_VIEW)
+
+        self.assertEqual(response.status_code, status.HTTP_400_BAD_REQUEST)
+        self.assertIn("view", response.data)
+
+    def test_can_link_a_shape_or_track_in_the_same_job(self) -> None:
+        for object_type, annotation in (
+            (models.Issue.ObjectType.SHAPE, self.shape),
+            (models.Issue.ObjectType.TRACK, self.track),
+        ):
+            with self.subTest(object_type=object_type):
+                response = self.create_issue(object_id=annotation.id, object_type=object_type)
+
+                self.assertEqual(response.status_code, status.HTTP_201_CREATED, response.data)
+                issue = self.client.get(f"/api/issues/{response.data['id']}").data
+                self.assertEqual(issue["object_type"], object_type)
+                self.assertEqual(issue["object_id"], annotation.id)
+
+    def test_can_clear_an_annotation_reference(self) -> None:
+        response = self.create_issue(
+            object_id=self.track.id, object_type=models.Issue.ObjectType.TRACK
+        )
+        self.assertEqual(response.status_code, status.HTTP_201_CREATED, response.data)
+
+        response = self.client.patch(
+            f"/api/issues/{response.data['id']}",
+            {"object_id": None, "object_type": None},
+            format="json",
+        )
+
+        self.assertEqual(response.status_code, status.HTTP_200_OK, response.data)
+        self.assertIsNone(response.data["object_id"])
+        self.assertIsNone(response.data["object_type"])
+
+    def test_cannot_link_an_incomplete_or_cross_job_reference(self) -> None:
+        shape = models.Issue.ObjectType.SHAPE
+        cases = (
+            ({"object_id": self.shape.id}, "object_id"),
+            ({"object_id": self.shape.id, "object_type": ""}, "object_type"),
+            (
+                {"job": self.other_job.id, "object_id": self.shape.id, "object_type": shape},
+                "object_id",
+            ),
+        )
+        for context, field in cases:
+            with self.subTest(context=context):
+                response = self.create_issue(**context)
+
+                self.assertEqual(response.status_code, status.HTTP_400_BAD_REQUEST)
+                self.assertIn(field, response.data)
+
+    def test_annotation_edits_and_deletion_preserve_the_issue(self) -> None:
+        response = self.create_issue(
+            object_id=self.shape.id, object_type=models.Issue.ObjectType.SHAPE
+        )
+        self.assertEqual(response.status_code, status.HTTP_201_CREATED, response.data)
+        issue_url = f"/api/issues/{response.data['id']}"
+        annotation_url = f"/api/jobs/{self.job.id}/annotations"
+        annotation = self.client.get(annotation_url).data["shapes"][0]
+        annotation["points"] = [2, 3, 4, *CUBOID[3:]]
+        annotations = {"shapes": [annotation], "tracks": [], "tags": []}
+        response = self.client.patch(f"{annotation_url}?action=update", annotations, format="json")
+        self.assertEqual(response.status_code, status.HTTP_200_OK, response.data)
+        self.assertEqual(response.data["shapes"][0]["id"], self.shape.id)
+        self.assertEqual(self.client.get(issue_url).data["object_id"], self.shape.id)
+
+        response = self.client.patch(f"{annotation_url}?action=delete", annotations, format="json")
+        self.assertEqual(response.status_code, status.HTTP_200_OK, response.data)
+        self.assertEqual(self.client.get(annotation_url).data["shapes"], [])
+
+        response = self.client.patch(issue_url, {"resolved": True}, format="json")
+
+        self.assertEqual(response.status_code, status.HTTP_200_OK, response.data)
+        self.assertEqual(response.data["object_id"], self.shape.id)
+        self.assertTrue(response.data["resolved"])
+
+    def test_frame_ranges_can_be_updated_within_the_job(self) -> None:
+        response = self.create_issue(end_frame=3)
+        self.assertEqual(response.status_code, status.HTTP_201_CREATED, response.data)
+        issue_url = f"/api/issues/{response.data['id']}"
+
+        for end_frame in (0, 6):
+            with self.subTest(end_frame=end_frame):
+                response = self.client.patch(issue_url, {"end_frame": end_frame}, format="json")
+                self.assertEqual(response.status_code, status.HTTP_400_BAD_REQUEST)
+                self.assertIn("end_frame", response.data)
+        self.assertEqual(self.client.get(issue_url).data["end_frame"], 3)
+
+        response = self.client.patch(issue_url, {"end_frame": 5}, format="json")
+        self.assertEqual(response.status_code, status.HTTP_200_OK, response.data)
+        self.assertEqual(response.data["end_frame"], 5)

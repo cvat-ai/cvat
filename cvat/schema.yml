@@ -9583,6 +9583,7 @@ components:
       - position
     IssueView:
       type: object
+      description: Perspective camera state saved when a 3D issue is created.
       properties:
         position:
           type: array
@@ -9615,6 +9616,7 @@ components:
       - zoom
     IssueViewRequest:
       type: object
+      description: Perspective camera state saved when a 3D issue is created.
       properties:
         position:
           type: array
@@ -9667,13 +9669,13 @@ components:
           nullable: true
           oneOf:
           - $ref: '#/components/schemas/ObjectTypeEnum'
-          - $ref: '#/components/schemas/BlankEnum'
           - $ref: '#/components/schemas/NullEnum'
         position:
           type: array
           items:
             type: number
             format: double
+          description: For 3D issues, use [x, y, z] or the 16 values of a CVAT cuboid.
         view:
           allOf:
           - $ref: '#/components/schemas/IssueViewRequest'
@@ -11206,13 +11208,13 @@ components:
           nullable: true
           oneOf:
           - $ref: '#/components/schemas/ObjectTypeEnum'
-          - $ref: '#/components/schemas/BlankEnum'
           - $ref: '#/components/schemas/NullEnum'
         position:
           type: array
           items:
             type: number
             format: double
+          description: For 3D issues, use [x, y, z] or the 16 values of a CVAT cuboid.
         assignee:
           type: integer
           nullable: true
