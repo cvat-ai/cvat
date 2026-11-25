@@ -66,14 +66,14 @@ context('Canvas 3D functionality. Control button. Mouse interaction.', () => {
                 'after_click_rightarrow',
             );
             testPerspectiveChangeOnButtonClick(
-                '.cvat-canvas3d-perspective-shift-down',
-                'Move camera down',
+                '.cvat-canvas3d-perspective-move-up',
+                'Move camera up',
                 'before_click_move_up',
                 'after_click_move_up',
             );
             testPerspectiveChangeOnButtonClick(
-                '.cvat-canvas3d-perspective-shift-up',
-                'Move camera up',
+                '.cvat-canvas3d-perspective-move-down',
+                'Move camera down',
                 'before_click_move_down',
                 'after_click_move_down',
             );
@@ -90,13 +90,13 @@ context('Canvas 3D functionality. Control button. Mouse interaction.', () => {
                 'after_click_zoom_out',
             );
             testPerspectiveChangeOnButtonClick(
-                '.cvat-canvas3d-perspective-shift-left',
+                '.cvat-canvas3d-perspective-move-left',
                 'Move camera left',
                 'before_click_move_left',
                 'after_click_move_left',
             );
             testPerspectiveChangeOnButtonClick(
-                '.cvat-canvas3d-perspective-shift-right',
+                '.cvat-canvas3d-perspective-move-right',
                 'Move camera right',
                 'before_click_move_right',
                 'after_click_move_right',

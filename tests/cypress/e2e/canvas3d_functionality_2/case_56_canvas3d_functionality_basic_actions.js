@@ -119,12 +119,12 @@ context('Canvas 3D functionality. Basic actions.', () => {
                         .should('exist')
                         .and('be.visible')
                         .within(() => {
-                            cy.get('.cvat-canvas3d-perspective-shift-down').should('exist').and('be.visible');
+                            cy.get('.cvat-canvas3d-perspective-move-up').should('exist').and('be.visible');
                             cy.get('.cvat-canvas3d-perspective-zoom-in').should('exist').and('be.visible');
-                            cy.get('.cvat-canvas3d-perspective-shift-up').should('exist').and('be.visible');
-                            cy.get('.cvat-canvas3d-perspective-shift-left').should('exist').and('be.visible');
+                            cy.get('.cvat-canvas3d-perspective-move-down').should('exist').and('be.visible');
+                            cy.get('.cvat-canvas3d-perspective-move-left').should('exist').and('be.visible');
                             cy.get('.cvat-canvas3d-perspective-zoom-out').should('exist').and('be.visible');
-                            cy.get('.cvat-canvas3d-perspective-shift-right').should('exist').and('be.visible');
+                            cy.get('.cvat-canvas3d-perspective-move-right').should('exist').and('be.visible');
                         });
                 });
             cy.get('.cvat-canvas3d-topview').should('exist').and('be.visible');

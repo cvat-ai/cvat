@@ -322,8 +322,8 @@ export const PerspectiveViewComponent = React.memo(
             frame: state.annotation.player.frame.number,
         }), shallowEqual);
 
-        const screenKeyControl = (code: CameraAction, altKey: boolean, shiftKey: boolean): void => {
-            canvas.keyControls(new KeyboardEvent('keydown', { code, altKey, shiftKey }));
+        const cameraControl = (action: CameraAction): void => {
+            canvas.cameraControl(action);
         };
 
         const navigateObject = (step: number): void => {
@@ -362,16 +362,16 @@ export const PerspectiveViewComponent = React.memo(
         };
 
         const handlers: Record<keyof typeof componentShortcuts, (event?: KeyboardEvent) => void> = {
-            TILT_UP: () => screenKeyControl(CameraAction.TILT_UP, false, true),
-            TILT_DOWN: () => screenKeyControl(CameraAction.TILT_DOWN, false, true),
-            ROTATE_LEFT: () => screenKeyControl(CameraAction.ROTATE_LEFT, false, true),
-            ROTATE_RIGHT: () => screenKeyControl(CameraAction.ROTATE_RIGHT, false, true),
-            MOVE_UP: () => screenKeyControl(CameraAction.MOVE_UP, true, false),
-            MOVE_DOWN: () => screenKeyControl(CameraAction.MOVE_DOWN, true, false),
-            MOVE_LEFT: () => screenKeyControl(CameraAction.MOVE_LEFT, true, false),
-            MOVE_RIGHT: () => screenKeyControl(CameraAction.MOVE_RIGHT, true, false),
-            ZOOM_IN: () => screenKeyControl(CameraAction.ZOOM_IN, true, false),
-            ZOOM_OUT: () => screenKeyControl(CameraAction.ZOOM_OUT, true, false),
+            TILT_UP: () => cameraControl(CameraAction.ROTATE_UP),
+            TILT_DOWN: () => cameraControl(CameraAction.ROTATE_DOWN),
+            ROTATE_LEFT: () => cameraControl(CameraAction.ROTATE_LEFT),
+            ROTATE_RIGHT: () => cameraControl(CameraAction.ROTATE_RIGHT),
+            MOVE_UP: () => cameraControl(CameraAction.MOVE_UP),
+            MOVE_DOWN: () => cameraControl(CameraAction.MOVE_DOWN),
+            MOVE_LEFT: () => cameraControl(CameraAction.MOVE_LEFT),
+            MOVE_RIGHT: () => cameraControl(CameraAction.MOVE_RIGHT),
+            ZOOM_IN: () => cameraControl(CameraAction.ZOOM_IN),
+            ZOOM_OUT: () => cameraControl(CameraAction.ZOOM_OUT),
             NEXT_OBJECT: (event?: KeyboardEvent) => {
                 if (event) {
                     event.preventDefault();
@@ -396,7 +396,7 @@ export const PerspectiveViewComponent = React.memo(
                         >
                             <Button
                                 size='small'
-                                onClick={() => screenKeyControl(CameraAction.TILT_UP, false, true)}
+                                onClick={() => cameraControl(CameraAction.ROTATE_UP)}
                                 className='cvat-canvas3d-perspective-arrow-directions-icons-up'
                             >
                                 <Icon
@@ -413,7 +413,7 @@ export const PerspectiveViewComponent = React.memo(
                         >
                             <Button
                                 size='small'
-                                onClick={() => screenKeyControl(CameraAction.ROTATE_LEFT, false, true)}
+                                onClick={() => cameraControl(CameraAction.ROTATE_LEFT)}
                                 className='cvat-canvas3d-perspective-arrow-directions-icons-left'
                             >
                                 <Icon
@@ -428,7 +428,7 @@ export const PerspectiveViewComponent = React.memo(
                         >
                             <Button
                                 size='small'
-                                onClick={() => screenKeyControl(CameraAction.TILT_DOWN, false, true)}
+                                onClick={() => cameraControl(CameraAction.ROTATE_DOWN)}
                                 className='cvat-canvas3d-perspective-arrow-directions-icons-bottom'
                             >
                                 <Icon
@@ -443,7 +443,7 @@ export const PerspectiveViewComponent = React.memo(
                         >
                             <Button
                                 size='small'
-                                onClick={() => screenKeyControl(CameraAction.ROTATE_RIGHT, false, true)}
+                                onClick={() => cameraControl(CameraAction.ROTATE_RIGHT)}
                                 className='cvat-canvas3d-perspective-arrow-directions-icons-right'
                             >
                                 <Icon
@@ -460,39 +460,39 @@ export const PerspectiveViewComponent = React.memo(
         function ControlGroup(): JSX.Element {
             return (
                 <span className='cvat-canvas3d-perspective-directions'>
-                    <CVATTooltip title={`Move camera down ${normalizedKeyMap.MOVE_UP}`} placement='topLeft'>
+                    <CVATTooltip title={`Move camera up ${normalizedKeyMap.MOVE_UP}`} placement='topLeft'>
                         <Button
                             size='small'
-                            onClick={() => screenKeyControl(CameraAction.MOVE_UP, true, false)}
-                            className='cvat-canvas3d-perspective-directions-icon cvat-canvas3d-perspective-shift-down'
+                            onClick={() => cameraControl(CameraAction.MOVE_UP)}
+                            className='cvat-canvas3d-perspective-directions-icon cvat-canvas3d-perspective-move-up'
                         >
-                            <ArrowDownOutlined />
+                            <ArrowUpOutlined />
                         </Button>
                     </CVATTooltip>
                     <CVATTooltip title={`Zoom camera in ${normalizedKeyMap.ZOOM_IN}`} placement='topLeft'>
                         <Button
                             size='small'
-                            onClick={() => screenKeyControl(CameraAction.ZOOM_IN, true, false)}
+                            onClick={() => cameraControl(CameraAction.ZOOM_IN)}
                             className='cvat-canvas3d-perspective-directions-icon cvat-canvas3d-perspective-zoom-in'
                         >
                             <ZoomInOutlined />
                         </Button>
                     </CVATTooltip>
-                    <CVATTooltip title={`Move camera up ${normalizedKeyMap.MOVE_DOWN}`} placement='topLeft'>
+                    <CVATTooltip title={`Move camera down ${normalizedKeyMap.MOVE_DOWN}`} placement='topLeft'>
                         <Button
                             size='small'
-                            onClick={() => screenKeyControl(CameraAction.MOVE_DOWN, true, false)}
-                            className='cvat-canvas3d-perspective-directions-icon cvat-canvas3d-perspective-shift-up'
+                            onClick={() => cameraControl(CameraAction.MOVE_DOWN)}
+                            className='cvat-canvas3d-perspective-directions-icon cvat-canvas3d-perspective-move-down'
                         >
-                            <ArrowUpOutlined />
+                            <ArrowDownOutlined />
                         </Button>
                     </CVATTooltip>
                     <br />
                     <CVATTooltip title={`Move camera left ${normalizedKeyMap.MOVE_LEFT}`} placement='topLeft'>
                         <Button
                             size='small'
-                            onClick={() => screenKeyControl(CameraAction.MOVE_LEFT, true, false)}
-                            className='cvat-canvas3d-perspective-directions-icon cvat-canvas3d-perspective-shift-left'
+                            onClick={() => cameraControl(CameraAction.MOVE_LEFT)}
+                            className='cvat-canvas3d-perspective-directions-icon cvat-canvas3d-perspective-move-left'
                         >
                             <ArrowLeftOutlined />
                         </Button>
@@ -500,7 +500,7 @@ export const PerspectiveViewComponent = React.memo(
                     <CVATTooltip title={`Zoom camera out ${normalizedKeyMap.ZOOM_OUT}`} placement='topLeft'>
                         <Button
                             size='small'
-                            onClick={() => screenKeyControl(CameraAction.ZOOM_OUT, true, false)}
+                            onClick={() => cameraControl(CameraAction.ZOOM_OUT)}
                             className='cvat-canvas3d-perspective-directions-icon cvat-canvas3d-perspective-zoom-out'
                         >
                             <ZoomOutOutlined />
@@ -509,8 +509,8 @@ export const PerspectiveViewComponent = React.memo(
                     <CVATTooltip title={`Move camera right ${normalizedKeyMap.MOVE_RIGHT}`} placement='topLeft'>
                         <Button
                             size='small'
-                            onClick={() => screenKeyControl(CameraAction.MOVE_RIGHT, true, false)}
-                            className='cvat-canvas3d-perspective-directions-icon cvat-canvas3d-perspective-shift-right'
+                            onClick={() => cameraControl(CameraAction.MOVE_RIGHT)}
+                            className='cvat-canvas3d-perspective-directions-icon cvat-canvas3d-perspective-move-right'
                         >
                             <ArrowRightOutlined />
                         </Button>
