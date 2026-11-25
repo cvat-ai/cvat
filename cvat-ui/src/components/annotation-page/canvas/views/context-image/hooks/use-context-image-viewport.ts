@@ -137,7 +137,6 @@ export default function useContextImageViewport({
     const isFittedRef = useRef(true);
     const previousImageSizeRef = useRef<Size | undefined>(undefined);
     const previousViewportSizeRef = useRef<Size | null>(null);
-    // Zoom reference size is only updated when zoom is adjusted during panel resize
     const zoomReferenceViewportSizeRef = useRef<Size | null>(null);
 
     // Updates viewport size when the viewport element is resized
