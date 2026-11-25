@@ -374,8 +374,8 @@ Python 3.12 is recommended, and Git is required to prepare the pinned upstream s
 
    ```bash
    cvat-cli --server-host "$CVAT_SERVER_URL" --org "$CVAT_ORG" function create-native "OBB Object Detection - DOTA" \
-     --function-file detector/rtdetrv2_obb/dota/func.py \
-     -p checkpoint_group=str:dota-single-scale -p model_size=str:X \
+     --function-file detector/rtdetrv2_obb/func.py \
+     -p dataset=str:dota -p model_size=str:X \
      -p conf_threshold=float:0.4 -p device=str:cpu
    ```
 
@@ -383,30 +383,31 @@ Python 3.12 is recommended, and Git is required to prepare the pinned upstream s
 
    ```bash
    cvat-cli --server-host "$CVAT_SERVER_URL" --org "$CVAT_ORG" function run-agent <function_id> \
-     --function-file detector/rtdetrv2_obb/dota/func.py \
-     -p checkpoint_group=str:dota-single-scale -p model_size=str:X \
+     --function-file detector/rtdetrv2_obb/func.py \
+     -p dataset=str:dota -p model_size=str:X \
      -p conf_threshold=float:0.4 -p device=str:cpu
    ```
 
 Select **AI assistance → Auto-labeling → Model → OBB Object Detection - DOTA**, map the model labels to task
 labels, and run it. No Hugging Face token is required to download the checkpoints.
 
-Use the following wrappers and model variants for other official checkpoints. Pass the value in
-parentheses with `-p checkpoint_group=str:<value>`.
+The function supports the following configurations. The `dataset` parameter is required. To
+select a non-default model variant, pass its value with
+`-p checkpoint_group=str:<value>`.
 
-| Dataset | Model variant | Function file | Supported `model_size` values |
-| ------- | ------------- | ------------- | ----------------------------- |
-| DOTA-v1.0 | Single-scale (`dota-single-scale`) | `detector/rtdetrv2_obb/dota/func.py` | `str:N`, `str:S`, `str:M`, `str:L`, `str:X` |
-| DOTA-v1.0 | Multi-scale (`dota-multi-scale`) | `detector/rtdetrv2_obb/dota/func.py` | `str:M`, `str:X` |
-| DIOR-R | Default (`dior-r`) | `detector/rtdetrv2_obb/dior_r/func.py` | `str:N`, `str:S`, `str:M`, `str:L`, `str:X` |
+| Dataset | `dataset` value | Model variant | Supported `model_size` values |
+| ------- | --------------- | ------------- | ----------------------------- |
+| DOTA-v1.0 | `str:dota` | Single-scale, default (`dota-single-scale`) | `str:N`, `str:S`, `str:M`, `str:L`, `str:X` |
+| DOTA-v1.0 | `str:dota` | Multi-scale (`dota-multi-scale`) | `str:M`, `str:X` |
+| DIOR-R | `str:dior-r` | Default (`dior-r`) | `str:N`, `str:S`, `str:M`, `str:L`, `str:X` |
 
 Register DOTA and DIOR-R as separate functions because their class lists differ. To use a prepared
-checkout in another location, set `RTDETRV2_OBB_UPSTREAM_DIR` to its absolute path; it must be at the
-supported commit. See the
+checkout in another location, set `RTDETRV2_OBB_UPSTREAM_DIR` to its absolute path; it must be at
+the supported commit. See the
 [RT-DETRv2-OBB README](https://github.com/cvat-ai/cvat-models/tree/develop/detector/rtdetrv2_obb)
 for checkpoint downloads and local checkpoint parameters. For container deployment, use the
-{{< ilink "/docs/guides/compose-agents-userguide" "Docker Compose agent guide" >}} and select
-the DOTA or DIOR-R agent bundle.
+{{< ilink "/docs/guides/compose-agents-userguide" "Docker Compose agent guide" >}} and include the
+required dataset parameter in `MODEL_CONFIG_PARAMS`.
 
 {{% /tab %}}
 
