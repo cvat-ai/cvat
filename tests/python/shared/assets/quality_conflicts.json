@@ -17,7 +17,8 @@
       "report_id": 17,
       "severity": "error",
       "type": "extra_annotation",
-      "attribute_names": []
+      "attribute_names": [],
+      "requirements": []
     },
     {
       "annotation_ids": [
@@ -33,7 +34,8 @@
       "report_id": 17,
       "severity": "error",
       "type": "missing_annotation",
-      "attribute_names": []
+      "attribute_names": [],
+      "requirements": []
     },
     {
       "annotation_ids": [
@@ -49,7 +51,8 @@
       "report_id": 17,
       "severity": "error",
       "type": "missing_annotation",
-      "attribute_names": []
+      "attribute_names": [],
+      "requirements": []
     },
     {
       "annotation_ids": [
@@ -71,7 +74,8 @@
       "report_id": 16,
       "severity": "error",
       "type": "mismatching_label",
-      "attribute_names": []
+      "attribute_names": [],
+      "requirements": []
     },
     {
       "annotation_ids": [
@@ -87,7 +91,8 @@
       "report_id": 16,
       "severity": "error",
       "type": "missing_annotation",
-      "attribute_names": []
+      "attribute_names": [],
+      "requirements": []
     },
     {
       "annotation_ids": [
@@ -103,7 +108,8 @@
       "report_id": 16,
       "severity": "error",
       "type": "missing_annotation",
-      "attribute_names": []
+      "attribute_names": [],
+      "requirements": []
     },
     {
       "annotation_ids": [
@@ -125,7 +131,8 @@
       "report_id": 14,
       "severity": "error",
       "type": "mismatching_label",
-      "attribute_names": []
+      "attribute_names": [],
+      "requirements": []
     },
     {
       "annotation_ids": [
@@ -141,7 +148,8 @@
       "report_id": 14,
       "severity": "error",
       "type": "missing_annotation",
-      "attribute_names": []
+      "attribute_names": [],
+      "requirements": []
     },
     {
       "annotation_ids": [
@@ -157,7 +165,8 @@
       "report_id": 14,
       "severity": "error",
       "type": "missing_annotation",
-      "attribute_names": []
+      "attribute_names": [],
+      "requirements": []
     },
     {
       "annotation_ids": [
@@ -173,7 +182,8 @@
       "report_id": 14,
       "severity": "error",
       "type": "missing_annotation",
-      "attribute_names": []
+      "attribute_names": [],
+      "requirements": []
     },
     {
       "annotation_ids": [
@@ -189,7 +199,8 @@
       "report_id": 12,
       "severity": "error",
       "type": "missing_annotation",
-      "attribute_names": []
+      "attribute_names": [],
+      "requirements": []
     },
     {
       "annotation_ids": [
@@ -205,7 +216,8 @@
       "report_id": 12,
       "severity": "error",
       "type": "missing_annotation",
-      "attribute_names": []
+      "attribute_names": [],
+      "requirements": []
     },
     {
       "annotation_ids": [
@@ -221,7 +233,8 @@
       "report_id": 12,
       "severity": "error",
       "type": "missing_annotation",
-      "attribute_names": []
+      "attribute_names": [],
+      "requirements": []
     },
     {
       "annotation_ids": [
@@ -237,7 +250,8 @@
       "report_id": 12,
       "severity": "error",
       "type": "missing_annotation",
-      "attribute_names": []
+      "attribute_names": [],
+      "requirements": []
     },
     {
       "annotation_ids": [
@@ -253,7 +267,8 @@
       "report_id": 12,
       "severity": "error",
       "type": "missing_annotation",
-      "attribute_names": []
+      "attribute_names": [],
+      "requirements": []
     },
     {
       "annotation_ids": [
@@ -269,7 +284,8 @@
       "report_id": 12,
       "severity": "error",
       "type": "missing_annotation",
-      "attribute_names": []
+      "attribute_names": [],
+      "requirements": []
     },
     {
       "annotation_ids": [
@@ -285,7 +301,8 @@
       "report_id": 12,
       "severity": "error",
       "type": "missing_annotation",
-      "attribute_names": []
+      "attribute_names": [],
+      "requirements": []
     },
     {
       "annotation_ids": [
@@ -307,7 +324,8 @@
       "report_id": 12,
       "severity": "error",
       "type": "mismatching_groups",
-      "attribute_names": []
+      "attribute_names": [],
+      "requirements": []
     },
     {
       "annotation_ids": [
@@ -329,7 +347,8 @@
       "report_id": 12,
       "severity": "error",
       "type": "mismatching_groups",
-      "attribute_names": []
+      "attribute_names": [],
+      "requirements": []
     },
     {
       "annotation_ids": [
@@ -351,7 +370,8 @@
       "report_id": 12,
       "severity": "error",
       "type": "mismatching_groups",
-      "attribute_names": []
+      "attribute_names": [],
+      "requirements": []
     },
     {
       "annotation_ids": [
@@ -373,7 +393,8 @@
       "report_id": 12,
       "severity": "error",
       "type": "mismatching_groups",
-      "attribute_names": []
+      "attribute_names": [],
+      "requirements": []
     },
     {
       "annotation_ids": [
@@ -395,7 +416,8 @@
       "report_id": 12,
       "severity": "error",
       "type": "mismatching_groups",
-      "attribute_names": []
+      "attribute_names": [],
+      "requirements": []
     },
     {
       "annotation_ids": [
@@ -417,7 +439,8 @@
       "report_id": 12,
       "severity": "error",
       "type": "mismatching_groups",
-      "attribute_names": []
+      "attribute_names": [],
+      "requirements": []
     },
     {
       "annotation_ids": [
@@ -439,7 +462,8 @@
       "report_id": 12,
       "severity": "error",
       "type": "mismatching_attributes",
-      "attribute_names": []
+      "attribute_names": [],
+      "requirements": []
     },
     {
       "annotation_ids": [
@@ -455,7 +479,8 @@
       "report_id": 12,
       "severity": "error",
       "type": "covered_annotation",
-      "attribute_names": []
+      "attribute_names": [],
+      "requirements": []
     },
     {
       "annotation_ids": [
@@ -477,7 +502,8 @@
       "report_id": 12,
       "severity": "error",
       "type": "mismatching_direction",
-      "attribute_names": []
+      "attribute_names": [],
+      "requirements": []
     },
     {
       "annotation_ids": [
@@ -499,7 +525,8 @@
       "report_id": 12,
       "severity": "error",
       "type": "mismatching_label",
-      "attribute_names": []
+      "attribute_names": [],
+      "requirements": []
     },
     {
       "annotation_ids": [
@@ -521,7 +548,8 @@
       "report_id": 12,
       "severity": "error",
       "type": "mismatching_label",
-      "attribute_names": []
+      "attribute_names": [],
+      "requirements": []
     },
     {
       "annotation_ids": [
@@ -543,7 +571,8 @@
       "report_id": 12,
       "severity": "error",
       "type": "mismatching_label",
-      "attribute_names": []
+      "attribute_names": [],
+      "requirements": []
     },
     {
       "annotation_ids": [
@@ -559,7 +588,8 @@
       "report_id": 12,
       "severity": "error",
       "type": "extra_annotation",
-      "attribute_names": []
+      "attribute_names": [],
+      "requirements": []
     },
     {
       "annotation_ids": [
@@ -575,7 +605,8 @@
       "report_id": 12,
       "severity": "error",
       "type": "extra_annotation",
-      "attribute_names": []
+      "attribute_names": [],
+      "requirements": []
     },
     {
       "annotation_ids": [
@@ -591,7 +622,8 @@
       "report_id": 12,
       "severity": "error",
       "type": "extra_annotation",
-      "attribute_names": []
+      "attribute_names": [],
+      "requirements": []
     },
     {
       "annotation_ids": [
@@ -607,7 +639,8 @@
       "report_id": 12,
       "severity": "error",
       "type": "extra_annotation",
-      "attribute_names": []
+      "attribute_names": [],
+      "requirements": []
     },
     {
       "annotation_ids": [
@@ -623,7 +656,8 @@
       "report_id": 12,
       "severity": "error",
       "type": "extra_annotation",
-      "attribute_names": []
+      "attribute_names": [],
+      "requirements": []
     },
     {
       "annotation_ids": [
@@ -639,7 +673,8 @@
       "report_id": 12,
       "severity": "error",
       "type": "extra_annotation",
-      "attribute_names": []
+      "attribute_names": [],
+      "requirements": []
     },
     {
       "annotation_ids": [
@@ -655,7 +690,8 @@
       "report_id": 12,
       "severity": "error",
       "type": "extra_annotation",
-      "attribute_names": []
+      "attribute_names": [],
+      "requirements": []
     },
     {
       "annotation_ids": [
@@ -671,7 +707,8 @@
       "report_id": 12,
       "severity": "error",
       "type": "extra_annotation",
-      "attribute_names": []
+      "attribute_names": [],
+      "requirements": []
     },
     {
       "annotation_ids": [
@@ -687,7 +724,8 @@
       "report_id": 12,
       "severity": "error",
       "type": "extra_annotation",
-      "attribute_names": []
+      "attribute_names": [],
+      "requirements": []
     },
     {
       "annotation_ids": [
@@ -703,7 +741,8 @@
       "report_id": 12,
       "severity": "error",
       "type": "extra_annotation",
-      "attribute_names": []
+      "attribute_names": [],
+      "requirements": []
     },
     {
       "annotation_ids": [
@@ -719,7 +758,8 @@
       "report_id": 12,
       "severity": "error",
       "type": "extra_annotation",
-      "attribute_names": []
+      "attribute_names": [],
+      "requirements": []
     },
     {
       "annotation_ids": [
@@ -735,7 +775,8 @@
       "report_id": 12,
       "severity": "error",
       "type": "missing_annotation",
-      "attribute_names": []
+      "attribute_names": [],
+      "requirements": []
     },
     {
       "annotation_ids": [
@@ -751,7 +792,8 @@
       "report_id": 12,
       "severity": "error",
       "type": "missing_annotation",
-      "attribute_names": []
+      "attribute_names": [],
+      "requirements": []
     },
     {
       "annotation_ids": [
@@ -767,7 +809,8 @@
       "report_id": 12,
       "severity": "error",
       "type": "missing_annotation",
-      "attribute_names": []
+      "attribute_names": [],
+      "requirements": []
     },
     {
       "annotation_ids": [
@@ -783,7 +826,8 @@
       "report_id": 12,
       "severity": "error",
       "type": "missing_annotation",
-      "attribute_names": []
+      "attribute_names": [],
+      "requirements": []
     },
     {
       "annotation_ids": [
@@ -799,7 +843,8 @@
       "report_id": 12,
       "severity": "error",
       "type": "missing_annotation",
-      "attribute_names": []
+      "attribute_names": [],
+      "requirements": []
     },
     {
       "annotation_ids": [
@@ -821,7 +866,8 @@
       "report_id": 12,
       "severity": "error",
       "type": "mismatching_label",
-      "attribute_names": []
+      "attribute_names": [],
+      "requirements": []
     },
     {
       "annotation_ids": [
@@ -843,7 +889,8 @@
       "report_id": 12,
       "severity": "error",
       "type": "mismatching_label",
-      "attribute_names": []
+      "attribute_names": [],
+      "requirements": []
     },
     {
       "annotation_ids": [
@@ -865,7 +912,8 @@
       "report_id": 12,
       "severity": "error",
       "type": "mismatching_label",
-      "attribute_names": []
+      "attribute_names": [],
+      "requirements": []
     },
     {
       "annotation_ids": [
@@ -887,7 +935,8 @@
       "report_id": 12,
       "severity": "error",
       "type": "mismatching_label",
-      "attribute_names": []
+      "attribute_names": [],
+      "requirements": []
     },
     {
       "annotation_ids": [
@@ -909,7 +958,8 @@
       "report_id": 12,
       "severity": "error",
       "type": "mismatching_label",
-      "attribute_names": []
+      "attribute_names": [],
+      "requirements": []
     },
     {
       "annotation_ids": [
@@ -931,7 +981,8 @@
       "report_id": 12,
       "severity": "error",
       "type": "mismatching_label",
-      "attribute_names": []
+      "attribute_names": [],
+      "requirements": []
     },
     {
       "annotation_ids": [
@@ -953,7 +1004,8 @@
       "report_id": 12,
       "severity": "error",
       "type": "mismatching_label",
-      "attribute_names": []
+      "attribute_names": [],
+      "requirements": []
     },
     {
       "annotation_ids": [
@@ -969,7 +1021,8 @@
       "report_id": 10,
       "severity": "error",
       "type": "extra_annotation",
-      "attribute_names": []
+      "attribute_names": [],
+      "requirements": []
     },
     {
       "annotation_ids": [
@@ -985,7 +1038,8 @@
       "report_id": 10,
       "severity": "error",
       "type": "missing_annotation",
-      "attribute_names": []
+      "attribute_names": [],
+      "requirements": []
     },
     {
       "annotation_ids": [
@@ -1007,7 +1061,8 @@
       "report_id": 9,
       "severity": "error",
       "type": "mismatching_label",
-      "attribute_names": []
+      "attribute_names": [],
+      "requirements": []
     },
     {
       "annotation_ids": [
@@ -1023,7 +1078,8 @@
       "report_id": 6,
       "severity": "error",
       "type": "missing_annotation",
-      "attribute_names": []
+      "attribute_names": [],
+      "requirements": []
     },
     {
       "annotation_ids": [
@@ -1039,7 +1095,8 @@
       "report_id": 6,
       "severity": "error",
       "type": "missing_annotation",
-      "attribute_names": []
+      "attribute_names": [],
+      "requirements": []
     },
     {
       "annotation_ids": [
@@ -1055,7 +1112,8 @@
       "report_id": 6,
       "severity": "error",
       "type": "missing_annotation",
-      "attribute_names": []
+      "attribute_names": [],
+      "requirements": []
     },
     {
       "annotation_ids": [
@@ -1071,7 +1129,8 @@
       "report_id": 6,
       "severity": "error",
       "type": "missing_annotation",
-      "attribute_names": []
+      "attribute_names": [],
+      "requirements": []
     },
     {
       "annotation_ids": [
@@ -1087,7 +1146,8 @@
       "report_id": 6,
       "severity": "error",
       "type": "missing_annotation",
-      "attribute_names": []
+      "attribute_names": [],
+      "requirements": []
     },
     {
       "annotation_ids": [
@@ -1103,7 +1163,8 @@
       "report_id": 6,
       "severity": "error",
       "type": "missing_annotation",
-      "attribute_names": []
+      "attribute_names": [],
+      "requirements": []
     },
     {
       "annotation_ids": [
@@ -1125,7 +1186,8 @@
       "report_id": 6,
       "severity": "error",
       "type": "mismatching_groups",
-      "attribute_names": []
+      "attribute_names": [],
+      "requirements": []
     },
     {
       "annotation_ids": [
@@ -1147,7 +1209,8 @@
       "report_id": 6,
       "severity": "error",
       "type": "mismatching_groups",
-      "attribute_names": []
+      "attribute_names": [],
+      "requirements": []
     },
     {
       "annotation_ids": [
@@ -1169,7 +1232,8 @@
       "report_id": 6,
       "severity": "error",
       "type": "mismatching_groups",
-      "attribute_names": []
+      "attribute_names": [],
+      "requirements": []
     },
     {
       "annotation_ids": [
@@ -1191,7 +1255,8 @@
       "report_id": 6,
       "severity": "error",
       "type": "mismatching_groups",
-      "attribute_names": []
+      "attribute_names": [],
+      "requirements": []
     },
     {
       "annotation_ids": [
@@ -1213,7 +1278,8 @@
       "report_id": 6,
       "severity": "error",
       "type": "mismatching_groups",
-      "attribute_names": []
+      "attribute_names": [],
+      "requirements": []
     },
     {
       "annotation_ids": [
@@ -1235,7 +1301,8 @@
       "report_id": 6,
       "severity": "error",
       "type": "mismatching_groups",
-      "attribute_names": []
+      "attribute_names": [],
+      "requirements": []
     },
     {
       "annotation_ids": [
@@ -1257,7 +1324,8 @@
       "report_id": 6,
       "severity": "error",
       "type": "mismatching_attributes",
-      "attribute_names": []
+      "attribute_names": [],
+      "requirements": []
     },
     {
       "annotation_ids": [
@@ -1273,7 +1341,8 @@
       "report_id": 6,
       "severity": "error",
       "type": "covered_annotation",
-      "attribute_names": []
+      "attribute_names": [],
+      "requirements": []
     },
     {
       "annotation_ids": [
@@ -1295,7 +1364,8 @@
       "report_id": 6,
       "severity": "error",
       "type": "mismatching_direction",
-      "attribute_names": []
+      "attribute_names": [],
+      "requirements": []
     },
     {
       "annotation_ids": [
@@ -1317,7 +1387,8 @@
       "report_id": 6,
       "severity": "error",
       "type": "mismatching_label",
-      "attribute_names": []
+      "attribute_names": [],
+      "requirements": []
     },
     {
       "annotation_ids": [
@@ -1339,7 +1410,8 @@
       "report_id": 6,
       "severity": "error",
       "type": "mismatching_label",
-      "attribute_names": []
+      "attribute_names": [],
+      "requirements": []
     },
     {
       "annotation_ids": [
@@ -1361,7 +1433,8 @@
       "report_id": 6,
       "severity": "error",
       "type": "mismatching_label",
-      "attribute_names": []
+      "attribute_names": [],
+      "requirements": []
     },
     {
       "annotation_ids": [
@@ -1377,7 +1450,8 @@
       "report_id": 6,
       "severity": "error",
       "type": "extra_annotation",
-      "attribute_names": []
+      "attribute_names": [],
+      "requirements": []
     },
     {
       "annotation_ids": [
@@ -1393,7 +1467,8 @@
       "report_id": 6,
       "severity": "error",
       "type": "extra_annotation",
-      "attribute_names": []
+      "attribute_names": [],
+      "requirements": []
     },
     {
       "annotation_ids": [
@@ -1409,7 +1484,8 @@
       "report_id": 6,
       "severity": "error",
       "type": "extra_annotation",
-      "attribute_names": []
+      "attribute_names": [],
+      "requirements": []
     },
     {
       "annotation_ids": [
@@ -1425,7 +1501,8 @@
       "report_id": 6,
       "severity": "error",
       "type": "extra_annotation",
-      "attribute_names": []
+      "attribute_names": [],
+      "requirements": []
     },
     {
       "annotation_ids": [
@@ -1441,7 +1518,8 @@
       "report_id": 6,
       "severity": "error",
       "type": "extra_annotation",
-      "attribute_names": []
+      "attribute_names": [],
+      "requirements": []
     },
     {
       "annotation_ids": [
@@ -1457,7 +1535,8 @@
       "report_id": 6,
       "severity": "error",
       "type": "extra_annotation",
-      "attribute_names": []
+      "attribute_names": [],
+      "requirements": []
     },
     {
       "annotation_ids": [
@@ -1473,7 +1552,8 @@
       "report_id": 6,
       "severity": "error",
       "type": "extra_annotation",
-      "attribute_names": []
+      "attribute_names": [],
+      "requirements": []
     },
     {
       "annotation_ids": [
@@ -1489,7 +1569,8 @@
       "report_id": 6,
       "severity": "error",
       "type": "extra_annotation",
-      "attribute_names": []
+      "attribute_names": [],
+      "requirements": []
     },
     {
       "annotation_ids": [
@@ -1505,7 +1586,8 @@
       "report_id": 6,
       "severity": "error",
       "type": "extra_annotation",
-      "attribute_names": []
+      "attribute_names": [],
+      "requirements": []
     },
     {
       "annotation_ids": [
@@ -1521,7 +1603,8 @@
       "report_id": 6,
       "severity": "error",
       "type": "extra_annotation",
-      "attribute_names": []
+      "attribute_names": [],
+      "requirements": []
     },
     {
       "annotation_ids": [
@@ -1537,7 +1620,8 @@
       "report_id": 6,
       "severity": "error",
       "type": "extra_annotation",
-      "attribute_names": []
+      "attribute_names": [],
+      "requirements": []
     },
     {
       "annotation_ids": [
@@ -1553,7 +1637,8 @@
       "report_id": 6,
       "severity": "error",
       "type": "missing_annotation",
-      "attribute_names": []
+      "attribute_names": [],
+      "requirements": []
     },
     {
       "annotation_ids": [
@@ -1569,7 +1654,8 @@
       "report_id": 6,
       "severity": "error",
       "type": "missing_annotation",
-      "attribute_names": []
+      "attribute_names": [],
+      "requirements": []
     },
     {
       "annotation_ids": [
@@ -1585,7 +1671,8 @@
       "report_id": 6,
       "severity": "error",
       "type": "missing_annotation",
-      "attribute_names": []
+      "attribute_names": [],
+      "requirements": []
     },
     {
       "annotation_ids": [
@@ -1601,7 +1688,8 @@
       "report_id": 6,
       "severity": "error",
       "type": "missing_annotation",
-      "attribute_names": []
+      "attribute_names": [],
+      "requirements": []
     },
     {
       "annotation_ids": [
@@ -1623,7 +1711,8 @@
       "report_id": 6,
       "severity": "error",
       "type": "mismatching_label",
-      "attribute_names": []
+      "attribute_names": [],
+      "requirements": []
     },
     {
       "annotation_ids": [
@@ -1645,7 +1734,8 @@
       "report_id": 6,
       "severity": "error",
       "type": "mismatching_label",
-      "attribute_names": []
+      "attribute_names": [],
+      "requirements": []
     },
     {
       "annotation_ids": [
@@ -1667,7 +1757,8 @@
       "report_id": 6,
       "severity": "error",
       "type": "mismatching_label",
-      "attribute_names": []
+      "attribute_names": [],
+      "requirements": []
     },
     {
       "annotation_ids": [
@@ -1689,7 +1780,8 @@
       "report_id": 6,
       "severity": "error",
       "type": "mismatching_label",
-      "attribute_names": []
+      "attribute_names": [],
+      "requirements": []
     },
     {
       "annotation_ids": [
@@ -1711,7 +1803,8 @@
       "report_id": 6,
       "severity": "error",
       "type": "mismatching_label",
-      "attribute_names": []
+      "attribute_names": [],
+      "requirements": []
     },
     {
       "annotation_ids": [
@@ -1733,7 +1826,8 @@
       "report_id": 6,
       "severity": "error",
       "type": "mismatching_label",
-      "attribute_names": []
+      "attribute_names": [],
+      "requirements": []
     },
     {
       "annotation_ids": [
@@ -1755,7 +1849,8 @@
       "report_id": 6,
       "severity": "error",
       "type": "mismatching_label",
-      "attribute_names": []
+      "attribute_names": [],
+      "requirements": []
     },
     {
       "annotation_ids": [
@@ -1771,7 +1866,8 @@
       "report_id": 4,
       "severity": "error",
       "type": "missing_annotation",
-      "attribute_names": []
+      "attribute_names": [],
+      "requirements": []
     },
     {
       "annotation_ids": [
@@ -1787,7 +1883,8 @@
       "report_id": 4,
       "severity": "error",
       "type": "missing_annotation",
-      "attribute_names": []
+      "attribute_names": [],
+      "requirements": []
     },
     {
       "annotation_ids": [
@@ -1803,7 +1900,8 @@
       "report_id": 4,
       "severity": "error",
       "type": "missing_annotation",
-      "attribute_names": []
+      "attribute_names": [],
+      "requirements": []
     },
     {
       "annotation_ids": [
@@ -1819,7 +1917,8 @@
       "report_id": 4,
       "severity": "error",
       "type": "missing_annotation",
-      "attribute_names": []
+      "attribute_names": [],
+      "requirements": []
     },
     {
       "annotation_ids": [
@@ -1835,7 +1934,8 @@
       "report_id": 4,
       "severity": "error",
       "type": "missing_annotation",
-      "attribute_names": []
+      "attribute_names": [],
+      "requirements": []
     },
     {
       "annotation_ids": [
@@ -1851,7 +1951,8 @@
       "report_id": 4,
       "severity": "error",
       "type": "missing_annotation",
-      "attribute_names": []
+      "attribute_names": [],
+      "requirements": []
     },
     {
       "annotation_ids": [
@@ -1873,7 +1974,8 @@
       "report_id": 4,
       "severity": "error",
       "type": "mismatching_groups",
-      "attribute_names": []
+      "attribute_names": [],
+      "requirements": []
     },
     {
       "annotation_ids": [
@@ -1895,7 +1997,8 @@
       "report_id": 4,
       "severity": "error",
       "type": "mismatching_groups",
-      "attribute_names": []
+      "attribute_names": [],
+      "requirements": []
     },
     {
       "annotation_ids": [
@@ -1917,7 +2020,8 @@
       "report_id": 4,
       "severity": "error",
       "type": "mismatching_groups",
-      "attribute_names": []
+      "attribute_names": [],
+      "requirements": []
     },
     {
       "annotation_ids": [
@@ -1939,7 +2043,8 @@
       "report_id": 4,
       "severity": "error",
       "type": "mismatching_groups",
-      "attribute_names": []
+      "attribute_names": [],
+      "requirements": []
     },
     {
       "annotation_ids": [
@@ -1961,7 +2066,8 @@
       "report_id": 4,
       "severity": "error",
       "type": "mismatching_groups",
-      "attribute_names": []
+      "attribute_names": [],
+      "requirements": []
     },
     {
       "annotation_ids": [
@@ -1983,7 +2089,8 @@
       "report_id": 4,
       "severity": "error",
       "type": "mismatching_groups",
-      "attribute_names": []
+      "attribute_names": [],
+      "requirements": []
     },
     {
       "annotation_ids": [
@@ -2005,7 +2112,8 @@
       "report_id": 4,
       "severity": "error",
       "type": "mismatching_attributes",
-      "attribute_names": []
+      "attribute_names": [],
+      "requirements": []
     },
     {
       "annotation_ids": [
@@ -2021,7 +2129,8 @@
       "report_id": 4,
       "severity": "error",
       "type": "covered_annotation",
-      "attribute_names": []
+      "attribute_names": [],
+      "requirements": []
     },
     {
       "annotation_ids": [
@@ -2043,7 +2152,8 @@
       "report_id": 4,
       "severity": "error",
       "type": "mismatching_direction",
-      "attribute_names": []
+      "attribute_names": [],
+      "requirements": []
     },
     {
       "annotation_ids": [
@@ -2065,7 +2175,8 @@
       "report_id": 4,
       "severity": "error",
       "type": "mismatching_label",
-      "attribute_names": []
+      "attribute_names": [],
+      "requirements": []
     },
     {
       "annotation_ids": [
@@ -2087,7 +2198,8 @@
       "report_id": 4,
       "severity": "error",
       "type": "mismatching_label",
-      "attribute_names": []
+      "attribute_names": [],
+      "requirements": []
     },
     {
       "annotation_ids": [
@@ -2109,7 +2221,8 @@
       "report_id": 4,
       "severity": "error",
       "type": "mismatching_label",
-      "attribute_names": []
+      "attribute_names": [],
+      "requirements": []
     },
     {
       "annotation_ids": [
@@ -2125,7 +2238,8 @@
       "report_id": 4,
       "severity": "error",
       "type": "extra_annotation",
-      "attribute_names": []
+      "attribute_names": [],
+      "requirements": []
     },
     {
       "annotation_ids": [
@@ -2141,7 +2255,8 @@
       "report_id": 4,
       "severity": "error",
       "type": "extra_annotation",
-      "attribute_names": []
+      "attribute_names": [],
+      "requirements": []
     },
     {
       "annotation_ids": [
@@ -2157,7 +2272,8 @@
       "report_id": 4,
       "severity": "error",
       "type": "extra_annotation",
-      "attribute_names": []
+      "attribute_names": [],
+      "requirements": []
     },
     {
       "annotation_ids": [
@@ -2173,7 +2289,8 @@
       "report_id": 4,
       "severity": "error",
       "type": "extra_annotation",
-      "attribute_names": []
+      "attribute_names": [],
+      "requirements": []
     },
     {
       "annotation_ids": [
@@ -2189,7 +2306,8 @@
       "report_id": 4,
       "severity": "error",
       "type": "extra_annotation",
-      "attribute_names": []
+      "attribute_names": [],
+      "requirements": []
     },
     {
       "annotation_ids": [
@@ -2205,7 +2323,8 @@
       "report_id": 4,
       "severity": "error",
       "type": "extra_annotation",
-      "attribute_names": []
+      "attribute_names": [],
+      "requirements": []
     },
     {
       "annotation_ids": [
@@ -2221,7 +2340,8 @@
       "report_id": 4,
       "severity": "error",
       "type": "extra_annotation",
-      "attribute_names": []
+      "attribute_names": [],
+      "requirements": []
     },
     {
       "annotation_ids": [
@@ -2237,7 +2357,8 @@
       "report_id": 4,
       "severity": "error",
       "type": "extra_annotation",
-      "attribute_names": []
+      "attribute_names": [],
+      "requirements": []
     },
     {
       "annotation_ids": [
@@ -2253,7 +2374,8 @@
       "report_id": 4,
       "severity": "error",
       "type": "extra_annotation",
-      "attribute_names": []
+      "attribute_names": [],
+      "requirements": []
     },
     {
       "annotation_ids": [
@@ -2269,7 +2391,8 @@
       "report_id": 4,
       "severity": "error",
       "type": "extra_annotation",
-      "attribute_names": []
+      "attribute_names": [],
+      "requirements": []
     },
     {
       "annotation_ids": [
@@ -2285,7 +2408,8 @@
       "report_id": 4,
       "severity": "error",
       "type": "extra_annotation",
-      "attribute_names": []
+      "attribute_names": [],
+      "requirements": []
     },
     {
       "annotation_ids": [
@@ -2301,7 +2425,8 @@
       "report_id": 4,
       "severity": "error",
       "type": "missing_annotation",
-      "attribute_names": []
+      "attribute_names": [],
+      "requirements": []
     },
     {
       "annotation_ids": [
@@ -2317,7 +2442,8 @@
       "report_id": 4,
       "severity": "error",
       "type": "missing_annotation",
-      "attribute_names": []
+      "attribute_names": [],
+      "requirements": []
     },
     {
       "annotation_ids": [
@@ -2333,7 +2459,8 @@
       "report_id": 4,
       "severity": "error",
       "type": "missing_annotation",
-      "attribute_names": []
+      "attribute_names": [],
+      "requirements": []
     },
     {
       "annotation_ids": [
@@ -2349,7 +2476,8 @@
       "report_id": 4,
       "severity": "error",
       "type": "missing_annotation",
-      "attribute_names": []
+      "attribute_names": [],
+      "requirements": []
     },
     {
       "annotation_ids": [
@@ -2371,7 +2499,8 @@
       "report_id": 4,
       "severity": "error",
       "type": "mismatching_label",
-      "attribute_names": []
+      "attribute_names": [],
+      "requirements": []
     },
     {
       "annotation_ids": [
@@ -2393,7 +2522,8 @@
       "report_id": 4,
       "severity": "error",
       "type": "mismatching_label",
-      "attribute_names": []
+      "attribute_names": [],
+      "requirements": []
     },
     {
       "annotation_ids": [
@@ -2415,7 +2545,8 @@
       "report_id": 4,
       "severity": "error",
       "type": "mismatching_label",
-      "attribute_names": []
+      "attribute_names": [],
+      "requirements": []
     },
     {
       "annotation_ids": [
@@ -2437,7 +2568,8 @@
       "report_id": 4,
       "severity": "error",
       "type": "mismatching_label",
-      "attribute_names": []
+      "attribute_names": [],
+      "requirements": []
     },
     {
       "annotation_ids": [
@@ -2459,7 +2591,8 @@
       "report_id": 4,
       "severity": "error",
       "type": "mismatching_label",
-      "attribute_names": []
+      "attribute_names": [],
+      "requirements": []
     },
     {
       "annotation_ids": [
@@ -2481,7 +2614,8 @@
       "report_id": 4,
       "severity": "error",
       "type": "mismatching_label",
-      "attribute_names": []
+      "attribute_names": [],
+      "requirements": []
     },
     {
       "annotation_ids": [
@@ -2503,7 +2637,8 @@
       "report_id": 4,
       "severity": "error",
       "type": "mismatching_label",
-      "attribute_names": []
+      "attribute_names": [],
+      "requirements": []
     },
     {
       "annotation_ids": [
@@ -2519,7 +2654,8 @@
       "report_id": 2,
       "severity": "error",
       "type": "missing_annotation",
-      "attribute_names": []
+      "attribute_names": [],
+      "requirements": []
     },
     {
       "annotation_ids": [
@@ -2535,7 +2671,8 @@
       "report_id": 2,
       "severity": "error",
       "type": "missing_annotation",
-      "attribute_names": []
+      "attribute_names": [],
+      "requirements": []
     },
     {
       "annotation_ids": [
@@ -2551,7 +2688,8 @@
       "report_id": 2,
       "severity": "error",
       "type": "missing_annotation",
-      "attribute_names": []
+      "attribute_names": [],
+      "requirements": []
     },
     {
       "annotation_ids": [
@@ -2567,7 +2705,8 @@
       "report_id": 2,
       "severity": "error",
       "type": "missing_annotation",
-      "attribute_names": []
+      "attribute_names": [],
+      "requirements": []
     },
     {
       "annotation_ids": [
@@ -2583,7 +2722,8 @@
       "report_id": 2,
       "severity": "error",
       "type": "missing_annotation",
-      "attribute_names": []
+      "attribute_names": [],
+      "requirements": []
     },
     {
       "annotation_ids": [
@@ -2599,7 +2739,8 @@
       "report_id": 2,
       "severity": "error",
       "type": "missing_annotation",
-      "attribute_names": []
+      "attribute_names": [],
+      "requirements": []
     },
     {
       "annotation_ids": [
@@ -2621,7 +2762,8 @@
       "report_id": 2,
       "severity": "error",
       "type": "mismatching_groups",
-      "attribute_names": []
+      "attribute_names": [],
+      "requirements": []
     },
     {
       "annotation_ids": [
@@ -2643,7 +2785,8 @@
       "report_id": 2,
       "severity": "error",
       "type": "mismatching_groups",
-      "attribute_names": []
+      "attribute_names": [],
+      "requirements": []
     },
     {
       "annotation_ids": [
@@ -2665,7 +2808,8 @@
       "report_id": 2,
       "severity": "error",
       "type": "mismatching_groups",
-      "attribute_names": []
+      "attribute_names": [],
+      "requirements": []
     },
     {
       "annotation_ids": [
@@ -2687,7 +2831,8 @@
       "report_id": 2,
       "severity": "error",
       "type": "mismatching_groups",
-      "attribute_names": []
+      "attribute_names": [],
+      "requirements": []
     },
     {
       "annotation_ids": [
@@ -2709,7 +2854,8 @@
       "report_id": 2,
       "severity": "error",
       "type": "mismatching_groups",
-      "attribute_names": []
+      "attribute_names": [],
+      "requirements": []
     },
     {
       "annotation_ids": [
@@ -2731,7 +2877,8 @@
       "report_id": 2,
       "severity": "error",
       "type": "mismatching_groups",
-      "attribute_names": []
+      "attribute_names": [],
+      "requirements": []
     },
     {
       "annotation_ids": [
@@ -2753,7 +2900,8 @@
       "report_id": 2,
       "severity": "error",
       "type": "mismatching_attributes",
-      "attribute_names": []
+      "attribute_names": [],
+      "requirements": []
     },
     {
       "annotation_ids": [
@@ -2769,7 +2917,8 @@
       "report_id": 2,
       "severity": "error",
       "type": "covered_annotation",
-      "attribute_names": []
+      "attribute_names": [],
+      "requirements": []
     },
     {
       "annotation_ids": [
@@ -2791,7 +2940,8 @@
       "report_id": 2,
       "severity": "error",
       "type": "mismatching_direction",
-      "attribute_names": []
+      "attribute_names": [],
+      "requirements": []
     },
     {
       "annotation_ids": [
@@ -2813,7 +2963,8 @@
       "report_id": 2,
       "severity": "error",
       "type": "mismatching_label",
-      "attribute_names": []
+      "attribute_names": [],
+      "requirements": []
     },
     {
       "annotation_ids": [
@@ -2835,7 +2986,8 @@
       "report_id": 2,
       "severity": "error",
       "type": "mismatching_label",
-      "attribute_names": []
+      "attribute_names": [],
+      "requirements": []
     },
     {
       "annotation_ids": [
@@ -2857,7 +3009,8 @@
       "report_id": 2,
       "severity": "error",
       "type": "mismatching_label",
-      "attribute_names": []
+      "attribute_names": [],
+      "requirements": []
     },
     {
       "annotation_ids": [
@@ -2873,7 +3026,8 @@
       "report_id": 2,
       "severity": "error",
       "type": "extra_annotation",
-      "attribute_names": []
+      "attribute_names": [],
+      "requirements": []
     },
     {
       "annotation_ids": [
@@ -2889,7 +3043,8 @@
       "report_id": 2,
       "severity": "error",
       "type": "extra_annotation",
-      "attribute_names": []
+      "attribute_names": [],
+      "requirements": []
     },
     {
       "annotation_ids": [
@@ -2905,7 +3060,8 @@
       "report_id": 2,
       "severity": "error",
       "type": "extra_annotation",
-      "attribute_names": []
+      "attribute_names": [],
+      "requirements": []
     },
     {
       "annotation_ids": [
@@ -2921,7 +3077,8 @@
       "report_id": 2,
       "severity": "error",
       "type": "extra_annotation",
-      "attribute_names": []
+      "attribute_names": [],
+      "requirements": []
     },
     {
       "annotation_ids": [
@@ -2937,7 +3094,8 @@
       "report_id": 2,
       "severity": "error",
       "type": "extra_annotation",
-      "attribute_names": []
+      "attribute_names": [],
+      "requirements": []
     },
     {
       "annotation_ids": [
@@ -2953,7 +3111,8 @@
       "report_id": 2,
       "severity": "error",
       "type": "extra_annotation",
-      "attribute_names": []
+      "attribute_names": [],
+      "requirements": []
     },
     {
       "annotation_ids": [
@@ -2969,7 +3128,8 @@
       "report_id": 2,
       "severity": "error",
       "type": "extra_annotation",
-      "attribute_names": []
+      "attribute_names": [],
+      "requirements": []
     },
     {
       "annotation_ids": [
@@ -2985,7 +3145,8 @@
       "report_id": 2,
       "severity": "error",
       "type": "extra_annotation",
-      "attribute_names": []
+      "attribute_names": [],
+      "requirements": []
     },
     {
       "annotation_ids": [
@@ -3001,7 +3162,8 @@
       "report_id": 2,
       "severity": "error",
       "type": "extra_annotation",
-      "attribute_names": []
+      "attribute_names": [],
+      "requirements": []
     },
     {
       "annotation_ids": [
@@ -3017,7 +3179,8 @@
       "report_id": 2,
       "severity": "error",
       "type": "extra_annotation",
-      "attribute_names": []
+      "attribute_names": [],
+      "requirements": []
     },
     {
       "annotation_ids": [
@@ -3033,7 +3196,8 @@
       "report_id": 2,
       "severity": "error",
       "type": "missing_annotation",
-      "attribute_names": []
+      "attribute_names": [],
+      "requirements": []
     },
     {
       "annotation_ids": [
@@ -3049,7 +3213,8 @@
       "report_id": 2,
       "severity": "error",
       "type": "missing_annotation",
-      "attribute_names": []
+      "attribute_names": [],
+      "requirements": []
     },
     {
       "annotation_ids": [
@@ -3065,7 +3230,8 @@
       "report_id": 2,
       "severity": "error",
       "type": "missing_annotation",
-      "attribute_names": []
+      "attribute_names": [],
+      "requirements": []
     },
     {
       "annotation_ids": [
@@ -3087,7 +3253,8 @@
       "report_id": 2,
       "severity": "error",
       "type": "mismatching_label",
-      "attribute_names": []
+      "attribute_names": [],
+      "requirements": []
     },
     {
       "annotation_ids": [
@@ -3109,7 +3276,8 @@
       "report_id": 2,
       "severity": "error",
       "type": "mismatching_label",
-      "attribute_names": []
+      "attribute_names": [],
+      "requirements": []
     },
     {
       "annotation_ids": [
@@ -3131,7 +3299,8 @@
       "report_id": 2,
       "severity": "error",
       "type": "mismatching_label",
-      "attribute_names": []
+      "attribute_names": [],
+      "requirements": []
     },
     {
       "annotation_ids": [
@@ -3153,7 +3322,8 @@
       "report_id": 2,
       "severity": "error",
       "type": "mismatching_label",
-      "attribute_names": []
+      "attribute_names": [],
+      "requirements": []
     },
     {
       "annotation_ids": [
@@ -3175,7 +3345,8 @@
       "report_id": 2,
       "severity": "error",
       "type": "mismatching_label",
-      "attribute_names": []
+      "attribute_names": [],
+      "requirements": []
     },
     {
       "annotation_ids": [
@@ -3197,7 +3368,8 @@
       "report_id": 2,
       "severity": "error",
       "type": "mismatching_label",
-      "attribute_names": []
+      "attribute_names": [],
+      "requirements": []
     }
   ]
 }

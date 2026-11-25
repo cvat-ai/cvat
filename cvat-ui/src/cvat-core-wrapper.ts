@@ -27,7 +27,8 @@ import { UpdateStatusData } from 'cvat-core/src/core-types';
 import { Job, Task } from 'cvat-core/src/session';
 import Project from 'cvat-core/src/project';
 import {
-    AnnotationConflict, ConflictSeverity, QualityConflict, QualityReport, QualityRequirement,
+    AnnotationConflict, ConflictSeverity, QualityConflict, QualityConflictRequirement,
+    QualityReport, QualityRequirement,
     QualityRequirementSaveFields, QualitySettings, QualitySettingsSaveFields, QualitySummary,
     QualityReportScoreComponents, QualityReportRequirementCalculation, QualityReportRequirementSummaryItem,
     QualityReportRequirementCalculationStatus, QualityReportRequirementCalculationReason,
@@ -35,6 +36,7 @@ import {
 import ConsensusSettings from 'cvat-core/src/consensus-settings';
 import ApiToken from 'cvat-core/src/api-token';
 import { FramesMetaData, FrameData } from 'cvat-core/src/frames';
+import type { CalibratedRelatedImageMetadata } from 'cvat-core/src/frames';
 import { ServerError, RequestError } from 'cvat-core/src/exceptions';
 import {
     ShapeType, ObjectType, LabelType, ModelKind, ModelProviders, HistoryActions,
@@ -148,6 +150,7 @@ export {
 };
 
 export type {
+    QualityConflictRequirement,
     SerializedData,
     SerializedAttribute,
     SerializedLabel,
@@ -177,6 +180,7 @@ export type {
     SerializedImageFilter,
     SerializedInterval,
     WebhookEvent,
+    CalibratedRelatedImageMetadata,
 };
 
 export type { IssueView } from 'cvat-core/src/issue';

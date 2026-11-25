@@ -39,6 +39,7 @@ export enum SettingsActionTypes {
     SWITCH_CONTROL_POINTS_SIZE = 'SWITCH_CONTROL_POINTS_SIZE',
     SWITCH_TEXT_POSITION = 'SWITCH_TEXT_POSITION',
     SWITCH_TEXT_CONTENT = 'SWITCH_TEXT_CONTENT',
+    SWITCH_SHOWING_CONFLICT_REQUIREMENTS = 'SWITCH_SHOWING_CONFLICT_REQUIREMENTS',
     CHANGE_BRIGHTNESS_LEVEL = 'CHANGE_BRIGHTNESS_LEVEL',
     CHANGE_CONTRAST_LEVEL = 'CHANGE_CONTRAST_LEVEL',
     CHANGE_SATURATION_LEVEL = 'CHANGE_SATURATION_LEVEL',
@@ -249,6 +250,15 @@ export function switchTextContent(textContent: string[]): AnyAction {
         type: SettingsActionTypes.SWITCH_TEXT_CONTENT,
         payload: {
             textContent: textContent.join(','),
+        },
+    };
+}
+
+export function switchShowingConflictRequirements(showConflictRequirements: boolean): AnyAction {
+    return {
+        type: SettingsActionTypes.SWITCH_SHOWING_CONFLICT_REQUIREMENTS,
+        payload: {
+            showConflictRequirements,
         },
     };
 }

@@ -108,7 +108,7 @@ jobs:
         with:
           persist-credentials: false
 
-      - uses: actions/setup-python@5fda3b95a4ea91299a34e894583c3862153e4b97 # v7.0.0
+      - uses: actions/setup-python@6d4fd22b20465ccc0f7354476588e8df7c9ca0e0 # v7.1.0
         with:
           python-version: '3.11'
 
@@ -155,7 +155,7 @@ jobs:
         if: always()
         uses: actions/upload-artifact@cf430e030ddbb5b0abf93d22962f4752f3646cd9 # v7.0.2
         with:
-          name: allure-results-rest-api
+          name: allure-results-rest-api-docker
           path: tests/python/allure-results
 
       - name: Unit tests
@@ -322,18 +322,19 @@ jobs:
         with:
           name: cvat_container_logs_${{ matrix.specs }}
           path: ${{ github.workspace }}/tests/cvat.log
+
       - name: Upload Allure results as an artifact
         if: always()
         uses: actions/upload-artifact@cf430e030ddbb5b0abf93d22962f4752f3646cd9 # v7.0.2
         with:
-          name: allure-results-e2e-${{ matrix.specs }}
+          name: allure-results-e2e-docker-${{ matrix.specs }}
           path: tests/allure-results-e2e
 
-  generate_report:
-    name: Generate Allure Report and Upload to S3
+  upload_testops_results:
     needs: [unit_testing, e2e_testing]
-    if: always()
-
-    uses: ./.github/workflows/generate-allure-report.yml
+    if: ${{ !cancelled() }}
+    permissions:
+      actions: read
+    uses: ./.github/workflows/upload-testops-results.yml
     secrets:
-      AWS_ALLURE_REPORTS_ROLE: ${{ secrets.AWS_ALLURE_REPORTS_ROLE }}
+      ALLURE_TOKEN: ${{ secrets.ALLURE_TOKEN }}

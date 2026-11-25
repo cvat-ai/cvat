@@ -121,6 +121,7 @@ export class CanvasViewImpl implements CanvasView, Listener {
     private selectedObjects: number[];
     private selectedObjectsSet: Set<number>;
     private selectedObjectsBox: SVG.Rect | null;
+    private selectedObjectsBoxBitmap: SVG.Rect | null;
     private selectedObjectsLabel: HTMLDivElement | null;
     private selectionPasteData: DrawData | null;
     private selectionPasteStates: any[];
@@ -791,6 +792,7 @@ export class CanvasViewImpl implements CanvasView, Listener {
                         x: x - offset,
                         y: y - offset,
                         states: this.controller.objects,
+                        mouseEvent: e,
                     },
                 },
             );
@@ -2133,6 +2135,7 @@ export class CanvasViewImpl implements CanvasView, Listener {
                     x: x - offset,
                     y: y - offset,
                     states: this.controller.objects,
+                    mouseEvent: event,
                 },
             }));
             this.canvas.addEventListener('click', (clickEvent: MouseEvent) => {
@@ -2267,6 +2270,7 @@ export class CanvasViewImpl implements CanvasView, Listener {
         this.selectedObjects = [];
         this.selectedObjectsSet = new Set();
         this.selectedObjectsBox = null;
+        this.selectedObjectsBoxBitmap = null;
         this.selectedObjectsLabel = null;
         this.selectionPasteData = null;
         this.selectionPasteStates = [];
@@ -2478,6 +2482,17 @@ export class CanvasViewImpl implements CanvasView, Listener {
         });
         this.canvas.addEventListener('mousedown', this.onContentMouseDown, true);
         this.canvas.addEventListener('mousemove', this.onContentMouseMove, true);
+        this.canvas.addEventListener('contextmenu', (event: MouseEvent): void => {
+            if (this.mode !== Mode.SELECT || !this.selectedObjectsBox) return;
+
+            const [x, y] = translateToSVG(this.content, [event.clientX, event.clientY]);
+            const box = this.selectedObjectsBox.bbox();
+            if (x >= box.x && x <= box.x2 && y >= box.y && y <= box.y2) {
+                event.preventDefault();
+                event.stopPropagation();
+                this.openSelectedObjectsMenu(event.clientX, event.clientY);
+            }
+        }, true);
 
         window.document.addEventListener('mouseup', this.onMouseUp);
         window.document.addEventListener('keydown', this.onKeyDown);
@@ -2668,6 +2683,7 @@ export class CanvasViewImpl implements CanvasView, Listener {
             // this.setupObjects(model.objects);
         } else if (reason === UpdateReasons.BITMAP) {
             const { imageBitmap } = model;
+            this.canvas.classList.toggle('cvat_canvas_bitmap_enabled', imageBitmap);
             if (imageBitmap) {
                 this.bitmap.style.display = '';
                 this.redrawBitmap();
@@ -4056,7 +4072,8 @@ export class CanvasViewImpl implements CanvasView, Listener {
     }
 
     private isStateMovableInSelection(state: any): boolean {
-        return !!state && !state.lock && !state.pinned && !state.isGroundTruth;
+        return !!state && !state.lock && !state.pinned && !state.isGroundTruth &&
+            !state.hidden && !state.outside && !this.isInnerHidden(state.clientID);
     }
 
     private getMovableSelectedStates(): any[] {
@@ -4078,13 +4095,16 @@ export class CanvasViewImpl implements CanvasView, Listener {
 
     private setSelectedObjectsOverlayDragging(dragging: boolean): void {
         this.selectedObjectsBox?.node.classList.toggle('cvat_canvas_selected_objects_box_dragging', dragging);
+        this.selectedObjectsBoxBitmap?.node.classList.toggle('cvat_canvas_selected_objects_box_dragging', dragging);
         this.selectedObjectsLabel?.classList.toggle('cvat_canvas_selected_objects_label_dragging', dragging);
     }
 
     private clearSelectedObjectsOverlay(): void {
         this.selectedObjectsBox?.remove();
+        this.selectedObjectsBoxBitmap?.parent().remove();
         this.selectedObjectsLabel?.remove();
         this.selectedObjectsBox = null;
+        this.selectedObjectsBoxBitmap = null;
         this.selectedObjectsLabel = null;
     }
 
@@ -4103,13 +4123,20 @@ export class CanvasViewImpl implements CanvasView, Listener {
         let moved = false;
 
         (this.selectedObjectsBox as any).draggable();
-        this.selectedObjectsBox.on('contextmenu', (event: MouseEvent): void => {
+        this.selectedObjectsBox.on('click', (event: MouseEvent): void => {
+            if (moved && this.mode === Mode.SELECT) {
+                event.preventDefault();
+                event.stopPropagation();
+            }
+            moved = false;
+        }).on('contextmenu', (event: MouseEvent): void => {
             event.preventDefault();
             event.stopPropagation();
             this.openSelectedObjectsMenu(event.clientX, event.clientY);
         }).on('beforedrag', (event: CustomEvent): void => {
             const sourceEvent = event.detail.event as MouseEvent;
-            sourceEvent.stopPropagation();
+            const startingSelection = this.mode === Mode.SELECT && this.isMultiSelectModifierPressed(sourceEvent);
+            if (!startingSelection) sourceEvent.stopPropagation();
             if (this.isMultiSelectModifierPressed(sourceEvent) ||
                 this.isMultiSelectObjectModifierPressed(sourceEvent) ||
                 !this.hasMovableSelectedObjects()) {
@@ -4194,7 +4221,6 @@ export class CanvasViewImpl implements CanvasView, Listener {
             }
 
             dragging = false;
-            moved = false;
             movableStates = [];
             previewShapes = [];
             startPointer = null;
@@ -4245,7 +4271,11 @@ export class CanvasViewImpl implements CanvasView, Listener {
 
     private updateSelectedObjectsOverlay(): void {
         const selectedShapes = this.selectedObjects
-            .map((clientID: number): SVG.Shape | null => this.svgShapes[clientID] || null)
+            .map((clientID: number): SVG.Shape | null => {
+                const state = this.drawnStates[clientID];
+                return state && !state.hidden && !state.outside && !this.isInnerHidden(clientID) ?
+                    this.svgShapes[clientID] || null : null;
+            })
             .filter((shape: SVG.Shape | null): shape is SVG.Shape => Boolean(shape?.node.isConnected));
 
         if (!selectedShapes.length) {
@@ -4265,13 +4295,24 @@ export class CanvasViewImpl implements CanvasView, Listener {
                 .rect(right - left, bottom - top)
                 .addClass('cvat_canvas_selected_objects_box');
             this.makeSelectedObjectsBoxDraggable();
+
+            // Keep hit testing in the content SVG; only mirror the outline above the bitmap.
+            const overlay = SVG.adopt(
+                window.document.createElementNS('http://www.w3.org/2000/svg', 'svg') as unknown as HTMLElement,
+            ) as SVG.Container;
+            overlay.addClass('cvat_canvas_selection_overlay');
+            this.attachmentBoard.appendChild(overlay.node);
+            this.selectedObjectsBoxBitmap = overlay
+                .rect(right - left, bottom - top)
+                .addClass('cvat_canvas_selected_objects_box_bitmap');
         }
 
-        this.selectedObjectsBox
-            .move(left - padding, top - padding)
-            .size(right - left + padding * 2, bottom - top + padding * 2)
-            .attr('stroke-width', SELECTED_OBJECTS_BOX_STROKE_WIDTH / this.geometry.scale)
-            .front();
+        for (const box of [this.selectedObjectsBox, this.selectedObjectsBoxBitmap]) {
+            box?.move(left - padding, top - padding)
+                .size(right - left + padding * 2, bottom - top + padding * 2)
+                .attr('stroke-width', SELECTED_OBJECTS_BOX_STROKE_WIDTH / this.geometry.scale)
+                .front();
+        }
         this.selectedObjectsBox.node.classList.toggle(
             'cvat_canvas_selected_objects_box_not_draggable',
             !this.hasMovableSelectedObjects(),

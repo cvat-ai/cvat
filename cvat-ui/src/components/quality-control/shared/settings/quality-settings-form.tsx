@@ -56,6 +56,25 @@ export default function QualitySettingsForm(props: Readonly<Props>): JSX.Element
     const requirementFormVisible = requirementFormMode.type !== 'list';
 
     useEffect(() => {
+        const openRequirementFromHash = (): void => {
+            const [tab, query] = window.location.hash.slice(1).split('?');
+            if (tab !== 'settings') return;
+
+            const requirementId = Number(new URLSearchParams(query).get('requirement'));
+            const requirement = settings.requirements.find((item) => item.id === requirementId);
+            if (requirement) {
+                setRequirementFormMode({ type: 'edit', requirement, enabledOverride: requirement.enabled });
+            } else {
+                setRequirementFormMode({ type: 'list' });
+            }
+        };
+
+        openRequirementFromHash();
+        window.addEventListener('hashchange', openRequirementFromHash);
+        return () => window.removeEventListener('hashchange', openRequirementFromHash);
+    }, [settings]);
+
+    useEffect(() => {
         onRequirementFormVisibilityChange(requirementFormVisible);
 
         return () => {
@@ -94,6 +113,7 @@ export default function QualitySettingsForm(props: Readonly<Props>): JSX.Element
     if (requirementFormMode.type !== 'list') {
         return (
             <QualityRequirementForm
+                key={requirementFormMode.type === 'edit' ? requirementFormMode.requirement.id : requirementFormMode.type}
                 settings={settings}
                 labels={labels}
                 requirement={requirementFormMode.type === 'edit' ? requirementFormMode.requirement : null}
@@ -105,7 +125,14 @@ export default function QualitySettingsForm(props: Readonly<Props>): JSX.Element
                 }
                 copiedRequirement={requirementFormMode.type === 'copy' ? requirementFormMode.sourceRequirement : null}
                 disabled={disabled}
-                onCancel={() => setRequirementFormMode({ type: 'list' })}
+                onCancel={() => {
+                    setRequirementFormMode({ type: 'list' });
+                    const [tab, query] = window.location.hash.slice(1).split('?');
+                    const params = new URLSearchParams(query);
+                    params.delete('requirement');
+                    const search = params.toString();
+                    window.history.replaceState(null, '', `#${tab}${search ? `?${search}` : ''}`);
+                }}
                 onReload={onReload}
             />
         );

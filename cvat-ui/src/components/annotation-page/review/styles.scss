@@ -5,6 +5,12 @@
 
 @import 'base';
 
+.cvat-conflict-tooltip-requirement-name {
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+}
+
 .cvat-create-issue-dialog {
     position: absolute;
     pointer-events: auto;

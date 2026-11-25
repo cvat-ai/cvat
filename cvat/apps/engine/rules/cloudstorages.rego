@@ -39,14 +39,7 @@ allow if {
 allow if {
     input.scope == utils.CREATE
     utils.has_perm(utils.USER)
-    utils.is_sandbox
-}
-
-allow if {
-    input.scope == utils.CREATE
-    input.auth.organization.id == input.resource.organization.id
-    utils.has_perm(utils.USER)
-    organizations.has_perm(organizations.MAINTAINER)
+    organizations.is_same_context_as_resource_with_perm(organizations.MAINTAINER)
 }
 
 allow if {
@@ -76,35 +69,19 @@ filter := utils.add_organization_filter(base_filter, ["organization"])
 
 allow if {
     input.scope in {utils.VIEW, utils.LIST_CONTENT}
-    utils.is_sandbox
+    organizations.is_same_context_as_resource
     utils.is_resource_owner
 }
 
 allow if {
     input.scope in {utils.VIEW, utils.LIST_CONTENT}
-    input.auth.organization.id == input.resource.organization.id
-    organizations.is_member
-    utils.is_resource_owner
-}
-
-allow if {
-    input.scope in {utils.VIEW, utils.LIST_CONTENT}
-    input.auth.organization.id == input.resource.organization.id
+    organizations.is_same_org_as_resource_with_perm(organizations.SUPERVISOR)
     utils.has_perm(utils.USER)
-    organizations.has_perm(organizations.SUPERVISOR)
 }
 
 allow if {
     input.scope in {utils.UPDATE, utils.DELETE}
-    utils.is_sandbox
-    utils.has_perm(utils.WORKER)
-    utils.is_resource_owner
-}
-
-allow if {
-    input.scope in {utils.UPDATE, utils.DELETE}
-    input.auth.organization.id == input.resource.organization.id
-    organizations.is_member
+    organizations.is_same_context_as_resource
     utils.has_perm(utils.WORKER)
     utils.is_resource_owner
 }
@@ -112,7 +89,6 @@ allow if {
 
 allow if {
     input.scope in {utils.UPDATE, utils.DELETE}
-    input.auth.organization.id == input.resource.organization.id
+    organizations.is_same_org_as_resource_with_perm(organizations.MAINTAINER)
     utils.has_perm(utils.USER)
-    organizations.has_perm(organizations.MAINTAINER)
 }

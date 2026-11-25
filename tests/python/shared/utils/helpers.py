@@ -11,8 +11,8 @@ from pathlib import Path
 
 import av
 import av.video.reformatter
-import librosa
 import numpy as np
+import soundfile as sf
 from PIL import Image
 
 from shared.fixtures.init import get_server_image_tag
@@ -125,7 +125,5 @@ def generate_manifest(path: str) -> None:
         raise
 
 
-def read_audio_pcm(
-    f: Path | io.IOBase, *, offset_ms: int = 0, rate: int = 8000
-) -> tuple[np.ndarray, float]:
-    return librosa.load(f, mono=True, sr=rate, offset=offset_ms / 1000)
+def read_audio_pcm(f: Path | io.IOBase) -> tuple[np.ndarray, int]:
+    return sf.read(f, always_2d=True)

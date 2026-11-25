@@ -76,5 +76,10 @@ class QualityBackend(ABC):
         raise NotImplementedError
 
     @abstractmethod
+    def shape_area(self, annotations: Sequence[cdm.Annotation]) -> float:
+        """Area of a GT object before comparison transforms; groups use their union."""
+        raise NotImplementedError("This quality backend does not support GT shape areas")
+
+    @abstractmethod
     def close(self) -> None:
         raise NotImplementedError

@@ -17,7 +17,13 @@ from cvat_sdk.core.helpers import get_paginated_collection
 from deepdiff import DeepDiff
 
 from shared.tasks.utils import parse_frame_step
-from shared.utils.config import get_method, make_api_client, patch_method
+from shared.utils.config import (
+    delete_method,
+    get_method,
+    make_api_client,
+    patch_method,
+    post_method,
+)
 from shared.utils.helpers import generate_image_files
 
 from .utils import (
@@ -1169,7 +1175,7 @@ class TestListQualityConflicts(_PermissionTestBase):
         task, _ = find_sandbox_task_without_gt(True)
 
         create_gt_job(admin_user, task["id"])
-        self.enable_base_quality_requirement(admin_user, task["id"])
+        requirement = self.enable_base_quality_requirement(admin_user, task["id"])
         task_report = create_quality_report(user=admin_user, task_id=task["id"])
 
         with make_api_client(admin_user) as api_client:
@@ -1183,6 +1189,92 @@ class TestListQualityConflicts(_PermissionTestBase):
 
         assert conflicts
         assert all(conflict["report_id"] == report["id"] for conflict in conflicts)
+        assert all(
+            conflict["requirements"] == [{"id": requirement["id"], "name": requirement["name"]}]
+            for conflict in conflicts
+        )
+        assert self._test_list_conflicts_200(admin_user, task_report["id"]) == conflicts
+
+    @pytest.mark.usefixtures("restore_db_per_function")
+    def test_conflicts_reference_only_triggering_requirements_from_report(
+        self, admin_user, find_sandbox_task_without_gt
+    ):
+        task, _ = find_sandbox_task_without_gt(True)
+        create_gt_job(admin_user, task["id"])
+        base_requirement = self.enable_base_quality_requirement(admin_user, task["id"])
+
+        requirements = [base_requirement]
+        # Calculate children in the reverse ID order to exercise sorting after merging conflicts.
+        for name, filter_expression, sort_order in (
+            ("Overlapping rectangles", None, 2),
+            ("Earlier overlapping rectangles", None, 1),
+            (
+                "Filtered out rectangles",
+                json.dumps({"==": [{"var": "shape.label"}, "__no_matching_label__"]}),
+                0,
+            ),
+        ):
+            payload = {
+                "settings_id": base_requirement["settings_id"],
+                "parent_requirement": base_requirement["id"],
+                "name": name,
+                "enabled": True,
+                "sort_order": sort_order,
+            }
+            if filter_expression is not None:
+                payload["filter"] = filter_expression
+            response = post_method(admin_user, "quality/settings/requirements", payload)
+            assert response.status_code == HTTPStatus.CREATED
+            if filter_expression is None:
+                requirements.append(response.json())
+
+        task_report = create_quality_report(user=admin_user, task_id=task["id"])
+        conflicts = self._test_list_conflicts_200(admin_user, task_report["id"], page_size=1)
+        assert conflicts
+        expected_requirements = [
+            {"id": requirement["id"], "name": requirement["name"]} for requirement in requirements
+        ]
+        for conflict in conflicts:
+            assert len(conflict["requirements"]) == len(expected_requirements)
+            assert conflict["requirements"] == sorted(expected_requirements, key=lambda r: r["id"])
+
+        with make_api_client(admin_user) as api_client:
+            _, response = api_client.quality_api.retrieve_report_data(task_report["id"])
+            assert response.status == HTTPStatus.OK
+            report_data = json.loads(response.data)
+        for requirement in expected_requirements:
+            group_conflicts = [
+                conflict
+                for frame in report_data["groups"][requirement["name"]]["frame_results"].values()
+                for conflict in frame["conflicts"]
+            ]
+            assert group_conflicts
+            assert all(conflict["requirements"] == [requirement] for conflict in group_conflicts)
+
+        child_requirement = requirements[1]
+        response = patch_method(
+            admin_user,
+            f"quality/settings/requirements/{child_requirement['id']}",
+            {"name": "Renamed rectangles", "enabled": False},
+        )
+        assert response.status_code == HTTPStatus.OK
+        self._test_list_conflicts_200(
+            admin_user, task_report["id"], expected_data=conflicts, page_size=1
+        )
+        response = delete_method(
+            admin_user, f"quality/settings/requirements/{child_requirement['id']}"
+        )
+        assert response.status_code == HTTPStatus.NO_CONTENT
+        self._test_list_conflicts_200(
+            admin_user, task_report["id"], expected_data=conflicts, page_size=1
+        )
+
+    def test_legacy_report_conflicts_have_no_requirements(self, admin_user, quality_conflicts):
+        report_id = next(iter(quality_conflicts))["report_id"]
+        conflicts = self._test_list_conflicts_200(admin_user, report_id)
+
+        assert conflicts
+        assert all(conflict["requirements"] == [] for conflict in conflicts)
 
     @pytest.mark.usefixtures("restore_db_per_function")
     @pytest.mark.parametrize(*_PermissionTestBase._default_sandbox_cases)

@@ -33,6 +33,22 @@ export function makeCornerPointsMatrix(x: number, y: number, z: number): number[
     ]);
 }
 
+export const CUBOID_EDGES = [
+    [0, 1], [0, 2], [0, 4],
+    [1, 3], [1, 5],
+    [2, 3], [2, 6],
+    [3, 7],
+    [4, 5], [4, 6],
+    [5, 7],
+    [6, 7],
+] as const;
+
+export const CUBOID_FACES = [
+    [0, 1, 3, 2], [4, 5, 7, 6],
+    [0, 1, 5, 4], [2, 3, 7, 6],
+    [0, 2, 6, 4], [1, 3, 7, 5],
+] as const;
+
 export class CuboidModel {
     public perspective: THREE.Mesh;
     public top: THREE.Mesh;

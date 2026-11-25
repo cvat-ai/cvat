@@ -981,7 +981,15 @@ class CanvasWrapperComponent extends React.PureComponent<Props> {
     };
 
     private onCanvasSelectionRequested = async (event: CustomEvent): Promise<void> => {
-        const { states, x, y } = event.detail;
+        const {
+            states, x, y, mouseEvent,
+        } = event.detail;
+        if (this.props.activeControl === ActiveControl.SELECT && mouseEvent &&
+            !mouseEvent.altKey && !mouseEvent.ctrlKey && !mouseEvent.metaKey && !mouseEvent.shiftKey) {
+            this.props.onSelectObjects([]);
+            return;
+        }
+
         const result = await this.resolveCanvasObject(states, x, y);
         if (!result?.state) {
             return;

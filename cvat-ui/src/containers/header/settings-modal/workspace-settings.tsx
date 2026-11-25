@@ -17,6 +17,7 @@ import {
     switchControlPointsSize,
     switchTextPosition,
     switchTextContent,
+    switchShowingConflictRequirements,
     switchShowingTagsOnFrame,
     switchAdaptiveZoom,
 } from 'actions/settings-actions';
@@ -38,6 +39,7 @@ interface StateToProps {
     controlPointsSize: number;
     textPosition: 'auto' | 'center';
     textContent: string;
+    showConflictRequirements: boolean;
     showTagsOnFrame: boolean;
 }
 
@@ -54,6 +56,7 @@ interface DispatchToProps {
     onChangeControlPointsSize(pointsSize: number): void;
     onChangeTextPosition(position: 'auto' | 'center'): void;
     onChangeTextContent(textContent: string[]): void;
+    onSwitchShowingConflictRequirements(enabled: boolean): void;
     onSwitchShowingTagsOnFrame(enabled: boolean): void;
 }
 
@@ -72,6 +75,7 @@ function mapStateToProps(state: CombinedState): StateToProps {
         controlPointsSize,
         textPosition,
         textContent,
+        showConflictRequirements,
         showTagsOnFrame,
     } = workspace;
 
@@ -88,6 +92,7 @@ function mapStateToProps(state: CombinedState): StateToProps {
         controlPointsSize,
         textPosition,
         textContent,
+        showConflictRequirements,
         showTagsOnFrame,
     };
 }
@@ -105,6 +110,7 @@ const mapDispatchToProps: DispatchToProps = {
     onChangeControlPointsSize: switchControlPointsSize,
     onChangeTextPosition: switchTextPosition,
     onChangeTextContent: switchTextContent,
+    onSwitchShowingConflictRequirements: switchShowingConflictRequirements,
     onSwitchShowingTagsOnFrame: switchShowingTagsOnFrame,
 };
 

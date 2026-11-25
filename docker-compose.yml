@@ -53,7 +53,7 @@ services:
 
   cvat_redis_inmem:
     container_name: cvat_redis_inmem
-    image: redis:7.2.11-alpine
+    image: redis:7.2.17-alpine
     restart: always
     command: [
       "redis-server",

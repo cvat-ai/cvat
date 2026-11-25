@@ -348,6 +348,7 @@ You can't mix 2D and 3D data in the same task.
       related_images/
         00001_pcd/
           image_01.png # or any other image
+          image_01.png.json # optional camera calibration sidecar
 
 {{< /tab >}}
 {{< tab header="3D Option 1" >}}
@@ -356,6 +357,7 @@ You can't mix 2D and 3D data in the same task.
       data/
         image.pcd
         image.png
+        image.png.json # optional camera calibration sidecar
 
 {{< /tab >}}
 {{< tab header="3D Option 2" >}}
@@ -365,11 +367,58 @@ You can't mix 2D and 3D data in the same task.
         image_1/
             image_1.pcd
             context_1.png # or any other name
+            context_1.png.json # optional camera calibration sidecar
             context_2.jpg
+            context_2.jpg.json # optional camera calibration sidecar
 
 
 {{< /tab >}}
 {{< /tabpane >}}
+
+#### Camera calibration
+
+For the **3D pointcloud** and CVAT 3D formats, you can add optional camera calibration sidecars
+for related images. Name a sidecar by appending `.json` to the related image file name. Calibration
+enables camera rays in the 3D annotation workspace.
+
+For CVAT 3D layouts, sidecars must use the following CVAT format:
+
+```json
+{
+  "format": "cvat-image-meta",
+  "version": 1,
+  "camera": {
+    "intrinsic_matrix": [
+      [721.5, 0, 609.6],
+      [0, 721.5, 172.9],
+      [0, 0, 1]
+    ]
+  },
+  "extrinsic_matrix": [
+    [1, 0, 0, 0.2],
+    [0, 1, 0, 0],
+    [0, 0, 1, 1.7]
+  ]
+}
+```
+
+For the **3D pointcloud** format, CVAT reads calibration from the Supervisely
+`meta.sensorsData` fields:
+
+```json
+{
+  "meta": {
+    "sensorsData": {
+      "intrinsicMatrix": [721.5, 0, 609.6, 0, 721.5, 172.9, 0, 0, 1],
+      "extrinsicMatrix": [1, 0, 0, 0.2, 0, 1, 0, 0, 0, 0, 1, 1.7]
+    }
+  }
+}
+```
+
+In both formats, the intrinsic matrix must be an invertible 3x3 matrix and the extrinsic matrix
+must be a 3x4 matrix with a rigid rotation and translation. All matrix values must be finite
+numbers.
 
 ### Advanced configuration
 
@@ -392,6 +441,7 @@ The following parameters are available:
 | Stop frame        | Defines the last frame of the video. |
 | Frame step        | Use this parameter to filter video frames or images in a dataset. Specify frame step value to include only <br>certain frames or images in the dataset. <br>For example, if the frame step value is `25`, the dataset will include every 25th frame or image. If a video <br>has `100` frames, setting the frame step to `25` will include only frames `1`, `26`, `51`, `76`, and `100` in the dataset. <br>This can be useful for reducing the size of the dataset, or for focusing on specific frames or images<br>of particular interest. |
 | Chunk size        | Defines amount of frames to be packed in a chunk when send from client to server. <br>The server defines automatically if the chunk is empty. <br>Recommended values: <li> 1080p or less: 36 <li> 2k or less: 8 <li>16 - 4k or less: 4 <li>8 - More: 1 - 4 |
+| Initial replicas  | The number of replica jobs to create for each annotation job. Replicas are used for {{< ilink "/docs/qa-analytics/consensus" "consensus-based annotation" >}}. <br>The default value `0` creates no replicas. Replicas can also be added or deleted after the task is created. |
 | Issue tracker     | Use this parameter to specify the issue tracker URL. |
 | Source storage    | Specify the source storage for importing resources like annotations and backups. <br>If the task was assigned to the project, use the **Use project source storage** toggle to determine whether to <br>use project values or specify new ones. |
 | Target storage    | Specify the target storage (local or cloud) for exporting resources like annotations and backups. <br>If the task is created in the project, use the **Use project target storage** toggle to determine whether to<br> use project values or specify new ones. |
@@ -507,6 +557,11 @@ For more information, consult
 You can delete the current frame from a task.
 This frame will not be presented either in the UI or in the exported annotation.
 Thus, it is possible to mark corrupted frames that are not subject to annotation.
+
+{{% alert title="Note" color="primary" %}}
+Frames cannot be deleted or restored in
+{{< ilink "/docs/workspace/jobs-page#replica-jobs" "replica jobs" >}}.
+{{% /alert %}}
 
 1. Go to the Job annotation view and click on the **Delete frame** button (**Alt**+**Del**).
 

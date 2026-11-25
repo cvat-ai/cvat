@@ -34,6 +34,7 @@ const defaultState: PluginsState = {
                 // not used
                 saveAnnotationButton: [],
             },
+            conflictRequirement: [],
         },
         qualityControlPage: {
             task: {
@@ -92,11 +93,6 @@ const defaultState: PluginsState = {
                 menu: {
                     items: [],
                 },
-                topBar: {
-                    menu: {
-                        items: [],
-                    },
-                },
             },
         },
         projectActions: {
@@ -107,14 +103,6 @@ const defaultState: PluginsState = {
         },
         jobActions: {
             items: [],
-        },
-        taskItem: {
-            // not used
-            ribbon: [],
-        },
-        projectItem: {
-            // not used
-            ribbon: [],
         },
         router: [],
         settings: {

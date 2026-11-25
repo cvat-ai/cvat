@@ -49,6 +49,8 @@ export interface CreateTaskData {
     cloudStorageId: number | null;
 }
 
+export type TaskSelection = Pick<CreateTaskData, 'projectId' | 'files' | 'activeFileManagerTab' | 'cloudStorageId'>;
+
 enum SupportedShareTypes {
     IMAGE = 'image',
     DIR = 'DIR',
@@ -61,11 +63,11 @@ interface Props {
     many: boolean;
 }
 
-type State = CreateTaskData & {
+type State = Omit<CreateTaskData, 'cloudStorageId'> & {
     multiTasks: (CreateTaskData & {
         status: 'pending' | 'progress' | 'failed' | 'completed' | 'cancelled';
     })[];
-    uploadFileErrorMessage: string;
+    uploadFileErrorMessages: Record<TabName, string>;
     loading: boolean;
     statusInProgressTask: string;
 };
@@ -91,9 +93,13 @@ const defaultState: State = {
         cloudStorage: [],
     },
     activeFileManagerTab: 'local',
-    cloudStorageId: null,
     multiTasks: [],
-    uploadFileErrorMessage: '',
+    uploadFileErrorMessages: {
+        local: '',
+        share: '',
+        remote: '',
+        cloudStorage: '',
+    },
     loading: false,
     statusInProgressTask: '',
 };
@@ -101,6 +107,7 @@ const defaultState: State = {
 const UploadFileErrorMessages = {
     one: 'Wrong list of files. You can upload an archive with images, a video, a pdf file or multiple images. ',
     multi: 'Wrong list of files. You can upload one or more videos. ',
+    jsonOnly: 'JSON files cannot be the only files in the selection. ',
 };
 
 const UploadFileHints = {
@@ -129,16 +136,20 @@ function checkFiles(files: RemoteFile[], type: SupportedShareTypes, baseError: s
 function validateRemoteFiles(remoteFiles: RemoteFile[], many: boolean): string {
     let uploadFileErrorMessage = '';
     const regFiles = remoteFiles.filter((file) => file.type === 'REG');
-    const excludedManifests = regFiles.filter((file) => !file.key.endsWith('.jsonl'));
-    if (!many && excludedManifests.length > 1) {
+    const nonManifests = regFiles.filter((file) => !file.key.endsWith('.jsonl'));
+    const nonManifestsOrJSONFiles = nonManifests.filter((file) => !file.key.endsWith('.json'));
+
+    if (!nonManifestsOrJSONFiles.length && nonManifests.length) {
+        uploadFileErrorMessage = UploadFileErrorMessages.jsonOnly;
+    } else if (!many && nonManifestsOrJSONFiles.length > 1) {
         uploadFileErrorMessage = checkFiles(
-            excludedManifests,
+            nonManifestsOrJSONFiles,
             SupportedShareTypes.IMAGE,
             UploadFileErrorMessages.one,
         );
     } else if (many) {
         uploadFileErrorMessage = checkFiles(
-            regFiles,
+            nonManifestsOrJSONFiles,
             SupportedShareTypes.VIDEO,
             UploadFileErrorMessages.multi,
         );
@@ -200,19 +211,6 @@ class CreateTaskContent extends React.PureComponent<Props & RouteComponentProps,
             ...defaultState,
             projectId: state.projectId,
         }));
-    };
-
-    private validateFiles = (): boolean => {
-        const { activeFileManagerTab, files } = this.state;
-
-        if (activeFileManagerTab === 'cloudStorage') {
-            this.setState({
-                cloudStorageId: this.fileManagerComponent.getCloudStorageId(),
-            });
-        }
-        const totalLen = Object.keys(files).reduce((acc, key: string) => acc + files[(key as TabName)].length, 0);
-
-        return !!totalLen;
     };
 
     private startLoading = (): void => {
@@ -335,9 +333,12 @@ class CreateTaskContent extends React.PureComponent<Props & RouteComponentProps,
             ) ? '' : UploadFileErrorMessages.multi;
         }
 
-        this.setState({
-            uploadFileErrorMessage,
-        });
+        this.setState((state) => ({
+            uploadFileErrorMessages: {
+                ...state.uploadFileErrorMessages,
+                local: uploadFileErrorMessage,
+            },
+        }));
 
         if (!uploadFileErrorMessage) {
             this.setState({
@@ -383,9 +384,12 @@ class CreateTaskContent extends React.PureComponent<Props & RouteComponentProps,
             uploadFileErrorMessage = `We can't process it. ${err}`;
         }
 
-        this.setState({
-            uploadFileErrorMessage,
-        });
+        this.setState((state) => ({
+            uploadFileErrorMessages: {
+                ...state.uploadFileErrorMessages,
+                remote: uploadFileErrorMessage,
+            },
+        }));
 
         if (!uploadFileErrorMessage) {
             this.setState({
@@ -402,7 +406,12 @@ class CreateTaskContent extends React.PureComponent<Props & RouteComponentProps,
         const { many } = this.props;
         const uploadFileErrorMessage = validateRemoteFiles(shareFiles, many);
         const filteredFiles = filterFiles(shareFiles, many);
-        this.setState({ uploadFileErrorMessage });
+        this.setState((state) => ({
+            uploadFileErrorMessages: {
+                ...state.uploadFileErrorMessages,
+                share: uploadFileErrorMessage,
+            },
+        }));
 
         if (!uploadFileErrorMessage) {
             this.setState({
@@ -419,7 +428,12 @@ class CreateTaskContent extends React.PureComponent<Props & RouteComponentProps,
         const { many } = this.props;
         const uploadFileErrorMessage = validateRemoteFiles(cloudStorageFiles, many);
         const filteredFiles = filterFiles(cloudStorageFiles, many);
-        this.setState({ uploadFileErrorMessage });
+        this.setState((state) => ({
+            uploadFileErrorMessages: {
+                ...state.uploadFileErrorMessages,
+                cloudStorage: uploadFileErrorMessage,
+            },
+        }));
 
         if (!uploadFileErrorMessage) {
             this.setState({
@@ -431,10 +445,11 @@ class CreateTaskContent extends React.PureComponent<Props & RouteComponentProps,
         }
     };
 
-    private validateBlocks = (): Promise<any> => new Promise((resolve, reject) => {
-        const { projectId } = this.state;
+    private validateBlocks = (): Promise<TaskSelection> => new Promise((resolve, reject) => {
+        const { projectId, activeFileManagerTab, files } = this.state;
+        const selectedFiles = files[activeFileManagerTab];
 
-        if (!this.validateFiles()) {
+        if (!selectedFiles.length) {
             notification.error({
                 message: 'Could not create a task',
                 description: 'A task must contain at least one file',
@@ -449,6 +464,18 @@ class CreateTaskContent extends React.PureComponent<Props & RouteComponentProps,
             return;
         }
 
+        const selection: TaskSelection = {
+            projectId,
+            activeFileManagerTab,
+            files: {
+                ...defaultState.files,
+                [activeFileManagerTab]: selectedFiles,
+            },
+            cloudStorageId: activeFileManagerTab === 'cloudStorage' ?
+                this.fileManagerComponent.getCloudStorageId() : null,
+        };
+
+        this.startLoading();
         this.basicConfigurationComponent.current
             .submit()
             .then(() => {
@@ -509,7 +536,7 @@ class CreateTaskContent extends React.PureComponent<Props & RouteComponentProps,
                 }
 
                 return Promise.resolve();
-            }).then(resolve)
+            }).then(() => resolve(selection))
             .catch((error: Error | ValidateErrorEntity): void => {
                 notification.error({
                     message: 'Could not create a task',
@@ -529,7 +556,8 @@ class CreateTaskContent extends React.PureComponent<Props & RouteComponentProps,
                 const { id } = createdTask;
                 history.push(`/tasks/${id}`);
             })
-            .catch(() => {});
+            .catch(() => {})
+            .finally(this.stopLoading);
     };
 
     private handleSubmitAndContinue = (): void => {
@@ -543,14 +571,13 @@ class CreateTaskContent extends React.PureComponent<Props & RouteComponentProps,
             })
             .then(this.resetState)
             .then(this.focusToForm)
-            .catch(() => {});
+            .catch(() => {})
+            .finally(this.stopLoading);
     };
 
-    private createOneTask = (): Promise<any> => {
+    private createOneTask = (selection: TaskSelection): Promise<any> => {
         const { onCreate } = this.props;
-        this.startLoading();
-        return onCreate(this.state, this.changeStatusInProgressTask)
-            .finally(this.stopLoading);
+        return onCreate({ ...this.state, ...selection }, this.changeStatusInProgressTask);
     };
 
     private setStatusOneOfMultiTasks = async (index: number, status: string): Promise<void> => {
@@ -608,25 +635,20 @@ class CreateTaskContent extends React.PureComponent<Props & RouteComponentProps,
         this.stopLoading();
     };
 
-    private addMultiTasks = async (): Promise<void> => new Promise((resolve) => {
+    private addMultiTasks = (selection: TaskSelection): Promise<void> => new Promise((resolve) => {
         const {
-            projectId,
-            subset,
-            advanced,
-            quality,
-            labels,
-            files: allFiles,
-            activeFileManagerTab,
-            cloudStorageId,
+            projectId, activeFileManagerTab, cloudStorageId, files,
+        } = selection;
+        const {
+            subset, advanced, quality, labels,
         } = this.state;
-
-        const files: (File | string)[] = allFiles[activeFileManagerTab];
+        const selectedFiles: (File | string)[] = files[activeFileManagerTab];
 
         this.setState({
-            multiTasks: files.map((file, index) => ({
+            multiTasks: selectedFiles.map((file, index) => ({
                 projectId,
                 basic: {
-                    name: this.getTaskName(index, activeFileManagerTab),
+                    name: this.getTaskName(index, activeFileManagerTab, file),
                 },
                 subset,
                 advanced,
@@ -663,7 +685,8 @@ class CreateTaskContent extends React.PureComponent<Props & RouteComponentProps,
                             ''} total: ${countAll}, `,
                     className: 'cvat-notification-create-task-success',
                 });
-            });
+            })
+            .catch(this.stopLoading);
     };
 
     private handleCancelMultiTasks = (): void => {
@@ -743,21 +766,17 @@ class CreateTaskContent extends React.PureComponent<Props & RouteComponentProps,
         }));
     };
 
-    private getTaskName = (indexFile: number, fileManagerTabName: TabName, defaultFileName = ''): string => {
+    private getTaskName = (indexFile: number, fileManagerTabName: TabName, file: File | string): string => {
         const { many } = this.props;
         const { basic } = this.state;
-        const { files } = this.state;
-        const file = files[fileManagerTabName][indexFile];
-        let fileName = defaultFileName;
+        let fileName: string;
         switch (fileManagerTabName) {
             case 'remote':
-                fileName = getFileNameFromPath(file as string) || defaultFileName;
-                break;
             case 'share':
-                fileName = getFileNameFromPath(file as string) || defaultFileName;
+                fileName = getFileNameFromPath(file as string) || '';
                 break;
             default:
-                fileName = (file as File)?.name || (file as string) || defaultFileName;
+                fileName = typeof file === 'string' ? file : file.name;
                 break;
         }
         return many ?
@@ -769,7 +788,7 @@ class CreateTaskContent extends React.PureComponent<Props & RouteComponentProps,
 
     private renderBasicBlock(): JSX.Element {
         const { many } = this.props;
-        const exampleMultiTaskName = many ? this.getTaskName(0, 'local', 'fileName.mp4') : '';
+        const exampleMultiTaskName = many ? this.getTaskName(0, 'local', this.state.files.local[0] || 'fileName.mp4') : '';
 
         return (
             <Col span={24}>
@@ -855,7 +874,8 @@ class CreateTaskContent extends React.PureComponent<Props & RouteComponentProps,
 
     private renderFilesBlock(): JSX.Element {
         const { many } = this.props;
-        const { uploadFileErrorMessage } = this.state;
+        const { uploadFileErrorMessages, activeFileManagerTab } = this.state;
+        const uploadFileErrorMessage = uploadFileErrorMessages[activeFileManagerTab];
 
         return (
             <>
@@ -962,10 +982,13 @@ class CreateTaskContent extends React.PureComponent<Props & RouteComponentProps,
     }
 
     private renderFooterSingleTask(): JSX.Element {
-        const { uploadFileErrorMessage, loading, statusInProgressTask: status } = this.state;
+        const {
+            uploadFileErrorMessages, activeFileManagerTab, loading, statusInProgressTask: status,
+        } = this.state;
+        const uploadFileErrorMessage = uploadFileErrorMessages[activeFileManagerTab];
 
         if (status === 'FAILED' || loading) {
-            return (<Alert message={status} />);
+            return (<Alert message={status || 'Preparing task…'} />);
         }
         return (
             <Row justify='end' gutter={8}>
@@ -996,16 +1019,17 @@ class CreateTaskContent extends React.PureComponent<Props & RouteComponentProps,
     private renderFooterMultiTasks(): JSX.Element {
         const {
             multiTasks: items,
-            uploadFileErrorMessage,
+            uploadFileErrorMessages,
             files,
             activeFileManagerTab,
             loading,
         } = this.state;
         const currentFiles = files[activeFileManagerTab];
+        const uploadFileErrorMessage = uploadFileErrorMessages[activeFileManagerTab];
         const countPending = items.filter((item) => item.status === 'pending').length;
         const countAll = items.length;
 
-        if ((loading || countPending !== countAll) && currentFiles.length) {
+        if (countAll > 0 && (loading || countPending !== countAll)) {
             return (
                 <MultiTasksProgress
                     tasks={items}
@@ -1025,7 +1049,7 @@ class CreateTaskContent extends React.PureComponent<Props & RouteComponentProps,
                         htmlType='submit'
                         type='primary'
                         onClick={this.handleSubmitMultiTasks}
-                        disabled={!!uploadFileErrorMessage}
+                        disabled={loading || !!uploadFileErrorMessage}
                     >
                         Submit&nbsp;
                         {currentFiles.length}

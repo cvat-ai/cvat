@@ -2,7 +2,10 @@
 #
 # SPDX-License-Identifier: MIT
 
+import sys
+
 from django.core.exceptions import ObjectDoesNotExist
+from django.core.signals import got_request_exception
 from django.db.models.signals import post_delete, post_save, pre_save
 from django.dispatch import receiver
 
@@ -22,7 +25,14 @@ from cvat.apps.organizations.models import Invitation, Membership, Organization
 from cvat.apps.webhooks.models import Webhook
 
 from .event import EventScopeChoice, event_scope
-from .handlers import handle_create, handle_delete, handle_update
+from .handlers import handle_create, handle_delete, handle_update, record_request_exception
+
+
+@receiver(got_request_exception)
+def request_exception(sender, *, request, **kwargs):
+    # Django sends this signal inside an except block, with only the request.
+    if (exc := sys.exception()) is not None:
+        record_request_exception(exc, request=request)
 
 
 @receiver(pre_save, sender=AccessToken)

@@ -47,7 +47,7 @@ export default function ProjectsPageComponent(): JSX.Element {
     const isAnySearch = anySearch<ProjectsQuery>(query);
 
     const selectableProjectIds = currentProjects
-        .map((p) => p.id).filter((id) => !deletedProjects[id]);
+        .map((project) => project.id).filter((id) => !(id in deletedProjects));
     const onSelectAll = useCallback(() => {
         dispatch(selectionActions.selectResources(selectableProjectIds, SelectedResourceType.PROJECTS));
     }, [selectableProjectIds]);

@@ -69,6 +69,8 @@ interface AttributeRuleRow {
     comparator: QualityRequirementAttributeComparator;
     isLocal: boolean;
     hasInheritedCounterpart: boolean;
+    // the attribute could have been deleted after the rule was created
+    isUnknownAttribute: boolean;
     searchValue: string;
 }
 
@@ -227,6 +229,7 @@ export default function QualityRequirementAttributeRules(props: Readonly<Props>)
                             isLocal: rule.isLocal ?? false,
                             hasInheritedCounterpart: typeof rule.specId === 'number' &&
                                 inheritedAttributeRuleSpecIds.has(rule.specId),
+                            isUnknownAttribute: typeof rule.specId === 'number' && !attributeOption,
                             searchValue: [
                                 name,
                                 rule.enabled ? 'enabled' : 'disabled',
@@ -287,6 +290,13 @@ export default function QualityRequirementAttributeRules(props: Readonly<Props>)
                                         name={[record.fieldName, 'specId']}
                                         className='cvat-quality-requirement-attribute-rule-field'
                                         rules={[{ required: true, message: 'This field is required' }]}
+                                        {...(record.isUnknownAttribute ? {
+                                            validateStatus: 'warning',
+                                            help: record.enabled ?
+                                                'The attribute was deleted. ' +
+                                                'The requirement is not computed while the rule is enabled' :
+                                                'The attribute was deleted. The rule is ignored',
+                                        } : {})}
                                     >
                                         <Select
                                             showSearch
@@ -294,6 +304,11 @@ export default function QualityRequirementAttributeRules(props: Readonly<Props>)
                                             optionFilterProp='children'
                                             onChange={() => markAttributeRuleChanged(record.index)}
                                         >
+                                            {record.isUnknownAttribute && (
+                                                <Select.Option key={record.specId} value={record.specId} disabled>
+                                                    {record.name}
+                                                </Select.Option>
+                                            )}
                                             {attributeOptions.map((option) => (
                                                 <Select.Option
                                                     key={option.value}

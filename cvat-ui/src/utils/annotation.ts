@@ -3,10 +3,17 @@
 //
 // SPDX-License-Identifier: MIT
 
+import { Canvas } from 'cvat-canvas-wrapper';
+import { Canvas3d } from 'cvat-canvas3d-wrapper';
 import { getCVATStore } from 'cvat-store';
 import { CombinedState } from 'reducers';
+import { Job, ObjectState, ObjectType } from 'cvat-core-wrapper';
 
-export default function isAbleToChangeFrame(frame?: number): boolean {
+export function jobHasUnsavedChanges(jobInstance: Job): boolean {
+    return jobInstance.annotations.hasUnsavedChanges() || jobInstance.frames.hasUnsavedChanges();
+}
+
+export function isAbleToChangeFrame(frame?: number): boolean {
     const store = getCVATStore();
 
     const state: CombinedState = store.getState();
@@ -29,4 +36,18 @@ export default function isAbleToChangeFrame(frame?: number): boolean {
     }
 
     return canvas.isAbleToChangeFrame() && frameInTheJob && !state.annotation.player.navigationBlocked;
+}
+
+export function focusObject(
+    state: ObjectState,
+    canvas: Canvas | Canvas3d | null,
+    focusedObjectPadding?: number,
+): void {
+    if (state.objectType !== ObjectType.TAG) {
+        if (canvas instanceof Canvas) {
+            canvas.focus(state.clientID as number, focusedObjectPadding);
+        } else if (canvas instanceof Canvas3d) {
+            canvas.focus(state.clientID as number);
+        }
+    }
 }

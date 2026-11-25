@@ -44,20 +44,10 @@ CONTEXTS = ["sandbox", "organization"]
 OWNERSHIPS = ["none"]
 GROUPS = ["admin", "user", "worker", "none"]
 ORG_ROLES = ["owner", "maintainer", "supervisor", "worker", None]
-SAME_ORG = [True, False]
 
 
 def RESOURCES(scope):
     return [None]
-
-
-def is_same_org(org1, org2):
-    if org1 is not None and org2 is not None:
-        return org1["id"] == org2["id"]
-    elif org1 is None and org2 is None:
-        return True
-    else:
-        return False
 
 
 def eval_rule(scope, context, ownership, privilege, membership, data):
@@ -78,7 +68,7 @@ def eval_rule(scope, context, ownership, privilege, membership, data):
     return bool(rules)
 
 
-def get_data(scope, context, ownership, privilege, membership, resource, same_org):
+def get_data(scope, context, ownership, privilege, membership, resource):
     data = {
         "scope": scope,
         "auth": {
@@ -123,16 +113,14 @@ def _get_name(prefix, **kwargs):
     return name
 
 
-def get_name(scope, context, ownership, privilege, membership, resource, same_org):
+def get_name(scope, context, ownership, privilege, membership, resource):
     return _get_name("test", **locals())
 
 
-def is_valid(scope, context, ownership, privilege, membership, resource, same_org):
+def is_valid(scope, context, ownership, privilege, membership, resource):
     if context == "sandbox" and membership:
         return False
-    if scope == "list" and ownership != "None":
-        return False
-    if context == "sandbox" and same_org is False:
+    if scope == "list" and ownership != "none":
         return False
 
     return True
@@ -142,21 +130,15 @@ def gen_test_rego(name):
     with open(f"{name}_test.gen.rego", "wt") as f:
         f.write(f"package {name}\nimport rego.v1\n\n")
         print("scopes", SCOPES)
-        for scope, context, ownership, privilege, membership, same_org in product(
-            SCOPES, CONTEXTS, OWNERSHIPS, GROUPS, ORG_ROLES, SAME_ORG
+        for scope, context, ownership, privilege, membership in product(
+            SCOPES, CONTEXTS, OWNERSHIPS, GROUPS, ORG_ROLES
         ):
             for resource in RESOURCES(scope):
-                if not is_valid(
-                    scope, context, ownership, privilege, membership, resource, same_org
-                ):
+                if not is_valid(scope, context, ownership, privilege, membership, resource):
                     continue
 
-                data = get_data(
-                    scope, context, ownership, privilege, membership, resource, same_org
-                )
-                test_name = get_name(
-                    scope, context, ownership, privilege, membership, resource, same_org
-                )
+                data = get_data(scope, context, ownership, privilege, membership, resource)
+                test_name = get_name(scope, context, ownership, privilege, membership, resource)
                 result = eval_rule(scope, context, ownership, privilege, membership, data)
                 f.write(
                     "{test_name} if {{\n    {allow} with input as {data}\n}}\n\n".format(

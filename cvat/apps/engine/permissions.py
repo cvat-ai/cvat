@@ -350,6 +350,7 @@ class ProjectPermission(
         owner_id = request.data.get("owner_id") or request.data.get("owner")
 
         scopes = cls.get_scopes(request, view, obj)
+        dst_iam_context = iam_context
 
         if cls.Scopes.UPDATE_ORGANIZATION in scopes:
             # consider this case as deleting a project in the org A and creating a new one in the org B
@@ -390,11 +391,11 @@ class ProjectPermission(
             permissions.append(self)
 
         if owner_id:
-            perm = UserPermission.create_scope_view(iam_context, owner_id)
+            perm = UserPermission.create_scope_view(dst_iam_context, owner_id)
             permissions.append(perm)
 
         if assignee_id:
-            perm = UserPermission.create_scope_view(iam_context, assignee_id)
+            perm = UserPermission.create_scope_view(dst_iam_context, assignee_id)
             permissions.append(perm)
 
         for field_source, field in [
@@ -408,7 +409,7 @@ class ProjectPermission(
             if cloud_storage_id := _get_key(field_source, field_path):
                 permissions.append(
                     CloudStoragePermission.create_scope_view(
-                        iam_context, storage_id=cloud_storage_id
+                        dst_iam_context, storage_id=cloud_storage_id
                     )
                 )
 
@@ -614,6 +615,7 @@ class TaskPermission(
         owner_id = request.data.get("owner_id") or request.data.get("owner")
 
         scopes = cls.get_scopes(request, view, obj)
+        dst_iam_context = iam_context
 
         if cls.Scopes.UPDATE_ORGANIZATION in scopes:
             # consider this case as deleting a task in the org A and creating a new one in the org B
@@ -666,15 +668,15 @@ class TaskPermission(
             permissions.append(self)
 
         if owner_id:
-            perm = UserPermission.create_scope_view(iam_context, owner_id)
+            perm = UserPermission.create_scope_view(dst_iam_context, owner_id)
             permissions.append(perm)
 
         if assignee_id:
-            perm = UserPermission.create_scope_view(iam_context, assignee_id)
+            perm = UserPermission.create_scope_view(dst_iam_context, assignee_id)
             permissions.append(perm)
 
         if project_id:
-            perm = ProjectPermission.create_scope_view(request, int(project_id), iam_context)
+            perm = ProjectPermission.create_scope_view(request, int(project_id), dst_iam_context)
             permissions.append(perm)
 
         for field_source, field in [
@@ -690,7 +692,7 @@ class TaskPermission(
             if cloud_storage_id := _get_key(field_source, field_path):
                 permissions.append(
                     CloudStoragePermission.create_scope_view(
-                        iam_context, storage_id=cloud_storage_id
+                        dst_iam_context, storage_id=cloud_storage_id
                     )
                 )
 

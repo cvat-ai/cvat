@@ -5,11 +5,17 @@
 from __future__ import annotations
 
 import itertools
-from collections.abc import Iterator
+import math
+from collections.abc import Iterator, Sequence
 from typing import TYPE_CHECKING, cast
 
 import attrs
 import datumaro as dm
+import numpy as np
+from shapely import make_valid
+from shapely.errors import ShapelyError
+from shapely.geometry import Polygon
+from shapely.ops import unary_union
 
 from cvat.apps.dataset_manager import data_model as cdm
 from cvat.apps.dataset_manager.data_model.adapters.datumaro import (
@@ -23,8 +29,11 @@ from cvat.apps.quality_control.backends.base import (
     FrameComparisonSample,
     QualityBackend,
 )
-from cvat.apps.quality_control.backends.datumaro.matching import Comparator
-from cvat.apps.quality_control.comparison_report import ComparisonParameters
+from cvat.apps.quality_control.backends.datumaro.matching import (
+    Comparator,
+    ComparisonParameters,
+    DistanceComparator,
+)
 from cvat.apps.quality_control.filters import RequirementJsonLogicFilter
 from cvat.apps.quality_control.matching import (
     AnnotationMatches,
@@ -32,10 +41,19 @@ from cvat.apps.quality_control.matching import (
     GroupComparison,
     MatchingResults,
 )
-from cvat.apps.quality_control.models import QualityRequirementAnnotationType
+from cvat.apps.quality_control.models import (
+    QualityRequirementAnnotationType,
+    ShapeSimilarityMetricType,
+)
+from cvat.apps.quality_control.threshold_policy import (
+    ConstantThresholdPolicy,
+    LinearThresholdPolicy,
+    ThresholdPolicy,
+    ThresholdPolicyEvaluator,
+)
 
 if TYPE_CHECKING:
-    from cvat.apps.quality_control.datumaro_data_provider import DatumaroJobDataProvider
+    from cvat.apps.quality_control.backends.datumaro.data_provider import DatumaroJobDataProvider
     from cvat.apps.quality_control.quality_handlers import EffectiveQualityRequirement
 
 
@@ -149,9 +167,15 @@ class Datumaro2DBackend(QualityBackend):
 
     @staticmethod
     def _comparison_parameters(requirement: EffectiveQualityRequirement) -> ComparisonParameters:
-        settings = ComparisonParameters()
+        settings = ComparisonParameters(
+            annotation_type=to_datumaro_annotation_type(requirement.comparison_annotation_type),
+            similarity_metric=requirement.similarity_metric,
+        )
         for name in (
+            "boundary_f_tolerance",
+            "boundary_f_threshold",
             "iou_threshold",
+            "oks_threshold",
             "oks_sigma",
             "line_thickness",
             "point_size_base",
@@ -165,15 +189,96 @@ class Datumaro2DBackend(QualityBackend):
             "panoptic_comparison",
         ):
             value = getattr(requirement, name)
+            if name == "iou_threshold" and isinstance(value, ThresholdPolicy):
+                continue
             if value is not None:
                 setattr(settings, name, value)
         settings.compare_attributes = attribute_comparison_may_compare(
             requirement.attribute_comparison
         )
-        settings.included_annotation_types = [
-            to_datumaro_annotation_type(requirement.comparison_annotation_type)
-        ]
         return settings
+
+    def _configure_matching_threshold(
+        self,
+        requirement: EffectiveQualityRequirement,
+        gt_item: dm.DatasetItem,
+        settings: ComparisonParameters,
+    ):
+        # TODO: remove this function from the backend
+        # variable thresholds are only used with the IoU similarity metric
+        if requirement.similarity_metric != ShapeSimilarityMetricType.IOU:
+            return
+
+        policy = requirement.iou_threshold
+        evaluator = (
+            ThresholdPolicyEvaluator(policy) if isinstance(policy, ThresholdPolicy) else None
+        )
+        if isinstance(policy, ConstantThresholdPolicy):
+            settings.iou_threshold = evaluator()
+        elif isinstance(policy, LinearThresholdPolicy):
+            thresholds = {}
+
+            def evaluate_gt_threshold(gt_annotation_parts: Sequence[dm.Annotation]) -> float:
+                key = tuple(id(ann) for ann in gt_annotation_parts)
+                if key not in thresholds:
+                    try:
+                        area = self.shape_area(
+                            [self._view(ann, self._gt_provider) for ann in gt_annotation_parts]
+                        )
+                        thresholds[key] = evaluator(area)
+                    except (ValueError, TypeError, ArithmeticError, ShapelyError) as error:
+                        raise ValueError(
+                            "Cannot compute linear IoU threshold for requirement "
+                            f"{requirement.name!r} on frame {gt_item.id!r}: "
+                            "invalid ground-truth shape area or geometry."
+                        ) from error
+
+                return thresholds[key]
+
+            settings.iou_threshold = evaluate_gt_threshold
+        elif policy is not None and not isinstance(policy, float | int):
+            raise AssertionError(f"Unsupported IoU threshold policy: {policy!r}")
+
+    def shape_area(self, annotations: Sequence[cdm.Annotation2D]) -> float:
+        # FIXME: the area computed here can be different from what's used by IoU during comparisons:
+        # - with panoptic comparison, IoU uses only the visible (not covered) part of the GT object,
+        #   but the area here is computed for the whole shape
+        # - IoU uses the shapes rasterized within the image, but the area here is not limited
+        #   by the image (e.g. for polygons partially outside the image)
+
+        native = [cast(DatumaroAnnotationAdapter, ann).native_annotation for ann in annotations]
+        if not native:
+            raise AssertionError("GT shape area requires at least one annotation")
+        if len(native) == 1:
+            area = float(annotations[0].get_area())
+            if not math.isfinite(area) or area < 0:
+                # Invalid coordinates are input data errors, not backend invariants.
+                raise ValueError("GT shape area must be finite and nonnegative.")
+            if isinstance(native[0], dm.Ellipse):
+                # Use the same rotated, rasterized geometry as ellipse IoU.
+                from pycocotools import mask as mask_utils
+
+                gt_item, _ = self._native_items
+                height, width = gt_item.media_as(dm.Image).size
+                polygon = DistanceComparator.to_polygon(native[0])
+                return float(
+                    mask_utils.area(
+                        mask_utils.merge(mask_utils.frPyObjects([polygon.points], height, width))
+                    )
+                )
+            return area
+        if all(ann.type == dm.AnnotationType.polygon for ann in native):
+            # Repair self-crossings and zero-width cuts used to represent polygon holes.
+            polygons = [
+                make_valid(Polygon(np.asarray(ann.points).reshape(-1, 2))) for ann in native
+            ]
+            return float(unary_union(polygons).area)
+        if all(ann.type == dm.AnnotationType.mask for ann in native):
+            mask = np.array(native[0].image, dtype=bool, copy=True)
+            for ann in native[1:]:
+                np.logical_or(mask, ann.image, out=mask)
+            return float(np.count_nonzero(mask))
+        raise ValueError("Cannot compute a GT union area for these annotation types.")
 
     def compare(
         self,
@@ -196,6 +301,8 @@ class Datumaro2DBackend(QualityBackend):
             ]
         )
         settings = self._comparison_parameters(requirement)
+        self._configure_matching_threshold(requirement, gt_item, settings)
+
         comparator = Comparator(
             self._gt_provider.dataset.native_dataset.categories(),
             settings=settings,

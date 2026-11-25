@@ -2,6 +2,8 @@
 #
 # SPDX-License-Identifier: MIT
 
+from pathlib import PurePath
+
 
 class BasicError(Exception):
     """
@@ -25,6 +27,16 @@ class InvalidPcdError(Exception):
     """
     Indicates an invalid point cloud
     """
+
+
+class InvalidRelatedImageMetadataError(ValueError):
+    """
+    Indicates invalid related image metadata
+    """
+
+    def __init__(self, sidecar_path: PurePath, message: str) -> None:
+        self.message = message
+        super().__init__(f"Invalid camera calibration sidecar '{sidecar_path}': {message}")
 
 
 class InvalidManifestError(BasicError):

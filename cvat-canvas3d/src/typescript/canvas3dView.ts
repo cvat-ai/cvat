@@ -11,7 +11,7 @@ import { Canvas3dController } from './canvas3dController';
 import { Listener, Master } from './master';
 import consts from './consts';
 import {
-    Canvas3dModel, DrawData, Mode, Planes, UpdateReasons, ViewType,
+    CameraRayData, Canvas3dModel, DrawData, Mode, Planes, UpdateReasons, ViewType,
 } from './canvas3dModel';
 import {
     createRotationHelper, removeRotationHelper,
@@ -19,7 +19,8 @@ import {
     createCuboidEdges, removeCuboidEdges, CuboidModel, makeCornerPointsMatrix,
 } from './cuboid';
 import { ObjectState, ObjectType } from '.';
-import { disposeScene } from './utils';
+import { ThickArrowHelper } from './thickArrowHelper';
+import { disposeObject3D, disposeScene } from './utils';
 import { IssueRegion, ISSUE_REGION_NAME } from './issueRegion';
 
 export interface Canvas3dView {
@@ -145,6 +146,7 @@ export class Canvas3dViewImpl implements Canvas3dView, Listener {
         cuboid: CuboidModel;
     }>;
     private hoverNeedsUpdate: boolean;
+    private cameraRayHelpers: ThickArrowHelper[];
     private issueRegions: Record<number, IssueRegion> = {};
     private redrawMaterial: THREE.MeshBasicMaterial | null = null;
 
@@ -385,6 +387,7 @@ export class Canvas3dViewImpl implements Canvas3dView, Listener {
 
         this.isCtrlDown = false;
         this.hoverNeedsUpdate = false;
+        this.cameraRayHelpers = [];
         this.action = {
             scan: null,
             detected: false,
@@ -1536,6 +1539,7 @@ export class Canvas3dViewImpl implements Canvas3dView, Listener {
             const onPCDLoadSuccess = (points: any): void => {
                 try {
                     this.onSceneImageLoaded(points);
+                    this.updateCameraRayHelpers(model.data.cameraRays);
                     model.updateCanvasObjects();
                     domElement.setAttribute('data-frame-number', String(frameNumber));
                 } finally {
@@ -1696,6 +1700,8 @@ export class Canvas3dViewImpl implements Canvas3dView, Listener {
                 // in case of changing control points size, need to update all helper points size
                 this.updateHelperPointsSize(view);
             });
+        } else if (reason === UpdateReasons.CAMERA_RAY_CHANGED) {
+            this.updateCameraRayHelpers(model.data.cameraRays);
         } else if (reason === UpdateReasons.SHAPE_ACTIVATED) {
             this.deactivateObject();
             this.activateObject();
@@ -1835,10 +1841,42 @@ export class Canvas3dViewImpl implements Canvas3dView, Listener {
 
         this.drawnObjects = {};
         this.activatedElementID = null;
+        this.cameraRayHelpers = [];
 
         Object.keys(this.views).forEach((view: string): void => {
             const viewData = this.views[view as keyof Views];
             disposeScene(viewData.scene);
+        });
+    }
+
+    private updateCameraRayHelpers(cameraRays: CameraRayData[]): void {
+        this.cameraRayHelpers.forEach((cameraRayHelper) => {
+            cameraRayHelper.parent?.remove(cameraRayHelper);
+            disposeObject3D(cameraRayHelper);
+        });
+        this.cameraRayHelpers = [];
+
+        const rayLength = Math.max(this.sceneBBox.getSize(new THREE.Vector3()).length(), 20);
+        const headLength = 2;
+        const headWidth = 1;
+        const lineWidth = 2;
+
+        ALL_VIEWS.forEach((view: ViewType): void => {
+            cameraRays.forEach(({ ray, color }): void => {
+                const cameraRayHelper = new ThickArrowHelper(
+                    ray.direction,
+                    ray.origin,
+                    rayLength,
+                    color,
+                    headLength,
+                    headWidth,
+                    lineWidth,
+                    this.views[view].renderer.getDrawingBufferSize(new THREE.Vector2()),
+                );
+
+                this.views[view].scene.add(cameraRayHelper);
+                this.cameraRayHelpers.push(cameraRayHelper);
+            });
         });
     }
 
@@ -2134,6 +2172,11 @@ export class Canvas3dViewImpl implements Canvas3dView, Listener {
             }
 
             view.renderer.setSize(width, height);
+            this.cameraRayHelpers.forEach((cameraRayHelper) => {
+                if (cameraRayHelper.parent === view.scene) {
+                    cameraRayHelper.setResolution(renderer.getDrawingBufferSize(new THREE.Vector2()));
+                }
+            });
             view.camera.updateProjectionMatrix();
         }
     }

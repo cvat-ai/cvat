@@ -69,7 +69,7 @@ with detailed descriptions provided in the table below.
 | **Search frame by filename**<br><br>![Search frame by filename](/images/navigation_search_icon.png) | Click to open the search pop-up. Type a frame filename to search for it within the job. Select the filename and press **Enter** to navigate to the selected frame. |
 | **Copy frame name**<br><br>![Copy frame name](/images/navigation_icons_copy_filename.png) | Click to copy frame name to the clipboard. |
 | **Copy frame link**<br><br>![Delete frame](/images/navigation_icons_copy_link.png) | Click to copy link to the frame. |
-| **Delete frame**<br><br>![Delete frame](/images/navigation_icons_delete_frame.png) | Click to delete or restore current frame. |
+| **Delete frame**<br><br>![Delete frame](/images/navigation_icons_delete_frame.png) | Click to delete or restore current frame. <br>Not available in {{< ilink "/docs/workspace/jobs-page#replica-jobs" "replica jobs" >}}. |
 
 ## Job information and Annotation Mode switcher
 

@@ -1,5 +1,5 @@
 allure-pytest==2.14.2
-av==16.0.1
+av==17.0.0
 pytest==9.0.3  # https://github.com/smarie/python-pytest-cases/issues/385
 pytest-cases==3.10.1
 pytest-timeout==2.4.0
@@ -8,8 +8,8 @@ pytest-xdist==3.8.0
 requests==2.33.0
 deepdiff==8.6.2
 boto3==1.39.0
-Pillow==12.3.0
-pyyaml==6.0.2
-numpy==2.3.2; python_version >= "3.14"
+Pillow==13.0.0
+pyyaml==6.0.4
+numpy==2.5.2; python_version >= "3.14"
 numpy==2.0.0; python_version < "3.14"
-librosa==0.11.0
+soundfile==0.14.0

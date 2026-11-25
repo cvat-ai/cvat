@@ -4,6 +4,114 @@
 
 @import 'base';
 
+.cvat-threshold-policy-editor {
+    .cvat-threshold-policy-controls,
+    .cvat-threshold-policy-toolbar {
+        display: flex;
+        align-items: center;
+        justify-content: space-between;
+        gap: $grid-unit-size * 2;
+        margin-bottom: $grid-unit-size * 2;
+    }
+
+    .cvat-threshold-policy-controls {
+        align-items: flex-start;
+        justify-content: flex-start;
+        flex-wrap: wrap;
+
+        .ant-select { width: $grid-unit-size * 28; }
+        .ant-input-number { width: $grid-unit-size * 14; }
+
+        .cvat-threshold-policy-undo {
+            margin-inline-start: auto;
+            margin-top: $grid-unit-size * 3;
+        }
+    }
+
+    label {
+        display: flex;
+        flex-direction: column;
+        gap: $grid-unit-size;
+        color: $text-color-secondary;
+        font-size: 12px;
+        margin-bottom: $grid-unit-size;
+    }
+
+    .cvat-threshold-policy-chart {
+        --threshold-line: #{$validation-progress-color};
+        --threshold-fill: #{$hover-menu-color};
+        --threshold-background: #{$background-color-1};
+        --threshold-grid: #{$border-color-1};
+        --threshold-text: #{$text-color-secondary};
+
+        position: relative;
+        height: clamp(240px, 40vw, 340px);
+
+        canvas {
+            display: block;
+            width: 100%;
+            touch-action: none;
+            user-select: none;
+        }
+    }
+
+    .cvat-threshold-policy-tooltip {
+        position: absolute;
+        padding: $grid-unit-size;
+        background: $background-color-1;
+        border: 1px solid $border-color-1;
+        border-radius: $grid-unit-size;
+        box-shadow: $box-shadow-base;
+        pointer-events: none;
+        font-size: 12px;
+
+        strong { color: $validation-progress-color; }
+    }
+
+    .cvat-threshold-policy-hint {
+        color: $text-color-secondary;
+        font-size: 12px;
+    }
+
+    .cvat-threshold-policy-points {
+        .ant-input-number { width: 100%; }
+
+        .cvat-threshold-policy-row.selected > td {
+            background: $hover-menu-color;
+        }
+    }
+
+    .cvat-threshold-policy-field {
+        margin-bottom: 0;
+    }
+
+    > .cvat-table-wrapper {
+        margin-top: $grid-unit-size * 2;
+
+        > .ant-row {
+            gap: $grid-unit-size;
+            margin-bottom: $grid-unit-size * 2;
+        }
+
+        .cvat-table-search-bar {
+            display: block;
+            margin-inline-start: auto;
+            max-width: $grid-unit-size * 32;
+        }
+
+        @media (width <= 600px) {
+            > .ant-row > .ant-col:nth-child(2) {
+                order: 1;
+                flex-basis: 100%;
+            }
+
+            .cvat-table-search-bar {
+                max-width: none;
+            }
+        }
+    }
+}
+
 .cvat-quality-target-metric-dropdown {
     .ant-select-item-group {
         color: $validation-progress-color;
@@ -101,7 +209,7 @@
     .cvat-quality-requirement-form {
         padding-top: $grid-unit-size;
 
-        .ant-form-item {
+        .ant-form-item:not(.cvat-threshold-policy-field) {
             margin-bottom: $grid-unit-size * 2;
         }
 

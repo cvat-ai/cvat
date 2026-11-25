@@ -28,10 +28,12 @@ import { Canvas3d } from 'cvat-canvas3d-wrapper';
 import { changeShowGroundTruth } from 'actions/settings-actions';
 import { ShowGroundTruthIcon } from 'icons';
 import IssueContext from 'components/annotation-page/review/issue-context';
+import ConflictRequirements from '../../review/conflict-requirements';
 
 export default function IssuesListComponent(): JSX.Element {
     const dispatch = useDispatch();
     const {
+        job,
         frame,
         frameIssues,
         frameConflicts,
@@ -48,6 +50,7 @@ export default function IssuesListComponent(): JSX.Element {
         activeIssueId,
         canvas,
     } = useSelector((state: CombinedState) => ({
+        job: state.annotation.job.instance,
         frame: state.annotation.player.frame.number,
         frameIssues: state.review.frameIssues,
         frameConflicts: state.review.frameConflicts,
@@ -315,6 +318,9 @@ export default function IssuesListComponent(): JSX.Element {
                                 </Paragraph>
                                 <Text />
                             </Row>
+                            {!!frameConflict.requirements.length && (
+                                <ConflictRequirements job={job} requirements={frameConflict.requirements} />
+                            )}
                         </div>
                     ),
                 )}

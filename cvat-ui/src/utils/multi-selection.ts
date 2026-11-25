@@ -43,11 +43,14 @@ export function sanitizeSelectedObjectIDs(
     states: ObjectState[],
     requestedStatesID: number[],
     hiddenZLayers: Set<number> = new Set<number>(),
+    previousSelectedStatesID: number[] = [],
 ): number[] {
+    const previousSelectedIDs = new Set(previousSelectedStatesID);
     const selectableIDs = new Set(states
         .filter((state: ObjectState): boolean => (
             [ObjectType.SHAPE, ObjectType.TRACK].includes(state.objectType) &&
-            !state.hidden && !state.outside && !hiddenZLayers.has(state.zOrder)
+            (!state.hidden || previousSelectedIDs.has(state.clientID as number)) &&
+            !state.outside && !hiddenZLayers.has(state.zOrder)
         ))
         .map((state: ObjectState): number => state.clientID as number));
 

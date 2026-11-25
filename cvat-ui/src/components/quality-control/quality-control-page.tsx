@@ -20,6 +20,7 @@ import {
     Project,
 } from 'cvat-core-wrapper';
 import CVATLoadingSpinner from 'components/common/loading-spinner';
+import { ScopedStateProvider } from 'utils/scoped-state';
 import GoBackButton from 'components/common/go-back-button';
 import ResourceLink from 'components/common/resource-link';
 import { CombinedState, InstanceType } from 'reducers';
@@ -199,7 +200,10 @@ function getQualityTabFromHash(): string {
     return supportedTabs.includes(tab) ? tab : supportedTabs[0];
 }
 
-function QualityControlPage(): JSX.Element {
+function QualityControlPageContent({ requestedInstanceType, requestedInstanceID }: {
+    requestedInstanceType: InstanceType;
+    requestedInstanceID: number;
+}): JSX.Element {
     const reduxDispatch = useDispatch();
     const [state, dispatch] = useReducer(reducer, {
         instance: null,
@@ -219,9 +223,6 @@ function QualityControlPage(): JSX.Element {
     });
 
     const [activeTab, setActiveTab] = useState(getQualityTabFromHash);
-
-    const requestedInstanceType: InstanceType = useInstanceType();
-    const requestedInstanceID = useInstanceId(requestedInstanceType);
 
     const { instance } = state;
     const pluginTabs = usePlugins((combinedState: CombinedState) => (
@@ -590,6 +591,20 @@ function QualityControlPage(): JSX.Element {
                 </Row>
             </Col>
         </Row>
+    );
+}
+
+function QualityControlPage(): JSX.Element {
+    const requestedInstanceType: InstanceType = useInstanceType();
+    const requestedInstanceID = useInstanceId(requestedInstanceType);
+
+    return (
+        <ScopedStateProvider scope={`${requestedInstanceType}:${requestedInstanceID}`}>
+            <QualityControlPageContent
+                requestedInstanceType={requestedInstanceType}
+                requestedInstanceID={requestedInstanceID}
+            />
+        </ScopedStateProvider>
     );
 }
 

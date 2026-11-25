@@ -2040,14 +2040,15 @@ Cypress.Commands.add('checkCsvFileContent', (expectedFileName, header, rowsCount
     });
 });
 
-Cypress.Commands.overwrite('visit', (orig, url, options) => {
-    orig(url, options);
-    cy.closeModalUnsupportedPlatform();
-});
+['visit', 'reload'].forEach((command) => {
+    Cypress.Commands.overwrite(command, (orig, ...args) => {
+        const options = args.find((arg) => arg !== null && typeof arg === 'object') || {};
+        const timeout = options.timeout ?? Cypress.config('pageLoadTimeout');
 
-Cypress.Commands.overwrite('reload', (orig, options) => {
-    orig(options);
-    cy.closeModalUnsupportedPlatform();
+        return cy.then({ timeout }, () => orig(...args)).then((win) => (
+            cy.closeModalUnsupportedPlatform().then(() => win)
+        ));
+    });
 });
 
 Cypress.Commands.add('clickDeleteFrameAnnotationView', () => {

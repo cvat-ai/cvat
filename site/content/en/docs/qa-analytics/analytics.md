@@ -221,7 +221,7 @@ The events table columns:
 | **Task ID** | The ID of the task. If the task exists (the **Exists** column has the value `true`), you can select the value to open the task. |
 | **Task name** | The task name. By default, the column is hidden. Select the value to open the task. |
 | **Job ID** | The ID of the job. If the job exists (the **Exists** column has the value `true`), you can select the value to open the job. |
-| **Type** | The job (**Job ID**) type. Possible values: `Annotation`, `Ground truth`, `Consensus replica`. |
+| **Type** | The job (**Job ID**) type. Possible values: `Annotation`, `Ground truth`, `Replica`. |
 | **Frame Count** | The total number of frames in the job (**Job ID**) |
 | **Exists** | Indicates if the job (**Job ID**) existed at the last data fetch. |
 | **Objects** | The total number of existing objects on the job (**Job ID**) frames |

@@ -2,8 +2,9 @@
 #
 # SPDX-License-Identifier: MIT
 
+import math
 import textwrap
-from collections.abc import Iterator, Mapping
+from collections.abc import Iterable, Iterator, Mapping
 from enum import Enum
 from typing import Any
 
@@ -11,7 +12,7 @@ from django.conf import settings as django_settings
 from django.db import models as django_models
 from django.db import transaction
 from drf_spectacular.utils import extend_schema_field, extend_schema_serializer
-from rest_framework import serializers
+from rest_framework import fields, serializers
 
 from cvat.apps.engine import field_validation
 from cvat.apps.engine import serializers as engine_serializers
@@ -29,6 +30,12 @@ from cvat.apps.quality_control.comparison_report import (
     RequirementCalculationStatus,
 )
 from cvat.apps.quality_control.filters import RequirementJsonLogicFilter
+from cvat.apps.quality_control.quality_handlers import INHERITED_REQUIREMENT_FIELDS
+from cvat.apps.quality_control.threshold_policy import (
+    ADAPTIVE_IOU_TYPES,
+    MAX_THRESHOLD_POINTS,
+    ThresholdPolicyMode,
+)
 from cvat.utils import django_database as db_utils
 
 
@@ -39,9 +46,15 @@ class AnnotationIdSerializer(serializers.ModelSerializer):
         read_only_fields = fields
 
 
+class AnnotationConflictRequirementSerializer(serializers.Serializer):
+    id = serializers.IntegerField(read_only=True)
+    name = serializers.CharField(read_only=True)
+
+
 class AnnotationConflictSerializer(serializers.ModelSerializer):
     annotation_ids = AnnotationIdSerializer(many=True)
     attribute_names = serializers.ListField(child=serializers.CharField(), read_only=True)
+    requirements = AnnotationConflictRequirementSerializer(many=True, read_only=True)
 
     class Meta:
         model = models.AnnotationConflict
@@ -53,6 +66,7 @@ class AnnotationConflictSerializer(serializers.ModelSerializer):
             "report_id",
             "severity",
             "attribute_names",
+            "requirements",
         )
         read_only_fields = fields
 
@@ -296,24 +310,113 @@ class QualitySettingsParentType(str, Enum):
         return tuple((x.value, x.name) for x in cls)
 
 
-_INHERITED_REQUIREMENT_FIELDS = (
-    "annotation_type",
-    "target_metric",
-    "target_metric_threshold",
-    "iou_threshold",
-    "oks_sigma",
-    "line_thickness",
-    "point_size_base",
-    "compare_line_orientation",
-    "line_orientation_threshold",
-    "compare_groups",
-    "group_match_threshold",
-    "check_covered_annotations",
-    "object_visibility_threshold",
-    "panoptic_comparison",
-    "compare_attributes",
-    "attribute_comparison",
-)
+class ThresholdPolicyPointSerializer(serializers.Serializer):
+    x = serializers.FloatField(
+        min_value=0, help_text="Finite GT shape area in px², strictly greater than zero."
+    )
+    y = serializers.FloatField(min_value=0, max_value=1)
+
+
+class SimilarityThresholdPolicySerializer(serializers.Serializer):
+    """An IoU threshold policy for rectangle, polygon, mask, and ellipse requirements.
+
+    The `iou_threshold` field also accepts a finite number between 0 and 1, such as `0.7`.
+    Existing numeric thresholds are returned as numbers.
+
+    A constant policy uses one threshold for all shapes:
+
+    ```json
+    {"type": "iou", "mode": "constant", "value": 0.7}
+    ```
+
+    A linear policy chooses a threshold from the GT shape area in px²:
+
+    ```json
+    {
+      "type": "iou",
+      "mode": "linear",
+      "input": "gt.shape_area",
+      "extrapolation": "clamp",
+      "points": [{"x": 100, "y": 0.4}, {"x": 1000, "y": 0.9}]
+    }
+    ```
+
+    Linear policies require 2-200 points with unique positive areas sorted in ascending order
+    and thresholds between 0 and 1. Outside the curve, the nearest endpoint applies.
+    Policies without `type` are accepted as IoU for compatibility; responses include it.
+    Other threshold types are not supported.
+
+    Setting a child's threshold to `null` restores inheritance of the whole threshold.
+    Root requirements cannot inherit their threshold.
+    """
+
+    type = serializers.ChoiceField(
+        choices=["iou"],
+        required=False,
+        help_text=(
+            "Threshold type. Omitted type is accepted as IoU for compatibility; "
+            "responses always include it."
+        ),
+    )
+    mode = serializers.ChoiceField(choices=ThresholdPolicyMode)
+    value = serializers.FloatField(required=False, min_value=0, max_value=1)
+    input = serializers.ChoiceField(choices=["gt.shape_area"], required=False)
+    extrapolation = serializers.ChoiceField(choices=["clamp"], required=False)
+    points = ThresholdPolicyPointSerializer(
+        many=True,
+        required=False,
+        min_length=2,
+        max_length=MAX_THRESHOLD_POINTS,
+        help_text=(
+            f"Required in linear mode: 2-{MAX_THRESHOLD_POINTS} points sorted by "
+            "unique positive GT area."
+        ),
+    )
+
+    def to_internal_value(self, data):
+        from cvat.apps.quality_control.threshold_policy import parse_threshold_policy
+
+        try:
+            return parse_threshold_policy(data)
+        except ValueError as error:
+            raise serializers.ValidationError(str(error)) from error
+
+    def to_representation(self, instance):
+        from cvat.apps.quality_control.threshold_policy import (
+            ThresholdPolicy,
+            parse_threshold_policy,
+        )
+
+        policy = (
+            instance if isinstance(instance, ThresholdPolicy) else parse_threshold_policy(instance)
+        )
+        return super().to_representation(policy)
+
+
+class IoUThresholdField(serializers.Field):
+    default_error_messages = {
+        "invalid": "Expected a finite threshold between 0 and 1 or an IoU policy."
+    }
+
+    def to_internal_value(self, data):
+        if isinstance(data, Mapping):
+            return SimilarityThresholdPolicySerializer().run_validation(data).to_dict()
+        if isinstance(data, bool) or not isinstance(data, (int, float)):
+            self.fail("invalid")
+        try:
+            value = float(data)
+        except OverflowError:
+            self.fail("invalid")
+        if not math.isfinite(value) or not 0 <= value <= 1:
+            self.fail("invalid")
+        return value
+
+    def to_representation(self, value):
+        from cvat.apps.quality_control.threshold_policy import ThresholdPolicy
+
+        if isinstance(value, (Mapping, ThresholdPolicy)):
+            return SimilarityThresholdPolicySerializer(value).data
+        return value
 
 
 @extend_schema_serializer(component_name="AttributeComparisonDefaultRule")
@@ -398,6 +501,17 @@ class QualityRequirementListSerializer(serializers.ListSerializer):
 
 # TODO: try to split into different types per annotation type?
 class QualityRequirementSerializer(serializers.ModelSerializer):
+    iou_threshold = IoUThresholdField(
+        required=False,
+        allow_null=True,
+        help_text=(
+            "The minimal IoU for distinction between matched / unmatched objects. "
+            f"Only used with the '{models.ShapeSimilarityMetricType.IOU}' similarity metric. "
+            "A constant threshold or an IoU policy by GT shape area "
+            "(rectangle, polygon, mask, ellipse). "
+            "Null inherits the whole threshold from the parent."
+        ),
+    )
     settings_id = serializers.PrimaryKeyRelatedField(
         source="settings",
         queryset=models.QualitySettings.objects.all(),
@@ -474,6 +588,12 @@ class QualityRequirementSerializer(serializers.ModelSerializer):
     is_base = serializers.BooleanField(read_only=True)
     effective = serializers.SerializerMethodField(read_only=True)
 
+    def __init__(self, instance=None, data=fields.empty, **kwargs):
+        super().__init__(instance, data, **kwargs)
+
+        if self.context:
+            assert isinstance(self.context.get("known_used_attribute_ids"), Iterable | None)
+
     @staticmethod
     def _get_requirement_limit() -> int:
         return django_settings.MAX_QUALITY_REQUIREMENTS_PER_SETTINGS
@@ -513,21 +633,22 @@ class QualityRequirementSerializer(serializers.ModelSerializer):
             )
 
     @staticmethod
-    def _get_effective_annotation_type(
-        requirement: models.QualityRequirement | None,
-    ) -> str | None:
+    def _get_inherited_field_value(
+        requirement: models.QualityRequirement | None, field_name: str
+    ) -> Any:
         visited: set[int] = set()
         while requirement is not None:
-            requirement_id = getattr(requirement, "id", None)
+            requirement_id = requirement.id
             if requirement_id is not None:
                 if requirement_id in visited:
                     return None
                 visited.add(requirement_id)
 
-            if requirement.annotation_type:
-                return requirement.annotation_type
+            value = getattr(requirement, field_name)
+            if value is not None:
+                return value
 
-            requirement = getattr(requirement, "parent", None)
+            requirement = requirement.parent
 
         return None
 
@@ -555,14 +676,18 @@ class QualityRequirementSerializer(serializers.ModelSerializer):
 
         if hasattr(parent_requirement, "annotation_type"):
             if annotation_type is None:
-                annotation_type = self._get_effective_annotation_type(parent_requirement)
+                annotation_type = self._get_inherited_field_value(
+                    parent_requirement, "annotation_type"
+                )
         elif parent_requirement:
             try:
                 parent_requirement_obj = models.QualityRequirement.objects.select_related(
                     "parent"
                 ).get(pk=parent_requirement)
                 if annotation_type is None:
-                    annotation_type = self._get_effective_annotation_type(parent_requirement_obj)
+                    annotation_type = self._get_inherited_field_value(
+                        parent_requirement_obj, "annotation_type"
+                    )
             except (
                 models.QualityRequirement.DoesNotExist,
                 TypeError,
@@ -593,6 +718,27 @@ class QualityRequirementSerializer(serializers.ModelSerializer):
 
         return set(AttributeSpec.objects.filter(label_filter).values_list("id", flat=True))
 
+    @staticmethod
+    def get_attribute_comparison_spec_ids(
+        attribute_comparison: Mapping[str, Any] | None,
+    ) -> set[int]:
+        return {
+            int(rule["spec_id"])
+            for rule in (attribute_comparison or {}).get("rules", [])
+            if rule.get("spec_id") is not None
+        }
+
+    @classmethod
+    def _collect_used_attribute_spec_ids(cls, quality_settings: models.QualitySettings) -> set[int]:
+        return set().union(
+            *(
+                cls.get_attribute_comparison_spec_ids(attribute_comparison)
+                for attribute_comparison in quality_settings.requirements.values_list(
+                    "attribute_comparison", flat=True
+                )
+            )
+        )
+
     def _validate_attribute_comparison_spec_ids(
         self,
         attribute_comparison: Mapping[str, Any] | None,
@@ -601,11 +747,7 @@ class QualityRequirementSerializer(serializers.ModelSerializer):
         if not attribute_comparison:
             return
 
-        requested_spec_ids = {
-            int(rule["spec_id"])
-            for rule in attribute_comparison.get("rules", [])
-            if rule.get("spec_id") is not None
-        }
+        requested_spec_ids = self.get_attribute_comparison_spec_ids(attribute_comparison)
         if not requested_spec_ids:
             return
 
@@ -614,6 +756,16 @@ class QualityRequirementSerializer(serializers.ModelSerializer):
             return
 
         unknown_spec_ids = requested_spec_ids - allowed_spec_ids
+        if unknown_spec_ids:
+            # The rules for the attributes deleted after the rules had been created are kept,
+            # including the copies of such rules in the new requirements.
+            # They are ignored, if disabled, or make the requirement not computed, if enabled.
+            known_used_attribute_ids = self.context.get("known_used_attribute_ids")
+            if known_used_attribute_ids is None:
+                known_used_attribute_ids = self._collect_used_attribute_spec_ids(quality_settings)
+
+            unknown_spec_ids.difference_update(known_used_attribute_ids)
+
         if unknown_spec_ids:
             raise serializers.ValidationError(
                 {
@@ -643,7 +795,11 @@ class QualityRequirementSerializer(serializers.ModelSerializer):
             "required_score",
             "parent_requirement",
             "effective",
+            "similarity_metric",
             "iou_threshold",
+            "oks_threshold",
+            "boundary_f_threshold",
+            "boundary_f_tolerance",
             "point_size",
             "point_size_base",
             "line_thickness",
@@ -673,23 +829,61 @@ class QualityRequirementSerializer(serializers.ModelSerializer):
         extra_kwargs = {k: {"required": False} for k in fields}
 
         for field_name, help_text in {
-            "iou_threshold": """
-                The overlap threshold used for distinction between matched / unmatched objects.
-                The specific meaning can vary depending on the shape type:
-                for rectangles, polygons, ellipses, lines and masks it's the IoU threshold;
-                for points and skeletons, it's the OKS threshold.
-            """,
+            "similarity_metric": textwrap.dedent("""
+                The similarity metric used to match the objects. The supported metrics
+                depend on the annotation type:
+                {supported_metrics}
+            """).format(
+                supported_metrics=";\n".join(
+                    "- {}: {}".format(
+                        annotation_type,
+                        ", ".join(
+                            f"'{metric}' (default)" if metric == default_metric else f"'{metric}'"
+                            for metric in sorted(metrics)
+                        ),
+                    )
+                    for annotation_type, metrics in sorted(
+                        models.QualityRequirement.get_supported_similarity_metrics().items(),
+                        key=lambda item: item[0],
+                    )
+                    for default_metric in [
+                        models.DefaultComparisonSettings.get_default_similarity_metric(
+                            annotation_type
+                        )
+                    ]
+                )
+            ),
+            "oks_threshold": """
+                The minimal OKS for distinction between matched / unmatched objects.
+                Only used with the '{oks}' similarity metric.
+            """.format(
+                oks=models.ShapeSimilarityMetricType.OKS
+            ),
+            "boundary_f_threshold": """
+                The minimal Boundary F score for distinction between matched / unmatched
+                objects. Only used with the '{boundary_f}' similarity metric.
+            """.format(
+                boundary_f=models.ShapeSimilarityMetricType.BOUNDARY_F
+            ),
+            "boundary_f_tolerance": """
+                The maximum allowed boundary deviation, in pixels. The boundary points
+                within this distance from the other object boundary are considered matching.
+                Only used with the '{boundary_f}' similarity metric.
+            """.format(
+                boundary_f=models.ShapeSimilarityMetricType.BOUNDARY_F
+            ),
             "point_size_base": """
-                When comparing point annotations (including both separate points and point groups),
+                When comparing point groups, skeletons, and skeleton keypoints,
                 the point size parameter defines matching area for each GT point based to the
                 object size. The point size base parameter allows to configure how to determine
-                the object size.
+                the object size. Single points without a group are always compared
+                using the image size.
                 If {image_size}, the image size is used. Useful if each point
                 annotation represents a separate object or boxes grouped with points do not
                 represent object boundaries.
                 If {group_bbox_size}, the object size is based on
-                the point group bbox size. Useful if each point group represents an object
-                or there is a bbox grouped with points, representing the object size.
+                the point group or skeleton bbox size. Useful if each point group represents
+                an object or there is a bbox grouped with points, representing the object size.
             """.format(
                 image_size=models.PointSizeBase.IMAGE_SIZE,
                 group_bbox_size=models.PointSizeBase.GROUP_BBOX_SIZE,
@@ -697,8 +891,11 @@ class QualityRequirementSerializer(serializers.ModelSerializer):
             "line_thickness": """
                 Thickness of polylines, relatively to the (image area) ^ 0.5.
                 The distance to the boundary around the GT line,
-                inside of which the checked line points should be
-            """,
+                inside of which the checked line points should be.
+                With the '{boundary_f}' similarity metric, the boundary tolerance is used instead
+            """.format(
+                boundary_f=models.ShapeSimilarityMetricType.BOUNDARY_F
+            ),
             "line_orientation_threshold": """
                 The minimal gain in the GT IoU between the given and reversed line directions
                 to consider the line inverted.
@@ -732,6 +929,41 @@ class QualityRequirementSerializer(serializers.ModelSerializer):
             ]:
                 extra_kwargs.setdefault(field_name, {}).setdefault("min_value", 0)
                 extra_kwargs.setdefault(field_name, {}).setdefault("max_value", 1)
+
+        extra_kwargs.setdefault("boundary_f_tolerance", {}).setdefault("min_value", 0)
+
+    def _validate_similarity_metric(self, attrs: dict[str, Any], annotation_type: str) -> None:
+        similarity_metric = attrs.get("similarity_metric")
+        if similarity_metric is None:
+            return
+
+        supported_metrics = models.QualityRequirement.get_supported_similarity_metrics()[
+            models.QualityRequirementAnnotationType(annotation_type)
+        ]
+        if similarity_metric not in supported_metrics:
+            raise serializers.ValidationError(
+                {
+                    "similarity_metric": (
+                        f"The '{similarity_metric}' similarity metric is not supported "
+                        f"for '{annotation_type}' requirements. Supported metrics: "
+                        + ", ".join(f"'{metric}'" for metric in sorted(supported_metrics))
+                        + "."
+                    )
+                }
+            )
+
+    def _validate_similarity_threshold(self, attrs: dict[str, Any], annotation_type: str) -> None:
+        if isinstance(attrs.get("iou_threshold"), dict):
+            if annotation_type not in ADAPTIVE_IOU_TYPES:
+                raise serializers.ValidationError(
+                    {
+                        "iou_threshold": (
+                            "IoU policies only support {} requirements.".format(
+                                ", ".join(t.value for t in ADAPTIVE_IOU_TYPES)
+                            )
+                        )
+                    }
+                )
 
     def validate(self, attrs):
         attrs = super().validate(attrs)
@@ -789,9 +1021,10 @@ class QualityRequirementSerializer(serializers.ModelSerializer):
                 }
             )
 
+        effective_annotation_type = annotation_type
         if parent_requirement is not None:
-            parent_effective_annotation_type = self._get_effective_annotation_type(
-                parent_requirement
+            parent_effective_annotation_type = self._get_inherited_field_value(
+                parent_requirement, "annotation_type"
             )
             if annotation_type is not None:
                 if annotation_type != parent_effective_annotation_type:
@@ -803,10 +1036,15 @@ class QualityRequirementSerializer(serializers.ModelSerializer):
                         }
                     )
                 attrs["annotation_type"] = None
+
+            effective_annotation_type = annotation_type or parent_effective_annotation_type
         elif annotation_type is None:
             raise serializers.ValidationError(
                 {"annotation_type": "This field is required for root requirements."}
             )
+
+        self._validate_similarity_metric(attrs, effective_annotation_type)
+        self._validate_similarity_threshold(attrs, effective_annotation_type)
 
         if self.instance and parent_requirement is not None:
             current_parent = parent_requirement
@@ -826,7 +1064,7 @@ class QualityRequirementSerializer(serializers.ModelSerializer):
                 current_parent = current_parent.parent
 
         if parent_requirement is None:
-            for field_name in _INHERITED_REQUIREMENT_FIELDS:
+            for field_name in INHERITED_REQUIREMENT_FIELDS:
                 if field_name == "attribute_comparison":
                     continue
 
@@ -864,14 +1102,7 @@ class QualityRequirementSerializer(serializers.ModelSerializer):
     def _should_touch_settings(self) -> bool:
         return self.context.get("touch_settings", True)
 
-    @staticmethod
-    def _clear_child_inherited_defaults(validated_data: dict[str, Any]) -> None:
-        for field_name in _INHERITED_REQUIREMENT_FIELDS:
-            validated_data.setdefault(field_name, None)
-
     def create(self, validated_data):
-        self._clear_child_inherited_defaults(validated_data)
-
         instance = super().create(validated_data)
         if self._should_touch_settings():
             self._touch_settings(instance.settings)
@@ -1214,6 +1445,7 @@ class QualitySettingsSerializer(WriteOnceMixin, serializers.ModelSerializer):
         settings: models.QualitySettings,
         data: dict,
         retained_requirement_ids: set[int],
+        known_used_attribute_ids: set[int] | None = None,
         instance: models.QualityRequirement | None = None,
     ) -> QualityRequirementSerializer:
         serializer_context = {
@@ -1221,6 +1453,7 @@ class QualitySettingsSerializer(WriteOnceMixin, serializers.ModelSerializer):
             "touch_settings": False,
             "retained_requirement_ids": retained_requirement_ids,
             "skip_requirement_limit_validation": True,
+            "known_used_attribute_ids": known_used_attribute_ids,
         }
         serializer_data = {
             **data,
@@ -1306,7 +1539,7 @@ class QualitySettingsSerializer(WriteOnceMixin, serializers.ModelSerializer):
         requirements_data: list[dict],
     ) -> None:
         # The requirements payload replaces the whole current requirement set.
-        existing_requirements = {
+        existing_requirements: dict[int, models.QualityRequirement] = {
             requirement.id: requirement
             for requirement in instance.requirements.select_related("parent").all()
         }
@@ -1355,6 +1588,16 @@ class QualitySettingsSerializer(WriteOnceMixin, serializers.ModelSerializer):
                 {"requirements": "Base quality requirements cannot be deleted."}
             )
 
+        # Collected before any changes are applied, as the requirements
+        # with these rules can be updated or deleted in the same request
+        known_used_attribute_ids = {
+            attribute_id
+            for requirement in existing_requirements.values()
+            for attribute_id in QualityRequirementSerializer.get_attribute_comparison_spec_ids(
+                requirement.attribute_comparison
+            )
+        }
+
         child_serializers: list[QualityRequirementSerializer] = []
         for index, requirement_data in enumerate(requirements_data):
             requirement_id = requirement_data.get("id")
@@ -1366,6 +1609,7 @@ class QualitySettingsSerializer(WriteOnceMixin, serializers.ModelSerializer):
                 settings=instance,
                 data=requirement_data,
                 retained_requirement_ids=retained_requirement_ids,
+                known_used_attribute_ids=known_used_attribute_ids,
                 instance=requirement_instance,
             )
             child_serializers.append(child_serializer)

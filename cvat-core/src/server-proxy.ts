@@ -222,6 +222,20 @@ function generateHealthCheckError(errorData: AxiosError<unknown>): ServerError |
     return new ServerError(message, response.status, response.statusText || errorData.code);
 }
 
+// Flattens nested serializer errors, e.g. {"field": {"subfield": ["error"]}},
+// into the (field path, message) pairs
+function flattenFieldErrors(data: unknown, path: string[] = []): [string, string][] {
+    if (Array.isArray(data) && data.every((item) => typeof item !== 'object' || item === null)) {
+        return [[path.join('.'), data.join(' ')]];
+    }
+
+    if (data && typeof data === 'object') {
+        return Object.entries(data).flatMap(([key, value]) => flattenFieldErrors(value, [...path, key]));
+    }
+
+    return [[path.join('.'), String(data)]];
+}
+
 function generateError(errorData: AxiosError): ServerError {
     if (errorData.response) {
         const serverError = (message: string): ServerError => new ServerError(
@@ -262,8 +276,8 @@ function generateError(errorData: AxiosError): ServerError {
                 }
 
                 // serializers fields
-                const message = Object.keys(errorData.response.data).map((key) => (
-                    `**${key}**: ${errorData.response.data[key].toString()}`
+                const message = flattenFieldErrors(errorData.response.data).map(([key, value]) => (
+                    `**${key}**: ${value}`
                 )).join('\n\n');
                 return serverError(message);
             }

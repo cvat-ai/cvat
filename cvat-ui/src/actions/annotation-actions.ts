@@ -5,9 +5,10 @@
 
 import { AnyAction, Store } from 'redux';
 import { ThunkAction, ThunkDispatch } from 'utils/redux';
-import isAbleToChangeFrame from 'utils/is-able-to-change-frame';
+import { isAbleToChangeFrame } from 'utils/annotation';
 import getHiddenZLayers from 'utils/get-hidden-z-layers';
-import { CanvasMode as Canvas3DMode } from 'cvat-canvas3d-wrapper';
+import { getRelatedImageMetadata } from 'utils/related-image-calibrations';
+import { cameraRayFromImagePoint, CanvasMode as Canvas3DMode } from 'cvat-canvas3d-wrapper';
 import {
     RectDrawingMethod, CuboidDrawingMethod, Canvas, CanvasMode as Canvas2DMode, CanvasHistorySource,
     finalizePastedShapePoints,
@@ -49,6 +50,7 @@ interface AnnotationsParameters {
 
 const cvat = getCore();
 let store: null | Store<CombinedState> = null;
+let nextCameraRayID = 0;
 
 function getStore(): Store<CombinedState> {
     if (store === null) {
@@ -103,6 +105,10 @@ export enum AnnotationActionTypes {
     UPDATE_CACHED_CHUNKS = 'UPDATE_CACHED_CHUNKS',
 
     UPDATE_ACTIVE_CONTROL = 'UPDATE_ACTIVE_CONTROL',
+    UPDATE_CAMERA_RAYS = 'UPDATE_CAMERA_RAYS',
+    REMOVE_CAMERA_RAY = 'REMOVE_CAMERA_RAY',
+    CLEAR_CONTEXT_IMAGE_CAMERA_RAYS = 'CLEAR_CONTEXT_IMAGE_CAMERA_RAYS',
+    CLEAR_CURRENT_FRAME_CAMERA_RAYS = 'CLEAR_CURRENT_FRAME_CAMERA_RAYS',
 
     COPY_SHAPE = 'COPY_SHAPE',
     PASTE_SHAPE = 'PASTE_SHAPE',
@@ -672,6 +678,7 @@ export function selectObjectsAsync(requestedStatesID: number[]): ThunkAction {
             state.annotation.annotations.states,
             requestedStatesID,
             getHiddenZLayers(state),
+            previousSelection,
         );
 
         const selectionUnchanged = previousSelection.length === selectedStatesID.length &&
@@ -686,6 +693,16 @@ export function selectObjectsAsync(requestedStatesID: number[]): ThunkAction {
         if (jobInstance && !selectionUnchanged) {
             await jobInstance.actions.recordSelection(previousSelection, selectedStatesID, frame);
             history = await jobInstance.actions.get();
+        }
+
+        const { instance: canvasInstance, activeControl } = getState().annotation.canvas;
+        if (!selectionUnchanged && selectedStatesID.length && activeControl === ActiveControl.CURSOR &&
+            canvasInstance instanceof Canvas && canvasInstance.mode() === Canvas2DMode.IDLE) {
+            canvasInstance.selectObjects({ enabled: true });
+            dispatch({
+                type: AnnotationActionTypes.UPDATE_ACTIVE_CONTROL,
+                payload: { activeControl: ActiveControl.SELECT },
+            });
         }
 
         dispatch({
@@ -1584,6 +1601,76 @@ export function updateActiveControl(activeControl: ActiveControl, preserveSelect
     };
 }
 
+export function addCameraRayFromContextImagePoint(
+    relatedImageName: string,
+    pixel: [number, number],
+): ThunkAction<boolean> {
+    return (dispatch: ThunkDispatch, getState: () => CombinedState): boolean => {
+        const state = getState();
+        const { number: frame, data: frameData } = state.annotation.player.frame;
+        const cameraRays = state.annotation.canvas.cameraRays[frame] || [];
+
+        const calibratedRelatedImagesMetadata = frameData?.calibratedRelatedImagesMetadata;
+        if (!calibratedRelatedImagesMetadata || !calibratedRelatedImagesMetadata.length) {
+            return false;
+        }
+
+        const meta = getRelatedImageMetadata(
+            calibratedRelatedImagesMetadata,
+            relatedImageName,
+        );
+        if (!meta) {
+            return false;
+        }
+
+        const cameraRay = cameraRayFromImagePoint(meta, pixel);
+        if (!cameraRay) {
+            return false;
+        }
+
+        const relatedImageIndex = calibratedRelatedImagesMetadata.indexOf(meta);
+        const color = cvat.enums.colors[relatedImageIndex % cvat.enums.colors.length];
+        dispatch({
+            type: AnnotationActionTypes.UPDATE_CAMERA_RAYS,
+            payload: {
+                frame,
+                cameraRays: [...cameraRays, {
+                    id: `camera-ray:${nextCameraRayID++}`,
+                    color,
+                    relatedImageName,
+                    pixel,
+                }],
+            },
+        });
+
+        return true;
+    };
+}
+
+export function removeCameraRay(id: string): AnyAction {
+    return {
+        type: AnnotationActionTypes.REMOVE_CAMERA_RAY,
+        payload: {
+            id,
+        },
+    };
+}
+
+export function clearContextImageCameraRays(relatedImageName: string): AnyAction {
+    return {
+        type: AnnotationActionTypes.CLEAR_CONTEXT_IMAGE_CAMERA_RAYS,
+        payload: {
+            relatedImageName,
+        },
+    };
+}
+
+export function clearCurrentFrameCameraRays(): AnyAction {
+    return {
+        type: AnnotationActionTypes.CLEAR_CURRENT_FRAME_CAMERA_RAYS,
+    };
+}
+
 function dispatchAnnotationsUpdate(
     dispatch: ThunkDispatch,
     states: CombinedState['annotation']['annotations']['states'],
@@ -1628,9 +1715,6 @@ export function updateAnnotationsAsync(statesToUpdate: ObjectState[], batch = fa
     return async (dispatch: ThunkDispatch, getState): Promise<void> => {
         const { jobInstance, workspace } = receiveAnnotationsParameters();
         try {
-            const hiddenWasUpdated = (state: ObjectState): boolean => (
-                state.updateFlags.hidden || state.elements.some(hiddenWasUpdated)
-            );
             if (statesToUpdate.some((state): boolean => state.updateFlags.zOrder)) {
                 // deactivate object to visualize changes immediately (UX)
                 dispatch(activateObject(null, null, null));
@@ -1641,43 +1725,14 @@ export function updateAnnotationsAsync(statesToUpdate: ObjectState[], batch = fa
                 return;
             }
 
-            const { selectedStatesID } = getState().annotation.annotations;
             if (batch) {
-                const hidingCompleteSelection = statesToSave.length === selectedStatesID.length &&
-                    statesToSave.every((stateToSave) => (
-                        hiddenWasUpdated(stateToSave) && stateToSave.hidden &&
-                        selectedStatesID.includes(stateToSave.clientID as number)
-                    ));
                 await jobInstance.annotations.saveStates(statesToSave);
-                if (hidingCompleteSelection) {
-                    await jobInstance.actions.recordSelection(
-                        selectedStatesID,
-                        [],
-                        statesToSave[0].frame,
-                        true,
-                    );
-                }
                 dispatch(fetchAnnotationsAsync());
                 return;
             }
 
-            const hiddenSelectedState = statesToSave.length === 1 &&
-                hiddenWasUpdated(statesToSave[0]) && statesToSave[0].hidden &&
-                selectedStatesID.includes(statesToSave[0].clientID as number);
-            const previousSelection = hiddenSelectedState ? [...selectedStatesID] : [];
-            const nextSelection = hiddenSelectedState ? selectedStatesID.filter(
-                (clientID: number): boolean => clientID !== statesToSave[0].clientID,
-            ) : [];
             const promises = statesToSave.map((objectState) => objectState.save());
             let states = await Promise.all(promises);
-            if (hiddenSelectedState) {
-                await jobInstance.actions.recordSelection(
-                    previousSelection,
-                    nextSelection,
-                    statesToSave[0].frame,
-                    true,
-                );
-            }
 
             if (workspace === Workspace.REVIEW) {
                 states = lockStatesForReviewWorkspace(states);

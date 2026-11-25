@@ -1,0 +1,11 @@
+# Preserve the unlimited HTTP body transfer time of the previous smokescreen
+# revision (eb1ac09). The new 300s read/write defaults can interrupt uploads or
+# downloads of large files over plain HTTP, even while data is flowing.
+# Use -1s because zero values retain the defaults in smokescreen's YAML loader.
+#
+# The upstream README's "Configuration files" section links to config_loader.go
+# as the reference for supported YAML fields:
+# https://github.com/stripe/smokescreen/blob/5b4b7aabca9bc70a8435358d648edd03294c299e/README.md#configuration-files
+# https://github.com/stripe/smokescreen/blob/5b4b7aabca9bc70a8435358d648edd03294c299e/pkg/smokescreen/config_loader.go
+read_timeout: -1s
+write_timeout: -1s

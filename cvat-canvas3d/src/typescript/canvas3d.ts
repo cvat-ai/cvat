@@ -12,6 +12,7 @@ import {
     DrawData,
     ViewType,
     MouseInteraction,
+    CameraRayData,
     Configuration,
     GroupData,
     SplitData,
@@ -20,7 +21,12 @@ import {
 import {
     Canvas3dView, Canvas3dViewImpl, ViewsDOM, CameraAction, PickResult,
 } from './canvas3dView';
-import { Master } from './master';
+import {
+    cameraRayFromImagePoint, projectCuboid,
+} from './geometry/camera-projection';
+import { CUBOID_EDGES, CUBOID_FACES } from './cuboid';
+import type { CameraCalibration } from './geometry/camera-projection';
+import type { Master } from './master';
 import type { IssueRegion } from './issueRegion';
 
 interface Canvas3d {
@@ -49,6 +55,7 @@ interface Canvas3d {
     movePosition(position: number[], view: ViewType, from: [number, number], to: [number, number]): number[] | null;
     group(groupData: GroupData): void;
     merge(mergeData: MergeData): void;
+    setCameraRays(cameraRays: CameraRayData[]): void;
     split(splitData: SplitData): void;
     destroy(): void;
 }
@@ -98,6 +105,10 @@ class Canvas3dImpl implements Canvas3d {
 
     public merge(mergeData: MergeData): void {
         this.model.merge(mergeData);
+    }
+
+    public setCameraRays(cameraRays: CameraRayData[]): void {
+        this.model.setCameraRays(cameraRays);
     }
 
     public isAbleToChangeFrame(): boolean {
@@ -177,7 +188,10 @@ class Canvas3dImpl implements Canvas3d {
 }
 
 export {
-    Canvas3dImpl as Canvas3d, ViewType, MouseInteraction, CameraAction, Mode as CanvasMode,
+    cameraRayFromImagePoint, CUBOID_EDGES, CUBOID_FACES, projectCuboid, Canvas3dImpl as Canvas3d,
+    ViewType, MouseInteraction, CameraAction, Mode as CanvasMode,
 };
 
-export type { ViewsDOM, PickResult };
+export type {
+    ViewsDOM, PickResult, CameraCalibration, CameraRayData,
+};
