@@ -6686,6 +6686,7 @@ __metadata:
     redux-logger: "npm:^4.0.0"
     redux-thunk: "npm:^2.3.0"
     rehype-sanitize: "npm:^6.0.0"
+    vanilla-cookieconsent: "npm:3.1.0"
     wavesurfer.js: "npm:^7.12.12"
   languageName: unknown
   linkType: soft
@@ -19726,6 +19727,13 @@ __metadata:
   version: 1.0.1
   resolution: "value-equal@npm:1.0.1"
   checksum: 10c0/79068098355483ef29f4d3753999ad880875b87625d7e9055cad9346ea4b7662aad3a66f87976801b0dd7a6f828ba973d28b1669ebcd37eaf88cc5f687c1a691
+  languageName: node
+  linkType: hard
+
+"vanilla-cookieconsent@npm:3.1.0":
+  version: 3.1.0
+  resolution: "vanilla-cookieconsent@npm:3.1.0"
+  checksum: 10c0/f344d9786ea74850ec4274d85c9049b4d36b3ff368ddb4a0e446bad2dc0ccfad03542e97f40f7eb103b9e06d8b4d5381f63f8f0f80d898f80c5bf3e96e877382
   languageName: node
   linkType: hard
 
