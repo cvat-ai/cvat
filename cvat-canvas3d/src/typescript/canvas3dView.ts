@@ -751,27 +751,40 @@ export class Canvas3dViewImpl implements Canvas3dView, Listener {
         this.updateCameraFrustumPlane();
     }
 
-    private getDefaultSideViewZoom(viewType: ViewType): number {
+    private getDefaultSideViewZoom(viewType: ViewType, target: THREE.Vector3): number {
         const { camera, renderer } = this.views[viewType];
         if (this.sceneBBox.isEmpty() || !(camera instanceof THREE.OrthographicCamera)) {
             return consts.SIDE_VIEWS_MIN_ZOOM;
         }
 
-        const sceneSize = this.sceneBBox.getSize(new THREE.Vector3());
+        const targetRelativeSceneSize = new THREE.Vector3(
+            2 * Math.max(
+                Math.abs(this.sceneBBox.min.x - target.x),
+                Math.abs(this.sceneBBox.max.x - target.x),
+            ),
+            2 * Math.max(
+                Math.abs(this.sceneBBox.min.y - target.y),
+                Math.abs(this.sceneBBox.max.y - target.y),
+            ),
+            2 * Math.max(
+                Math.abs(this.sceneBBox.min.z - target.z),
+                Math.abs(this.sceneBBox.max.z - target.z),
+            ),
+        );
         const canvas = renderer.domElement;
         const canvasWToHRatio = canvas.clientWidth / canvas.clientHeight;
         let projectionWidth: number;
         let projectionHeight: number;
 
         if (viewType === ViewType.TOP) {
-            projectionWidth = sceneSize.x;
-            projectionHeight = sceneSize.y;
+            projectionWidth = targetRelativeSceneSize.x;
+            projectionHeight = targetRelativeSceneSize.y;
         } else if (viewType === ViewType.SIDE) {
-            projectionWidth = sceneSize.x;
-            projectionHeight = sceneSize.z;
+            projectionWidth = targetRelativeSceneSize.x;
+            projectionHeight = targetRelativeSceneSize.z;
         } else {
-            projectionWidth = sceneSize.y;
-            projectionHeight = sceneSize.z;
+            projectionWidth = targetRelativeSceneSize.y;
+            projectionHeight = targetRelativeSceneSize.z;
         }
 
         const marginRatio = 1.3;
@@ -1969,6 +1982,7 @@ export class Canvas3dViewImpl implements Canvas3dView, Listener {
                 x, y, z, animation,
             );
 
+            const target = new THREE.Vector3(x, y, z);
             for (const cameraType of BOTTOM_VIEWS) {
                 const { camera } = this.views[cameraType];
                 camera.position.set(
@@ -1977,7 +1991,7 @@ export class Canvas3dViewImpl implements Canvas3dView, Listener {
                     z + this.cameraSettings[cameraType].position[2],
                 );
                 camera.lookAt(x, y, z);
-                camera.zoom = this.getDefaultSideViewZoom(cameraType);
+                camera.zoom = this.getDefaultSideViewZoom(cameraType, target);
                 camera.updateProjectionMatrix();
             }
         }
