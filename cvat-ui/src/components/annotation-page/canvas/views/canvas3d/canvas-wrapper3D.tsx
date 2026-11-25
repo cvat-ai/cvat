@@ -6,8 +6,9 @@
 import './styles.scss';
 import React, { useCallback, useEffect, useRef } from 'react';
 import { connect, useDispatch, useSelector } from 'react-redux';
-import {
+import Icon, {
     ArrowDownOutlined, ArrowLeftOutlined, ArrowRightOutlined, ArrowUpOutlined,
+    ZoomInOutlined, ZoomOutOutlined,
 } from '@ant-design/icons';
 import Button from 'antd/lib/button';
 import Spin from 'antd/lib/spin';
@@ -41,6 +42,7 @@ import {
 } from 'cvat-canvas3d-wrapper';
 
 import CVATTooltip from 'components/common/cvat-tooltip';
+import { CameraRotateRightIcon } from 'icons';
 import { EventScope } from 'cvat-logger';
 import {
     getCore, ObjectState, ObjectType, Job,
@@ -56,26 +58,26 @@ const cvat = getCore();
 
 const componentShortcuts = {
     TILT_UP: {
-        name: 'Camera Roll Angle Up',
-        description: 'Increases camera roll angle',
+        name: 'Rotate camera up',
+        description: 'Rotate the camera upward around the target',
         sequences: ['shift+up'],
         scope: ShortcutScope['3D_ANNOTATION_WORKSPACE'],
     },
     TILT_DOWN: {
-        name: 'Camera Roll Angle Down',
-        description: 'Decreases camera roll angle',
+        name: 'Rotate camera down',
+        description: 'Rotate the camera downward around the target',
         sequences: ['shift+down'],
         scope: ShortcutScope['3D_ANNOTATION_WORKSPACE'],
     },
     ROTATE_LEFT: {
-        name: 'Camera Pitch Angle Left',
-        description: 'Decreases camera pitch angle',
+        name: 'Rotate camera left',
+        description: 'Rotate the camera left around the target',
         sequences: ['shift+left'],
         scope: ShortcutScope['3D_ANNOTATION_WORKSPACE'],
     },
     ROTATE_RIGHT: {
-        name: 'Camera Pitch Angle Right',
-        description: 'Increases camera pitch angle',
+        name: 'Rotate camera right',
+        description: 'Rotate the camera right around the target',
         sequences: ['shift+right'],
         scope: ShortcutScope['3D_ANNOTATION_WORKSPACE'],
     },
@@ -388,42 +390,66 @@ export const PerspectiveViewComponent = React.memo(
             return (
                 <div className='cvat-canvas3d-perspective-arrow-directions'>
                     <div>
-                        <CVATTooltip title={normalizedKeyMap.TILT_UP} placement='topRight'>
+                        <CVATTooltip
+                            title={`Rotate camera up ${normalizedKeyMap.TILT_UP}`}
+                            placement='topRight'
+                        >
                             <Button
                                 size='small'
                                 onClick={() => screenKeyControl(CameraAction.TILT_UP, false, true)}
                                 className='cvat-canvas3d-perspective-arrow-directions-icons-up'
                             >
-                                <ArrowUpOutlined className='cvat-canvas3d-perspective-arrow-directions-icons-color' />
+                                <Icon
+                                    component={CameraRotateRightIcon}
+                                    className='cvat-canvas3d-rotation-icon cvat-canvas3d-rotation-icon-vertical-up'
+                                />
                             </Button>
                         </CVATTooltip>
                     </div>
                     <div>
-                        <CVATTooltip title={normalizedKeyMap.ROTATE_LEFT} placement='topRight'>
+                        <CVATTooltip
+                            title={`Rotate camera left ${normalizedKeyMap.ROTATE_LEFT}`}
+                            placement='topRight'
+                        >
                             <Button
                                 size='small'
                                 onClick={() => screenKeyControl(CameraAction.ROTATE_LEFT, false, true)}
                                 className='cvat-canvas3d-perspective-arrow-directions-icons-left'
                             >
-                                <ArrowLeftOutlined className='cvat-canvas3d-perspective-arrow-directions-icons-color' />
+                                <Icon
+                                    component={CameraRotateRightIcon}
+                                    className='cvat-canvas3d-rotation-icon cvat-canvas3d-rotation-icon-horizontal-left'
+                                />
                             </Button>
                         </CVATTooltip>
-                        <CVATTooltip title={normalizedKeyMap.TILT_DOWN} placement='topRight'>
+                        <CVATTooltip
+                            title={`Rotate camera down ${normalizedKeyMap.TILT_DOWN}`}
+                            placement='topRight'
+                        >
                             <Button
                                 size='small'
                                 onClick={() => screenKeyControl(CameraAction.TILT_DOWN, false, true)}
                                 className='cvat-canvas3d-perspective-arrow-directions-icons-bottom'
                             >
-                                <ArrowDownOutlined className='cvat-canvas3d-perspective-arrow-directions-icons-color' />
+                                <Icon
+                                    component={CameraRotateRightIcon}
+                                    className='cvat-canvas3d-rotation-icon cvat-canvas3d-rotation-icon-vertical-down'
+                                />
                             </Button>
                         </CVATTooltip>
-                        <CVATTooltip title={normalizedKeyMap.ROTATE_RIGHT} placement='topRight'>
+                        <CVATTooltip
+                            title={`Rotate camera right ${normalizedKeyMap.ROTATE_RIGHT}`}
+                            placement='topRight'
+                        >
                             <Button
                                 size='small'
                                 onClick={() => screenKeyControl(CameraAction.ROTATE_RIGHT, false, true)}
                                 className='cvat-canvas3d-perspective-arrow-directions-icons-right'
                             >
-                                <ArrowRightOutlined className='cvat-canvas3d-perspective-arrow-directions-icons-color' />
+                                <Icon
+                                    component={CameraRotateRightIcon}
+                                    className='cvat-canvas3d-rotation-icon cvat-canvas3d-rotation-icon-horizontal-right'
+                                />
                             </Button>
                         </CVATTooltip>
                     </div>
@@ -434,59 +460,59 @@ export const PerspectiveViewComponent = React.memo(
         function ControlGroup(): JSX.Element {
             return (
                 <span className='cvat-canvas3d-perspective-directions'>
-                    <CVATTooltip title={normalizedKeyMap.MOVE_UP} placement='topLeft'>
+                    <CVATTooltip title={`Move camera down ${normalizedKeyMap.MOVE_UP}`} placement='topLeft'>
                         <Button
                             size='small'
                             onClick={() => screenKeyControl(CameraAction.MOVE_UP, true, false)}
                             className='cvat-canvas3d-perspective-directions-icon cvat-canvas3d-perspective-shift-down'
                         >
-                            U
+                            <ArrowDownOutlined />
                         </Button>
                     </CVATTooltip>
-                    <CVATTooltip title={normalizedKeyMap.ZOOM_IN} placement='topLeft'>
+                    <CVATTooltip title={`Zoom camera in ${normalizedKeyMap.ZOOM_IN}`} placement='topLeft'>
                         <Button
                             size='small'
                             onClick={() => screenKeyControl(CameraAction.ZOOM_IN, true, false)}
                             className='cvat-canvas3d-perspective-directions-icon cvat-canvas3d-perspective-zoom-in'
                         >
-                            I
+                            <ZoomInOutlined />
                         </Button>
                     </CVATTooltip>
-                    <CVATTooltip title={normalizedKeyMap.MOVE_DOWN} placement='topLeft'>
+                    <CVATTooltip title={`Move camera up ${normalizedKeyMap.MOVE_DOWN}`} placement='topLeft'>
                         <Button
                             size='small'
                             onClick={() => screenKeyControl(CameraAction.MOVE_DOWN, true, false)}
                             className='cvat-canvas3d-perspective-directions-icon cvat-canvas3d-perspective-shift-up'
                         >
-                            O
+                            <ArrowUpOutlined />
                         </Button>
                     </CVATTooltip>
                     <br />
-                    <CVATTooltip title={normalizedKeyMap.MOVE_LEFT} placement='topLeft'>
+                    <CVATTooltip title={`Move camera left ${normalizedKeyMap.MOVE_LEFT}`} placement='topLeft'>
                         <Button
                             size='small'
                             onClick={() => screenKeyControl(CameraAction.MOVE_LEFT, true, false)}
                             className='cvat-canvas3d-perspective-directions-icon cvat-canvas3d-perspective-shift-left'
                         >
-                            J
+                            <ArrowLeftOutlined />
                         </Button>
                     </CVATTooltip>
-                    <CVATTooltip title={normalizedKeyMap.ZOOM_OUT} placement='topLeft'>
+                    <CVATTooltip title={`Zoom camera out ${normalizedKeyMap.ZOOM_OUT}`} placement='topLeft'>
                         <Button
                             size='small'
                             onClick={() => screenKeyControl(CameraAction.ZOOM_OUT, true, false)}
                             className='cvat-canvas3d-perspective-directions-icon cvat-canvas3d-perspective-zoom-out'
                         >
-                            K
+                            <ZoomOutOutlined />
                         </Button>
                     </CVATTooltip>
-                    <CVATTooltip title={normalizedKeyMap.MOVE_RIGHT} placement='topLeft'>
+                    <CVATTooltip title={`Move camera right ${normalizedKeyMap.MOVE_RIGHT}`} placement='topLeft'>
                         <Button
                             size='small'
                             onClick={() => screenKeyControl(CameraAction.MOVE_RIGHT, true, false)}
                             className='cvat-canvas3d-perspective-directions-icon cvat-canvas3d-perspective-shift-right'
                         >
-                            L
+                            <ArrowRightOutlined />
                         </Button>
                     </CVATTooltip>
                 </span>
