@@ -362,16 +362,16 @@ export const PerspectiveViewComponent = React.memo(
         };
 
         const handlers: Record<keyof typeof componentShortcuts, (event?: KeyboardEvent) => void> = {
-            TILT_UP: () => { }, // Handled by CVAT 3D Independently
-            TILT_DOWN: () => { },
-            ROTATE_LEFT: () => { },
-            ROTATE_RIGHT: () => { },
-            MOVE_UP: () => { },
-            MOVE_DOWN: () => { },
-            MOVE_LEFT: () => { },
-            MOVE_RIGHT: () => { },
-            ZOOM_IN: () => { },
-            ZOOM_OUT: () => { },
+            TILT_UP: () => screenKeyControl(CameraAction.TILT_UP, false, true),
+            TILT_DOWN: () => screenKeyControl(CameraAction.TILT_DOWN, false, true),
+            ROTATE_LEFT: () => screenKeyControl(CameraAction.ROTATE_LEFT, false, true),
+            ROTATE_RIGHT: () => screenKeyControl(CameraAction.ROTATE_RIGHT, false, true),
+            MOVE_UP: () => screenKeyControl(CameraAction.MOVE_UP, true, false),
+            MOVE_DOWN: () => screenKeyControl(CameraAction.MOVE_DOWN, true, false),
+            MOVE_LEFT: () => screenKeyControl(CameraAction.MOVE_LEFT, true, false),
+            MOVE_RIGHT: () => screenKeyControl(CameraAction.MOVE_RIGHT, true, false),
+            ZOOM_IN: () => screenKeyControl(CameraAction.ZOOM_IN, true, false),
+            ZOOM_OUT: () => screenKeyControl(CameraAction.ZOOM_OUT, true, false),
             NEXT_OBJECT: (event?: KeyboardEvent) => {
                 if (event) {
                     event.preventDefault();
@@ -760,16 +760,6 @@ const Canvas3DWrapperComponent = React.memo((props: Props): null => {
         canvasInstanceDOM.perspective.addEventListener('canvas.dragstop', onCanvasDragDone);
     };
 
-    const keyControlsKeyDown = (key: KeyboardEvent): void => {
-        canvasInstance.keyControls(key);
-    };
-
-    const keyControlsKeyUp = (key: KeyboardEvent): void => {
-        if (key.code === 'ControlLeft') {
-            canvasInstance.keyControls(key);
-        }
-    };
-
     const onCanvasShapeSelected = (event: any): void => {
         const { clientID } = event.detail;
         onActivateObject(clientID);
@@ -803,9 +793,6 @@ const Canvas3DWrapperComponent = React.memo((props: Props): null => {
     useEffect(() => {
         const canvasInstanceDOM = canvasInstance.html();
 
-        document.addEventListener('keydown', keyControlsKeyDown);
-        document.addEventListener('keyup', keyControlsKeyUp);
-
         initialSetup();
         updateCanvas();
         animateCanvas();
@@ -815,8 +802,6 @@ const Canvas3DWrapperComponent = React.memo((props: Props): null => {
             canvasInstanceDOM.perspective.removeEventListener('canvas.canceled', onCanvasCancel);
             canvasInstanceDOM.perspective.removeEventListener('canvas.dragstart', onCanvasDragStart);
             canvasInstanceDOM.perspective.removeEventListener('canvas.dragstop', onCanvasDragDone);
-            document.removeEventListener('keydown', keyControlsKeyDown);
-            document.removeEventListener('keyup', keyControlsKeyUp);
             cancelAnimationFrame(animateId.current);
         };
     }, []);
