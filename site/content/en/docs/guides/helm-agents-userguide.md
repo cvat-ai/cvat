@@ -13,7 +13,7 @@ and we are excited to share with you new ways to do that. In this guide we will 
 using Helm.
 
 If you are familiar with Kubernetes and you want better control over your deployment and higher flexibility,
-you should go with Helm deployment instead of [Docker compose](/docs/guides/helm-agents-userguide/).
+you should go with Helm deployment instead of [Docker Compose](/docs/guides/compose-agents-userguide/).
 
 In this guide we will cover the following topics:
 
@@ -50,11 +50,11 @@ nodes have `nvidia.com/gpu` in `.status.allocatable`.
 
 ## How to configure `values.yaml` for your CVAT agent
 
-Clone the CVAT repository and navigate to the chart directory:
+Clone the standalone `cvat-models` repository and navigate to the chart directory:
 
 ```bash
-git clone git@github.com:cvat-ai/cvat.git
-cd cvat/ai-models/agents_deployment/helm
+git clone https://github.com/cvat-ai/cvat-models.git
+cd cvat-models/agents_deployment/helm
 ```
 
 Open `values.yaml` and configure the following sections.

@@ -233,6 +233,7 @@ provides Python functions for supported models. You can use them directly withou
 | ------- | ------------ | --------------- |
 | YOLO | Detection, segmentation, or pose estimation | AI assistance → Auto-labeling |
 | RF-DETR | Detection, instance segmentation, or keypoint detection | AI assistance → Auto-labeling |
+| RT-DETRv2-OBB | DOTA or DIOR-R detection with rotated bounding boxes | AI assistance → Auto-labeling |
 | Hugging Face Transformers | Detection, segmentation, or classification | AI assistance → Auto-labeling |
 | SAM2 tracking | Tracks an existing mask or polygon | Run annotation action |
 | [SAM2 interactor](https://github.com/cvat-ai/cvat-models/tree/develop/interactor/sam2) | Segments objects from points and boxes | AI assistance → Prompting |
@@ -353,6 +354,59 @@ For local weights, use `-p model=str:/absolute/path/to/best.pth` with the matchi
 
 See the [RF-DETR README](https://github.com/cvat-ai/cvat-models/tree/develop/detector/detr)
 for exact architecture names, checkpoint requirements, and custom keypoint schemas.
+
+{{% /tab %}}
+
+{{% tab header="RT-DETRv2-OBB" %}}
+
+The function returns rotated rectangles and supports the official DOTA-v1.0 and DIOR-R checkpoints.
+Python 3.12 is recommended, and Git is required to prepare the pinned upstream source.
+
+1. Install dependencies, prepare the pinned upstream source, and download the default checkpoint:
+
+   ```bash
+   python -m pip install -r detector/rio_detr/requirements.txt
+   detector/rio_detr/clone_upstream.sh
+   python detector/rio_detr/common.py --group dota-single-scale --model-size X
+   ```
+
+2. Register the default DOTA X single-scale model:
+
+   ```bash
+   cvat-cli --server-host "$CVAT_SERVER_URL" --org "$CVAT_ORG" function create-native "OBB Object Detection - DOTA" \
+     --function-file detector/rio_detr/dota/func.py \
+     -p checkpoint_group=str:dota-single-scale -p model_size=str:X \
+     -p conf_threshold=float:0.4 -p device=str:cpu
+   ```
+
+3. Start the agent with the same parameters:
+
+   ```bash
+   cvat-cli --server-host "$CVAT_SERVER_URL" --org "$CVAT_ORG" function run-agent <function_id> \
+     --function-file detector/rio_detr/dota/func.py \
+     -p checkpoint_group=str:dota-single-scale -p model_size=str:X \
+     -p conf_threshold=float:0.4 -p device=str:cpu
+   ```
+
+Select **AI assistance → Auto-labeling → Model → OBB Object Detection - DOTA**, map the model labels to task
+labels, and run it. No Hugging Face token is required to download the checkpoints.
+
+Use the following wrappers and model variants for other official checkpoints. Pass the value in
+parentheses with `-p checkpoint_group=str:<value>`.
+
+| Dataset | Model variant | Function file | Supported `model_size` values |
+| ------- | ------------- | ------------- | ----------------------------- |
+| DOTA-v1.0 | Single-scale (`dota-single-scale`) | `detector/rio_detr/dota/func.py` | `str:N`, `str:S`, `str:M`, `str:L`, `str:X` |
+| DOTA-v1.0 | Multi-scale (`dota-multi-scale`) | `detector/rio_detr/dota/func.py` | `str:M`, `str:X` |
+| DIOR-R | Default (`dior-r`) | `detector/rio_detr/dior_r/func.py` | `str:N`, `str:S`, `str:M`, `str:L`, `str:X` |
+
+Register DOTA and DIOR-R as separate functions because their class lists differ. To use a prepared
+checkout in another location, set `RIO_DETR_UPSTREAM_DIR` to its absolute path; it must be at the
+supported commit. See the
+[RT-DETRv2-OBB README](https://github.com/cvat-ai/cvat-models/tree/develop/detector/rio_detr)
+for checkpoint downloads and local checkpoint parameters. For container deployment, use the
+{{< ilink "/docs/guides/compose-agents-userguide" "Docker Compose agent guide" >}} and select
+the DOTA or DIOR-R agent bundle.
 
 {{% /tab %}}
 
