@@ -31,6 +31,7 @@ import IssueDialog from './issue-dialog';
 
 const DRAFT_ISSUE_ID = 0;
 const ISSUE_DRAG_THRESHOLD = 3;
+const ISSUE_RESIZE_HANDLE_SIZE = 8;
 const OVERLAY_GAP = 15;
 const FALLBACK_INSET_TOP = 24;
 
@@ -135,6 +136,7 @@ function IssueOverlays({ canvas }: { canvas: Canvas3d }): JSX.Element {
     const visibleIssuesById = useMemo(() => new Map(visibleIssues.map((issue) => [issue.id, issue])), [visibleIssues]);
     const activeIssue = visibleIssuesById.get(activeIssueId);
     const geometryHighlightId = highlightedIssueId ?? hoveredResolvedIssueId;
+    const canDragIssues = !creating && !fetching && activeControl === ActiveControl.CURSOR;
 
     useEffect(() => {
         if (!newPosition) setDraftView(ViewType.PERSPECTIVE);
@@ -475,14 +477,36 @@ function IssueOverlays({ canvas }: { canvas: Canvas3d }): JSX.Element {
                 pins.forEach((pin) => {
                     const point = canvas.projectPosition(pin.position, view);
                     if (point) {
+                        const isActive = pin.id === DRAFT_ISSUE_ID ?
+                            newSource === NewIssueSource.ISSUE_TOOL : pin.id === activeIssueId;
+                        const canResize = canDragIssues && pin.cuboid && isActive && view !== ViewType.PERSPECTIVE;
+                        const corners = canResize ? canvas.projectIssueCuboid(pin.position, view).map(
+                            (corner, index, projected) => (
+                                corner && !projected.slice(0, index).some((other) => (
+                                    other && Math.hypot(other[0] - corner[0], other[1] - corner[1]) < 2
+                                )) ? corner : null
+                            ),
+                        ) : [];
                         next.push({
                             ...pane,
                             id: pin.id,
                             x: Math.round((canvasRect.left + point[0]) * 100) / 100,
                             y: Math.round((canvasRect.top + point[1]) * 100) / 100,
                             cuboid: pin.cuboid,
-                            corners: pin.cuboid && (pin.id === DRAFT_ISSUE_ID || pin.id === activeIssueId) &&
-                                view !== ViewType.PERSPECTIVE ? canvas.projectIssueCuboid(pin.position, view) : [],
+                            corners,
+                        });
+                        corners.forEach((corner, index) => {
+                            if (!corner) return;
+                            sprites.push({
+                                id: pin.id,
+                                view,
+                                position: pin.position,
+                                width: ISSUE_RESIZE_HANDLE_SIZE,
+                                height: ISSUE_RESIZE_HANDLE_SIZE,
+                                offset: [corner[0] - point[0], corner[1] - point[1]],
+                                highlighted: false,
+                                corner: index,
+                            });
                         });
                         const { issue } = pin;
                         const highlighted = highlightedIssueId === pin.id || preview?.drag.id === pin.id;
@@ -546,7 +570,8 @@ function IssueOverlays({ canvas }: { canvas: Canvas3d }): JSX.Element {
         updatePositions();
         return () => cancelAnimationFrame(animationFrame);
     }, [
-        canvas, ready, visibleIssues, newPosition, preview, highlightedIssueId, geometryHighlightId, activeIssueId,
+        canvas, ready, visibleIssues, newPosition, newSource, preview, highlightedIssueId, geometryHighlightId,
+        activeIssueId, canDragIssues,
     ]);
 
     useEffect(() => {
@@ -615,8 +640,7 @@ function IssueOverlays({ canvas }: { canvas: Canvas3d }): JSX.Element {
                                 const issue = visibleIssuesById.get(id);
                                 const isDraft = id === DRAFT_ISSUE_ID;
                                 if (!issue && !(isDraft && newPosition)) return null;
-                                const draggable = view !== ViewType.PERSPECTIVE && !creating && !fetching &&
-                                    activeControl === ActiveControl.CURSOR &&
+                                const draggable = view !== ViewType.PERSPECTIVE && canDragIssues &&
                                     (!isDraft || newSource === NewIssueSource.ISSUE_TOOL);
                                 const clickable = draggable || (view === ViewType.PERSPECTIVE && !!issue &&
                                     activeControl === ActiveControl.CURSOR);
@@ -654,9 +678,7 @@ function IssueOverlays({ canvas }: { canvas: Canvas3d }): JSX.Element {
                                             />
                                         ) : <div {...regionProps} aria-hidden />)}
                                         {!!resizeHandles && corners.map((corner, index) => {
-                                            if (!corner || corners.slice(0, index).some((other) => (
-                                                other && Math.hypot(other[0] - corner[0], other[1] - corner[1]) < 2
-                                            ))) return null;
+                                            if (!corner) return null;
                                             return (
                                                 <button
                                                     key={index}

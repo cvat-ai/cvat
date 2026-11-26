@@ -405,6 +405,18 @@ context('3D spatial review', { browser: '!firefox' }, () => {
             } else {
                 cy.get('.cvat-issue-dialog').should('contain.text', 'Review this missing object region');
                 cy.get('.cvat-canvas3d-issue-resize-handle').should('exist');
+                cy.get(`.cvat-canvas3d-${view} canvas`).should(($canvas) => {
+                    const { scene } = $canvas[0];
+                    const prefix = `cvat-issue-sprite-${view.replace('view', '')}:${issueId}:`;
+                    const label = scene.getObjectByName(`${prefix}label`);
+                    const handles = scene.children.filter((object) => object.name.startsWith(`${prefix}handle-`));
+                    expect(label?.isSprite).to.equal(true);
+                    expect(handles).to.have.length.at.least(4);
+                    handles.forEach((handle) => {
+                        expect(handle.isSprite).to.equal(true);
+                        expect(handle.renderOrder).to.be.lessThan(label.renderOrder);
+                    });
+                });
                 cy.get('.cvat-issue-dialog-header [aria-label="close"]').click();
                 cy.get('.cvat-issue-dialog').should('not.exist');
             }
@@ -617,6 +629,7 @@ context('3D spatial review', { browser: '!firefox' }, () => {
             cy.get(`#cvat-hidden-issue-label-${id}-top`).type('{enter}');
             cy.get('.cvat-issue-dialog').should('contain.text', 'Review this sprite anchor');
             cy.get('.cvat-issue-dialog-header [aria-label="close"]').click();
+            cy.contains('[role="tab"]', 'Issues').click();
             cy.get('.cvat-issues-sidebar-shown-issues').click();
             cy.get('.cvat-canvas3d-perspective canvas').should(($canvas) => {
                 expect($canvas[0].scene.children.some((child) => child.isSprite)).to.equal(false);

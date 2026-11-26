@@ -215,15 +215,6 @@
     cursor: nwse-resize;
     touch-action: none;
     z-index: 1;
-
-    &::after {
-        content: '';
-        position: absolute;
-        inset: $grid-unit-size;
-        background: white;
-        border: 1px solid red;
-        border-radius: 50%;
-    }
 }
 
 button.cvat-canvas3d-issue-region,

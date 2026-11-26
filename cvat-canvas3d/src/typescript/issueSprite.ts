@@ -14,6 +14,7 @@ export interface IssueSprite {
     height: number;
     offset: [number, number];
     highlighted: boolean;
+    corner?: number;
     label?: { text: string; resolved: boolean; font: string; order: number };
 }
 
@@ -58,10 +59,16 @@ function spriteTexture(data: IssueSprite, ratio: number): THREE.CanvasTexture {
         }
         context.fillText(text, 24, cy);
     } else {
-        context.fillStyle = data.highlighted ? '#40a9ff' : '#d9b300';
-        context.strokeStyle = 'rgba(0, 0, 0, 0.7)';
+        const handle = data.corner !== undefined;
+        if (handle) {
+            context.fillStyle = '#fff';
+            context.strokeStyle = 'red';
+        } else {
+            context.fillStyle = data.highlighted ? '#40a9ff' : '#d9b300';
+            context.strokeStyle = 'rgba(0, 0, 0, 0.7)';
+        }
         context.beginPath();
-        context.arc(data.width / 2, data.height / 2, 4, 0, Math.PI * 2);
+        context.arc(data.width / 2, data.height / 2, handle ? (data.width - 1) / 2 : 4, 0, Math.PI * 2);
         context.fill();
         context.stroke();
     }
@@ -79,10 +86,12 @@ export class IssueSprites {
         const keys = new Set<string>();
         const pixelRatio = displayPixelRatio();
         for (const data of items) {
-            const key = `${data.view}:${data.id}:${data.label ? 'label' : 'point'}`;
+            const handle = data.corner !== undefined;
+            const kind = data.label ? 'label' : 'point';
+            const key = `${data.view}:${data.id}:${handle ? `handle-${data.corner}` : kind}`;
             keys.add(key);
             const signature = JSON.stringify([
-                pixelRatio, data.width, data.height, !data.label && data.highlighted,
+                pixelRatio, data.width, data.height, !data.label && !handle && data.highlighted,
                 data.label?.text, data.label?.resolved, data.label?.font,
             ]);
             let entry = this.sprites.get(key);
@@ -106,8 +115,8 @@ export class IssueSprites {
             }
             entry.sprite.renderOrder = data.label ? 101 + data.label.order : 100;
             entry.sprite.center.set(
-                data.label ? -data.offset[0] / data.width : 0.5,
-                data.label ? 1 + data.offset[1] / data.height : 0.5,
+                (data.label ? 0 : 0.5) - data.offset[0] / data.width,
+                (data.label ? 1 : 0.5) + data.offset[1] / data.height,
             );
             entry.data = data;
         }
