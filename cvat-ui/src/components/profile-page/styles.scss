@@ -75,6 +75,16 @@
     display: flex;
     align-items: center;
     gap: $grid-unit-size * 2;
+
+    > .ant-btn {
+        width: $grid-unit-size * 4;
+        margin: 0 $grid-unit-size * 0.75;
+        flex-shrink: 0;
+    }
+
+    & + & {
+        margin-top: $grid-unit-size * 3;
+    }
 }
 
 .cvat-profile-privacy-consent-item-copy {

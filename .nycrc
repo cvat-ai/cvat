@@ -10,6 +10,7 @@
     "exclude": [
         "**/3rdparty/*",
         "**/tests/*",
+        "cvat-ui/plugins/*/assets/**",
         "cvat-ui/src/actions/boundaries-actions.ts",
         "cvat-ui/src/utils/platform-checker.ts"
     ],
