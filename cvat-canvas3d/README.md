@@ -23,7 +23,7 @@ interface Canvas3d {
   isAbleToChangeFrame(): boolean;
   mode(): Mode;
   render(): void;
-  keyControls(keys: KeyboardEvent): void;
+  cameraControl(action: CameraAction): void;
   draw(drawData: DrawData): void;
   cancel(): void;
   dragCanvas(enable: boolean): void;
