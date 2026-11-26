@@ -699,8 +699,9 @@ export class Canvas3dViewImpl implements Canvas3dView, Listener {
                 this.isPerspectiveBeingDragged;
 
             if (e.detail !== 1 || selectionIsBlocked) return;
-            const intersects = this.views.perspective.rayCaster.renderer
-                .intersectObjects(this.getAllVisibleCuboids(), false);
+            const { camera, rayCaster } = this.views.perspective;
+            rayCaster.renderer.setFromCamera(rayCaster.mouseVector, camera);
+            const intersects = rayCaster.renderer.intersectObjects(this.getAllVisibleCuboids(), false);
             const intersectionClientID = +(intersects[0]?.object?.name) || null;
             const objectState = Number.isInteger(intersectionClientID) ? this.model.objects
                 .find((state: ObjectState) => state.clientID === intersectionClientID) : null;
