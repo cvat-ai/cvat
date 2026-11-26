@@ -765,11 +765,24 @@ context('3D spatial review', { browser: '!firefox' }, () => {
             expect(response.body.view.position).to.have.length(3);
             expect(response.body.view.target).to.have.length(3);
             expect(response.body.view.zoom).to.be.greaterThan(0);
-            cy.get('.cvat-canvas3d-perspective canvas').click(50, 50);
-            cy.get('.cvat-objects-sidebar-state-active-item').should('not.exist');
             cy.get(`#cvat-hidden-issue-label-${response.body.id}-perspective`).click();
         });
         cy.get('.cvat-issue-dialog').should('be.visible');
+        cy.get('.cvat-objects-sidebar-state-active-item').should('not.exist');
+        ['top', 'side', 'front'].forEach((view) => {
+            cy.get(`.cvat-canvas3d-${view}view canvas`).should(($canvas) => {
+                const { cuboid } = $canvas[0].getDrawnObjects().find(({ state }) => state.clientID === 1);
+                expect(cuboid[view].visible, `annotation visible in ${view}`).to.equal(true);
+                expect(cuboid[view].getObjectByName('edges')).to.exist;
+            });
+        });
+        cy.get('.cvat-canvas3d-perspective canvas').trigger('mousemove', 50, 50);
+        cy.get('.cvat-issue-dialog-header [aria-label="close"]').click();
+        cy.get('.cvat-issue-dialog').should('not.exist');
+        cy.get('.cvat-canvas3d-perspective canvas').should(($canvas) => {
+            const { cuboid } = $canvas[0].getDrawnObjects().find(({ state }) => state.clientID === 1);
+            ['top', 'side', 'front'].forEach((view) => expect(cuboid[view].visible).to.equal(false));
+        });
         cy.get('#cvat-objects-sidebar-state-item-1').trigger('mouseover');
         rightClickCuboid();
         cy.contains('.cvat-context-menu-item', 'Open an issue ...').click();

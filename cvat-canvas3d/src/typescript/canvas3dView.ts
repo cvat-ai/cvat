@@ -173,7 +173,13 @@ export class Canvas3dViewImpl implements Canvas3dView, Listener {
     }
 
     public setupIssueCuboids(regions: IssueCuboid[], activeID: number | null = null): void {
+        const hadActiveIssueCuboid = this.activeIssueCuboidID !== null;
         this.activeIssueCuboidID = regions.some((region) => region.id === activeID) ? activeID : null;
+        if (hadActiveIssueCuboid !== (this.activeIssueCuboidID !== null)) {
+            for (const { cuboid, data } of Object.values(this.drawnObjects)) {
+                this.updateOrthographicCuboidVisibility(cuboid, data.clientID === this.activatedElementID);
+            }
+        }
         if (!this.issueCuboids && regions.length && this.views.perspective.scene.children.length) {
             this.issueCuboids = new IssueCuboids(Object.fromEntries(
                 Object.values(ViewType).map((view) => [view, this.views[view].scene]),
@@ -1491,14 +1497,28 @@ export class Canvas3dViewImpl implements Canvas3dView, Listener {
         return cuboid;
     }
 
+    private updateOrthographicCuboidVisibility(cuboid: CuboidModel, activated: boolean): void {
+        const visible = cuboid.perspective.visible && (activated || this.activeIssueCuboidID !== null);
+        for (const view of BOTTOM_VIEWS) {
+            const mesh = cuboid[view];
+            if (mesh.visible === visible) continue;
+
+            mesh.visible = visible;
+            if (visible) {
+                createCuboidEdges(mesh);
+            } else {
+                removeCuboidEdges(mesh);
+            }
+        }
+    }
+
     private deactivateObject(): void {
         const { shapeOpacity } = this.model.data.configuration;
         if (this.activatedElementID !== null) {
             const { cuboid } = this.drawnObjects[this.activatedElementID];
             cuboid.setOpacity(shapeOpacity);
+            this.updateOrthographicCuboidVisibility(cuboid, false);
             for (const view of BOTTOM_VIEWS) {
-                cuboid[view].visible = false;
-                removeCuboidEdges(cuboid[view]);
                 removeResizeHelper(cuboid[view]);
                 removeRotationHelper(cuboid[view]);
             }
@@ -1512,16 +1532,14 @@ export class Canvas3dViewImpl implements Canvas3dView, Listener {
         if (clientID !== null && this.drawnObjects[+clientID]?.cuboid?.perspective?.visible) {
             const { cuboid, data } = this.drawnObjects[+clientID];
             cuboid.setOpacity(selectedShapeOpacity);
-            for (const view of BOTTOM_VIEWS) {
-                cuboid[view].visible = true;
-                createCuboidEdges(cuboid[view]);
+            this.updateOrthographicCuboidVisibility(cuboid, true);
 
-                if (!data.lock) {
+            if (!data.lock) {
+                for (const view of BOTTOM_VIEWS) {
                     createResizeHelper(cuboid, view);
                     createRotationHelper(cuboid, view);
-                    BOTTOM_VIEWS
-                        .forEach((type) => this.updateHelperPointsSize(type));
                 }
+                BOTTOM_VIEWS.forEach((view) => this.updateHelperPointsSize(view));
             }
 
             this.activatedElementID = +clientID;
@@ -1535,6 +1553,7 @@ export class Canvas3dViewImpl implements Canvas3dView, Listener {
         states.forEach((state: ObjectState) => {
             const cuboid = this.addCuboid(state);
             this.addSceneChildren(cuboid);
+            this.updateOrthographicCuboidVisibility(cuboid, false);
             this.drawnObjects[state.clientID] = {
                 cuboid,
                 data: drawnDataFromState(state),
@@ -1572,9 +1591,7 @@ export class Canvas3dViewImpl implements Canvas3dView, Listener {
 
             if (outside !== data.outside || hidden !== data.hidden) {
                 cuboid.perspective.visible = !(outside || hidden);
-                cuboid.top.visible = !(outside || hidden);
-                cuboid.side.visible = !(outside || hidden);
-                cuboid.front.visible = !(outside || hidden);
+                this.updateOrthographicCuboidVisibility(cuboid, clientID === this.activatedElementID);
             }
 
             if (occluded !== data.occluded) {
