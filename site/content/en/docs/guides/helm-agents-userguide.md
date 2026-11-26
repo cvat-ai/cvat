@@ -187,7 +187,7 @@ agent:
   extraVolumes:
     - name: openh264
       hostPath:
-        path: /opt/openh264/libopenh264-2.6.0-linux64.8.so
+        path: /opt/openh264/libopenh264-2.7.0-linux64.8.so
         type: File
 ```
 

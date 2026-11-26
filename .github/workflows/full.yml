@@ -163,8 +163,8 @@ jobs:
 
       - name: Download OpenH264
         env:
-          OPENH264_URL: https://ciscobinary.openh264.org/libopenh264-2.6.0-linux64.8.so.bz2
-          OPENH264_SHA256: 27ab53323c110b76214c1c72222f459d17febbcd1e252136cadc292b0308d75b
+          OPENH264_URL: https://ciscobinary.openh264.org/libopenh264-2.7.0-linux64.8.so.bz2
+          OPENH264_SHA256: 44ad0dd2c5af2bac84d26f89f2eb4e268708b8739323d15d33837f7221ce4980
         run: |
           curl -fsSL "${OPENH264_URL}" -o /tmp/libopenh264.so.bz2
           echo "${OPENH264_SHA256}  /tmp/libopenh264.so.bz2" | sha256sum --check

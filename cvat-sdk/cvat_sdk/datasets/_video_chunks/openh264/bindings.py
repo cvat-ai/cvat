@@ -67,30 +67,29 @@ class SBufferInfo(ctypes.Structure):
     ]
 
 
-# Signatures of the ``ISVCDecoderVtbl`` entries; the header declares them inline.
-_InitializeDecoder = ctypes.CFUNCTYPE(
-    ctypes.c_long, ctypes.c_void_p, ctypes.POINTER(SDecodingParam)
-)
-_UninitializeDecoder = ctypes.CFUNCTYPE(ctypes.c_long, ctypes.c_void_p)
-_UnusedDecoderMethod = ctypes.CFUNCTYPE(None)
-_DecodeFrameNoDelay = ctypes.CFUNCTYPE(
-    ctypes.c_int,
-    ctypes.c_void_p,
-    # const unsigned char* pSrc: c_char_p takes bytes as is and keeps them alive for the call.
-    ctypes.c_char_p,
-    ctypes.c_int,
-    ctypes.POINTER(ctypes.c_void_p),
-    ctypes.POINTER(SBufferInfo),
-)
-
-
 # codec_api.h
 class ISVCDecoderVtbl(ctypes.Structure):
     _fields_ = [
-        ("Initialize", _InitializeDecoder),
-        ("Uninitialize", _UninitializeDecoder),
-        ("DecodeFrame", _UnusedDecoderMethod),
-        ("DecodeFrameNoDelay", _DecodeFrameNoDelay),
+        (
+            "Initialize",
+            ctypes.CFUNCTYPE(ctypes.c_long, ctypes.c_void_p, ctypes.POINTER(SDecodingParam)),
+        ),
+        ("Uninitialize", ctypes.CFUNCTYPE(ctypes.c_long, ctypes.c_void_p)),
+        # Not used by the decoder
+        ("DecodeFrame", ctypes.CFUNCTYPE(None)),
+        (
+            "DecodeFrameNoDelay",
+            ctypes.CFUNCTYPE(
+                ctypes.c_int,
+                ctypes.c_void_p,
+                # const unsigned char* pSrc: c_char_p takes bytes as is
+                # and keeps them alive for the call.
+                ctypes.c_char_p,
+                ctypes.c_int,
+                ctypes.POINTER(ctypes.c_void_p),
+                ctypes.POINTER(SBufferInfo),
+            ),
+        ),
     ]
 
 

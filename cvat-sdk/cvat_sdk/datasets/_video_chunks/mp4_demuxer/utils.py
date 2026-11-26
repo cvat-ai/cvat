@@ -6,23 +6,51 @@ from __future__ import annotations
 
 import itertools
 import os
-from collections.abc import Iterable, Mapping
-from typing import BinaryIO, TypeVar
+from typing import BinaryIO, TypeAlias
 
 from cvat_sdk.datasets._video_chunks.exceptions import UnsupportedVideoError
 from cvat_sdk.datasets._video_chunks.mp4_demuxer.consts import (
     ANNEX_B_START_CODE,
     BOX_HEADER_SIZE,
+    LARGE_BOX_HEADER_SIZE,
     NAL_LENGTH_SIZE,
-    VISUAL_SAMPLE_ENTRY_SIZE,
+    VERSION_AND_FLAGS_SIZE,
 )
-from cvat_sdk.datasets._video_chunks.mp4_demuxer.schemas import ByteRange, SampleTable
+from cvat_sdk.datasets._video_chunks.mp4_demuxer.schemas import (
+    Box,
+    BoxMapping,
+    BoxType,
+    ByteRange,
+    SampleTable,
+)
 
-_T = TypeVar("_T")
+_BoxTree: TypeAlias = dict[BoxType, "_BoxTree"]
 
+# The boxes of a CVAT chunk, nested as in the file. Only these boxes are read by the demuxer,
+# the others are skipped.
+_BOX_TREE: _BoxTree = {
+    BoxType(b"mdat"): {},
+    BoxType(b"moov"): {
+        BoxType(b"trak"): {
+            BoxType(b"mdia"): {
+                BoxType(b"minf"): {
+                    BoxType(b"stbl"): {
+                        BoxType(b"stsd"): {BoxType(b"avc1"): {BoxType(b"avcC"): {}}},
+                        BoxType(b"stsc"): {},
+                        BoxType(b"stsz"): {},
+                        BoxType(b"stco"): {},
+                    },
+                },
+            },
+        },
+    },
+}
 
-def _box_name(box_type: bytes) -> str:
-    return repr(box_type.decode("latin-1"))
+# stsd and avc1 hold fixed fields before their child boxes
+_CHILD_BOXES_OFFSET = {
+    BoxType(b"stsd"): VERSION_AND_FLAGS_SIZE + 4,
+    BoxType(b"avc1"): 78,  # video fields: width, height, resolution, compressor name, etc.
+}
 
 
 def read_at(file: BinaryIO, offset: int, size: int) -> bytes:
@@ -52,89 +80,67 @@ def _uint_at(data: memoryview, offset: int, size: int) -> int:
     return int.from_bytes(_bytes_at(data=data, offset=offset, size=size), "big")
 
 
-def _check_box_size(box_type: bytes, size: int, available: int) -> None:
-    # CVAT chunks have only 32-bit box sizes, so the special sizes 0 (the box runs to the end
-    # of the file) and 1 (a 64-bit size follows) are rejected along with the invalid ones.
-    if not BOX_HEADER_SIZE <= size <= available:
-        raise UnsupportedVideoError(
-            f"The MP4 chunk has an invalid {_box_name(box_type=box_type)} box"
-        )
+def _read_box_at(file: BinaryIO, offset: int, available: int) -> Box:
+    if available < BOX_HEADER_SIZE:
+        raise UnsupportedVideoError("The MP4 chunk has a truncated box")
+
+    header = read_at(file=file, offset=offset, size=min(LARGE_BOX_HEADER_SIZE, available))
+    box_type = BoxType(header[4:8])
+    size = int.from_bytes(header[0:4], "big")
+    header_size = BOX_HEADER_SIZE
+
+    if size == 1:
+        # A 64-bit size follows the type
+        size = int.from_bytes(header[8:16], "big")
+        header_size = LARGE_BOX_HEADER_SIZE
+    elif size == 0:
+        size = available
+
+    if not header_size <= size <= available:
+        raise UnsupportedVideoError(f"The MP4 chunk has an invalid {box_type} box")
+
+    return Box(
+        type=box_type,
+        payload_range=ByteRange(offset=offset + header_size, size=size - header_size),
+    )
 
 
-def _add_box(boxes: dict[bytes, _T], box_type: bytes, box: _T) -> None:
-    if box_type in boxes:
-        raise UnsupportedVideoError(
-            f"The MP4 chunk has more than one {_box_name(box_type=box_type)} box"
-        )
+def _find_boxes(file: BinaryIO, container: ByteRange, tree: _BoxTree, boxes: BoxMapping) -> None:
+    """Add the boxes of ``tree`` found in ``container`` to ``boxes``, reading only box headers."""
 
-    boxes[box_type] = box
+    offset = container.offset
 
+    while offset < container.end:
+        box = _read_box_at(file=file, offset=offset, available=container.end - offset)
+        offset = box.payload_range.end
 
-def _get_box(boxes: Mapping[bytes, _T], box_type: bytes) -> _T:
-    try:
-        return boxes[box_type]
-    except KeyError:
-        raise UnsupportedVideoError(
-            f"The MP4 chunk has no {_box_name(box_type=box_type)} box"
-        ) from None
+        if box.type not in tree:
+            continue
 
+        boxes[box.type] = box
 
-def _get_full_box(boxes: Mapping[bytes, memoryview], box_type: bytes) -> memoryview:
-    """Return the payload of a full box after its version and flags."""
+        children_tree = tree[box.type]
+        if children_tree:
+            children_offset = _CHILD_BOXES_OFFSET.get(box.type, 0)
+            if box.payload_range.size < children_offset:
+                raise UnsupportedVideoError("The MP4 chunk has a truncated box")
 
-    payload = _get_box(boxes=boxes, box_type=box_type)
-    version = _uint_at(data=payload, offset=0, size=1)
-    if version != 0:
-        raise UnsupportedVideoError(
-            f"The MP4 chunk has an unsupported version {version} "
-            f"of the {_box_name(box_type=box_type)} box"
-        )
-
-    return payload[4:]
-
-
-def locate_top_level_boxes(file: BinaryIO) -> tuple[ByteRange, ByteRange]:
-    """Return the payloads of the ``mdat`` and ``moov`` boxes, reading only box headers."""
-
-    file_size = file.seek(0, os.SEEK_END)
-    boxes: dict[bytes, ByteRange] = {}
-    offset = 0
-
-    while offset < file_size:
-        header = read_at(file=file, offset=offset, size=BOX_HEADER_SIZE)
-        size = int.from_bytes(header[0:4], "big")
-        box_type = header[4:8]
-        _check_box_size(box_type=box_type, size=size, available=file_size - offset)
-        _add_box(
-            boxes=boxes,
-            box_type=box_type,
-            box=ByteRange(offset=offset + BOX_HEADER_SIZE, size=size - BOX_HEADER_SIZE),
-        )
-        offset += size
-
-    return _get_box(boxes=boxes, box_type=b"mdat"), _get_box(boxes=boxes, box_type=b"moov")
+            _find_boxes(
+                file=file,
+                container=ByteRange(
+                    offset=box.payload_range.offset + children_offset,
+                    size=box.payload_range.size - children_offset,
+                ),
+                tree=children_tree,
+                boxes=boxes,
+            )
 
 
-def _get_children_boxes(payload: memoryview) -> dict[bytes, memoryview]:
-    """Return the payloads of the boxes inside ``payload`` by their type."""
+def _read_table(file: BinaryIO, table: ByteRange) -> memoryview:
+    """Read a sample table box without its version and flags."""
 
-    children: dict[bytes, memoryview] = {}
-    offset = 0
-
-    while offset < len(payload):
-        # A header cut short by the end of the payload fails the size check below
-        header = payload[offset : offset + BOX_HEADER_SIZE]
-        size = int.from_bytes(header[0:4], "big")
-        box_type = bytes(header[4:8])
-        _check_box_size(box_type=box_type, size=size, available=len(payload) - offset)
-        _add_box(
-            boxes=children,
-            box_type=box_type,
-            box=payload[offset + BOX_HEADER_SIZE : offset + size],
-        )
-        offset += size
-
-    return children
+    payload = read_at(file=file, offset=table.offset, size=table.size)
+    return memoryview(payload)[VERSION_AND_FLAGS_SIZE:]
 
 
 def _parse_avc_configuration(avcc: memoryview) -> bytes:
@@ -171,19 +177,6 @@ def _parse_avc_configuration(avcc: memoryview) -> bytes:
     return bytes(parameter_sets)
 
 
-def _parse_sample_description(stsd: memoryview) -> bytes:
-    """Return the SPS and PPS of the single ``avc1`` sample entry in Annex-B form."""
-
-    entry_count = _uint_at(data=stsd, offset=0, size=4)
-    entries = _get_children_boxes(payload=stsd[4:])
-    if entry_count != 1 or entries.keys() != {b"avc1"}:
-        raise UnsupportedVideoError("The MP4 chunk is not a single H.264 (avc1) video track")
-
-    # The avc1 child boxes follow its fixed VisualSampleEntry fields
-    avc1_children = _get_children_boxes(payload=entries[b"avc1"][VISUAL_SAMPLE_ENTRY_SIZE:])
-    return _parse_avc_configuration(avcc=_get_box(boxes=avc1_children, box_type=b"avcC"))
-
-
 def _parse_chunk_offsets(stco: memoryview) -> tuple[int, ...]:
     """Parse the ``stco`` table."""
 
@@ -215,7 +208,7 @@ def _expand_samples_per_chunk(stsc: memoryview, chunk_count: int) -> list[int]:
     ]
 
 
-def _parse_sample_sizes(stsz: memoryview, sample_count: int) -> Iterable[int]:
+def _parse_sample_sizes(stsz: memoryview, sample_count: int) -> tuple[int, ...]:
     """
     Parse the ``stsz`` table, which must list ``sample_count`` samples.
 
@@ -228,8 +221,7 @@ def _parse_sample_sizes(stsz: memoryview, sample_count: int) -> Iterable[int]:
         raise UnsupportedVideoError("The MP4 chunk has inconsistent sample tables")
 
     if common_size:
-        # FFmpeg writes a common size when all samples have it, e.g. in a 1-frame chunk
-        return itertools.repeat(common_size, sample_count)
+        return (common_size,) * sample_count
 
     return tuple(_uint_at(data=stsz, offset=8 + 4 * index, size=4) for index in range(sample_count))
 
@@ -237,7 +229,7 @@ def _parse_sample_sizes(stsz: memoryview, sample_count: int) -> Iterable[int]:
 def _build_samples(
     chunk_offsets: tuple[int, ...],
     samples_per_chunk: list[int],
-    sample_sizes: Iterable[int],
+    sample_sizes: tuple[int, ...],
     mdat: ByteRange,
 ) -> tuple[ByteRange, ...]:
     """Place the samples back to back from the start of their chunk, inside ``mdat``."""
@@ -257,22 +249,30 @@ def _build_samples(
     return tuple(samples)
 
 
-def parse_moov(moov: memoryview, mdat: ByteRange) -> SampleTable:
+def read_sample_table(file: BinaryIO) -> SampleTable:
     """Read the sample table of the chunk's single H.264 track."""
 
-    trak = _get_box(boxes=_get_children_boxes(payload=moov), box_type=b"trak")
-    mdia = _get_box(boxes=_get_children_boxes(payload=trak), box_type=b"mdia")
-    minf = _get_box(boxes=_get_children_boxes(payload=mdia), box_type=b"minf")
-    stbl = _get_children_boxes(
-        payload=_get_box(boxes=_get_children_boxes(payload=minf), box_type=b"stbl")
+    boxes = BoxMapping()
+
+    file_size = file.seek(0, os.SEEK_END)
+    _find_boxes(
+        file=file,
+        container=ByteRange(offset=0, size=file_size),
+        tree=_BOX_TREE,
+        boxes=boxes,
     )
 
-    chunk_offsets = _parse_chunk_offsets(stco=_get_full_box(boxes=stbl, box_type=b"stco"))
+    mdat = boxes[BoxType(b"mdat")].payload_range
+    chunk_offsets = _parse_chunk_offsets(
+        stco=_read_table(file=file, table=boxes[BoxType(b"stco")].payload_range)
+    )
     samples_per_chunk = _expand_samples_per_chunk(
-        stsc=_get_full_box(boxes=stbl, box_type=b"stsc"), chunk_count=len(chunk_offsets)
+        stsc=_read_table(file=file, table=boxes[BoxType(b"stsc")].payload_range),
+        chunk_count=len(chunk_offsets),
     )
     sample_sizes = _parse_sample_sizes(
-        stsz=_get_full_box(boxes=stbl, box_type=b"stsz"), sample_count=sum(samples_per_chunk)
+        stsz=_read_table(file=file, table=boxes[BoxType(b"stsz")].payload_range),
+        sample_count=sum(samples_per_chunk),
     )
     samples = _build_samples(
         chunk_offsets=chunk_offsets,
@@ -283,8 +283,11 @@ def parse_moov(moov: memoryview, mdat: ByteRange) -> SampleTable:
     if not samples:
         raise UnsupportedVideoError("The MP4 chunk has no frames")
 
+    avcc = boxes[BoxType(b"avcC")].payload_range
     return SampleTable(
-        parameter_sets=_parse_sample_description(stsd=_get_full_box(boxes=stbl, box_type=b"stsd")),
+        parameter_sets=_parse_avc_configuration(
+            avcc=memoryview(read_at(file=file, offset=avcc.offset, size=avcc.size))
+        ),
         samples=samples,
     )
 
@@ -298,7 +301,7 @@ def to_annex_b(sample: bytes) -> bytes:
     while offset + NAL_LENGTH_SIZE <= len(access_unit):
         nal_size = int.from_bytes(access_unit[offset : offset + NAL_LENGTH_SIZE], "big")
         access_unit[offset : offset + NAL_LENGTH_SIZE] = ANNEX_B_START_CODE
-        offset += NAL_LENGTH_SIZE + nal_size
+        offset += len(ANNEX_B_START_CODE) + nal_size
 
     if offset != len(access_unit):
         raise UnsupportedVideoError("An H.264 sample has an invalid NAL length")

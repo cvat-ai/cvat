@@ -14,6 +14,25 @@ class Mp4ChunkDemuxer:
     """
     Split a CVAT MP4 chunk into H.264 access units for the decoder.
 
+    Only the MP4 chunks CVAT writes are supported. CVAT writes every video chunk with
+    FFmpeg's MP4 muxer from libopenh264 constrained-baseline output, so all chunks share
+    one layout, and only sizes and counts vary:
+
+        ftyp | free | mdat | moov
+        moov
+          trak                              exactly one
+            mdia / minf / stbl
+              stsd                          one avc1 entry: avcC (+ btrt)
+              stco, stsc, stsz              where each frame lies in mdat
+              stts, stss                    not read
+            edts                            not read
+        a frame is H.264 NAL units, each prefixed by its 4-byte length
+
+    The i-th sample must be the i-th frame of the chunk. The server passes the frames to
+    the encoder in frame order, and the demuxer accepts only constrained-baseline H.264,
+    which has no B-frames, so the encoder cannot reorder them. The samples are therefore
+    stored in frame order and are yielded as stored.
+
     The sample table is parsed on construction, so an unsupported or broken chunk is
     rejected before any decoding starts. The caller owns ``file``; the demuxer never
     closes it. Iterating reads the access units lazily, starting from the first frame
@@ -22,33 +41,10 @@ class Mp4ChunkDemuxer:
 
     def __init__(self, file: BinaryIO) -> None:
         self._file = file
-
-        mdat, moov = utils.locate_top_level_boxes(file=file)
-        moov_payload = utils.read_at(file=file, offset=moov.offset, size=moov.size)
-        self._sample_table = utils.parse_moov(moov=memoryview(moov_payload), mdat=mdat)
+        self._sample_table = utils.read_sample_table(file=file)
 
     def __iter__(self) -> Generator[bytes, None, None]:
-        """
-        Yield the frames as Annex-B access units, the first one led by the SPS and PPS.
-
-        Only the MP4 chunks CVAT writes are supported. CVAT writes every video chunk with
-        FFmpeg's MP4 muxer from libopenh264 constrained-baseline output, so all chunks share
-        one layout, and only sizes and counts vary:
-
-            ftyp | free | mdat | moov           every box size is 32-bit
-            moov
-              trak                              exactly one
-                mdia / minf / stbl
-                  stsd                          one avc1 entry: avcC (+ btrt)
-                  stco, stsc, stsz              where each frame lies in mdat
-                  stts, stss                    not read
-                edts                            not read
-            a frame is H.264 NAL units, each prefixed by its 4-byte length
-
-        The encoder emits the frames in the order the server feeds them, so a CVAT chunk
-        stores its frames in display order. That is why the samples are yielded in file
-        order.
-        """
+        """Yield the frames as Annex-B access units, the first one led by the SPS and PPS."""
 
         parameter_sets = self._sample_table.parameter_sets
 
