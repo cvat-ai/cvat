@@ -395,26 +395,21 @@ export class Canvas3dViewImpl implements Canvas3dView, Listener {
         if (view === ViewType.PERSPECTIVE || !camera || !rect.width || !rect.height ||
             (position.length !== 3 && !isIssueCuboid(position)) || !position.every(Number.isFinite)) return null;
 
-        // Intersect both pointer locations with the screen-parallel plane through the anchor.
-        // Taking their difference preserves depth and the original grab offset, even in rotated views.
-        const anchor = new THREE.Vector3(...position.slice(0, 3));
-        const normal = camera.getWorldDirection(new THREE.Vector3());
+        const direction = camera.getWorldDirection(new THREE.Vector3());
+        // In an orthographic view, the pointer delta is independent of depth.
+        // Unproject on one plane so markers outside the displayed slice can move too.
+        const unproject = ([clientX, clientY]: [number, number]): THREE.Vector3 => new THREE.Vector3(
+            ((clientX - rect.left) / rect.width) * 2 - 1,
+            1 - ((clientY - rect.top) / rect.height) * 2,
+            0,
+        ).unproject(camera);
+        const delta = unproject(to).sub(unproject(from));
         // lookAt slightly perturbs cameras whose up vector is parallel to the viewing axis.
         // Keep their hidden coordinate exact so repeated drags cannot accumulate depth drift.
-        const axis = normal.toArray().findIndex((value) => Math.abs(value) > 1 - 1e-6);
-        if (axis !== -1) normal.set(0, 0, 0).setComponent(axis, 1);
-        const plane = new THREE.Plane().setFromNormalAndCoplanarPoint(normal, anchor);
-        const raycaster = new THREE.Raycaster();
-        const intersect = ([clientX, clientY]: [number, number]): THREE.Vector3 | null => {
-            raycaster.setFromCamera(new THREE.Vector2(
-                ((clientX - rect.left) / rect.width) * 2 - 1,
-                -((clientY - rect.top) / rect.height) * 2 + 1,
-            ), camera);
-            return raycaster.ray.intersectPlane(plane, new THREE.Vector3());
-        };
-        const start = intersect(from);
-        const end = intersect(to);
-        return start && end ? [...anchor.add(end.sub(start)).toArray(), ...position.slice(3)] : null;
+        const axis = direction.toArray().findIndex((value) => Math.abs(value) > 1 - 1e-6);
+        if (axis !== -1) delta.setComponent(axis, 0);
+        const moved = new THREE.Vector3(...position.slice(0, 3)).add(delta).toArray();
+        return moved.every(Number.isFinite) ? [...moved, ...position.slice(3)] : null;
     }
 
     public focusObjectByClientId(clientID: number, animate: boolean = true): void {
