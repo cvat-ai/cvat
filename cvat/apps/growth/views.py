@@ -88,10 +88,13 @@ class UpdatesViewSet(viewsets.ViewSet):
     )
     @action(detail=False, methods=["GET"])
     def summary(self, request: Request) -> Response:
-        serializer = UpdatesSummarySerializer(
-            updates_service.summary(UserGrowthData.for_user(request.user))
-        )
-        return Response(serializer.data)
+        content = updates_service.summary(UserGrowthData.for_user(request.user))
+        data = UpdatesSummarySerializer(content).data
+        try:
+            UpdatesSummarySerializer(data=data).is_valid(raise_exception=True)
+        except ValidationError as exc:
+            raise updates_service.UpdatesUnavailable() from exc
+        return Response(data)
 
     @extend_schema(
         summary="Acknowledge displayed updates for the current user",

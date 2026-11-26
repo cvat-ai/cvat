@@ -115,7 +115,7 @@ class ReleaseNoteSerializer(serializers.Serializer):
     url = serializers.URLField()
     markdown_url = serializers.URLField(source="markdownURL")
     has_edition_sections = serializers.BooleanField(source="hasEditionSections")
-    highlights = serializers.ListField(child=serializers.CharField())
+    highlights = serializers.ListField(child=serializers.CharField(allow_blank=True))
 
 
 class AnnouncementPreviewSerializer(serializers.Serializer):

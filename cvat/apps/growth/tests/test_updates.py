@@ -150,6 +150,21 @@ class UpdatesApiTestCase(UpdatesApiTestBase):
         for item in (response.data, response.data["state"], release, announcement):
             self.assertTrue(all(key == key.lower() for key in item), item)
 
+    def test_invalid_summary_url_returns_service_unavailable(self) -> None:
+        self.announcement["imageURL"] = "https://bad host.example/preview.png"
+
+        response = self.client.get("/api/whats-new/summary")
+
+        self.assertEqual(response.status_code, HTTPStatus.SERVICE_UNAVAILABLE)
+
+    def test_release_summary_allows_blank_description_as_fallback_highlight(self) -> None:
+        self.release.update(description="", highlights=[])
+
+        response = self.client.get("/api/whats-new/summary")
+
+        self.assertEqual(response.status_code, HTTPStatus.OK)
+        self.assertEqual(response.data["latest_release"]["highlights"], [""])
+
     def test_new_user_starts_from_registration_day_and_has_empty_release_version(self) -> None:
         response = self.client.get("/api/whats-new/summary")
 
