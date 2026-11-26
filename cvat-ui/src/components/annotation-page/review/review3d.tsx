@@ -30,6 +30,7 @@ import HiddenIssueLabel, { getIssueLabelPosition } from './hidden-issue-label';
 import IssueDialog from './issue-dialog';
 
 const DRAFT_ISSUE_ID = 0;
+const ISSUE_DRAG_THRESHOLD = 3;
 const OVERLAY_GAP = 15;
 const FALLBACK_INSET_TOP = 24;
 
@@ -59,7 +60,7 @@ interface MarkerDrag {
     position: number[];
     moved: boolean;
     corner: number | null;
-    suppressClickOnRelease: boolean;
+    fromCanvas: boolean;
 }
 
 function getPaneSignature({ view, canvasRect, expanded }: IssuePane): string {
@@ -124,6 +125,7 @@ function IssueOverlays({ canvas }: { canvas: Canvas3d }): JSX.Element {
     const [hoveredResolvedIssueId, setHoveredResolvedIssueId] = useState<number | null>(null);
     const [preview, setPreview] = useState<{ drag: MarkerDrag; position: number[] } | null>(null);
     const dragRef = useRef<MarkerDrag | null>(null);
+    const completedCanvasPress = useRef<{ view: ViewType; issueId: number | null } | null>(null);
     const navigationOwner = useRef<MarkerDrag | null>(null);
     const suppressClick = useRef({ id: -1, until: 0 });
     const isMounted = useIsMounted();
@@ -204,7 +206,7 @@ function IssueOverlays({ canvas }: { canvas: Canvas3d }): JSX.Element {
             position: [...origin],
             moved: false,
             corner,
-            suppressClickOnRelease: corner === null && event.currentTarget !== canvas.html()[view],
+            fromCanvas: event.currentTarget === canvas.html()[view],
         };
         dragRef.current = drag;
         navigationOwner.current = drag;
@@ -224,7 +226,7 @@ function IssueOverlays({ canvas }: { canvas: Canvas3d }): JSX.Element {
             const drag = dragRef.current;
             if (!drag) return;
             dragRef.current = null;
-            if (drag.moved && drag.suppressClickOnRelease) {
+            if (drag.moved && drag.corner === null && !drag.fromCanvas) {
                 suppressClick.current = { id: drag.id, until: Date.now() + 250 };
             }
             try {
@@ -240,7 +242,8 @@ function IssueOverlays({ canvas }: { canvas: Canvas3d }): JSX.Element {
         const move = (event: PointerEvent): void => {
             const drag = dragRef.current;
             if (!drag || event.pointerId !== drag.pointerId) return;
-            if (!drag.moved && Math.hypot(event.clientX - drag.start[0], event.clientY - drag.start[1]) < 3) return;
+            if (!drag.moved &&
+                Math.hypot(event.clientX - drag.start[0], event.clientY - drag.start[1]) < ISSUE_DRAG_THRESHOLD) return;
             event.preventDefault();
             const rect = canvas.html()[drag.view].getBoundingClientRect();
             const destination: [number, number] = [
@@ -256,7 +259,14 @@ function IssueOverlays({ canvas }: { canvas: Canvas3d }): JSX.Element {
             }
         };
         const up = (event: PointerEvent): void => {
-            if (event.pointerId === dragRef.current?.pointerId) finishDrag(false);
+            const drag = dragRef.current;
+            if (!drag || event.pointerId !== drag.pointerId) return;
+            if (drag.fromCanvas && event.target === canvas.html()[drag.view]) {
+                const click = !drag.moved &&
+                    Math.hypot(event.clientX - drag.start[0], event.clientY - drag.start[1]) < ISSUE_DRAG_THRESHOLD;
+                completedCanvasPress.current = { view: drag.view, issueId: click ? drag.id : null };
+            }
+            finishDrag(false);
         };
         const cancel = (): void => { finishDrag(true); };
         const onKeyDown = (event: KeyboardEvent): void => {
@@ -279,6 +289,7 @@ function IssueOverlays({ canvas }: { canvas: Canvas3d }): JSX.Element {
             window.removeEventListener('blur', cancel);
             window.removeEventListener('keydown', onKeyDown, true);
             dragRef.current = null;
+            completedCanvasPress.current = null;
             setPreview(null);
             if (navigationOwner.current) releaseNavigation(navigationOwner.current);
         };
@@ -306,13 +317,13 @@ function IssueOverlays({ canvas }: { canvas: Canvas3d }): JSX.Element {
         return () => perspective.removeEventListener('canvas.issueregiondrawn', drawn as EventListener);
     }, [canvas, dispatch, startDraft]);
 
-    const openIssue = (issue: Issue): void => {
+    const openIssue = useCallback((issue: Issue): void => {
         if (suppressClick.current.id === issue.id && Date.now() < suppressClick.current.until) return;
         if (Object.values(ViewType).some((view) => !canvas.projectPosition(issue.position, view))) {
             canvas.focusPosition(issue.position);
         }
         dispatch(reviewActions.selectIssue(issue.id));
-    };
+    }, [canvas, dispatch]);
 
     useEffect(() => {
         if (!ready) return undefined;
@@ -373,6 +384,7 @@ function IssueOverlays({ canvas }: { canvas: Canvas3d }): JSX.Element {
             const click = (event: MouseEvent): void => onClick(view, event);
             const contextMenu = (event: MouseEvent): void => onContextMenu(view, event);
             const regionDown = (event: PointerEvent): void => {
+                completedCanvasPress.current = null;
                 if (workspace !== Workspace.REVIEW || view === ViewType.PERSPECTIVE || event.button !== 0 ||
                     activeControl !== ActiveControl.CURSOR || creating || fetching || navigationBlocked) return;
                 const id = canvas.pickIssueCuboid(event.clientX, event.clientY, view);
@@ -380,8 +392,17 @@ function IssueOverlays({ canvas }: { canvas: Canvas3d }): JSX.Element {
                 event.stopImmediatePropagation();
                 beginDrag(event, id, view);
             };
-            const dismissOnCanvasClick = (event: MouseEvent): void => {
-                if (activeControl !== ActiveControl.CURSOR || dragged) return;
+            const onRegionClick = (event: MouseEvent): void => {
+                if (activeControl !== ActiveControl.CURSOR) return;
+                const press = completedCanvasPress.current;
+                completedCanvasPress.current = null;
+                if (press?.view === view) {
+                    event.stopImmediatePropagation();
+                    const issue = press.issueId === null ? undefined : visibleIssuesById.get(press.issueId);
+                    if (issue && !newPosition) openIssue(issue);
+                    return;
+                }
+                if (dragged) return;
                 if (isIssueCuboid(newPosition)) {
                     event.stopImmediatePropagation();
                     return;
@@ -395,14 +416,14 @@ function IssueOverlays({ canvas }: { canvas: Canvas3d }): JSX.Element {
             views[view].addEventListener('click', click, true);
             views[view].addEventListener('dblclick', onDoubleClick, true);
             views[view].addEventListener('pointerdown', regionDown, true);
-            views[view].addEventListener('click', dismissOnCanvasClick, true);
+            views[view].addEventListener('click', onRegionClick, true);
             views[view].addEventListener('contextmenu', contextMenu, true);
             return () => {
                 views[view].removeEventListener('mousedown', down, true);
                 views[view].removeEventListener('click', click, true);
                 views[view].removeEventListener('dblclick', onDoubleClick, true);
                 views[view].removeEventListener('pointerdown', regionDown, true);
-                views[view].removeEventListener('click', dismissOnCanvasClick, true);
+                views[view].removeEventListener('click', onRegionClick, true);
                 views[view].removeEventListener('contextmenu', contextMenu, true);
             };
         });
@@ -413,7 +434,7 @@ function IssueOverlays({ canvas }: { canvas: Canvas3d }): JSX.Element {
         };
     }, [
         canvas, ready, activeControl, objects, workspace, navigationBlocked,
-        visibleIssuesById, newPosition, creating, fetching, activeIssue, startDraft,
+        visibleIssuesById, newPosition, creating, fetching, activeIssue, startDraft, openIssue,
     ]);
 
     useEffect(() => {

@@ -395,12 +395,19 @@ context('3D spatial review', { browser: '!firefox' }, () => {
             expect(response.body.object_id).to.equal(null);
             expect(response.body.object_type).to.equal(null);
         });
-        ['perspective', 'topview'].forEach((view) => {
+        ['perspective', 'topview', 'sideview', 'frontview'].forEach((view) => {
             cy.get(`.cvat-canvas3d-${view} canvas`).should(($canvas) => {
                 expect($canvas[0].scene.getObjectByName(`cvat-issue-cuboid-${issueId}`)).to.exist;
             }).then(($canvas) => issueCuboidBodyPoint($canvas[0], issueId))
                 .then(({ canvas, x, y }) => cy.wrap(canvas).realClick({ x, y }));
-            cy.get('.cvat-issue-dialog').should('not.exist');
+            if (view === 'perspective') {
+                cy.get('.cvat-issue-dialog').should('not.exist');
+            } else {
+                cy.get('.cvat-issue-dialog').should('contain.text', 'Review this missing object region');
+                cy.get('.cvat-canvas3d-issue-resize-handle').should('exist');
+                cy.get('.cvat-issue-dialog-header [aria-label="close"]').click();
+                cy.get('.cvat-issue-dialog').should('not.exist');
+            }
         });
         cy.then(() => cy.get(`#cvat-hidden-issue-label-${issueId}-perspective`).click());
         cy.get('.cvat-issue-dialog').should('contain.text', 'Review this missing object region');
