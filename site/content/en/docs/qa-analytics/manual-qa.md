@@ -13,9 +13,7 @@ CVAT introduces a specialized **Review mode**, designed to streamline the
 validation of annotations by pinpointing errors or discrepancies in annotation.
 
 {{% alert title="Note" color="primary" %}}
-For 3D tasks, **Review mode** supports issue pins, optional object or track links,
-and frame ranges in the point cloud.
-See [Reviewing 3D tasks](#reviewing-3d-tasks).
+The **Review mode** is not applicable for 3D tasks.
 {{% /alert %}}
 
 See:
@@ -194,65 +192,6 @@ In the Objects toolbar, only the first and last comments will be displayed
 ![Issue comment example](/images/issue_comments.png)
 
 You can copy and paste comments text.
-
-## Reviewing 3D tasks
-
-1. Open a 3D job and select **Review** in the workspace selector.
-2. To report a location, click **Open an issue** in the left toolbar (or press
-   **N**), then click a cuboid surface or a visible point-cloud point in **Top**,
-   **Side**, or **Front**. This tool creates an unlinked issue point, even when you
-   click a cuboid. It cannot place points in **Perspective**. You can still rotate
-   the perspective scene while the tool is active. Dragging and clicking empty
-   background do not place an issue.
-3. To report an annotation, right-click the cuboid directly in any 3D view and
-   select **Open an issue ...** or a quick issue. The issue is linked to that
-   cuboid's shape or track and placed at its center. A previously selected object
-   does not determine the target. Right-clicking empty space does not open an
-   object issue menu. Unsaved linked annotations are saved when the issue is submitted.
-4. Enter a description and click **Submit**. There is no object selector or frame
-   range to configure. Every new issue applies only to the current frame, including
-   issues linked to tracks. Its marker appears at the same XYZ location in the
-   perspective, top, side, and front views on that frame.
-5. Click an issue label to open its discussion on the perspective canvas or in
-   an expanded 3D view. You can add comments, resolve the issue, or reopen it.
-   Hover over an item in the **Issues** tab to highlight its location; click it to
-   focus the issue. Opening a linked issue selects its cuboid in all four views
-   when it is available and visible on the current frame. **Select** in the
-   discussion selects and focuses the linked annotation.
-   Cuboids with unresolved linked issues have a translucent red highlight.
-   Hovering over an issue in the sidebar turns its cuboid's highlight yellow.
-   The fill uses one color and keeps the point cloud visible.
-   Resolving the last open issue removes the highlight;
-   hovering over a resolved issue's label temporarily shows it again. The issue
-   visibility controls also apply to this highlight. Unlinked issue points do not
-   highlight annotations.
-6. New 3D issues save the perspective camera view when they are created,
-   including quick issues. Click **Restore review view** in the discussion to
-   restore that camera position, viewing angle, and zoom. Moving the marker does
-   not replace the saved view. Older issues without a saved view do not show this button.
-7. Use the **Issues** tab arrows to jump to previous or next frames containing
-   issues. The visibility buttons hide all pins or hide resolved issues.
-8. Drag an issue's point marker or label in **Top**, **Side**, or **Front** to
-   reposition it along the view plane, keeping its depth in that view. All views
-   update together. Release to save the position, or press **Escape** to cancel.
-   You can also adjust a new marker before submitting its description. Moving a
-   marker does not move the annotation or change its object link.
-
-An expanded pane shows only its own issue markers and discussion. Expanding a
-camera image hides the 3D issue overlays. Unfinished comments and issue descriptions
-are retained when expanding and restoring views.
-
-Alongside incorrect position and attribute, 3D quick issues offer
-**incorrect rotation** and **incorrect dimensions**. Tracks also offer
-**incorrect track identity**. If the cuboid's label has attributes, use
-**Quick issue: specific attribute** to include an attribute's name in the first
-comment, for example, `Wrong attribute: visibility`. These presets use the same
-comments, resolve, and reopen workflow as other issues; add a comment to explain
-the expected correction.
-
-Pins keep their XYZ location when annotations are edited. If a linked annotation
-is deleted, its discussion and marker remain available. Switch to **Standard 3D**
-to edit annotations; existing issues and comments remain available there.
 
 ## Manual QA complete video tutorial
 
