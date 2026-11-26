@@ -201,7 +201,7 @@ export class Canvas3dViewImpl implements Canvas3dView, Listener {
             top: {
                 position: [0, 0, 8],
                 lookAt: [0, 0, 0],
-                up: [0, 0, 1],
+                up: [0, 1, 0],
             },
             side: {
                 position: [0, -8, 0],
