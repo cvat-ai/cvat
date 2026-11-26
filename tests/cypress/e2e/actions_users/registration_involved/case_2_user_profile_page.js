@@ -6,7 +6,7 @@
 /// <reference types="cypress" />
 
 import {
-    toSnakeCase, aMonthFrom, aYearFrom, parseDatetime, format, prettify,
+    toSnakeCase, aMonthFrom, aYearFrom, parseDatetime, format,
 } from '../../../support/utils';
 import { ClipboardCtx } from '../../../support/const';
 import { projectSpec } from '../../../support/const_project';
@@ -172,18 +172,10 @@ context('User page, password change, token handling', () => {
                         lastName: lastNameNew,
                         username: usernameNew,
                     });
-                    assert(
-                        Cypress._.isEqual(req.body, expectedFields),
-                        'Unexpected request fields:\n' +
-                        `${prettify(req.body)} !== ${prettify(expectedFields)}`,
-                    );
+                    assert.deepEqual(req.body, expectedFields, 'Unexpected request fields');
                     req.continue((res) => {
                         const resFields = Cypress._.pick(res.body, ['first_name', 'last_name', 'username']);
-                        assert(
-                            Cypress._.isEqual(expectedFields, resFields),
-                            'Unexpected response fields:\n' +
-                            `${prettify(resFields)} !== ${prettify(expectedFields)}`,
-                        );
+                        assert.deepEqual(resFields, expectedFields, 'Unexpected response fields');
                     });
                 }).as('updateFirstLastName');
 

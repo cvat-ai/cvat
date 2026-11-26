@@ -223,7 +223,7 @@ context('Basic markdown pipeline', () => {
                 guideTextarea().type('Unsaved markdown text');
 
                 cy.go('back');
-                cy.get('@confirm').then((confirm) => {
+                cy.get('@confirm').should((confirm) => {
                     expect(confirm.callCount).to.equal(1);
                     expect(confirm.firstCall.args[0]).to.equal(confirmationMessage);
                 });
