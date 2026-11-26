@@ -152,12 +152,13 @@ class UpdatesApiTestCase(UpdatesApiTestBase):
         for item in (response.data, response.data["state"], release, announcement):
             self.assertTrue(all(key == key.lower() for key in item), item)
 
-    def test_invalid_summary_url_returns_service_unavailable(self) -> None:
+    def test_invalid_summary_url_returns_bad_gateway(self) -> None:
         self.announcement["imageURL"] = "https://bad host.example/preview.png"
 
         response = self.client.get("/api/whats-new/summary")
 
-        self.assertEqual(response.status_code, HTTPStatus.SERVICE_UNAVAILABLE)
+        self.assertEqual(response.status_code, HTTPStatus.BAD_GATEWAY)
+        self.assertEqual(response.data, {"detail": HTTPStatus.BAD_GATEWAY.phrase})
 
     def test_release_summary_allows_blank_description_as_fallback_highlight(self) -> None:
         self.release.update(description="", highlights=[])
@@ -332,9 +333,12 @@ class UpdatesApiTestCase(UpdatesApiTestBase):
 
     @override_settings(CVAT_NEWS_EDITION="invalid/edition")
     def test_invalid_edition_configuration_does_not_fetch_content(self) -> None:
-        response = self.client.get("/api/whats-new/summary")
+        with self.assertLogs("cvat.apps.growth.views", level="ERROR") as logs:
+            response = self.client.get("/api/whats-new/summary")
 
         self.assertEqual(response.status_code, HTTPStatus.SERVICE_UNAVAILABLE)
+        self.assertEqual(response.data, {"detail": HTTPStatus.SERVICE_UNAVAILABLE.phrase})
+        self.assertIn("CVAT_NEWS_EDITION must be a lowercase edition identifier.", logs.output[0])
         self.session.get.assert_not_called()
 
     def test_invalid_content_edition_keeps_announcement_state_unread(self) -> None:
@@ -548,6 +552,22 @@ class UpdatesApiTestCase(UpdatesApiTestBase):
         self.assertEqual(response.status_code, HTTPStatus.OK)
         self.assertEqual(response.data["last_seen_release_notes_version"], "")
         self.assertFalse(response.data["promotion_notifications_allowed"])
+
+    def test_release_acknowledgement_returns_generic_upstream_errors(self) -> None:
+        for error_type, status in (
+            (requests.ConnectionError, HTTPStatus.BAD_GATEWAY),
+            (requests.Timeout, HTTPStatus.GATEWAY_TIMEOUT),
+        ):
+            with self.subTest(error_type=error_type):
+                self.session.get.side_effect = error_type("Upstream connection details")
+                with self.assertLogs("cvat.apps.growth.views", level="ERROR") as logs:
+                    response = self.client.post(
+                        "/api/whats-new/acknowledge", {"release_version": "2.0.0"}, format="json"
+                    )
+
+                self.assertEqual(response.status_code, status)
+                self.assertEqual(response.data, {"detail": status.phrase})
+                self.assertIn(error_type.__name__, logs.output[0])
 
     def test_cannot_acknowledge_an_unpublished_release(self) -> None:
         response = self.client.post(

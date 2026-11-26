@@ -2,6 +2,7 @@
 #
 # SPDX-License-Identifier: MIT
 
+from http import HTTPStatus
 from typing import Any
 
 from django.conf import settings
@@ -10,10 +11,11 @@ from django.db.models import QuerySet
 from drf_spectacular.utils import extend_schema, extend_schema_view
 from rest_framework import mixins, viewsets
 from rest_framework.decorators import action
-from rest_framework.exceptions import NotFound, ValidationError
+from rest_framework.exceptions import APIException, NotFound, ValidationError
 from rest_framework.request import Request
 from rest_framework.response import Response
 
+from cvat.apps.engine.log import ServerLogManager
 from cvat.apps.engine.mixins import PartialUpdateModelMixin
 
 from . import updates as updates_service
@@ -25,6 +27,8 @@ from .serializers import (
     UpdatesSummarySerializer,
     UserGrowthDataSerializer,
 )
+
+slogger = ServerLogManager(__name__)
 
 
 @extend_schema(tags=["growth"])
@@ -75,6 +79,14 @@ class UpdatesViewSet(viewsets.ViewSet):
         if not settings.CVAT_NEWS_ENABLED:
             raise NotFound()
 
+    def handle_exception(self, exc: Exception) -> Response:
+        if isinstance(exc, updates_service.UpdatesUnavailable):
+            slogger.glob.error("What's New request failed: %s", exc)
+            api_error = APIException(exc.status_code.phrase)
+            api_error.status_code = exc.status_code
+            exc = api_error
+        return super().handle_exception(exc)
+
     def finalize_response(
         self, request: Request, response: Response, *args: Any, **kwargs: Any
     ) -> Response:
@@ -93,7 +105,9 @@ class UpdatesViewSet(viewsets.ViewSet):
         try:
             UpdatesSummarySerializer(data=data).is_valid(raise_exception=True)
         except ValidationError as exc:
-            raise updates_service.UpdatesUnavailable() from exc
+            raise updates_service.UpdatesUnavailable(
+                f"Invalid What's New summary: {exc.detail}", status_code=HTTPStatus.BAD_GATEWAY
+            ) from exc
         return Response(data)
 
     @extend_schema(

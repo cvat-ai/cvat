@@ -23,7 +23,6 @@ from django.core.validators import URLValidator
 from django.utils.dateparse import parse_datetime
 from django.utils.module_loading import import_string
 from django.utils.timezone import now
-from rest_framework.exceptions import APIException
 
 from cvat import VERSION
 from cvat.apps.engine.log import ServerLogManager
@@ -51,9 +50,15 @@ DocumentT = TypeVar("DocumentT")
 _validate_web_url = URLValidator(schemes=["http", "https"])
 
 
-class UpdatesUnavailable(APIException):
-    status_code = HTTPStatus.SERVICE_UNAVAILABLE
-    default_detail = "What's New is temporarily unavailable."
+class UpdatesUnavailable(Exception):
+    def __init__(
+        self,
+        message: str = "What's New is temporarily unavailable.",
+        *,
+        status_code: HTTPStatus = HTTPStatus.SERVICE_UNAVAILABLE,
+    ) -> None:
+        super().__init__(message)
+        self.status_code = status_code
 
 
 def version_parts(value: Any) -> tuple[int, int, int]:
@@ -79,14 +84,18 @@ def edition() -> str:
 
 def _base_url() -> str:
     value = settings.CVAT_NEWS_SOURCE_URL
-    parsed = urlsplit(value)
+    try:
+        parsed = urlsplit(value) if isinstance(value, str) else None
+    except ValueError:
+        parsed = None
     if (
-        parsed.scheme not in ("http", "https")
+        parsed is None
+        or parsed.scheme not in ("http", "https")
         or not parsed.netloc
         or parsed.username
         or parsed.password
     ):
-        raise UpdatesUnavailable("The documentation source is not configured correctly.")
+        raise UpdatesUnavailable("CVAT_NEWS_SOURCE_URL must be an HTTP(S) URL without credentials.")
     return value.rstrip("/") + "/"
 
 
@@ -113,7 +122,7 @@ def _document(
             if on_stale:
                 on_stale()
             return saved["data"]
-        raise UpdatesUnavailable()
+        raise UpdatesUnavailable(f"What's New document {path} is already being refreshed.")
 
     try:
         headers = {}
@@ -148,8 +157,9 @@ def _document(
                 return data
     except (requests.RequestException, ValueError, TypeError, KeyError) as exc:
         reason = type(exc).__name__ if isinstance(exc, requests.RequestException) else str(exc)
-        slogger.glob.warning("Could not refresh What's New document %s: %s", path, reason)
+        message = f"Could not refresh What's New document {path}: {reason}"
         if saved:
+            slogger.glob.warning("%s", message)
             # Back off briefly without discarding the last valid document.
             saved["checked_at"] = time.time() - max(0, settings.CVAT_NEWS_CACHE_TTL) + RETRY_DELAY
             saved["stale"] = True
@@ -157,7 +167,12 @@ def _document(
             if on_stale:
                 on_stale()
             return saved["data"]
-        raise UpdatesUnavailable() from None
+        status_code = (
+            HTTPStatus.GATEWAY_TIMEOUT
+            if isinstance(exc, requests.Timeout)
+            else HTTPStatus.BAD_GATEWAY
+        )
+        raise UpdatesUnavailable(message, status_code=status_code) from None
     finally:
         cache.delete(lock_key)
 
@@ -364,12 +379,13 @@ def external_announcements(*, on_stale: OnStale | None = None) -> list[Announcem
     try:
         load = cast(AnnouncementProvider, import_string(provider))
     except (ImportError, AttributeError):
-        slogger.glob.error("Could not load the configured announcement provider")
-        raise UpdatesUnavailable() from None
+        raise UpdatesUnavailable("Could not load the configured announcement provider.") from None
     items = load(edition=edition(), limit=ANNOUNCEMENT_LIMIT, on_stale=on_stale)
     if not isinstance(items, list):
-        slogger.glob.warning("The announcement provider returned an invalid feed")
-        raise UpdatesUnavailable()
+        raise UpdatesUnavailable(
+            "The announcement provider returned an invalid feed.",
+            status_code=HTTPStatus.BAD_GATEWAY,
+        )
 
     previews = []
     for item in items:
@@ -411,7 +427,8 @@ def announcement_feed() -> tuple[list[AnnouncementPreview], list[AnnouncementSou
     ):
         try:
             items = load(on_stale=lambda: unavailable_sources.add(source))
-        except UpdatesUnavailable:
+        except UpdatesUnavailable as exc:
+            slogger.glob.warning("Could not load %s announcements: %s", source, exc)
             unavailable_sources.add(source)
             continue
         for item in items:
@@ -465,7 +482,8 @@ def summary(growth_data: UserGrowthData) -> dict[str, Any]:
         result["latest_announced_release"] = next(
             (release for release in releases if release["announce"]), None
         )
-    except UpdatesUnavailable:
+    except UpdatesUnavailable as exc:
+        slogger.glob.warning("Could not load release notes: %s", exc)
         unavailable_sources.add(AnnouncementSource.HUGO)
     result["announcements"], announcement_unavailable_sources = announcement_feed()
     unavailable_sources.update(announcement_unavailable_sources)
