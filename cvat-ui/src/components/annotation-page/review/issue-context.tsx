@@ -25,19 +25,17 @@ export default function IssueContext({ issue }: {
     if (!is3D || !issue.view || !(canvas instanceof Canvas3d)) return null;
 
     return (
-        <div className='cvat-issue-context'>
-            <Button
-                className='cvat-issue-restore-view'
-                type='link'
-                size='small'
-                disabled={!ready || activeControl !== ActiveControl.CURSOR || navigationBlocked}
-                onClick={(event) => {
-                    event.stopPropagation();
-                    canvas.restoreReviewView(issue.view);
-                }}
-            >
-                Restore review view
-            </Button>
-        </div>
+        <Button
+            className='cvat-issue-restore-view'
+            type='link'
+            size='small'
+            disabled={!ready || activeControl !== ActiveControl.CURSOR || navigationBlocked}
+            onClick={(event) => {
+                event.stopPropagation();
+                canvas.restoreReviewView(issue.view);
+            }}
+        >
+            Restore review view
+        </Button>
     );
 }

@@ -152,9 +152,10 @@ export default function IssueDialog(props: Props): JSX.Element {
             ref={ref}
             className='cvat-issue-dialog'
         >
-            <Row className='cvat-issue-dialog-header' justify='space-between'>
-                <Col>
+            <Row className='cvat-issue-dialog-header' justify='space-between' wrap={false}>
+                <Col className='cvat-issue-dialog-title'>
                     <Text strong>{typeof id === 'number' ? `Issue #${id}` : 'Issue'}</Text>
+                    <IssueContext issue={issue} />
                 </Col>
                 <Col>
                     <CVATTooltip title='Collapse the chat'>
@@ -162,32 +163,22 @@ export default function IssueDialog(props: Props): JSX.Element {
                     </CVATTooltip>
                 </Col>
             </Row>
-            <IssueContext issue={issue} />
-            <Row className='cvat-issue-dialog-chat' justify='start'>
-                {
-                    lines.length > 0 ? <Col style={{ display: 'block' }}>{lines}</Col> : (
-                        <Col>No comments found</Col>
-                    )
-                }
-            </Row>
-            <Row className='cvat-issue-dialog-input' justify='start'>
-                <Col span={24}>
-                    <Input
-                        placeholder='Type a comment here..'
-                        value={currentText}
-                        onChange={(event: React.ChangeEvent<HTMLInputElement>) => {
-                            setCurrentText(event.target.value);
-                        }}
-                        onPressEnter={() => {
-                            if (currentText) {
-                                comment(currentText);
-                                setCurrentText('');
-                            }
-                        }}
-                    />
-                </Col>
-            </Row>
-            <Row className='cvat-issue-dialog-footer' justify='space-between'>
+            <div className='cvat-issue-dialog-chat'>{lines.length ? lines : 'No comments found'}</div>
+            <Input
+                className='cvat-issue-dialog-input'
+                placeholder='Type a comment here…'
+                value={currentText}
+                onChange={(event: React.ChangeEvent<HTMLInputElement>) => {
+                    setCurrentText(event.target.value);
+                }}
+                onPressEnter={() => {
+                    if (currentText) {
+                        comment(currentText);
+                        setCurrentText('');
+                    }
+                }}
+            />
+            <Row className='cvat-issue-dialog-footer' justify='space-between' align='middle'>
                 <Col>
                     <Button type='link' className='cvat-issue-dialog-remove-button' danger onClick={onDeleteIssue}>
                         Remove

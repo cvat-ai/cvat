@@ -48,19 +48,6 @@
     width: $grid-unit-size * 40;
 }
 
-.cvat-issue-context {
-    display: flex;
-    flex-direction: column;
-    margin-bottom: $grid-unit-size;
-
-    .cvat-issue-restore-view {
-        padding: 0;
-        text-align: left;
-        height: auto;
-        white-space: normal;
-    }
-}
-
 .cvat-conflict-label {
     position: absolute;
     min-width: 2 * $grid-unit-size;
@@ -93,48 +80,49 @@
     pointer-events: auto;
     background: $background-color-2;
     padding: $grid-unit-size;
+    display: flex;
+    flex-direction: column;
+    gap: $grid-unit-size;
     transform-origin: top left;
     box-shadow: $box-shadow-base;
     border-radius: $border-radius-base;
 
+    .cvat-issue-dialog-title {
+        display: flex;
+        flex-direction: column;
+        align-items: flex-start;
+        gap: $grid-unit-size * 0.25;
+        min-width: 0;
+    }
+
+    .cvat-issue-restore-view,
+    .cvat-issue-dialog-remove-button {
+        padding-inline: 0;
+        border: 0;
+    }
+
+    .cvat-issue-restore-view {
+        height: auto;
+        text-align: left;
+        white-space: normal;
+    }
+
     .cvat-issue-dialog-chat {
-        > div {
-            width: 100%;
-        }
-
-        .ant-comment {
-            user-select: auto;
-            padding: $grid-unit-size;
-            padding-bottom: 0;
-
-            .ant-comment-content {
-                line-height: 14px;
-            }
-
-            .ant-comment-avatar {
-                margin: 0;
-            }
-        }
-
-        user-select: all;
         background: $background-color-1;
         padding: $grid-unit-size;
+        border-radius: $border-radius-base;
         max-height: $grid-unit-size * 45;
         overflow-y: auto;
-        width: 100%;
-    }
+        overflow-wrap: anywhere;
+        user-select: text;
 
-    .cvat-issue-dialog-input {
-        background: $background-color-1;
-        margin-top: $grid-unit-size;
-    }
+        .ant-comment + .ant-comment {
+            margin-top: $grid-unit-size;
+        }
 
-    .cvat-issue-dialog-footer {
-        margin-top: $grid-unit-size;
-    }
-
-    .ant-comment > .ant-comment-inner {
-        padding: 0;
+        .ant-comment > .ant-comment-inner {
+            padding: 0;
+        }
     }
 
     &:hover {
