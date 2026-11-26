@@ -12,7 +12,7 @@ export interface QuickIssuePreset {
     message: string;
 }
 
-export interface QuickIssueGroup {
+interface QuickIssueGroup {
     key: string;
     label: string;
     items: QuickIssuePreset[];

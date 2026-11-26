@@ -643,7 +643,6 @@ function IssueOverlays({ canvas }: { canvas: Canvas3d }): JSX.Element {
                                                     className='cvat-canvas3d-issue-resize-handle'
                                                     data-issue-id={id}
                                                     data-view={view}
-                                                    data-corner={index}
                                                     style={{ left: corner[0], top: corner[1] }}
                                                     aria-label={`Resize issue region in ${view} view`}
                                                     title='Drag to resize the issue region. Press Escape to cancel.'

@@ -13,7 +13,6 @@ import { ensureError } from 'utils/error-handling';
 const cvat = getCore();
 
 export enum ReviewActionTypes {
-    CREATE_ISSUE = 'CREATE_ISSUE',
     START_ISSUE = 'START_ISSUE',
     FINISH_ISSUE_SUCCESS = 'FINISH_ISSUE_SUCCESS',
     FINISH_ISSUE_FAILED = 'FINISH_ISSUE_FAILED',
@@ -43,7 +42,6 @@ export enum ReviewActionTypes {
 }
 
 export const reviewActions = {
-    createIssue: () => createAction(ReviewActionTypes.CREATE_ISSUE, {}),
     startIssue: (
         position: number[], source = NewIssueSource.ISSUE_TOOL,
         view: IssueView | null = null,

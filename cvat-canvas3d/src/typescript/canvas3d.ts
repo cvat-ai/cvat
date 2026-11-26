@@ -219,7 +219,7 @@ export {
 };
 
 export type {
-    ViewsDOM, PickResult, CameraCalibration, CameraRayData, IssueCuboid, IssueSprite,
+    ViewsDOM, CameraCalibration, CameraRayData, IssueSprite,
 };
 
 export { isIssueCuboid, isIssuePoint } from './issueCuboid';

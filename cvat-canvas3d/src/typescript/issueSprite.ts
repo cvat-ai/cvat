@@ -82,7 +82,7 @@ export class IssueSprites {
             const key = `${data.view}:${data.id}:${data.label ? 'label' : 'point'}`;
             keys.add(key);
             const signature = JSON.stringify([
-                pixelRatio, data.width, data.height, data.highlighted,
+                pixelRatio, data.width, data.height, !data.label && data.highlighted,
                 data.label?.text, data.label?.resolved, data.label?.font,
             ]);
             let entry = this.sprites.get(key);

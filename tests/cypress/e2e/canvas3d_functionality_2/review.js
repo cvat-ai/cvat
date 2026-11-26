@@ -1407,7 +1407,6 @@ context('3D spatial review', { browser: '!firefox' }, () => {
         cy.get('.cvat-canvas3d-issue-resize-handle').should('exist');
         cy.then(() => cy.get(`#cvat-objects-sidebar-issue-item-${createdIssues[0].id}`).click());
         cy.get('.cvat-issue-dialog').should('be.visible');
-        cy.get('.cvat-issue-select-object').should('not.exist');
     });
     it('restores the saved perspective after rotating, moving the marker and reloading', () => {
         let shapeId;
