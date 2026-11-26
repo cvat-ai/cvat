@@ -113,7 +113,6 @@ class ReleaseNoteSerializer(serializers.Serializer):
     announce = serializers.BooleanField()
     editions = serializers.ListField(child=serializers.RegexField(EDITION_PATTERN))
     url = serializers.URLField()
-    markdown_url = serializers.URLField(source="markdownURL")
     has_edition_sections = serializers.BooleanField(source="hasEditionSections")
     highlights = serializers.ListField(child=serializers.CharField(allow_blank=True))
 
@@ -135,7 +134,6 @@ class AnnouncementPreviewSerializer(serializers.Serializer):
         help_text="Call-to-action button label for opening the announcement URL.",
     )
     label = serializers.CharField(required=False)
-    markdown_url = serializers.URLField(source="markdownURL", required=False)
 
 
 @extend_schema_serializer(many=False)

@@ -36,7 +36,6 @@ class AnnouncementPreview(TypedDict):
     cta: NotRequired[str]
     label: NotRequired[str]
     source: NotRequired[AnnouncementSource]
-    markdownURL: NotRequired[str]
 
 
 class AnnouncementProvider(Protocol):

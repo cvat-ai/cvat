@@ -131,13 +131,15 @@ class UpdatesApiTestCase(UpdatesApiTestBase):
             datetime.fromisoformat(release["published_at"]),
             datetime.fromisoformat(self.release["publishedAt"]),
         )
-        self.assertEqual(release["markdown_url"], self.release["markdownURL"])
+        self.assertEqual(release["url"], "https://docs.example.com/release-notes/2.0.0/")
+        self.assertNotIn("markdown_url", release)
         self.assertTrue(release["has_edition_sections"])
         self.assertEqual(
             datetime.fromisoformat(announcement["published_at"]),
             datetime.fromisoformat(self.announcement["publishedAt"]),
         )
-        self.assertEqual(announcement["markdown_url"], self.announcement["markdownURL"])
+        self.assertEqual(announcement["url"], "https://docs.example.com/announcements/guide/")
+        self.assertNotIn("markdown_url", announcement)
         self.assertEqual(announcement["image_url"], self.announcement["imageURL"])
         self.assertEqual(announcement["video_url"], self.announcement["videoURL"])
         self.assertEqual(announcement["image_alt"], self.announcement["imageAlt"])

@@ -13,18 +13,16 @@ interface SerializedSeenState {
     promotion_notifications_allowed: boolean;
 }
 
-interface SerializedReleaseNote extends Omit<ReleaseNote, 'publishedAt' | 'markdownURL' | 'hasEditionSections'> {
+interface SerializedReleaseNote extends Omit<ReleaseNote, 'publishedAt' | 'hasEditionSections'> {
     published_at: string;
-    markdown_url: string;
     has_edition_sections: boolean;
 }
 
-interface SerializedAnnouncement extends Omit<Announcement, 'publishedAt' | 'imageURL' | 'videoURL' | 'imageAlt' | 'markdownURL'> {
+interface SerializedAnnouncement extends Omit<Announcement, 'publishedAt' | 'imageURL' | 'videoURL' | 'imageAlt'> {
     published_at: string;
     image_url?: string;
     video_url?: string;
     image_alt?: string;
-    markdown_url?: string;
 }
 
 interface SerializedUpdates extends Omit<Updates,
@@ -59,20 +57,20 @@ function deserializeSeenState(state: SerializedSeenState): SeenState {
 function deserializeRelease(release: SerializedReleaseNote | null): ReleaseNote | null {
     if (!release) return null;
     const {
-        published_at: publishedAt, markdown_url: markdownURL, has_edition_sections: hasEditionSections, ...rest
+        published_at: publishedAt, has_edition_sections: hasEditionSections, ...rest
     } = release;
     return {
-        ...rest, publishedAt, markdownURL, hasEditionSections,
+        ...rest, publishedAt, hasEditionSections,
     };
 }
 
 function deserializeAnnouncement(announcement: SerializedAnnouncement): Announcement {
     const {
         published_at: publishedAt, image_url: imageURL, video_url: videoURL,
-        image_alt: imageAlt, markdown_url: markdownURL, ...rest
+        image_alt: imageAlt, ...rest
     } = announcement;
     return {
-        ...rest, publishedAt, imageURL, videoURL, imageAlt, markdownURL,
+        ...rest, publishedAt, imageURL, videoURL, imageAlt,
     };
 }
 

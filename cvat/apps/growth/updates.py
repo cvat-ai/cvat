@@ -307,7 +307,6 @@ def _index(body: str, kind: ContentKind) -> list[dict[str, Any]]:
                 "publishedAt": publication_date(raw.get("publishedAt"))
                 .astimezone(timezone.utc)
                 .isoformat(),
-                "markdownURL": _docs_url(path),
                 "url": _docs_url(path.removesuffix("index.md")),
                 "contentPath": path,
                 "editions": _editions(raw["editions"]),
@@ -387,8 +386,6 @@ def external_announcements(*, on_stale: OnStale | None = None) -> list[Announcem
                 raise ValueError("Invalid announcement label")
 
             urls = [item["url"]]
-            if "markdownURL" in item:
-                urls.append(item["markdownURL"])
             urls.extend(fields[key] for key in ("imageURL", "videoURL") if fields[key])
             for url in urls:
                 _validate_web_url(url)

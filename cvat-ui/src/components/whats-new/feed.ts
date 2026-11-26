@@ -9,7 +9,6 @@ export interface ReleaseNote {
     publishedAt: string;
     announce: boolean;
     url: string;
-    markdownURL: string;
     editions: string[];
     hasEditionSections: boolean;
     highlights: string[];
@@ -55,7 +54,6 @@ export interface Announcement extends PostPreview {
     editions: string[];
     announce: boolean;
     source: 'hugo' | 'external';
-    markdownURL?: string;
 }
 
 export interface SeenState {

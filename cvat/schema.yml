@@ -8233,9 +8233,6 @@ components:
           description: Call-to-action button label for opening the announcement URL.
         label:
           type: string
-        markdown_url:
-          type: string
-          format: uri
       required:
       - announce
       - description
@@ -13301,9 +13298,6 @@ components:
         url:
           type: string
           format: uri
-        markdown_url:
-          type: string
-          format: uri
         has_edition_sections:
           type: boolean
         highlights:
@@ -13316,7 +13310,6 @@ components:
       - editions
       - has_edition_sections
       - highlights
-      - markdown_url
       - published_at
       - title
       - url
