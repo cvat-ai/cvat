@@ -20,7 +20,7 @@ import CVATTooltip from 'components/common/cvat-tooltip';
 import { Issue, Comment as CommentModel } from 'cvat-core-wrapper';
 import { deleteIssueAsync } from 'actions/review-actions';
 import { useDialogPositioning } from './use-dialog-positioning';
-import IssueContext from './issue-context';
+import RestoreReviewViewButton from './restore-review-view-button';
 
 interface Props {
     container?: HTMLElement;
@@ -64,6 +64,12 @@ export default function IssueDialog(props: Props): JSX.Element {
     } = props;
 
     const { id, comments } = issue;
+    const submitComment = (): void => {
+        if (currentText) {
+            comment(currentText);
+            setCurrentText('');
+        }
+    };
 
     const position = useDialogPositioning({
         ref,
@@ -155,7 +161,7 @@ export default function IssueDialog(props: Props): JSX.Element {
             <Row className='cvat-issue-dialog-header' justify='space-between' wrap={false}>
                 <Col className='cvat-issue-dialog-title'>
                     <Text strong>{typeof id === 'number' ? `Issue #${id}` : 'Issue'}</Text>
-                    <IssueContext issue={issue} />
+                    <RestoreReviewViewButton view={issue.view} />
                 </Col>
                 <Col>
                     <CVATTooltip title='Collapse the chat'>
@@ -171,12 +177,7 @@ export default function IssueDialog(props: Props): JSX.Element {
                 onChange={(event: React.ChangeEvent<HTMLInputElement>) => {
                     setCurrentText(event.target.value);
                 }}
-                onPressEnter={() => {
-                    if (currentText) {
-                        comment(currentText);
-                        setCurrentText('');
-                    }
-                }}
+                onPressEnter={submitComment}
             />
             <Row className='cvat-issue-dialog-footer' justify='space-between' align='middle'>
                 <Col>
@@ -190,11 +191,7 @@ export default function IssueDialog(props: Props): JSX.Element {
                             className='cvat-issue-dialog-comment-button'
                             loading={isFetching}
                             type='primary'
-                            disabled={!currentText.length}
-                            onClick={() => {
-                                comment(currentText);
-                                setCurrentText('');
-                            }}
+                            onClick={submitComment}
                         >
                             Comment
                         </Button>

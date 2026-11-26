@@ -29,6 +29,10 @@ import CreateIssueDialog from './create-issue-dialog';
 import HiddenIssueLabel, { getIssueLabelPosition } from './hidden-issue-label';
 import IssueDialog from './issue-dialog';
 
+const DRAFT_ISSUE_ID = 0;
+const OVERLAY_GAP = 15;
+const FALLBACK_INSET_TOP = 24;
+
 interface IssuePane {
     view: ViewType;
     canvasRect: DOMRect;
@@ -56,6 +60,13 @@ interface MarkerDrag {
     moved: boolean;
     corner: number | null;
     suppressClickOnRelease: boolean;
+}
+
+function getPaneSignature({ view, canvasRect, expanded }: IssuePane): string {
+    const {
+        left, top, width, height,
+    } = canvasRect;
+    return `${view}:${expanded}:${left}:${top}:${width}:${height}`;
 }
 
 function ViewOverlay({ canvasRect, children }: {
@@ -161,12 +172,12 @@ function IssueOverlays({ canvas }: { canvas: Canvas3d }): JSX.Element {
             })) : [];
         if (ready && isIssueCuboid(newPosition)) {
             regions.push({
-                id: 0,
-                position: preview?.drag.id === 0 ? preview.position : newPosition,
+                id: DRAFT_ISSUE_ID,
+                position: preview?.drag.id === DRAFT_ISSUE_ID ? preview.position : newPosition,
                 highlighted: false,
             });
         }
-        canvas.setupIssueCuboids(regions, isIssueCuboid(newPosition) ? 0 : activeIssueId);
+        canvas.setupIssueCuboids(regions, isIssueCuboid(newPosition) ? DRAFT_ISSUE_ID : activeIssueId);
     }, [
         canvas, ready, visibleIssues, highlightedIssueId, geometryHighlightId, newPosition, preview, activeIssueId,
     ]);
@@ -180,7 +191,7 @@ function IssueOverlays({ canvas }: { canvas: Canvas3d }): JSX.Element {
         if (event.button !== 0 || view === ViewType.PERSPECTIVE || !ready || creating || fetching ||
             activeControl !== ActiveControl.CURSOR || navigationBlocked || dragRef.current) return;
         const issue = visibleIssuesById.get(id);
-        const origin = id === 0 ? newPosition : issue?.position;
+        const origin = id === DRAFT_ISSUE_ID ? newPosition : issue?.position;
         if (!isIssuePoint(origin) && !isIssueCuboid(origin)) return;
         event.preventDefault();
         event.stopPropagation();
@@ -218,7 +229,7 @@ function IssueOverlays({ canvas }: { canvas: Canvas3d }): JSX.Element {
             }
             try {
                 if (!cancel && drag.moved && drag.position.some((value, index) => value !== drag.origin[index])) {
-                    if (drag.id) await dispatch(moveIssueAsync(drag.id, drag.position));
+                    if (drag.id !== DRAFT_ISSUE_ID) await dispatch(moveIssueAsync(drag.id, drag.position));
                     else dispatch(reviewActions.moveDraftIssue(drag.position));
                 }
             } finally {
@@ -418,7 +429,9 @@ function IssueOverlays({ canvas }: { canvas: Canvas3d }): JSX.Element {
                 position: preview?.drag.id === issue.id ? preview.position : issue.position,
             })),
             ...(newPosition ? [{
-                id: 0, issue: null, position: preview?.drag.id === 0 ? preview.position : newPosition,
+                id: DRAFT_ISSUE_ID,
+                issue: null,
+                position: preview?.drag.id === DRAFT_ISSUE_ID ? preview.position : newPosition,
             }] : []),
         ].map((pin) => ({ ...pin, cuboid: isIssueCuboid(pin.position) }));
         let animationFrame: number;
@@ -447,7 +460,7 @@ function IssueOverlays({ canvas }: { canvas: Canvas3d }): JSX.Element {
                             x: Math.round((canvasRect.left + point[0]) * 100) / 100,
                             y: Math.round((canvasRect.top + point[1]) * 100) / 100,
                             cuboid: pin.cuboid,
-                            corners: pin.cuboid && (pin.id === 0 || pin.id === activeIssueId) &&
+                            corners: pin.cuboid && (pin.id === DRAFT_ISSUE_ID || pin.id === activeIssueId) &&
                                 view !== ViewType.PERSPECTIVE ? canvas.projectIssueCuboid(pin.position, view) : [],
                         });
                         const { issue } = pin;
@@ -469,7 +482,7 @@ function IssueOverlays({ canvas }: { canvas: Canvas3d }): JSX.Element {
                             const { width, height } = label.getBoundingClientRect();
                             const style = window.getComputedStyle(label);
                             const { left, top } = getIssueLabelPosition(
-                                point[1] + 15, point[0] + 15, canvasRect, { width, height },
+                                point[1] + OVERLAY_GAP, point[0] + OVERLAY_GAP, canvasRect, { width, height },
                             );
                             sprites.push({
                                 id: pin.id,
@@ -495,14 +508,14 @@ function IssueOverlays({ canvas }: { canvas: Canvas3d }): JSX.Element {
                 previousSprites = spriteSignature;
                 canvas.setupIssueSprites(sprites);
             }
-            const placementSignature = next.map(({
-                id, view, x, y, canvasRect, expanded, cuboid, corners,
-            }) => [
-                id, view, x, y, expanded, cuboid,
-                canvasRect.left, canvasRect.top, canvasRect.width, canvasRect.height,
-                JSON.stringify(corners),
-            ].join(':')).join('|');
-            const signature = `${placementSignature}|${JSON.stringify(nextFallbackPane)}`;
+            const placementSignature = next.map((placement) => {
+                const {
+                    id, x, y, cuboid, corners,
+                } = placement;
+                return [id, x, y, cuboid, getPaneSignature(placement), JSON.stringify(corners)].join(':');
+            }).join('|');
+            const fallbackSignature = nextFallbackPane ? getPaneSignature(nextFallbackPane) : '';
+            const signature = `${placementSignature}|${fallbackSignature}`;
             if (signature !== previous) {
                 previous = signature;
                 setLayout({ placements: next, fallbackPane: nextFallbackPane });
@@ -522,19 +535,18 @@ function IssueOverlays({ canvas }: { canvas: Canvas3d }): JSX.Element {
         dispatch(activateObject(object?.clientID ?? null, null, null));
     }, [activeIssue, activeControl, objects, ready]);
 
-    const dialogId = newPosition ? 0 : activeIssueId;
+    const dialogId = newPosition ? DRAFT_ISSUE_ID : activeIssueId;
     const preferredView = newPosition ? draftView : ViewType.PERSPECTIVE;
     const activePlacement = placements.find(({ id, view, expanded }) => (
         id === dialogId && (view === preferredView || expanded)
     ));
     // Park saved discussions below the pane controls while their spatial anchor is off-screen.
-    const fallbackAnchor: DialogAnchor | null = !activePlacement && !newPosition && activeIssue && fallbackPane ? {
+    const visibleAnchor: DialogAnchor | null = activePlacement ?? (!newPosition && activeIssue && fallbackPane ? {
         ...fallbackPane,
         id: activeIssue.id,
         x: fallbackPane.canvasRect.left,
-        y: fallbackPane.canvasRect.top + 24,
-    } : null;
-    const visibleAnchor = activePlacement || fallbackAnchor;
+        y: fallbackPane.canvasRect.top + FALLBACK_INSET_TOP,
+    } : null);
     useEffect(() => {
         if (visibleAnchor) lastDialogPlacement.current = visibleAnchor;
     }, [visibleAnchor]);
@@ -545,13 +557,16 @@ function IssueOverlays({ canvas }: { canvas: Canvas3d }): JSX.Element {
     const draftBounds = newPosition && dialogPlacement && !dialogPlacement.expanded &&
         dialogPlacement.view !== ViewType.PERSPECTIVE ?
         canvas.html()[dialogPlacement.view].closest('.cvat-canvas-grid-root')?.getBoundingClientRect() : null;
-    const dialogPosition = dialogPlacement && {
+    const dialogCoordinates: [number, number] | null = dialogPlacement && [
+        dialogPlacement.x + OVERLAY_GAP, dialogPlacement.y + OVERLAY_GAP,
+    ];
+    const dialogPosition = dialogCoordinates && {
         container: dialogContainer,
-        top: dialogPlacement.y + 15,
-        left: dialogPlacement.x + 15,
+        top: dialogCoordinates[1],
+        left: dialogCoordinates[0],
         angle: 0,
         scale: 1,
-        clientCoordinates: [dialogPlacement.x + 15, dialogPlacement.y + 15] as [number, number],
+        clientCoordinates: dialogCoordinates,
         canvasRect: draftBounds || dialogPlacement.canvasRect,
     };
     const showRegion = (issue: Issue, show: boolean): void => {
@@ -577,15 +592,16 @@ function IssueOverlays({ canvas }: { canvas: Canvas3d }): JSX.Element {
                                 id, x, y, expanded, cuboid, corners,
                             }) => {
                                 const issue = visibleIssuesById.get(id);
-                                if (!issue && !(id === 0 && newPosition)) return null;
+                                const isDraft = id === DRAFT_ISSUE_ID;
+                                if (!issue && !(isDraft && newPosition)) return null;
                                 const draggable = view !== ViewType.PERSPECTIVE && !creating && !fetching &&
                                     activeControl === ActiveControl.CURSOR &&
-                                    (id !== 0 || newSource === NewIssueSource.ISSUE_TOOL);
+                                    (!isDraft || newSource === NewIssueSource.ISSUE_TOOL);
                                 const clickable = draggable || (view === ViewType.PERSPECTIVE && !!issue &&
                                     activeControl === ActiveControl.CURSOR);
                                 const highlighted = highlightedIssueId === id || preview?.drag.id === id;
                                 const hasDialog = activeIssueId === id && (view === ViewType.PERSPECTIVE || expanded);
-                                const resizeHandles = draggable && corners.length && (id === 0 || activeIssueId === id);
+                                const resizeHandles = draggable && corners.length && (isDraft || activeIssueId === id);
                                 const regionProps = {
                                     className: `cvat-canvas3d-issue-region ${highlighted ?
                                         'cvat-canvas3d-issue-highlighted' : ''}`,
@@ -607,7 +623,7 @@ function IssueOverlays({ canvas }: { canvas: Canvas3d }): JSX.Element {
                                                 {...regionProps}
                                                 type='button'
                                                 aria-label={draggable ?
-                                                    `Move ${id ? `issue #${id}` : 'new issue'} in ${view} view` :
+                                                    `Move ${isDraft ? 'new issue' : `issue #${id}`} in ${view} view` :
                                                     `Open issue #${id}`}
                                                 title={draggable ? 'Drag to reposition the issue. Press Escape to cancel.' :
                                                     undefined}
@@ -639,8 +655,8 @@ function IssueOverlays({ canvas }: { canvas: Canvas3d }): JSX.Element {
                                             <HiddenIssueLabel
                                                 container={container}
                                                 bounds={canvasRect}
-                                                top={y - canvasRect.top + 15}
-                                                left={x - canvasRect.left + 15}
+                                                top={y - canvasRect.top + OVERLAY_GAP}
+                                                left={x - canvasRect.left + OVERLAY_GAP}
                                                 angle={0}
                                                 scale={1}
                                                 idSuffix={`-${view}`}

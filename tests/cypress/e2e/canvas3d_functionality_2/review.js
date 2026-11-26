@@ -44,15 +44,26 @@ function resizeIssueRegion(id, view, dx, dy, cancel = false) {
 }
 
 function afterRender(canvas, callback) {
-    return new Cypress.Promise((resolve) => {
+    return new Cypress.Promise((resolve, reject) => {
         const { scene } = canvas;
         const previous = scene.onAfterRender;
         scene.onAfterRender = (renderer, renderedScene, camera) => {
             scene.onAfterRender = previous;
-            previous.call(scene, renderer, renderedScene, camera);
-            resolve(callback(camera));
+            try {
+                previous.call(scene, renderer, renderedScene, camera);
+                resolve(callback(camera));
+            } catch (error) {
+                reject(error);
+            }
         };
     });
+}
+
+function getClientPoint(point, bounds) {
+    return {
+        clientX: bounds.left + ((point.x + 1) / 2) * bounds.width,
+        clientY: bounds.top + ((1 - point.y) / 2) * bounds.height,
+    };
 }
 
 function issueCuboidBodyPoint(canvas, id) {
@@ -60,10 +71,9 @@ function issueCuboidBodyPoint(canvas, id) {
         const mesh = canvas.scene.getObjectByName(`cvat-issue-cuboid-${id}`);
         const point = mesh.getWorldPosition(mesh.position.clone()).project(camera);
         const bounds = canvas.getBoundingClientRect();
-        const x = ((point.x + 1) * bounds.width) / 2;
-        const y = ((1 - point.y) * bounds.height) / 2;
-        const clientX = bounds.left + x;
-        const clientY = bounds.top + y;
+        const { clientX, clientY } = getClientPoint(point, bounds);
+        const x = clientX - bounds.left;
+        const y = clientY - bounds.top;
         expect(canvas.ownerDocument.elementFromPoint(clientX, clientY)).to.equal(canvas);
         return {
             canvas, x, y, clientX, clientY,
@@ -72,42 +82,27 @@ function issueCuboidBodyPoint(canvas, id) {
 }
 
 function viewSnapshot(canvas, serverId, view = 'perspective', position) {
-    return new Cypress.Promise((resolve) => {
-        const { scene } = canvas;
-        const previous = scene.onAfterRender;
-        scene.onAfterRender = (renderer, renderedScene, camera) => {
-            scene.onAfterRender = previous;
-            previous.call(scene, renderer, renderedScene, camera);
-            const object = canvas.getDrawnObjects().find((item) => item.state.serverID === serverId);
-            const mesh = object.cuboid[view];
-            const anchor = position ? mesh.position.clone().fromArray(position) :
-                mesh.getWorldPosition(mesh.position.clone());
-            const projected = anchor.clone().project(camera);
-            const rect = canvas.getBoundingClientRect();
-            const center = mesh.getWorldPosition(mesh.position.clone());
-            const vertices = mesh.geometry.attributes.position;
-            const clickPoints = [center, ...Array.from({ length: vertices.count }, (_, index) => (
-                center.clone().fromBufferAttribute(vertices, index).applyMatrix4(mesh.matrixWorld).lerp(center, 0.3)
-            ))].map((point) => {
-                const projectedPoint = point.project(camera);
-                return {
-                    clientX: rect.left + ((projectedPoint.x + 1) / 2) * rect.width,
-                    clientY: rect.top + ((1 - projectedPoint.y) / 2) * rect.height,
-                };
-            });
-            resolve({
-                rotation: camera.quaternion.toArray(),
-                position: camera.position.toArray(),
-                up: camera.up.toArray(),
-                zoom: camera.zoom,
-                localPoint: mesh.worldToLocal(anchor).toArray(),
-                clipDepth: projected.z,
-                clickPoints,
-                point: {
-                    clientX: rect.left + ((projected.x + 1) / 2) * rect.width,
-                    clientY: rect.top + ((1 - projected.y) / 2) * rect.height,
-                },
-            });
+    return afterRender(canvas, (camera) => {
+        const object = canvas.getDrawnObjects().find((item) => item.state.serverID === serverId);
+        const mesh = object.cuboid[view];
+        const anchor = position ? mesh.position.clone().fromArray(position) :
+            mesh.getWorldPosition(mesh.position.clone());
+        const projected = anchor.clone().project(camera);
+        const rect = canvas.getBoundingClientRect();
+        const center = mesh.getWorldPosition(mesh.position.clone());
+        const vertices = mesh.geometry.attributes.position;
+        const clickPoints = [center, ...Array.from({ length: vertices.count }, (_, index) => (
+            center.clone().fromBufferAttribute(vertices, index).applyMatrix4(mesh.matrixWorld).lerp(center, 0.3)
+        ))].map((point) => getClientPoint(point.project(camera), rect));
+        return {
+            rotation: camera.quaternion.toArray(),
+            position: camera.position.toArray(),
+            up: camera.up.toArray(),
+            zoom: camera.zoom,
+            localPoint: mesh.worldToLocal(anchor).toArray(),
+            clipDepth: projected.z,
+            clickPoints,
+            point: getClientPoint(projected, rect),
         };
     });
 }
@@ -148,47 +143,37 @@ function checkSelectedCuboid(serverId, objectType) {
 }
 
 function viewCloudPoint(canvas, view = 'perspective') {
-    return new Cypress.Promise((resolve, reject) => {
-        const { scene } = canvas;
-        const previous = scene.onAfterRender;
-        scene.onAfterRender = (renderer, renderedScene, camera) => {
-            scene.onAfterRender = previous;
-            previous.call(scene, renderer, renderedScene, camera);
-            const bounds = canvas.getDrawnObjects().filter(({ cuboid }) => cuboid[view].visible)
-                .map(({ cuboid }) => {
-                    const mesh = cuboid[view];
-                    const vertices = mesh.geometry.attributes.position;
-                    const projected = Array.from({ length: vertices.count }, (_, index) => (
-                        mesh.position.clone().fromBufferAttribute(vertices, index)
-                            .applyMatrix4(mesh.matrixWorld).project(camera)
-                    ));
-                    return {
-                        left: Math.min(...projected.map((point) => point.x)) - 0.03,
-                        right: Math.max(...projected.map((point) => point.x)) + 0.03,
-                        top: Math.min(...projected.map((point) => point.y)) - 0.03,
-                        bottom: Math.max(...projected.map((point) => point.y)) + 0.03,
-                    };
-                });
-            const cloud = scene.children.find((child) => child.isPoints && child.visible);
-            const vertices = cloud.geometry.attributes.position;
-            for (let index = 0; index < vertices.count; index++) {
-                const point = cloud.position.clone().fromBufferAttribute(vertices, index)
-                    .applyMatrix4(cloud.matrixWorld).project(camera);
-                if (Math.abs(point.x) < 0.75 && Math.abs(point.y) < 0.75 && Math.abs(point.z) <= 1 &&
-                    !bounds.some((box) => point.x >= box.left && point.x <= box.right &&
-                        point.y >= box.top && point.y <= box.bottom)) {
-                    const rect = canvas.getBoundingClientRect();
-                    const location = {
-                        clientX: rect.left + ((point.x + 1) / 2) * rect.width,
-                        clientY: rect.top + ((1 - point.y) / 2) * rect.height,
-                    };
-                    if (canvas.ownerDocument.elementFromPoint(location.clientX, location.clientY) !== canvas) continue;
-                    resolve(location);
-                    return;
-                }
+    return afterRender(canvas, (camera) => {
+        const bounds = canvas.getDrawnObjects().filter(({ cuboid }) => cuboid[view].visible)
+            .map(({ cuboid }) => {
+                const mesh = cuboid[view];
+                const vertices = mesh.geometry.attributes.position;
+                const projected = Array.from({ length: vertices.count }, (_, index) => (
+                    mesh.position.clone().fromBufferAttribute(vertices, index)
+                        .applyMatrix4(mesh.matrixWorld).project(camera)
+                ));
+                return {
+                    left: Math.min(...projected.map((point) => point.x)) - 0.03,
+                    right: Math.max(...projected.map((point) => point.x)) + 0.03,
+                    top: Math.min(...projected.map((point) => point.y)) - 0.03,
+                    bottom: Math.max(...projected.map((point) => point.y)) + 0.03,
+                };
+            });
+        const cloud = canvas.scene.children.find((child) => child.isPoints && child.visible);
+        const vertices = cloud.geometry.attributes.position;
+        const rect = canvas.getBoundingClientRect();
+        for (let index = 0; index < vertices.count; index++) {
+            const point = cloud.position.clone().fromBufferAttribute(vertices, index)
+                .applyMatrix4(cloud.matrixWorld).project(camera);
+            if (Math.abs(point.x) < 0.75 && Math.abs(point.y) < 0.75 && Math.abs(point.z) <= 1 &&
+                !bounds.some((box) => point.x >= box.left && point.x <= box.right &&
+                    point.y >= box.top && point.y <= box.bottom)) {
+                const location = getClientPoint(point, rect);
+                if (canvas.ownerDocument.elementFromPoint(location.clientX, location.clientY) !== canvas) continue;
+                return location;
             }
-            reject(new Error('No visible cloud point outside the cuboids'));
-        };
+        }
+        throw new Error('No visible cloud point outside the cuboids');
     });
 }
 

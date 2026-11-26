@@ -117,21 +117,13 @@ export default function (state: ReviewState = defaultState, action: ReviewAction
                 ...reviewOnFrame(frame, state.issues, state.conflicts),
             };
         }
-        case ReviewActionTypes.START_ISSUE: {
-            const {
-                position, source, view,
-            } = action.payload;
+        case ReviewActionTypes.START_ISSUE:
             return {
                 ...state,
                 activeIssueId: null,
                 highlightedIssueId: null,
-                newIssue: {
-                    position,
-                    source,
-                    view,
-                },
+                newIssue: action.payload,
             };
-        }
         case ReviewActionTypes.FINISH_ISSUE_SUCCESS: {
             const { frame, issue, draft } = action.payload;
             const issues = [...state.issues, issue];
