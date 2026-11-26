@@ -783,21 +783,45 @@ context('3D spatial review', { browser: '!firefox' }, () => {
             const { cuboid } = $canvas[0].getDrawnObjects().find(({ state }) => state.clientID === 1);
             ['top', 'side', 'front'].forEach((view) => expect(cuboid[view].visible).to.equal(false));
         });
+        cy.get('#cvat-objects-sidebar-state-item-1').find('.cvat-object-item-button-lock-enabled').click();
         cy.get('#cvat-objects-sidebar-state-item-1').trigger('mouseover');
+        cy.get('.cvat-canvas3d-topview canvas').should(($canvas) => {
+            const { state, cuboid } = $canvas[0].getDrawnObjects().find((object) => object.state.clientID === 1);
+            expect(state.lock).to.equal(false);
+            expect(cuboid.top.visible).to.equal(true);
+            expect($canvas[0].scene.getObjectByName('2DResizeHelper_0')).not.to.exist;
+        });
         rightClickCuboid();
         cy.contains('.cvat-context-menu-item', 'Open an issue ...').click();
         cy.get('.cvat-create-issue-dialog').should('be.visible');
         cy.get('.cvat-issue-dialog').should('not.exist');
+        cy.get('.cvat-canvas3d-topview canvas').should(($canvas) => {
+            const { scene } = $canvas[0];
+            const draft = scene.getObjectByName('cvat-issue-cuboid-0');
+            expect(draft.position.toArray()).to.deep.equal(points.slice(0, 3));
+            expect(draft.scale.toArray()).to.deep.equal(points.slice(6, 9));
+            expect(scene.getObjectByName('2DResizeHelper_0')).not.to.exist;
+        });
+        resizeIssueRegion(0, 'top', 12, 10);
         cy.get('.cvat-create-issue-dialog').within(() => {
             cy.get('#issue_description').type('Check the cuboid extents');
             cy.contains('button', 'Submit').click();
         });
         cy.wait('@cuboidIssue').then(({ request, response }) => {
             expect(response.statusCode).to.equal(201);
-            expect(response.body.position).to.deep.equal(points);
+            expect(response.body.position.slice(6, 9)).not.to.deep.equal(points.slice(6, 9));
             expect(request.body).not.to.include.any.keys('object_id', 'object_type');
+            cy.get('.cvat-canvas3d-topview canvas').should(($canvas) => {
+                const { state } = $canvas[0].getDrawnObjects().find((object) => object.state.clientID === 1);
+                expect(state.points).to.deep.equal(points);
+            });
             cy.removeIssue(`#cvat-hidden-issue-label-${response.body.id}-perspective`);
             cy.get(`#cvat-hidden-issue-label-${response.body.id}-perspective`).should('not.exist');
+        });
+        cy.changeWorkspace('Standard 3D');
+        cy.get('#cvat-objects-sidebar-state-item-1').trigger('mouseover');
+        cy.get('.cvat-canvas3d-topview canvas').should(($canvas) => {
+            expect($canvas[0].scene.getObjectByName('2DResizeHelper_0')).to.exist;
         });
     });
 

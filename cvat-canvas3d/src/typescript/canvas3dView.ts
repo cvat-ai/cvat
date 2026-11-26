@@ -173,9 +173,10 @@ export class Canvas3dViewImpl implements Canvas3dView, Listener {
     }
 
     public setupIssueCuboids(regions: IssueCuboid[], activeID: number | null = null): void {
-        const hadActiveIssueCuboid = this.activeIssueCuboidID !== null;
-        this.activeIssueCuboidID = regions.some((region) => region.id === activeID) ? activeID : null;
-        if (hadActiveIssueCuboid !== (this.activeIssueCuboidID !== null)) {
+        const previousID = this.activeIssueCuboidID;
+        const activeRegion = regions.find(({ id, position }) => id === activeID && isIssueCuboid(position));
+        this.activeIssueCuboidID = activeRegion?.id ?? null;
+        if ((previousID === null) !== (this.activeIssueCuboidID === null)) {
             for (const { cuboid, data } of Object.values(this.drawnObjects)) {
                 this.updateOrthographicCuboidVisibility(cuboid, data.clientID === this.activatedElementID);
             }
@@ -186,6 +187,9 @@ export class Canvas3dViewImpl implements Canvas3dView, Listener {
             ) as Record<ViewType, THREE.Scene>);
         }
         this.issueCuboids?.setup(regions);
+        if (activeRegion && activeRegion.id !== previousID) {
+            this.focusOrthographicViews(activeRegion.position);
+        }
     }
 
     private reviewRay(clientX: number, clientY: number, view: ViewType): {
@@ -322,6 +326,10 @@ export class Canvas3dViewImpl implements Canvas3dView, Listener {
     public focusPosition(position: number[]): void {
         if (!isIssuePoint(position) && !isIssueCuboid(position)) return;
         this.views.perspective.controls?.moveTo(position[0], position[1], position[2], true);
+        this.focusOrthographicViews(position);
+    }
+
+    private focusOrthographicViews(position: number[]): void {
         BOTTOM_VIEWS.forEach((view) => {
             const { camera } = this.views[view];
             if (!camera) return;
@@ -673,9 +681,9 @@ export class Canvas3dViewImpl implements Canvas3dView, Listener {
             }
         });
 
-        canvasTopView.addEventListener('mousedown', this.startAction.bind(this, 'top'));
-        canvasSideView.addEventListener('mousedown', this.startAction.bind(this, 'side'));
-        canvasFrontView.addEventListener('mousedown', this.startAction.bind(this, 'front'));
+        canvasTopView.addEventListener('mousedown', this.startAction.bind(this, ViewType.TOP));
+        canvasSideView.addEventListener('mousedown', this.startAction.bind(this, ViewType.SIDE));
+        canvasFrontView.addEventListener('mousedown', this.startAction.bind(this, ViewType.FRONT));
 
         canvasTopView.addEventListener('mousemove', this.moveAction.bind(this, 'top'));
         canvasSideView.addEventListener('mousemove', this.moveAction.bind(this, 'side'));
@@ -1108,7 +1116,7 @@ export class Canvas3dViewImpl implements Canvas3dView, Listener {
     }
 
     private updateSideViewsZoom(): void {
-        if (this.activatedElementID !== null) {
+        if (this.activatedElementID !== null && this.activeIssueCuboidID === null) {
             const { selectedCuboid } = this;
             const { top, front, side } = this.views;
 
@@ -1240,22 +1248,23 @@ export class Canvas3dViewImpl implements Canvas3dView, Listener {
         );
     };
 
-    private startAction(view: any, event: MouseEvent): void {
-        const { clientID } = this.model.data.activeElement;
-        if (event.detail !== 1 || this.mode !== Mode.IDLE || clientID === null || !(clientID in this.drawnObjects)) {
+    private startAction(view: ViewType, event: MouseEvent): void {
+        const clientID = this.activatedElementID;
+        if (!this.model.data.configuration.cuboidEditingEnabled || event.detail !== 1 ||
+            this.mode !== Mode.IDLE || clientID === null) {
             return;
         }
 
-        const canvas = this.views[view as keyof Views].renderer.domElement;
+        const canvas = this.views[view].renderer.domElement;
         const rect = canvas.getBoundingClientRect();
-        const { mouseVector } = this.views[view as keyof Views].rayCaster as { mouseVector: THREE.Vector2 };
+        const { mouseVector } = this.views[view].rayCaster;
         const diffX = event.clientX - rect.left;
         const diffY = event.clientY - rect.top;
         mouseVector.x = (diffX / canvas.clientWidth) * 2 - 1;
         mouseVector.y = -(diffY / canvas.clientHeight) * 2 + 1;
         this.action.rotation.screenInit = { x: diffX, y: diffY };
         this.action.rotation.screenMove = { x: diffX, y: diffY };
-        const { data } = this.drawnObjects[+clientID];
+        const { data } = this.drawnObjects[clientID];
 
         if (!data.lock) {
             this.action.scan = view;
@@ -1326,9 +1335,9 @@ export class Canvas3dViewImpl implements Canvas3dView, Listener {
     }
 
     private completeActions(): void {
-        if (this.mode === Mode.SELECT_REGION) return;
+        if (!this.model.data.configuration.cuboidEditingEnabled ||
+            this.mode === Mode.SELECT_REGION || this.activatedElementID === null) return;
         const { scan, detected } = this.action;
-        if (this.model.data.activeElement.clientID === null) return;
         if (!detected) {
             this.resetActions();
             return;
@@ -1527,14 +1536,14 @@ export class Canvas3dViewImpl implements Canvas3dView, Listener {
     }
 
     private activateObject(): void {
-        const { selectedShapeOpacity } = this.model.data.configuration;
+        const { selectedShapeOpacity, cuboidEditingEnabled } = this.model.data.configuration;
         const { clientID } = this.model.data.activeElement;
         if (clientID !== null && this.drawnObjects[+clientID]?.cuboid?.perspective?.visible) {
             const { cuboid, data } = this.drawnObjects[+clientID];
             cuboid.setOpacity(selectedShapeOpacity);
             this.updateOrthographicCuboidVisibility(cuboid, true);
 
-            if (!data.lock) {
+            if (cuboidEditingEnabled && !data.lock) {
                 for (const view of BOTTOM_VIEWS) {
                     createResizeHelper(cuboid, view);
                     createRotationHelper(cuboid, view);
@@ -1543,9 +1552,11 @@ export class Canvas3dViewImpl implements Canvas3dView, Listener {
             }
 
             this.activatedElementID = +clientID;
-            this.rotatePlane(null, null);
-            this.detachCamera();
-            this.updateCameraFrustumPlane();
+            if (this.activeIssueCuboidID === null) {
+                this.rotatePlane(null, null);
+                this.detachCamera();
+                this.updateCameraFrustumPlane();
+            }
         }
     }
 
@@ -2389,7 +2400,6 @@ export class Canvas3dViewImpl implements Canvas3dView, Listener {
             const viewType = this.views[view as keyof Views];
             if (!(viewType.controls && viewType.camera && viewType.rayCaster)) return;
 
-            const { clientID } = this.model.data.activeElement;
             this.resizeRendererToDisplaySize(view as ViewType, viewType);
             if (viewType.controls.enabled) {
                 viewType.controls.update(this.clock.getDelta());
@@ -2401,7 +2411,7 @@ export class Canvas3dViewImpl implements Canvas3dView, Listener {
             if (view === ViewType.PERSPECTIVE && viewType.scene.children.length !== 0) {
                 this.renderRayCaster(viewType);
             }
-            if (clientID !== null && view !== ViewType.PERSPECTIVE) {
+            if (this.activatedElementID !== null && view !== ViewType.PERSPECTIVE) {
                 viewType.rayCaster.renderer.setFromCamera(viewType.rayCaster.mouseVector, viewType.camera);
                 // First Scan
                 if (this.action.scan === view) {
