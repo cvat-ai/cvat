@@ -1752,15 +1752,7 @@ class Profile(models.Model):
 
 
 class Issue(TimestampedModel, AssignableModel):
-    class ObjectType(TextChoices):
-        SHAPE = "shape", "Shape"
-        TRACK = "track", "Track"
-
     frame = models.PositiveIntegerField()
-    end_frame = models.PositiveIntegerField(null=True, blank=True)
-    # Keep the reference when the annotation is deleted so the review history survives.
-    object_id = models.PositiveBigIntegerField(null=True, blank=True)
-    object_type = models.CharField(max_length=5, choices=ObjectType.choices, null=True, blank=True)
     position = FloatArrayField()
     view = models.JSONField(null=True, blank=True)
     job = models.ForeignKey(

@@ -52,7 +52,7 @@ function reviewOnFrame(frame: number, issues: Issue[], conflicts: QualityConflic
     ReviewState, 'frameIssues' | 'frameConflicts'
 > {
     return {
-        frameIssues: issues.filter((issue) => issue.frame <= frame && frame <= issue.endFrame),
+        frameIssues: issues.filter((issue) => issue.frame === frame),
         frameConflicts: conflicts.filter((conflict) => conflict.frame === frame),
     };
 }

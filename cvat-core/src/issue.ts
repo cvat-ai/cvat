@@ -10,7 +10,6 @@ import Comment, { RawCommentData } from './comment';
 import User from './user';
 import { ArgumentError } from './exceptions';
 import serverProxy from './server-proxy';
-import { ObjectType } from './enums';
 import type { SerializedUser } from './server-response-types';
 
 function validatePosition(position: number[]): void {
@@ -23,9 +22,6 @@ interface RawIssueData {
     job: number;
     position: number[];
     frame: number;
-    end_frame?: number | null;
-    object_id?: number | null;
-    object_type?: ObjectType.SHAPE | ObjectType.TRACK | null;
     view?: IssueView | null;
     id?: number;
     comments?: RawCommentData[];
@@ -42,15 +38,12 @@ export interface IssueView {
 }
 
 type IssueData = Omit<RawIssueData, 'comments' | 'owner'> & { comments: Comment[]; owner?: User | null };
-type IssueWriteData = Omit<RawIssueData, 'owner' | 'object_id' | 'object_type'> & { owner?: number };
+type IssueWriteData = Omit<RawIssueData, 'owner'> & { owner?: number };
 
 export default class Issue {
     public readonly id?: number;
     public readonly job: number;
     public readonly frame: number;
-    public readonly endFrame: number;
-    public readonly objectID: number | null;
-    public readonly objectType: ObjectType.SHAPE | ObjectType.TRACK | null;
     public readonly view: IssueView | null;
     public readonly owner?: User;
     public readonly comments: Comment[];
@@ -65,9 +58,6 @@ export default class Issue {
         if (owner) issueOwner = owner instanceof User ? owner : new User(owner);
         const data: IssueData = {
             ...fields,
-            end_frame: fields.end_frame ?? null,
-            object_id: fields.object_id ?? null,
-            object_type: fields.object_type ?? null,
             view: fields.view ?? null,
             created_date: fields.created_date ?? new Date().toISOString(),
             comments: Array.isArray(comments) ? comments.map((comment) => new Comment(comment)) : [],
@@ -95,15 +85,6 @@ export default class Issue {
                 },
                 frame: {
                     get: () => data.frame,
-                },
-                endFrame: {
-                    get: () => data.end_frame ?? data.frame,
-                },
-                objectID: {
-                    get: () => data.object_id,
-                },
-                objectType: {
-                    get: () => data.object_type,
                 },
                 view: {
                     get: () => (data.view ? {
@@ -181,7 +162,6 @@ export default class Issue {
             job: this.job,
             position: this.position,
             frame: this.frame,
-            end_frame: this.endFrame === this.frame ? null : this.endFrame,
             view: this.view,
         };
 

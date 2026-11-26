@@ -6,7 +6,7 @@ from django.db import migrations, models
 
 
 class Migration(migrations.Migration):
-    dependencies = [("engine", "0111_issue_review_context")]
+    dependencies = [("engine", "0111_relatedfile_calibration_matrices")]
 
     operations = [
         migrations.AddField(

@@ -168,7 +168,6 @@ export const finishIssueAsync = (message: string): ThunkAction => async (dispatc
         const issue = new cvat.classes.Issue({
             job: jobInstance.id,
             frame: frameNumber,
-            end_frame: null,
             position,
             view,
         });

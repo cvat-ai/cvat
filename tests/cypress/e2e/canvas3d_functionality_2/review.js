@@ -122,26 +122,6 @@ function settledPerspectiveSnapshot(canvas, serverId) {
     return capture();
 }
 
-function checkSelectedCuboid(serverId, objectType) {
-    cy.get('.cvat-objects-sidebar-state-active-item').should('have.length', 1)
-        .and('contain.text', `CUBOID ${objectType.toUpperCase()}`);
-    cy.get('.cvat-canvas3d-perspective canvas').should(($canvas) => {
-        const objects = $canvas[0].getDrawnObjects();
-        const selected = objects.find(({ state }) => state.serverID === serverId && state.objectType === objectType);
-        expect(selected, 'linked annotation is drawn').to.exist;
-        ['perspective', 'top', 'side', 'front'].forEach((view) => {
-            expect(selected.cuboid[view].visible, `linked cuboid visible in ${view}`).to.equal(true);
-        });
-        objects.filter((object) => object !== selected).forEach(({ cuboid }) => {
-            expect(selected.cuboid.perspective.material.opacity, 'linked cuboid has selected opacity')
-                .to.be.greaterThan(cuboid.perspective.material.opacity);
-            ['top', 'side', 'front'].forEach((view) => {
-                expect(cuboid[view].visible, `unrelated cuboid hidden in ${view}`).to.equal(false);
-            });
-        });
-    });
-}
-
 function viewCloudPoint(canvas, view = 'perspective') {
     return afterRender(canvas, (camera) => {
         const bounds = canvas.getDrawnObjects().filter(({ cuboid }) => cuboid[view].visible)
@@ -188,7 +168,6 @@ function clickReviewPoint(canvas, point) {
 
 function checkSimpleIssueForm() {
     cy.get('.cvat-create-issue-dialog').should('be.visible');
-    cy.get('#issue_object, #issue_start_frame, #issue_end_frame').should('not.exist');
     cy.get('.cvat-create-issue-dialog input').should('have.length', 1);
 }
 
@@ -268,9 +247,6 @@ context('3D spatial review', { browser: '!firefox' }, () => {
             expect(response.statusCode).to.equal(201);
             expect(response.body.position).to.have.length(3);
             expect(response.body.position.every(Number.isFinite)).to.equal(true);
-            expect(response.body.object_id).to.equal(null);
-            expect(response.body.object_type).to.equal(null);
-            expect(response.body.end_frame).to.equal(null);
             return response.body.id;
         });
     }
@@ -392,8 +368,6 @@ context('3D spatial review', { browser: '!firefox' }, () => {
             position = response.body.position;
             expect(position).to.have.length(16);
             expect(position.slice(6, 9)).not.to.deep.equal([1, 1, 1]);
-            expect(response.body.object_id).to.equal(null);
-            expect(response.body.object_type).to.equal(null);
         });
         ['perspective', 'topview', 'sideview', 'frontview'].forEach((view) => {
             cy.get(`.cvat-canvas3d-${view} canvas`).should(($canvas) => {
@@ -550,10 +524,7 @@ context('3D spatial review', { browser: '!firefox' }, () => {
             issueId = response.body.id;
             position = response.body.position;
             expect(position).to.have.length(3);
-            expect(response.body.object_id).to.equal(null);
-            expect(response.body.object_type).to.equal(null);
             expect(response.body.frame).to.equal(0);
-            expect(response.body.end_frame).to.equal(null);
         });
         cy.get('.cvat-canvas3d-perspective canvas').should(($canvas) => {
             const cloud = $canvas[0].scene.children.find((child) => child.isPoints);
@@ -776,12 +747,9 @@ context('3D spatial review', { browser: '!firefox' }, () => {
         rightClickCuboid();
         cy.intercept('POST', '/api/issues**').as('cuboidIssue');
         cy.contains('.cvat-context-menu-item', 'Quick issue: incorrect position').click();
-        cy.wait('@cuboidIssue').then(({ request, response }) => {
+        cy.wait('@cuboidIssue').then(({ response }) => {
             expect(response.statusCode).to.equal(201);
             expect(response.body.position).to.deep.equal(points);
-            expect(request.body).not.to.include.any.keys('object_id', 'object_type');
-            expect(response.body.object_type).to.equal(null);
-            expect(response.body.object_id).to.equal(null);
             expect(response.body.view.position).to.have.length(3);
             expect(response.body.view.target).to.have.length(3);
             expect(response.body.view.zoom).to.be.greaterThan(0);
@@ -827,10 +795,9 @@ context('3D spatial review', { browser: '!firefox' }, () => {
             cy.get('#issue_description').type('Check the cuboid extents');
             cy.contains('button', 'Submit').click();
         });
-        cy.wait('@cuboidIssue').then(({ request, response }) => {
+        cy.wait('@cuboidIssue').then(({ response }) => {
             expect(response.statusCode).to.equal(201);
             expect(response.body.position.slice(6, 9)).not.to.deep.equal(points.slice(6, 9));
-            expect(request.body).not.to.include.any.keys('object_id', 'object_type');
             cy.get('.cvat-canvas3d-topview canvas').should(($canvas) => {
                 const { state } = $canvas[0].getDrawnObjects().find((object) => object.state.clientID === 1);
                 expect(state.points).to.deep.equal(points);
@@ -1023,11 +990,8 @@ context('3D spatial review', { browser: '!firefox' }, () => {
         cy.get('.cvat-create-issue-dialog').contains('button', 'Submit').click();
         cy.wait('@trackFrameIssue').then(({ response }) => {
             expect(response.statusCode).to.equal(201);
-            expect(response.body.object_type).to.equal(null);
-            expect(response.body.object_id).to.equal(null);
             expect(response.body.position).to.deep.equal([1, ...points.slice(1)]);
             expect(response.body.frame).to.equal(1);
-            expect(response.body.end_frame).to.equal(null);
             issueId = response.body.id;
         });
         cy.contains('[role="tab"]', 'Issues').click();
@@ -1048,9 +1012,7 @@ context('3D spatial review', { browser: '!firefox' }, () => {
             cy.intercept('PATCH', `/api/issues/${issueId}`).as('moveTrackFrameIssue');
             dragMarker(issueId, 'top', 10, -6, false, true);
             cy.wait('@moveTrackFrameIssue').then(({ response }) => {
-                expect(response.body.object_id).to.equal(null);
                 savedPosition = response.body.position;
-                expect(response.body.end_frame).to.equal(null);
             });
         });
         cy.reload();
@@ -1075,10 +1037,9 @@ context('3D spatial review', { browser: '!firefox' }, () => {
         cy.then(() => cy.get(`#cvat-objects-sidebar-issue-item-${issueId}`).click());
         cy.get('.cvat-issue-dialog').should('be.visible').and('contain.text', 'The position needs correction');
         cy.get('.cvat-issue-dialog').contains('button', 'Reopen').click();
+        cy.get('.cvat-issue-dialog').contains('button', 'Resolve').should('be.visible');
         cy.then(() => cy.request(`/api/issues/${issueId}`).then(({ body }) => {
-            expect(body.object_id).to.equal(null);
             expect(body.position).to.deep.equal(savedPosition);
-            expect(body.end_frame).to.equal(null);
             expect(body.resolved).to.equal(false);
         }));
     });
@@ -1102,11 +1063,9 @@ context('3D spatial review', { browser: '!firefox' }, () => {
         cy.get('#issue_description').type('Review this newly created cuboid');
         cy.intercept('POST', '/api/issues**').as('newCuboidIssue');
         cy.get('.cvat-create-issue-dialog').contains('button', 'Submit').click();
-        cy.wait('@newCuboidIssue').then(({ request, response }) => {
+        cy.wait('@newCuboidIssue').then(({ response }) => {
             expect(response.statusCode).to.equal(201);
             expect(response.body.position).to.have.length(16);
-            expect(request.body).not.to.include.any.keys('object_id', 'object_type');
-            expect(response.body.object_id).to.equal(null);
             cy.request(`/api/jobs/${jobId}/annotations`).then(({ body }) => {
                 expect(body.shapes).to.have.length(0);
             });
@@ -1401,18 +1360,14 @@ context('3D spatial review', { browser: '!firefox' }, () => {
             checkSimpleIssueForm();
             cy.get('#issue_description').type('Check this annotation or location');
             cy.get('.cvat-create-issue-dialog').contains('button', 'Submit').click();
-            cy.wait('@explicitIssueTarget').then(({ request, response }) => {
-                expect(request.body).not.to.include.any.keys('object_id', 'object_type');
+            cy.wait('@explicitIssueTarget').then(({ response }) => {
                 if (cuboidPoints) {
                     expect(response.body.position).to.deep.equal(cuboidPoints);
                 } else {
                     expect(response.body.position).to.have.length(3);
                 }
                 expect(response.statusCode).to.equal(201);
-                expect(response.body.object_id).to.equal(null);
-                expect(response.body.object_type).to.equal(null);
                 expect(response.body.frame).to.equal(0);
-                expect(response.body.end_frame).to.equal(null);
                 createdIssues.push(response.body);
             });
         }
@@ -1621,8 +1576,6 @@ context('3D spatial review', { browser: '!firefox' }, () => {
             cy.wait('@propertyIssue').then(({ request, response }) => {
                 expect(request.body.message).to.equal(message);
                 expect(response.statusCode).to.equal(201);
-                expect(response.body.object_type).to.equal(null);
-                expect(response.body.object_id).to.equal(null);
                 expect(response.body.position).to.deep.equal([objectType === 'track' ? 2 : -2, ...points.slice(1)]);
                 expect(response.body.view.position).to.have.length(3);
                 createdIssues.push(response.body.id);
@@ -1772,10 +1725,7 @@ context('3D spatial review', { browser: '!firefox' }, () => {
                 cy.get('.cvat-create-issue-dialog').contains('button', 'Submit').click();
                 cy.wait('@orthographicIssue').then(({ response }) => {
                     expect(response.statusCode).to.equal(201);
-                    expect(response.body.object_type).to.equal(null);
-                    expect(response.body.object_id).to.equal(null);
                     expect(response.body.frame).to.equal(0);
-                    expect(response.body.end_frame).to.equal(null);
                     expect(response.body.view.position).to.have.length(3);
                     issueIds.push(response.body.id);
                     cy.get(`${pane} canvas`).then(($canvas) => (
@@ -1805,8 +1755,6 @@ context('3D spatial review', { browser: '!firefox' }, () => {
             cy.get('.cvat-create-issue-dialog').contains('button', 'Submit').click();
             cy.wait('@orthographicIssue').then(({ response }) => {
                 expect(response.statusCode).to.equal(201);
-                expect(response.body.object_id).to.equal(null);
-                expect(response.body.object_type).to.equal(null);
                 cy.get(`${pane} canvas`).then(($canvas) => {
                     const cloud = $canvas[0].scene.children.find((child) => child.isPoints && child.visible);
                     const vertices = cloud.geometry.attributes.position;
@@ -1830,150 +1778,6 @@ context('3D spatial review', { browser: '!firefox' }, () => {
         cy.contains('[role="tab"]', 'Issues').click();
         cy.get('.cvat-issues-sidebar-hidden-issues').click();
         cy.then(() => cy.get(`.cvat-canvas3d-issue-region[data-issue-id="${issueIds[0]}"]`).should('have.length', 4));
-    });
-
-    it('highlights linked cuboids with a single translucent color without changing annotation colors', () => {
-        let shapeId;
-        let trackId;
-        let originalColor;
-        const issueIds = [];
-        const points = [0, 0, 1, 0, 0, 0.3, 1, 1, 1, 0, 0, 0, 0, 0, 0, 0];
-        cy.getCookie('csrftoken').then((cookie) => cy.request({
-            method: 'DELETE', url: `/api/jobs/${jobId}/annotations`, headers: { 'X-CSRFToken': cookie.value },
-        }));
-        cy.request(`/api/labels?job_id=${jobId}`).then(({ body }) => cy.getCookie('csrftoken').then((cookie) => (
-            cy.request({
-                method: 'PATCH',
-                url: `/api/jobs/${jobId}/annotations?action=create`,
-                headers: { 'X-CSRFToken': cookie.value },
-                body: {
-                    tags: [],
-                    shapes: [{
-                        type: 'cuboid',
-                        frame: 0,
-                        label_id: body.results[0].id,
-                        points: [-2, ...points.slice(1)],
-                        attributes: [],
-                        occluded: false,
-                        z_order: 0,
-                        rotation: 0,
-                    }],
-                    tracks: [{
-                        frame: 0,
-                        label_id: body.results[0].id,
-                        attributes: [],
-                        shapes: [0, 2].map((frame) => ({
-                            frame,
-                            type: 'cuboid',
-                            points: [2, ...points.slice(1)],
-                            attributes: [],
-                            occluded: false,
-                            outside: false,
-                            z_order: 0,
-                            rotation: 0,
-                        })),
-                    }],
-                },
-            }).then(({ body: annotations }) => {
-                shapeId = annotations.shapes[0].id;
-                trackId = annotations.tracks[0].id;
-            })
-        )));
-        cy.getCookie('csrftoken').then((cookie) => {
-            const headers = { 'X-CSRFToken': cookie.value };
-            cy.then(() => {
-                [
-                    {
-                        object_type: 'shape', object_id: shapeId, position: [-2, 0, 2], message: 'First cuboid issue',
-                    },
-                    {
-                        object_type: 'shape', object_id: shapeId, position: [-2, 0, 1], message: 'Second cuboid issue',
-                    },
-                    {
-                        object_type: 'track', object_id: trackId, position: [2, 0, 1], message: 'Resolved track issue',
-                    },
-                    { position: [-2, 0, 0], message: 'Unlinked point inside the same view' },
-                ].forEach((issue) => cy.request({
-                    method: 'POST', url: '/api/issues', headers, body: { job: jobId, frame: 0, ...issue },
-                }).then(({ body }) => { issueIds.push(body.id); }));
-            });
-            cy.then(() => cy.request({
-                method: 'PATCH', url: `/api/issues/${issueIds[2]}`, headers, body: { resolved: true },
-            }));
-        });
-        cy.visit(`/tasks/${taskId}/jobs/${jobId}?defaultWorkspace=review`);
-        cy.get('.cvat-canvas3d-perspective canvas').should(($canvas) => {
-            expect($canvas[0].getDrawnObjects()).to.have.length(2);
-        }).then(($canvas) => {
-            originalColor = $canvas[0].getDrawnObjects().find(({ state }) => (
-                state.serverID === shapeId && state.objectType === 'shape'
-            )).cuboid.perspective.material.color.getHexString();
-        });
-
-        function checkIssueHighlight(id, objectType, color) {
-            cy.get('.cvat-canvas3d-perspective canvas').should(($canvas) => {
-                const { cuboid } = $canvas[0].getDrawnObjects().find(({ state }) => (
-                    state.serverID === id && state.objectType === objectType
-                ));
-                ['perspective', 'top', 'side', 'front'].forEach((view) => {
-                    const regions = cuboid[view].children.filter((child) => child.name === 'cvat-issue-region');
-                    expect(regions, `${objectType} highlight in ${view}`).to.have.length(color ? 1 : 0);
-                    expect(cuboid[view].material.colorWrite, 'normal fill is restored when the issue highlight clears')
-                        .to.equal(!color);
-                    if (color) {
-                        expect(regions[0].material.uniforms.regionColor.value.getHexString()).to.equal(color);
-                        expect(regions[0].material.uniforms.regionOpacity.value).to.be.within(0.2, 0.99);
-                        expect(regions[0].material.fragmentShader).not.to.include('discard');
-                        expect(regions[0].geometry).not.to.equal(cuboid[view].geometry);
-                        expect(regions[0].getWorldPosition(cuboid[view].position.clone()).toArray())
-                            .to.deep.equal(cuboid[view].getWorldPosition(cuboid[view].position.clone()).toArray());
-                    }
-                    if (objectType === 'shape') {
-                        expect(cuboid[view].material.color.getHexString()).to.equal(originalColor);
-                    }
-                });
-            });
-        }
-
-        cy.contains('.cvat-objects-sidebar-state-item', 'CUBOID SHAPE').trigger('mouseover');
-        cy.then(() => { checkSelectedCuboid(shapeId, 'shape'); });
-        cy.then(() => { checkIssueHighlight(shapeId, 'shape', 'ff0000'); });
-        cy.then(() => { checkIssueHighlight(trackId, 'track', null); });
-        cy.contains('[role="tab"]', 'Issues').click();
-        cy.then(() => cy.get(`#cvat-objects-sidebar-issue-item-${issueIds[0]}`).trigger('mouseover'));
-        cy.then(() => { checkIssueHighlight(shapeId, 'shape', 'ffff00'); });
-        cy.then(() => cy.get(`#cvat-objects-sidebar-issue-item-${issueIds[0]}`).trigger('mouseout'));
-        cy.then(() => { checkIssueHighlight(shapeId, 'shape', 'ff0000'); });
-
-        cy.then(() => cy.get(`#cvat-objects-sidebar-issue-item-${issueIds[0]}`).click());
-        cy.get('.cvat-issue-dialog').contains('button', 'Resolve').click();
-        cy.then(() => { checkIssueHighlight(shapeId, 'shape', 'ff0000'); });
-        cy.then(() => cy.get(`#cvat-objects-sidebar-issue-item-${issueIds[1]}`).click());
-        cy.get('.cvat-issue-dialog').contains('button', 'Resolve').click();
-        cy.then(() => { checkIssueHighlight(shapeId, 'shape', null); });
-
-        // Resolved issues can be previewed, but do not leave a persistent region.
-        cy.then(() => cy.get(`#cvat-hidden-issue-label-${issueIds[0]}-perspective`).trigger('mouseover'));
-        cy.then(() => { checkIssueHighlight(shapeId, 'shape', 'ff0000'); });
-        cy.then(() => cy.get(`#cvat-hidden-issue-label-${issueIds[0]}-perspective`).trigger('mouseout'));
-        cy.then(() => { checkIssueHighlight(shapeId, 'shape', null); });
-        cy.then(() => cy.get(`#cvat-objects-sidebar-issue-item-${issueIds[2]}`).trigger('mouseover'));
-        cy.then(() => { checkIssueHighlight(trackId, 'track', 'ffff00'); });
-        cy.get('.cvat-issues-sidebar-hidden-resolved-status').click();
-        cy.then(() => { checkIssueHighlight(trackId, 'track', null); });
-        cy.get('.cvat-issues-sidebar-hidden-resolved-status').click();
-        cy.then(() => cy.get(`#cvat-objects-sidebar-issue-item-${issueIds[2]}`).trigger('mouseout'));
-        cy.then(() => cy.get(`#cvat-objects-sidebar-issue-item-${issueIds[2]}`).click());
-        cy.get('.cvat-issue-dialog').contains('button', 'Reopen').click();
-        cy.then(() => { checkIssueHighlight(trackId, 'track', 'ff0000'); });
-        cy.get('.cvat-issues-sidebar-shown-issues').click();
-        cy.then(() => { checkIssueHighlight(trackId, 'track', null); });
-        cy.get('.cvat-issues-sidebar-hidden-issues').click();
-        cy.then(() => { checkIssueHighlight(trackId, 'track', 'ff0000'); });
-        cy.goCheckFrameNumber(1);
-        cy.then(() => { checkIssueHighlight(trackId, 'track', null); });
-        cy.goCheckFrameNumber(0);
-        cy.then(() => { checkIssueHighlight(trackId, 'track', 'ff0000'); });
     });
 });
 
@@ -2051,7 +1855,6 @@ context('2D review with shared canvas popups', () => {
             expect(response.statusCode).to.equal(201);
             expect(request.body.message).to.equal('Wrong attribute');
             expect(response.body.position).to.have.length(10);
-            expect(response.body.object_id).to.equal(null);
             expect(response.body.view).to.equal(null);
         });
     });

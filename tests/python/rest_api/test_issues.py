@@ -40,13 +40,7 @@ class TestPostIssues:
 
             assert (
                 DeepDiff(
-                    {
-                        "end_frame": None,
-                        "object_id": None,
-                        "object_type": None,
-                        "view": None,
-                        **data,
-                    },
+                    {"view": None, **data},
                     response_json,
                     exclude_regex_paths=r"root\['created_date|updated_date|comments|id|owner|message'\]",
                 )

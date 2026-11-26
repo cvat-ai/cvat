@@ -21,7 +21,6 @@ import {
 import { ObjectState, ObjectType } from '.';
 import { ThickArrowHelper } from './thickArrowHelper';
 import { displayPixelRatio, disposeObject3D, disposeScene } from './utils';
-import { IssueRegion, ISSUE_REGION_NAME } from './issueRegion';
 import {
     IssueCuboid, IssueCuboids, isIssueCuboid, isIssuePoint, issueCuboidCorners, resizeIssueCuboid,
 } from './issueCuboid';
@@ -32,7 +31,6 @@ export interface Canvas3dView {
     render(): void;
     keyControls(keys: KeyboardEvent): void;
     focusObjectByClientId(clientID: number, animate?: boolean): void;
-    setupIssueRegions(regions: Record<number, IssueRegion>): void;
     setupIssueCuboids(regions: IssueCuboid[], activeID?: number | null): void;
     setupIssueSprites(sprites: IssueSprite[]): void;
     pickIssueCuboid(clientX: number, clientY: number, view: ViewType): number | null;
@@ -157,11 +155,9 @@ export class Canvas3dViewImpl implements Canvas3dView, Listener {
     }>;
     private hoverNeedsUpdate: boolean;
     private cameraRayHelpers: ThickArrowHelper[];
-    private issueRegions: Record<number, IssueRegion> = {};
     private issueCuboids: IssueCuboids | null = null;
     private issueSprites: IssueSprites | null = null;
     private activeIssueCuboidID: number | null = null;
-    private redrawMaterial: THREE.MeshBasicMaterial | null = null;
 
     public setupIssueSprites(sprites: IssueSprite[]): void {
         if (!this.issueSprites && sprites.length && this.views.perspective.scene.children.length) {
@@ -244,13 +240,6 @@ export class Canvas3dViewImpl implements Canvas3dView, Listener {
             position, corner, new THREE.Vector3(...moved).sub(new THREE.Vector3(...position.slice(0, 3))),
             this.views[view].camera.getWorldDirection(new THREE.Vector3()),
         ) : null;
-    }
-
-    public setupIssueRegions(regions: Record<number, IssueRegion>): void {
-        this.issueRegions = { ...regions };
-        Object.values(this.drawnObjects).forEach(({ cuboid, data }) => {
-            cuboid.setIssueRegion(this.issueRegions[data.clientID] ?? null);
-        });
     }
 
     public pick(clientX: number, clientY: number, view: ViewType = ViewType.PERSPECTIVE): PickResult | null {
@@ -1496,7 +1485,6 @@ export class Canvas3dViewImpl implements Canvas3dView, Listener {
         cuboid.setRotation(state.points[3], state.points[4], state.points[5]);
         cuboid.attachCameraReference();
         cuboid.setOrientationVisibility(orientationVisibility);
-        cuboid.setIssueRegion(this.issueRegions[state.clientID] ?? null);
 
         cuboid[ViewType.PERSPECTIVE].visible = !(state.hidden || state.outside);
         for (const view of BOTTOM_VIEWS) {
@@ -1854,12 +1842,6 @@ export class Canvas3dViewImpl implements Canvas3dView, Listener {
                 if (this.drawnObjects[data.redraw]?.cuboid?.perspective?.visible) {
                     const { cuboid } = this.drawnObjects[data.redraw];
                     this.cube.perspective = cuboid.perspective.clone() as THREE.Mesh;
-                    // Review highlighting belongs to the source annotation, not its drawing preview.
-                    this.cube.perspective.getObjectByName(ISSUE_REGION_NAME)?.removeFromParent();
-                    const material = (cuboid.perspective.material as THREE.MeshBasicMaterial).clone();
-                    material.colorWrite = true;
-                    this.cube.perspective.material = material;
-                    this.redrawMaterial = material;
                     cuboid.perspective.visible = false;
                 } else {
                     // an object must be drawn and visible to be redrawn
@@ -1911,8 +1893,6 @@ export class Canvas3dViewImpl implements Canvas3dView, Listener {
             }
 
             if (this.mode === Mode.DRAW) {
-                this.redrawMaterial?.dispose();
-                this.redrawMaterial = null;
                 this.controller.drawData.enabled = false;
                 const { redraw } = this.controller.drawData;
                 if (Number.isInteger(redraw)) {

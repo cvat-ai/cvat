@@ -78,11 +78,7 @@ export default function IssuesListComponent(): JSX.Element {
 
     let frames = issues
         .filter((issue: Issue) => !issuesResolvedHidden || !issue.resolved)
-        // Find neighboring frames without expanding long issue ranges into arrays.
-        .flatMap((issue: Issue) => [
-            Math.min(issue.endFrame, Math.max(issue.frame, frame - 1)),
-            Math.max(issue.frame, Math.min(issue.endFrame, frame + 1)),
-        ])
+        .map((issue: Issue) => issue.frame)
         .sort((a: number, b: number) => +a - +b);
 
     if (showGroundTruth) {

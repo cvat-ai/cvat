@@ -4619,9 +4619,6 @@ class IssueReadSerializer(serializers.ModelSerializer):
         fields = (
             "id",
             "frame",
-            "end_frame",
-            "object_id",
-            "object_type",
             "position",
             "view",
             "job",
@@ -4650,35 +4647,27 @@ class IssueWriteSerializer(WriteOnceMixin, serializers.ModelSerializer):
     )
     message = serializers.CharField(style={"base_template": "textarea.html"})
     view = IssueViewSerializer(required=False, allow_null=True)
-    object_type = serializers.ChoiceField(
-        choices=models.Issue.ObjectType.choices, allow_null=True, required=False
-    )
 
     def validate(self, attrs: dict[str, Any]) -> dict[str, Any]:
         instance: models.Issue | None = self.instance
-        if instance and {"position", "view", "end_frame", "object_id", "object_type"}.isdisjoint(
-            attrs
-        ):
+        if instance and {"position", "view"}.isdisjoint(attrs):
             return attrs
 
         job = instance.job if instance else attrs["job"]
         segment = job.segment
-        is_3d = segment.task.dimension == models.DimensionType.DIM_3D
-        if is_3d and "position" in attrs:
-            self._validate_3d_position(attrs["position"])
-        if not is_3d and attrs.get("view") is not None:
+        if segment.task.dimension == models.DimensionType.DIM_3D:
+            if "position" in attrs:
+                self._validate_3d_position(attrs["position"])
+            if instance is None:
+                frame_provider = TaskFrameProvider(segment.task)
+                if not segment.contains_frame(frame_provider.get_abs_frame_number(attrs["frame"])):
+                    raise serializers.ValidationError(
+                        {"frame": "The frame must belong to the job."}
+                    )
+        elif attrs.get("view") is not None:
             raise serializers.ValidationError(
                 {"view": "Camera views are only supported for 3D issues."}
             )
-
-        end_frame = attrs.get("end_frame")
-        if (is_3d and instance is None) or end_frame is not None:
-            frame = instance.frame if instance else attrs["frame"]
-            self._validate_frames(segment, frame, end_frame)
-
-        if "object_id" in attrs or "object_type" in attrs:
-            self._validate_annotation_reference(job, attrs)
-
         return attrs
 
     @classmethod
@@ -4695,43 +4684,6 @@ class IssueWriteSerializer(WriteOnceMixin, serializers.ModelSerializer):
         ):
             raise serializers.ValidationError({"position": "Cuboid dimensions must be positive."})
 
-    @staticmethod
-    def _validate_frames(segment: models.Segment, frame: int, end_frame: int | None) -> None:
-        frame_provider = TaskFrameProvider(segment.task)
-        if not segment.contains_frame(frame_provider.get_abs_frame_number(frame)):
-            raise serializers.ValidationError({"frame": "The frame must belong to the job."})
-        if end_frame is not None and (
-            end_frame < frame
-            or not segment.contains_frame(frame_provider.get_abs_frame_number(end_frame))
-        ):
-            raise serializers.ValidationError(
-                {
-                    "end_frame": "The end frame must be at or after the start frame and belong to the job."
-                }
-            )
-
-    def _validate_annotation_reference(self, job: models.Job, attrs: dict[str, Any]) -> None:
-        instance: models.Issue | None = self.instance
-        object_id = attrs.get("object_id", instance.object_id if instance else None)
-        object_type = attrs.get("object_type", instance.object_type if instance else None)
-        if (object_id is None) != (object_type is None):
-            raise serializers.ValidationError(
-                {"object_id": "Provide both object_id and object_type, or neither."}
-            )
-        if object_id is None:
-            return
-
-        annotation_model = {
-            models.Issue.ObjectType.SHAPE: models.LabeledShape,
-            models.Issue.ObjectType.TRACK: models.LabeledTrack,
-        }.get(object_type)
-        if annotation_model is None:
-            raise serializers.ValidationError({"object_type": "Select a valid annotation type."})
-        if not annotation_model.objects.filter(id=object_id, job=job).exists():
-            raise serializers.ValidationError(
-                {"object_id": "The annotation must belong to this job."}
-            )
-
     def to_representation(self, instance):
         serializer = IssueReadSerializer(instance, context=self.context)
         return serializer.data
@@ -4744,18 +4696,7 @@ class IssueWriteSerializer(WriteOnceMixin, serializers.ModelSerializer):
 
     class Meta:
         model = models.Issue
-        fields = (
-            "frame",
-            "end_frame",
-            "object_id",
-            "object_type",
-            "position",
-            "view",
-            "job",
-            "assignee",
-            "message",
-            "resolved",
-        )
+        fields = ("frame", "position", "view", "job", "assignee", "message", "resolved")
         write_once_fields = ("frame", "job", "message", "view")
 
 

@@ -23,7 +23,7 @@ import {
 import { ThunkDispatch, shallowEqual } from 'utils/redux';
 import { useIsMounted } from 'utils/hooks';
 import { clamp } from 'utils/math';
-import { findLinkedCuboid, isReviewableCuboid } from 'utils/review/reviewable-cuboid';
+import { isReviewableCuboid } from 'utils/review/reviewable-cuboid';
 import { showIssueGeometry, visibleFrameIssues } from 'utils/review/issue-visibility';
 import CreateIssueDialog from './create-issue-dialog';
 import HiddenIssueLabel, { getIssueLabelPosition } from './hidden-issue-label';
@@ -145,25 +145,6 @@ function IssueOverlays({ canvas }: { canvas: Canvas3d }): JSX.Element {
     useEffect(() => {
         setHoveredResolvedIssueId(null);
     }, [frame, job]);
-
-    useEffect(() => {
-        const regions: Record<number, { highlighted: boolean }> = {};
-        if (ready) {
-            for (const issue of visibleIssues) {
-                if (!showIssueGeometry(issue, activeIssueId, geometryHighlightId)) continue;
-                const highlighted = issue.id === highlightedIssueId;
-                const object = findLinkedCuboid(objects, issue);
-                if (object) {
-                    regions[object.clientID] = { highlighted: highlighted || !!regions[object.clientID]?.highlighted };
-                }
-            }
-        }
-        canvas.setupIssueRegions(regions);
-    }, [
-        canvas, ready, visibleIssues, objects, activeIssueId, highlightedIssueId, geometryHighlightId,
-    ]);
-
-    useEffect(() => () => canvas.setupIssueRegions({}), [canvas]);
 
     useEffect(() => {
         const regions = ready ? visibleIssues.filter((issue) => (
@@ -576,10 +557,8 @@ function IssueOverlays({ canvas }: { canvas: Canvas3d }): JSX.Element {
 
     useEffect(() => {
         if (!ready || !activeIssue || activeControl !== ActiveControl.CURSOR) return;
-        const object = findLinkedCuboid(objects, activeIssue);
-        // Reuse selection so the linked cuboid is highlighted in every 3D view.
-        dispatch(activateObject(object?.clientID ?? null, null, null));
-    }, [activeIssue, activeControl, objects, ready]);
+        dispatch(activateObject(null, null, null));
+    }, [activeIssue, activeControl, ready, dispatch]);
 
     const dialogId = newPosition ? DRAFT_ISSUE_ID : activeIssueId;
     const preferredView = newPosition ? draftView : ViewType.PERSPECTIVE;

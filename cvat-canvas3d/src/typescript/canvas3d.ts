@@ -27,7 +27,6 @@ import {
 import { CUBOID_EDGES, CUBOID_FACES } from './cuboid';
 import type { CameraCalibration } from './geometry/camera-projection';
 import type { Master } from './master';
-import type { IssueRegion } from './issueRegion';
 import type { IssueCuboid } from './issueCuboid';
 import type { IssueSprite } from './issueSprite';
 
@@ -46,7 +45,6 @@ interface Canvas3d {
     fitCanvas(): void;
     fit(): void;
     focus(clientID: number): void;
-    setupIssueRegions(regions: Record<number, IssueRegion>): void;
     setupIssueCuboids(regions: IssueCuboid[], activeID?: number | null): void;
     setupIssueSprites(sprites: IssueSprite[]): void;
     pickIssueCuboid(clientX: number, clientY: number, view: ViewType): number | null;
@@ -141,10 +139,6 @@ class Canvas3dImpl implements Canvas3d {
 
     public focus(clientID: number): void {
         this.view.focusObjectByClientId(clientID, true);
-    }
-
-    public setupIssueRegions(regions: Record<number, IssueRegion>): void {
-        this.view.setupIssueRegions(regions);
     }
 
     public setupIssueCuboids(regions: IssueCuboid[], activeID: number | null = null): void {

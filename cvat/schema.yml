@@ -9528,20 +9528,6 @@ components:
         frame:
           type: integer
           readOnly: true
-        end_frame:
-          type: integer
-          readOnly: true
-          nullable: true
-        object_id:
-          type: integer
-          readOnly: true
-          nullable: true
-        object_type:
-          readOnly: true
-          nullable: true
-          oneOf:
-          - $ref: '#/components/schemas/ObjectTypeEnum'
-          - $ref: '#/components/schemas/NullEnum'
         position:
           type: array
           items:
@@ -9654,22 +9640,6 @@ components:
           type: integer
           maximum: 2147483647
           minimum: 0
-        end_frame:
-          type: integer
-          maximum: 2147483647
-          minimum: 0
-          nullable: true
-        object_id:
-          type: integer
-          maximum: 9223372036854775807
-          minimum: 0
-          format: int64
-          nullable: true
-        object_type:
-          nullable: true
-          oneOf:
-          - $ref: '#/components/schemas/ObjectTypeEnum'
-          - $ref: '#/components/schemas/NullEnum'
         position:
           type: array
           items:
@@ -10474,14 +10444,6 @@ components:
     NullEnum:
       enum:
       - null
-    ObjectTypeEnum:
-      enum:
-      - shape
-      - track
-      type: string
-      description: |-
-        * `shape` - Shape
-        * `track` - Track
     OnlineFunctionCallRequest:
       type: object
       properties:
@@ -11193,22 +11155,6 @@ components:
     PatchedIssueWriteRequest:
       type: object
       properties:
-        end_frame:
-          type: integer
-          maximum: 2147483647
-          minimum: 0
-          nullable: true
-        object_id:
-          type: integer
-          maximum: 9223372036854775807
-          minimum: 0
-          format: int64
-          nullable: true
-        object_type:
-          nullable: true
-          oneOf:
-          - $ref: '#/components/schemas/ObjectTypeEnum'
-          - $ref: '#/components/schemas/NullEnum'
         position:
           type: array
           items:
