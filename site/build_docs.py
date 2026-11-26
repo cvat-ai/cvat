@@ -168,6 +168,14 @@ def generate_docs(repo, output_dir: os.PathLike, tags):
         generate_versioning_config(versioning_toml_path, (t.name for t in tags), "/..")
         for tag in tags:
             git_checkout(tag.name, temp_repo, Path(temp_dir))
+            # All published versions share the same docs hostname and consent settings.
+            for relative_path in (
+                "layouts/partials/head.html",
+                "layouts/partials/footer.html",
+                "layouts/partials/cookie-consent.html",
+                "assets/js/cookie-consent.js",
+            ):
+                shutil.copy2(repo_root / "site" / relative_path, content_loc / relative_path)
             copy_sdk_examples(Path(temp_repo.working_tree_dir), content_loc)
             change_version_menu_toml(versioning_toml_path, tag.name)
             run_npm_install()

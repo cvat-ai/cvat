@@ -1,152 +1,79 @@
-/**
- * Cookie Consent Banner JavaScript
- * Copyright (C) CVAT.ai Corporation
- * SPDX-License-Identifier: MIT
- *
- * Note: Banner visibility is controlled by Hugo production mode.
- * This script only loads in production environments.
- */
+// Copyright (C) CVAT.ai Corporation
+// SPDX-License-Identifier: MIT
 
-(function() {
-    'use strict';
+(() => {
+    const measurementId = document.currentScript.dataset.gaTrackingId;
+    const disableKey = `ga-disable-${measurementId}`;
+    const denied = {
+        analytics_storage: 'denied',
+        ad_storage: 'denied',
+        ad_user_data: 'denied',
+        ad_personalization: 'denied',
+    };
+    let started = false;
+    let permitted = false;
 
-    /**
-     * Simple check for localhost/development to prevent analytics pollution
-     * @returns {boolean} True if running on localhost or with custom port
-     */
-    function isLocalhost() {
-        return location.hostname.includes('localhost') ||
-               location.hostname === '127.0.0.1' ||
-               location.port !== '';
+    function isAccepted() {
+        return window.CVATCookieConsent?.getState().analytics === true;
     }
 
-    /**
-     * Inject Google Analytics script into the page
-     */
-    function injectGAScript() {
-        // Defense in depth: prevent analytics on localhost even in production builds
-        if (isLocalhost()) {
-            console.log('Analytics disabled for localhost');
-            return;
-        }
-
-        // Check if GA tracking ID is available
-        if (!window.GOOGLE_TAG_ID) {
-            console.log('GA tracking ID not configured');
-            return;
-        }
-
-        if (document.getElementById('ga-script')) return;
-
-        // Re-enable Google Analytics tracking if it was previously disabled
-        delete window['ga-disable-' + window.GOOGLE_TAG_ID];
-
-        // Load the external Google Analytics script
-        var s = document.createElement('script');
-        s.id = 'ga-script';
-        s.async = true;
-        s.src = 'https://www.googletagmanager.com/gtag/js?id=' + window.GOOGLE_TAG_ID;
-        document.head.appendChild(s);
-
-        // Initialize Google Analytics directly
-        window.dataLayer = window.dataLayer || [];
-        window.gtag = function() { dataLayer.push(arguments); };
-        window.gtag('js', new Date());
-        window.gtag('config', window.GOOGLE_TAG_ID);
-    }
-
-    /**
-     * Clear all analytics-related cookies and data
-     */
     function clearAnalyticsCookies() {
-        // Clear Google Analytics cookies
-        var cookies = document.cookie.split(';');
-        for (var i = 0; i < cookies.length; i++) {
-            var cookie = cookies[i].trim();
-            var cookieName = cookie.split('=')[0];
-
-            // Remove GA cookies
-            if (cookieName.startsWith('_ga') ||
-                cookieName.startsWith('_gid') ||
-                cookieName.startsWith('_gat')) {
-
-                // Clear for current domain
-                document.cookie = cookieName + '=; expires=Thu, 01 Jan 1970 00:00:00 UTC; path=/;';
-                // Clear for domain with leading dot
-                document.cookie = cookieName + '=; expires=Thu, 01 Jan 1970 00:00:00 UTC; path=/; domain=' + location.hostname + ';';
-                document.cookie = cookieName + '=; expires=Thu, 01 Jan 1970 00:00:00 UTC; path=/; domain=.' + location.hostname + ';';
+        const domains = ['', location.hostname];
+        if (location.hostname.endsWith('.cvat.ai')) domains.push('cvat.ai');
+        for (const cookie of document.cookie.split(';')) {
+            const name = cookie.split('=')[0].trim();
+            if (!/^_(?:(?:ga|gat)(?:_|$)|gid$)/.test(name)) continue;
+            for (const domain of domains) {
+                document.cookie = `${name}=; Max-Age=0; Path=/${domain ? `; Domain=${domain}` : ''}`;
             }
         }
-
-        // Clear dataLayer
-        if (window.dataLayer) {
-            window.dataLayer = [];
-        }
-
-        // Properly disable Google Analytics tracking
-        if (window.GOOGLE_TAG_ID) {
-            window['ga-disable-' + window.GOOGLE_TAG_ID] = true;
-        }
-
-        // Remove GA script if present
-        var gaScript = document.getElementById('ga-script');
-        if (gaScript) {
-            gaScript.remove();
-        }
-
-        console.log('Analytics cookies and scripts cleared');
     }
 
-    /**
-     * Handle cookie acceptance
-     */
-    window.acceptCookies = function() {
-        localStorage.setItem('cookieConsent', 'true');
-        document.getElementById('cookie-consent-banner').style.display = 'none';
-        injectGAScript();
-    };
+    document.querySelector('[data-cookie-settings]').addEventListener('click', (event) => {
+        event.preventDefault();
+        window.CVATCookieConsent?.show().catch(console.error);
+    });
 
-    /**
-     * Handle cookie rejection
-     */
-    window.rejectCookies = function() {
-        var previousConsent = localStorage.getItem('cookieConsent');
-        localStorage.setItem('cookieConsent', 'false');
-        document.getElementById('cookie-consent-banner').style.display = 'none';
+    if (location.hostname === 'localhost' || location.hostname === '127.0.0.1' || location.port) return;
 
-        // If user previously accepted but now rejects, clear analytics cookies
-        if (previousConsent === 'true') {
-            clearAnalyticsCookies();
-        }
-    };
-
-    /**
-     * Show cookie settings banner (called from footer link)
-     */
-    window.showCookieSettings = function() {
-        document.getElementById('cookie-consent-banner').style.display = 'flex';
-    };
-
-    /**
-     * Initialize cookie consent banner on page load
-     */
-    function initializeCookieConsent() {
-        var consent = localStorage.getItem('cookieConsent');
-
-        // Show banner if no consent given yet
-        if (!consent) {
-            document.getElementById('cookie-consent-banner').style.display = 'flex';
-        } else if (consent === 'true') {
-            // Load analytics if user previously consented
-            injectGAScript();
-        }
+    window.dataLayer = window.dataLayer || [];
+    function command() {
+        window.dataLayer.push(arguments);
     }
 
-    // Initialize when DOM is ready
-    if (document.readyState === 'loading') {
-        document.addEventListener('DOMContentLoaded', initializeCookieConsent);
-    } else {
-        initializeCookieConsent();
+    window.gtag = function () {
+        if (isAccepted()) command.apply(null, arguments);
+    };
+
+    function updateConsent() {
+        const accepted = isAccepted();
+        window[disableKey] = !accepted;
+        if (!accepted) {
+            if (permitted) command('consent', 'update', denied);
+            if (permitted || window.CVATCookieConsent?.getState().choice === 'rejected') clearAnalyticsCookies();
+            permitted = false;
+            return;
+        }
+
+        if (permitted) return;
+        permitted = true;
+        if (started) {
+            command('consent', 'update', { analytics_storage: 'granted' });
+            return;
+        }
+
+        started = true;
+        command('consent', 'default', denied);
+        command('consent', 'update', { analytics_storage: 'granted' });
+        command('js', new Date());
+        command('config', measurementId, { allow_google_signals: false, allow_ad_personalization_signals: false });
+
+        const script = document.createElement('script');
+        script.async = true;
+        script.src = `https://www.googletagmanager.com/gtag/js?id=${encodeURIComponent(measurementId)}`;
+        document.head.append(script);
     }
 
+    window.addEventListener('cvat:cookie-consent', updateConsent);
+    updateConsent();
 })();
