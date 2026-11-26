@@ -2,13 +2,13 @@
 //
 // SPDX-License-Identifier: MIT
 
-import React, { useEffect, useState } from '@modules/react';
-import Alert from '@modules/antd/lib/alert';
-import Button from '@modules/antd/lib/button';
-import Checkbox, { CheckboxChangeEvent } from '@modules/antd/lib/checkbox';
-import { Col, Row } from '@modules/antd/lib/grid';
-import notification from '@modules/antd/lib/notification';
-import Text from '@modules/antd/lib/typography/Text';
+import React, { useEffect, useState } from 'react';
+import Alert from 'antd/lib/alert';
+import Button from 'antd/lib/button';
+import Checkbox, { CheckboxChangeEvent } from 'antd/lib/checkbox';
+import { Col, Row } from 'antd/lib/grid';
+import notification from 'antd/lib/notification';
+import Text from 'antd/lib/typography/Text';
 
 import indexedStorage from '../indexed-storage';
 import { CachePlugin } from '../types';
@@ -66,7 +66,7 @@ export default function SettingsComponent({ plugin }: SettingsComponentProps): J
                                             return indexedStorage.estimate();
                                         }).then((res) => setQuota(res))
                                         .catch((err) => notification.error({
-                                            message: 'Cache error occured',
+                                            message: 'Cache error occurred',
                                             description: err.toString(),
                                         }));
                                 }}

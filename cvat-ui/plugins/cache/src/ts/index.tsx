@@ -2,10 +2,10 @@
 //
 // SPDX-License-Identifier: MIT
 
-import React from '@modules/react';
-import { PluginEntryPoint, ComponentBuilder } from '@root/components/plugins-entrypoint';
-import { Job } from '@root/cvat-core-wrapper';
-import { logError, EventScope } from '@root/cvat-logger';
+import React from 'react';
+import { PluginEntryPoint, ComponentBuilder } from 'components/plugins-entrypoint';
+import { Job } from 'cvat-core-wrapper';
+import { logError, EventScope } from 'cvat-logger';
 import indexedStorage, { DatabaseStore, LoggingCallbacks } from './indexed-storage';
 import cacheState from './cache-state';
 import {

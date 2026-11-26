@@ -4,7 +4,7 @@
 
 import {
     CloudStorage, CVATCore, Job, MLModel, Project, Task,
-} from '@root/cvat-core-wrapper';
+} from 'cvat-core-wrapper';
 import { DatabaseStore } from './indexed-storage';
 
 export type PreviewFor = Project | Task | Job | CloudStorage | MLModel;
