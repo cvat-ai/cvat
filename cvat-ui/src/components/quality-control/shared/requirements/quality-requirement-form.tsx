@@ -496,7 +496,9 @@ export default function QualityRequirementForm(props: Readonly<QualityRequiremen
                 return (
                     <Col span={12}>
                         {renderPercentInput(
-                            'iouThreshold', 'IoU threshold (%)', requirementDescriptions.iouThreshold,
+                            'iouThreshold', 'IoU threshold (%)', annotationType === QualityRequirementAnnotationType.CUBOID ?
+                                'Intersection over union of cuboid volumes, including rotations around all three axes.' :
+                                requirementDescriptions.iouThreshold,
                         )}
                     </Col>
                 );
@@ -650,19 +652,23 @@ export default function QualityRequirementForm(props: Readonly<QualityRequiremen
                         </Row>
                     </>
                 )}
-                <Divider />
-                <Row gutter={16}>
-                    <Col span={12}>
-                        {renderCheckbox('matchGroups', 'Match groups', requirementDescriptions.matchGroups)}
-                    </Col>
-                    <Col span={12}>
-                        {renderPercentInput(
-                            'groupMatchThreshold',
-                            'Min group match threshold (%)',
-                            requirementDescriptions.groupMatchThreshold,
-                        )}
-                    </Col>
-                </Row>
+                {annotationType !== QualityRequirementAnnotationType.CUBOID && (
+                    <>
+                        <Divider />
+                        <Row gutter={16}>
+                            <Col span={12}>
+                                {renderCheckbox('matchGroups', 'Match groups', requirementDescriptions.matchGroups)}
+                            </Col>
+                            <Col span={12}>
+                                {renderPercentInput(
+                                    'groupMatchThreshold',
+                                    'Min group match threshold (%)',
+                                    requirementDescriptions.groupMatchThreshold,
+                                )}
+                            </Col>
+                        </Row>
+                    </>
+                )}
             </>
         );
     };
@@ -702,6 +708,11 @@ export default function QualityRequirementForm(props: Readonly<QualityRequiremen
                 }, {
                     validator: (_, value: string): Promise<void> => {
                         const trimmedValue = value?.trim();
+                        if (!isBaseRequirement && ANNOTATION_TYPES.some((type) => (
+                            `Base ${type.replace(/_/g, ' ')}` === trimmedValue
+                        ))) {
+                            return Promise.reject(new Error('This name is reserved for a base quality requirement'));
+                        }
                         const duplicate = settings.requirements.find((item) => (
                             item.name === trimmedValue && item.id !== requirement?.id
                         ));
@@ -712,7 +723,7 @@ export default function QualityRequirementForm(props: Readonly<QualityRequiremen
                     },
                 }]}
             >
-                <Input placeholder='Sample requirement name' />
+                <Input placeholder='Sample requirement name' disabled={isBaseRequirement || formDisabled} />
             </Form.Item>
             <Form.Item
                 name='parentRequirement'
@@ -767,6 +778,7 @@ export default function QualityRequirementForm(props: Readonly<QualityRequiremen
                                 noStyle
                             >
                                 <QualityRequirementFilter
+                                    annotationType={annotationType}
                                     labels={labels}
                                     parentFilters={parentFilters}
                                     disabled={disabled}

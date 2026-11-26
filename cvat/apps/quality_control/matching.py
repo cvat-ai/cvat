@@ -67,6 +67,13 @@ def _match_segments_once(
     dist_thresh: float | Callable[[_ShapeT1], float] = 1.0,
     label_matcher: LabelEqualityFunction[_ShapeT1, _ShapeT2] = lambda a, b: a.label == b.label,
 ) -> SegmentMatchingResult[_ShapeT1, _ShapeT2]:
+    if not a_segms or not b_segms:
+        # Callable thresholds may validate GT geometry (e.g. 2D area-based IoU).
+        # Preserve those checks even without pairs to match; numeric 3D thresholds skip them.
+        if callable(dist_thresh):
+            for annotation in a_segms:
+                dist_thresh(annotation)
+        return [], [], list(a_segms), list(b_segms)
     max_anns = max(len(a_segms), len(b_segms))
     if not max_anns:
         return [], [], [], []

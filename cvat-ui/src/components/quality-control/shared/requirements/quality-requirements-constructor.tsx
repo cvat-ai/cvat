@@ -86,6 +86,7 @@ interface RequirementRow {
 }
 
 interface Props {
+    dimension?: string;
     form: FormInstance;
     settings: QualitySettings;
     disabled: boolean;
@@ -208,6 +209,7 @@ export default function QualityRequirementsConstructor(props: Readonly<Props>): 
     const {
         form,
         settings,
+        dimension,
         disabled,
         onReload,
         onCreateRequirement,
@@ -221,7 +223,21 @@ export default function QualityRequirementsConstructor(props: Readonly<Props>): 
         () => readExpandedRowKeys(expandedRowsStorageKey),
     );
     const [enabledValues, setEnabledValues] = useState<Record<string, boolean>>({});
-    const data = useMemo(() => buildRequirementTree(settings.requirements), [settings.requirements]);
+    const data = useMemo(() => {
+        const requirementsById = buildRequirementsById(settings.requirements);
+        const visibleRequirements = settings.requirements.filter((requirement) => {
+            const type = getRequirementDisplayValue(
+                requirement,
+                requirementsById,
+                (item: QualityRequirement) => item.annotationType,
+                (item: QualityRequirement) => item.effective?.annotationType,
+            );
+            if (dimension === '3d') return type === 'cuboid';
+            if (dimension === '2d') return type !== 'cuboid';
+            return true;
+        });
+        return buildRequirementTree(visibleRequirements);
+    }, [settings.requirements, dimension]);
 
     useEffect(() => {
         setExpandedRowKeys(readExpandedRowKeys(expandedRowsStorageKey));

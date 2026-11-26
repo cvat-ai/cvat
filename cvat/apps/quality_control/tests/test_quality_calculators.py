@@ -4,6 +4,7 @@
 
 import unittest
 from contextlib import ExitStack, nullcontext
+from datetime import datetime, timezone
 from types import SimpleNamespace
 from unittest import mock
 
@@ -15,8 +16,12 @@ class TestTaskQualityCalculatorCleanup(unittest.TestCase):
     def setUp(self):
         patches = ExitStack()
         self.addCleanup(patches.close)
+        patches.enter_context(mock.patch.object(quality_calculators, "validate_quality_task"))
         self.task = SimpleNamespace(
-            id=1, updated_date=None, assignee_id=None, assignee_updated_date=None
+            id=1,
+            updated_date=datetime(2026, 11, 26, tzinfo=timezone.utc),
+            assignee_id=None,
+            assignee_updated_date=None,
         )
         self.jobs = [
             SimpleNamespace(
@@ -46,6 +51,7 @@ class TestTaskQualityCalculatorCleanup(unittest.TestCase):
         )
         settings = settings_manager.return_value.get_task_settings.return_value
         settings.job_filter = ""
+        settings.updated_date = self.task.updated_date
         settings.requirements.select_related.return_value.all.return_value = []
         patches.enter_context(
             mock.patch.object(

@@ -5,7 +5,7 @@
 from __future__ import annotations
 
 from collections.abc import Hashable, Sequence
-from functools import cached_property
+from functools import cached_property, partial
 from typing import Any
 
 import datumaro as dm
@@ -14,13 +14,33 @@ from django.db import transaction
 from cvat.apps.dataset_manager import data_model as cdm
 from cvat.apps.dataset_manager.bindings import (
     CommonData,
+    CvatDataExtractor,
     CvatToDmAnnotationConverter,
     GetCVATDataExtractor,
     match_dm_item,
 )
 from cvat.apps.dataset_manager.data_model.adapters.datumaro import DatumaroDatasetAdapter
+from cvat.apps.engine.models import DimensionType
 from cvat.apps.quality_control.attribute_comparison import CVAT_ATTRIBUTE_SPEC_IDS_ATTR
 from cvat.apps.quality_control.data_providers import JobDataProvider
+
+
+class _Quality3DDataExtractor(CvatDataExtractor):
+    @staticmethod
+    def _load_user_info(meta: dict) -> dict:
+        # QC does not export author metadata; the task owner may have been deleted.
+        return {}
+
+    def _process_one_frame_data(self, frame_data: CommonData.Frame) -> dm.DatasetItem:
+        # Frame indices are unique even when PCD basenames collide. Neither PCD
+        # contents nor context images are needed to compare annotation geometry.
+        return dm.DatasetItem(
+            id=str(frame_data.idx),
+            subset=frame_data.subset,
+            annotations=partial(self._read_cvat_anno, frame_data, self._instance_meta["labels"]),
+            media=dm.PointCloud.from_file(frame_data.name),
+            attributes={"frame": frame_data.frame},
+        )
 
 
 class _MemoizingAnnotationConverterFactory:
@@ -29,6 +49,7 @@ class _MemoizingAnnotationConverterFactory:
         attribute_spec_ids_by_label: dict[str, dict[str, int]] | None = None,
     ) -> None:
         self._annotation_mapping = {}  # dm annotation -> cvat annotation
+        self._user_attributes = {}
         self._attribute_spec_ids_by_label = attribute_spec_ids_by_label or {}
 
     def remember_conversion(self, cvat_ann: Any, dm_anns: Sequence[dm.Annotation]) -> None:
@@ -51,12 +72,18 @@ class _MemoizingAnnotationConverterFactory:
     def _make_key(self, dm_ann: dm.Annotation) -> Hashable:
         return id(dm_ann)
 
-    def get_source_ann(self, dm_ann: dm.Annotation) -> CommonData.Tag | CommonData.LabeledShape:
+    def get_source_ann(
+        self, dm_ann: dm.Annotation
+    ) -> CommonData.Tag | CommonData.LabeledShape | CommonData.TrackedShape:
         "Retrieve the original CVAT annotation for a Datumaro annotation"
         return self._annotation_mapping[self._make_key(dm_ann)]
 
     def clear(self):
         self._annotation_mapping.clear()
+        self._user_attributes.clear()
+
+    def get_user_attributes(self, dm_ann: dm.Annotation) -> dict[str, Any]:
+        return self._user_attributes[self._make_key(dm_ann)]
 
     def __call__(self, *args, **kwargs) -> list[dm.Annotation]:
         converter = _MemoizingAnnotationConverter(
@@ -100,6 +127,10 @@ class _MemoizingAnnotationConverter(CvatToDmAnnotationConverter):
         converted = list(super()._convert_shape(shape, index=index))
         for dm_ann in converted:
             dm_ann.id = shape.id
+            if self.dimension == DimensionType.DIM_3D:
+                self._factory._user_attributes[self._factory._make_key(dm_ann)] = (
+                    self._convert_attrs(shape.label, shape.attributes)
+                )
 
         self._factory.remember_conversion(shape, converted)
         return converted
@@ -137,15 +168,24 @@ class DatumaroJobDataProvider(JobDataProvider):
     def dm_dataset(self) -> dm.Dataset:
         from cvat.apps.dataset_manager.formats.registry import dm_env
 
-        extractor = GetCVATDataExtractor(self.job_data, convert_annotations=self._annotation_memo)
+        extractor_factory = (
+            _Quality3DDataExtractor
+            if self.dimension == DimensionType.DIM_3D
+            else GetCVATDataExtractor
+        )
+        extractor = extractor_factory(
+            self.job_data, dimension=self.dimension, convert_annotations=self._annotation_memo
+        )
         return dm.Dataset.from_extractors(extractor, env=dm_env)
 
     def dm_item_id_to_frame_id(self, item: dm.DatasetItem) -> int:
+        if self.dimension == DimensionType.DIM_3D:
+            return int(item.id)
         return match_dm_item(item, self.job_data)
 
     def dm_ann_to_annotation_reference(self, ann: dm.Annotation) -> cdm.AnnotationReference:
         source_ann = self._annotation_memo.get_source_ann(ann)
-        if "track_id" in ann.attributes:
+        if hasattr(source_ann, "track_id"):
             source_ann_id = source_ann.track_id
             ann_type = cdm.AnnotationReferenceType.TRACK
             shape_type = source_ann.type

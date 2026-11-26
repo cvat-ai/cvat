@@ -102,23 +102,23 @@ class _ShapeFilterContext:
 
     @property
     def source(self) -> Any:
-        return self._attributes.get("source")
+        return self._ann.source
 
     @property
     def occluded(self) -> Any:
-        return self._attributes.get("occluded")
+        return self._ann.metadata.get("occluded")
 
     @property
     def track_id(self) -> Any:
-        return self._attributes.get("track_id")
+        return self._ann.metadata.get("track_id")
 
     @property
     def outside(self) -> Any:
-        return self._attributes.get("outside")
+        return self._ann.metadata.get("outside")
 
     @property
     def keyframe(self) -> Any:
-        return self._attributes.get("keyframe")
+        return self._ann.metadata.get("keyframe")
 
     @cached_property
     def attribute(self) -> _AnnotationAttributesFilterContext:
@@ -247,6 +247,10 @@ class RequirementJsonLogicFilter(JsonLogicFilter):
         if not supports_skeleton_lookup:
             for term in cls._SKELETON_LOOKUP_FIELDS:
                 supported_terms.pop(term, None)
+
+        if annotation_type == models.QualityRequirementAnnotationType.CUBOID:
+            supported_terms.pop("shape.area", None)
+            supported_terms.pop("shape.track.area", None)
 
         return sorted(supported_terms)
 

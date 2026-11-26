@@ -1523,7 +1523,7 @@ class GroundTruthJobCreateSerializer(BaseJobCreateSerializer):
 
         if task.media_type == models.MediaType.AUDIO:
             frames = []
-        elif task.media_type == models.MediaType.IMAGE:
+        elif task.media_type in (models.MediaType.IMAGE, models.MediaType.POINT_CLOUD):
             task_size = task.data.size
             valid_frame_ids = task.data.get_valid_frame_indices()
 

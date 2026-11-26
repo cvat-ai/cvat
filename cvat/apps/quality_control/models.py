@@ -12,10 +12,14 @@ from typing import TYPE_CHECKING, Any
 
 from django.conf import settings
 from django.core.exceptions import ValidationError
-from django.db import models
+from django.db import models, transaction
 from django.forms.models import model_to_dict
 
 from cvat.apps.engine.models import Job, JobType, Project, ShapeType, Task, TimestampedModel
+from cvat.apps.quality_control.backends.capabilities import (
+    get_all_backend_capabilities,
+    get_backend_capabilities,
+)
 from cvat.utils import django_database as db_utils
 
 if TYPE_CHECKING:
@@ -426,25 +430,10 @@ class DefaultComparisonSettings:
     def get_default_similarity_metric(
         annotation_type: QualityRequirementAnnotationType,
     ) -> ShapeSimilarityMetricType:
-        match annotation_type:
-            case QualityRequirementAnnotationType.TAG:
-                return ShapeSimilarityMetricType.EQUALITY
-            case (
-                QualityRequirementAnnotationType.POINTS
-                | QualityRequirementAnnotationType.SKELETON
-                | QualityRequirementAnnotationType.SKELETON_KEYPOINT
-            ):
-                return ShapeSimilarityMetricType.OKS
-            case (
-                QualityRequirementAnnotationType.RECTANGLE
-                | QualityRequirementAnnotationType.POLYGON
-                | QualityRequirementAnnotationType.MASK
-                | QualityRequirementAnnotationType.POLYLINE
-                | QualityRequirementAnnotationType.ELLIPSE
-            ):
-                return ShapeSimilarityMetricType.IOU
-            case _:
-                assert False, f"Unknown quality requirement annotation type '{annotation_type}'"
+        capabilities = get_backend_capabilities(annotation_type)
+        return ShapeSimilarityMetricType(
+            capabilities.get_default_similarity_metric(annotation_type)
+        )
 
     @classmethod
     def as_dict(cls) -> dict[str, Any]:
@@ -506,6 +495,21 @@ class QualitySettings(TimestampedModel):
     def to_dict(self):
         return model_to_dict(self)
 
+    def get_dimension(self) -> str | None:
+        if self.task_id:
+            return self.task.dimension or None
+        return self.project.tasks.exclude(dimension="").values_list("dimension", flat=True).first()
+
+    def get_supported_annotation_types(self) -> tuple[QualityRequirementAnnotationType, ...]:
+        dimension = self.get_dimension()
+        supported_types = {
+            annotation_type
+            for capabilities in get_all_backend_capabilities()
+            if capabilities.dimension == dimension
+            for annotation_type in capabilities.similarity_metrics
+        }
+        return tuple(t for t in QualityRequirementAnnotationType if t in supported_types)
+
 
 class QualityRequirementAnnotationType(models.TextChoices):
     TAG = "tag"
@@ -517,6 +521,30 @@ class QualityRequirementAnnotationType(models.TextChoices):
     MASK = "mask"
     POLYGON = "polygon"
     ELLIPSE = "ellipse"
+    CUBOID = "cuboid"
+
+
+INHERITED_REQUIREMENT_FIELDS = (
+    "annotation_type",
+    "target_metric",
+    "target_metric_threshold",
+    "similarity_metric",
+    "boundary_f_tolerance",
+    "boundary_f_threshold",
+    "iou_threshold",
+    "oks_threshold",
+    "oks_sigma",
+    "line_thickness",
+    "point_size_base",
+    "compare_line_orientation",
+    "line_orientation_threshold",
+    "compare_groups",
+    "group_match_threshold",
+    "check_covered_annotations",
+    "object_visibility_threshold",
+    "panoptic_comparison",
+    "attribute_comparison",
+)
 
 
 class QualityRequirement(TimestampedModel):
@@ -611,6 +639,11 @@ class QualityRequirement(TimestampedModel):
         return self.parent_id is None
 
     @classmethod
+    def get_disabled_parameter_value(cls, field_name: str) -> bool | None:
+        """Use False for switches and None for other inapplicable parameters."""
+        return False if isinstance(cls._meta.get_field(field_name), models.BooleanField) else None
+
+    @classmethod
     def get_base_defaults(cls, annotation_type: QualityRequirementAnnotationType) -> dict[str, Any]:
         default_settings = DefaultComparisonSettings.as_dict()
         default_settings.update(
@@ -622,43 +655,29 @@ class QualityRequirement(TimestampedModel):
             compare_attributes=False,
             attribute_comparison=None,
         )
-
         existing_fields = {f.name for f in cls._meta.fields}
-        return {k: v for k, v in default_settings.items() if k in existing_fields}
+        default_settings = {k: v for k, v in default_settings.items() if k in existing_fields}
+        capabilities = get_backend_capabilities(annotation_type)
+        for field_name in default_settings:
+            if field_name not in capabilities.supported_parameters:
+                default_settings[field_name] = cls.get_disabled_parameter_value(field_name)
+
+        return default_settings
 
     @staticmethod
     def get_supported_similarity_metrics() -> (
         dict[QualityRequirementAnnotationType, tuple[ShapeSimilarityMetricType, ...]]
     ):
-        region_metrics = (ShapeSimilarityMetricType.IOU, ShapeSimilarityMetricType.BOUNDARY_F)
-        point_metrics = (ShapeSimilarityMetricType.OKS,)
         return {
-            QualityRequirementAnnotationType.TAG: (ShapeSimilarityMetricType.EQUALITY,),
-            QualityRequirementAnnotationType.RECTANGLE: region_metrics,
-            QualityRequirementAnnotationType.POLYGON: region_metrics,
-            QualityRequirementAnnotationType.MASK: region_metrics,
-            QualityRequirementAnnotationType.POLYLINE: region_metrics,
-            QualityRequirementAnnotationType.ELLIPSE: region_metrics,
-            QualityRequirementAnnotationType.POINTS: point_metrics,
-            QualityRequirementAnnotationType.SKELETON: point_metrics,
-            QualityRequirementAnnotationType.SKELETON_KEYPOINT: point_metrics,
+            QualityRequirementAnnotationType(annotation_type): tuple(
+                ShapeSimilarityMetricType(metric) for metric in metrics
+            )
+            for capabilities in get_all_backend_capabilities()
+            for annotation_type, metrics in capabilities.similarity_metrics.items()
         }
 
     def to_dict(self):
         return model_to_dict(self)
-
-
-_BASE_REQUIREMENT_ANNOTATION_TYPES = (
-    QualityRequirementAnnotationType.TAG,
-    QualityRequirementAnnotationType.RECTANGLE,
-    QualityRequirementAnnotationType.SKELETON,
-    QualityRequirementAnnotationType.SKELETON_KEYPOINT,
-    QualityRequirementAnnotationType.POINTS,
-    QualityRequirementAnnotationType.POLYLINE,
-    QualityRequirementAnnotationType.MASK,
-    QualityRequirementAnnotationType.POLYGON,
-    QualityRequirementAnnotationType.ELLIPSE,
-)
 
 
 def get_base_requirement_name(annotation_type: str) -> str:
@@ -666,37 +685,54 @@ def get_base_requirement_name(annotation_type: str) -> str:
 
 
 def ensure_base_quality_requirements(quality_settings: QualitySettings) -> bool:
-    existing_base_annotation_types = set(
-        quality_settings.requirements.filter(
-            parent__isnull=True,
-            annotation_type__in=_BASE_REQUIREMENT_ANNOTATION_TYPES,
-        ).values_list("annotation_type", flat=True)
-    )
-
-    requirements_to_create = []
-    for sort_order, annotation_type in enumerate(_BASE_REQUIREMENT_ANNOTATION_TYPES):
-        if annotation_type in existing_base_annotation_types:
-            continue
-
-        base_defaults = QualityRequirement.get_base_defaults(annotation_type)
-
-        requirements_to_create.append(
-            QualityRequirement(
-                settings=quality_settings,
-                name=get_base_requirement_name(annotation_type),
-                sort_order=sort_order,
-                annotation_type=annotation_type,
-                enabled=False,
-                **base_defaults,
-            )
-        )
-
-    if not requirements_to_create:
+    annotation_types = quality_settings.get_supported_annotation_types()
+    if not annotation_types:
+        # Tasks receive a dimension after data upload; empty projects have none.
         return False
 
-    # Avoid using upsert as it can lead to a deadlock when there are concurrent transactions.
-    # A simple insert should just fail on a constraint in such cases, which is what we need.
-    db_utils.bulk_create(QualityRequirement, requirements_to_create)
-    db_utils.clear_prefetched_relation_cache(quality_settings, "requirements")
-    quality_settings.touch()
-    return True
+    existing_types = set(
+        quality_settings.requirements.filter(parent__isnull=True).values_list(
+            "annotation_type", flat=True
+        )
+    )
+    if existing_types.issuperset(annotation_types):
+        return False
+
+    # Serialize initialization without locking settings that already have their bases.
+    with transaction.atomic():
+        QualitySettings.objects.select_for_update().get(pk=quality_settings.pk)
+        # Recheck after locking: another GT may have initialized shared project settings.
+        existing_requirements = list(
+            quality_settings.requirements.values_list("annotation_type", "parent_id", "sort_order")
+        )
+        existing_base_annotation_types = {
+            annotation_type
+            for annotation_type, parent_id, _ in existing_requirements
+            if parent_id is None
+        }
+        next_sort_order = max((order for _, _, order in existing_requirements), default=-1) + 1
+
+        requirements_to_create = []
+        for annotation_type in annotation_types:
+            if annotation_type in existing_base_annotation_types:
+                continue
+
+            requirements_to_create.append(
+                QualityRequirement(
+                    settings=quality_settings,
+                    name=get_base_requirement_name(annotation_type),
+                    sort_order=next_sort_order,
+                    annotation_type=annotation_type,
+                    enabled=False,
+                    **QualityRequirement.get_base_defaults(annotation_type),
+                )
+            )
+            next_sort_order += 1
+
+        if not requirements_to_create:
+            return False
+
+        db_utils.bulk_create(QualityRequirement, requirements_to_create)
+        db_utils.clear_prefetched_relation_cache(quality_settings, "requirements")
+        quality_settings.touch()
+        return True

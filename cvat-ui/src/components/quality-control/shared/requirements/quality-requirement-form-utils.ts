@@ -68,6 +68,7 @@ export const METRIC_OPTION_GROUPS: Array<{
 export const SUPPORTED_SIMILARITY_METRICS: Record<
     QualityRequirementAnnotationType, QualityRequirementSimilarityMetric[]
 > = {
+    [QualityRequirementAnnotationType.CUBOID]: [QualityRequirementSimilarityMetric.IOU],
     [QualityRequirementAnnotationType.TAG]: [QualityRequirementSimilarityMetric.EQUALITY],
     [QualityRequirementAnnotationType.RECTANGLE]: [
         QualityRequirementSimilarityMetric.IOU, QualityRequirementSimilarityMetric.BOUNDARY_F,
@@ -850,6 +851,11 @@ export function serializeRequirementValues(
     );
 
     for (const descriptor of SERIALIZED_INHERITED_FIELD_DESCRIPTORS) {
+        if (values.annotationType === QualityRequirementAnnotationType.CUBOID && ![
+            'metric', 'requiredScore', 'similarityMetric', 'iouThreshold', 'attributeComparison',
+        ].includes(descriptor.fieldName)) {
+            continue;
+        }
         if (!includeInheritedOrResetField(descriptor.fieldName)) {
             continue;
         }

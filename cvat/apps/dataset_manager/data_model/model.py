@@ -85,6 +85,11 @@ class Annotation(ABC):
     """Base class for read-only annotation representations."""
 
     @property
+    def metadata(self) -> Mapping[str, Any]:
+        """Service fields, separate from identically named user attributes when available."""
+        return self.attributes
+
+    @property
     @abstractmethod
     def id(self) -> int | None:
         raise NotImplementedError
@@ -134,6 +139,14 @@ class Annotation2D(Annotation):
         raise NotImplementedError
 
 
+class Annotation3D(Annotation):
+    """An annotation with a volume in cubic coordinate units."""
+
+    @abstractmethod
+    def get_volume(self) -> float:
+        raise NotImplementedError
+
+
 class Tag(Annotation):
     annotation_type = AnnotationType.TAG
 
@@ -158,7 +171,7 @@ class Ellipse(Annotation2D):
     annotation_type = AnnotationType.ELLIPSE
 
 
-class Cuboid(Annotation):
+class Cuboid(Annotation3D):
     annotation_type = AnnotationType.CUBOID
 
 

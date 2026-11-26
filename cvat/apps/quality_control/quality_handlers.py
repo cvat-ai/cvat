@@ -35,6 +35,7 @@ from cvat.apps.quality_control.backends import (
     QualityBackend,
     make_quality_backend,
 )
+from cvat.apps.quality_control.backends.capabilities import get_backend_capabilities
 from cvat.apps.quality_control.comparison_report import (
     UNMATCHED_LABEL_NAME,
     AnnotationConflict,
@@ -111,6 +112,7 @@ class EffectiveQualityRequirement:
         """Resolve the requirement target to an annotation interface."""
         return {
             models.QualityRequirementAnnotationType.TAG: cdm.Tag,
+            models.QualityRequirementAnnotationType.CUBOID: cdm.Cuboid,
             models.QualityRequirementAnnotationType.RECTANGLE: cdm.Rectangle,
             models.QualityRequirementAnnotationType.POLYGON: cdm.Polygon,
             models.QualityRequirementAnnotationType.POLYLINE: cdm.Polyline,
@@ -122,31 +124,9 @@ class EffectiveQualityRequirement:
         }[models.QualityRequirementAnnotationType(self.annotation_type)]
 
 
-INHERITED_REQUIREMENT_FIELDS = (
-    "annotation_type",
-    "target_metric",
-    "target_metric_threshold",
-    "similarity_metric",
-    "boundary_f_tolerance",
-    "boundary_f_threshold",
-    "iou_threshold",
-    "oks_threshold",
-    "oks_sigma",
-    "line_thickness",
-    "point_size_base",
-    "compare_line_orientation",
-    "line_orientation_threshold",
-    "compare_groups",
-    "group_match_threshold",
-    "check_covered_annotations",
-    "object_visibility_threshold",
-    "panoptic_comparison",
-    "attribute_comparison",
-)
-
 _REQUIRED_ROOT_REQUIREMENT_FIELDS = tuple(
     field_name
-    for field_name in INHERITED_REQUIREMENT_FIELDS
+    for field_name in models.INHERITED_REQUIREMENT_FIELDS
     if field_name != "attribute_comparison"
 )
 
@@ -184,7 +164,7 @@ def _make_effective_requirement(
 
         values = {
             field_name: deepcopy(getattr(requirement, field_name))
-            for field_name in INHERITED_REQUIREMENT_FIELDS
+            for field_name in models.INHERITED_REQUIREMENT_FIELDS
         }
 
         missing_fields = [
@@ -192,6 +172,11 @@ def _make_effective_requirement(
             for field_name in _REQUIRED_ROOT_REQUIREMENT_FIELDS
             if values[field_name] is None
         ]
+        if values["annotation_type"] is not None:
+            capabilities = get_backend_capabilities(values["annotation_type"])
+            missing_fields = [
+                name for name in missing_fields if name in capabilities.supported_parameters
+            ]
         if missing_fields:
             raise ValueError(
                 "Root quality requirement must define inherited fields: "
@@ -200,10 +185,10 @@ def _make_effective_requirement(
     else:
         values = {
             field_name: deepcopy(getattr(inherited, field_name))
-            for field_name in INHERITED_REQUIREMENT_FIELDS
+            for field_name in models.INHERITED_REQUIREMENT_FIELDS
         }
 
-        for field_name in INHERITED_REQUIREMENT_FIELDS:
+        for field_name in models.INHERITED_REQUIREMENT_FIELDS:
             local_value = getattr(requirement, field_name, None)
             if local_value is None:
                 continue
@@ -596,6 +581,10 @@ class RequirementHandler(ABC):
         self.requirement = requirement
         self._backend = backend
         self._included_annotation_types = (requirement.comparison_annotation_type,)
+        if requirement.annotation_type == models.QualityRequirementAnnotationType.CUBOID:
+            RequirementJsonLogicFilter.validate_expression(
+                requirement.filter, annotation_type=requirement.annotation_type
+            )
         self._filter = RequirementJsonLogicFilter(
             expression=self.requirement.filter,
             catalog=self._backend.catalog,

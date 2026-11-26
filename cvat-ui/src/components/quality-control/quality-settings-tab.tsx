@@ -166,6 +166,7 @@ function QualitySettingsTab(props: Readonly<Props>): JSX.Element | null {
                 )}
                 {!requirementFormVisible && header}
                 <QualitySettingsForm
+                    dimension={instance.dimension}
                     form={form}
                     settings={effectiveSettings}
                     labels={labels}

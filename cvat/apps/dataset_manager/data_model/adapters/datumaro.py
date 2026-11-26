@@ -6,6 +6,7 @@ from __future__ import annotations
 
 from collections.abc import Callable, Iterator, Mapping
 from functools import cached_property
+from math import prod
 from types import MappingProxyType
 from typing import Any, cast
 
@@ -104,7 +105,8 @@ class DatumaroSkeletonAdapter(DatumaroAnnotation2DAdapter, cdm.Skeleton):
 
 
 class DatumaroCuboidAdapter(DatumaroAnnotationAdapter, cdm.Cuboid):
-    pass
+    def get_volume(self) -> float:
+        return float(prod(cast(dm.Cuboid3d, self.native_annotation).scale))
 
 
 _ANNOTATION_ADAPTERS: dict[dm.AnnotationType, type[DatumaroAnnotationAdapter]] = {

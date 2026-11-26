@@ -6,14 +6,16 @@ from __future__ import annotations
 
 from abc import ABC, abstractmethod
 from collections.abc import Collection, Iterator, Sequence
-from typing import TYPE_CHECKING
+from typing import TYPE_CHECKING, ClassVar
 
 from attrs import define, field, validators
 
-from cvat.apps.dataset_manager import data_model as cdm
-from cvat.apps.quality_control.matching import AttributeMatchingFunction, MatchingResults
+from cvat.apps.quality_control.backends.capabilities import QualityBackendCapabilities
 
 if TYPE_CHECKING:
+    from cvat.apps.dataset_manager import data_model as cdm
+    from cvat.apps.engine.models import Task
+    from cvat.apps.quality_control.matching import AttributeMatchingFunction, MatchingResults
     from cvat.apps.quality_control.models import QualityRequirementAnnotationType
     from cvat.apps.quality_control.quality_handlers import EffectiveQualityRequirement
 
@@ -35,6 +37,61 @@ class QualityBackend(ABC):
     Consume each sample before advancing the iterator. A backend may retain
     native media and identity mappings for the duration of that sample.
     """
+
+    capabilities: ClassVar[QualityBackendCapabilities]
+
+    @classmethod
+    def get_capabilities(cls) -> QualityBackendCapabilities:
+        return cls.capabilities
+
+    @classmethod
+    def validate_task(cls, task: Task) -> None:
+        capabilities = cls.get_capabilities()
+        if (
+            task.dimension != capabilities.dimension
+            or task.media_type not in capabilities.media_types
+        ):
+            raise ValueError(
+                f"Quality reports require {capabilities.dimension} data with media type "
+                + ", ".join(f"'{media_type}'" for media_type in sorted(capabilities.media_types))
+            )
+
+    @classmethod
+    def validate_requirement(cls, requirement: EffectiveQualityRequirement) -> None:
+        from cvat.apps.quality_control import models
+        from cvat.apps.quality_control.filters import RequirementJsonLogicFilter
+
+        capabilities = cls.get_capabilities()
+        if requirement.annotation_type not in capabilities.similarity_metrics:
+            raise ValueError(
+                f"Quality reports for {capabilities.dimension} data support only "
+                + ", ".join(capabilities.similarity_metrics)
+                + " requirements"
+            )
+
+        for field_name in models.INHERITED_REQUIREMENT_FIELDS:
+            if field_name in capabilities.supported_parameters:
+                continue
+            value = getattr(requirement, field_name)
+            disabled_value = models.QualityRequirement.get_disabled_parameter_value(field_name)
+            if value is not None and value is not disabled_value:
+                raise ValueError(
+                    f"The '{field_name}' setting is not supported "
+                    f"for '{requirement.annotation_type}' requirements"
+                )
+
+        if (
+            requirement.similarity_metric
+            not in capabilities.similarity_metrics[requirement.annotation_type]
+        ):
+            raise ValueError(
+                f"The '{requirement.similarity_metric}' similarity metric is not supported "
+                f"for '{requirement.annotation_type}' requirements"
+            )
+
+        RequirementJsonLogicFilter.validate_expression(
+            requirement.filter, annotation_type=requirement.annotation_type
+        )
 
     @property
     @abstractmethod

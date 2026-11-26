@@ -476,6 +476,9 @@ export default function implementAPI(cvat: CVATCore): CVATCore {
     implementationMixin(cvat.analytics.quality.conflicts, async (filter: QualityConflictsFilter) => {
         checkFilter(filter, {
             reportID: isInteger,
+            jobID: isInteger,
+            frame: isInteger,
+            type: isString,
         });
 
         const params = fieldsToSnakeCase(filter);
@@ -496,8 +499,8 @@ export default function implementAPI(cvat: CVATCore): CVATCore {
             const conflictsByObject: Record<string, QualityConflict[]> = {};
 
             frameConflicts.forEach((qualityConflict: QualityConflict) => {
-                const { type, serverID } = qualityConflict.annotationConflicts[0];
-                const firstObjID = `${type}_${serverID}`;
+                const { type, serverID, jobID } = qualityConflict.annotationConflicts[0];
+                const firstObjID = `${jobID}_${type}_${serverID}`;
                 conflictsByObject[firstObjID] = conflictsByObject[firstObjID] || [];
                 conflictsByObject[firstObjID].push(qualityConflict);
             });
@@ -518,6 +521,7 @@ export default function implementAPI(cvat: CVATCore): CVATCore {
                             for (const annotationConflict of objectConflict.annotationConflicts) {
                                 if (!mainObjectConflict.annotationConflicts.find((_annotationConflict) => (
                                     _annotationConflict.serverID === annotationConflict.serverID &&
+                                    _annotationConflict.jobID === annotationConflict.jobID &&
                                     _annotationConflict.type === annotationConflict.type))
                                 ) {
                                     mainObjectConflict.annotationConflicts.push(annotationConflict);

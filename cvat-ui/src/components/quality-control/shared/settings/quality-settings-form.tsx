@@ -19,6 +19,7 @@ import QualityRequirementsConstructor from '../requirements/quality-requirements
 import QualityRequirementForm from '../requirements/quality-requirement-form';
 
 interface Props {
+    dimension?: string;
     form: FormInstance;
     settings: QualitySettings;
     labels: Label[];
@@ -46,6 +47,7 @@ export default function QualitySettingsForm(props: Readonly<Props>): JSX.Element
         form,
         settings,
         labels,
+        dimension,
         disabled,
         onReload,
         onRequirementFormVisibilityChange,
@@ -209,6 +211,7 @@ export default function QualitySettingsForm(props: Readonly<Props>): JSX.Element
             </Row>
             <Divider />
             <QualityRequirementsConstructor
+                dimension={dimension}
                 form={form}
                 settings={settings}
                 disabled={disabled}

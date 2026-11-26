@@ -67,6 +67,9 @@ export type ConsensusSettingsFilter = Camelized<APIConsensusSettingsFilter>;
 
 export interface APIQualityConflictsFilter extends APICommonFilterParams {
     report_id?: number;
+    job_id?: number;
+    frame?: number;
+    type?: string;
 }
 export type QualityConflictsFilter = Camelized<APIQualityConflictsFilter>;
 

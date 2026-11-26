@@ -18,7 +18,14 @@ from cvat.apps.dataset_manager.data_model.adapters.datumaro import (
 
 class TestAnnotationHierarchy(unittest.TestCase):
     def test_abstract_annotations_require_an_implementation(self):
-        for annotation_class in (cdm.Annotation, cdm.Interval, cdm.Dataset, cdm.Sample):
+        for annotation_class in (
+            cdm.Annotation,
+            cdm.Annotation2D,
+            cdm.Annotation3D,
+            cdm.Interval,
+            cdm.Dataset,
+            cdm.Sample,
+        ):
             with self.subTest(annotation_class=annotation_class):
                 self.assertRaises(TypeError, annotation_class)
 
@@ -69,6 +76,27 @@ class TestDatumaroAnnotationAdapter(unittest.TestCase):
                 annotation = adapt_annotation(native, reference_getter=mock.Mock())
                 self.assertIsInstance(annotation, annotation_type)
                 self.assertNotIsInstance(annotation, cdm.Annotation2D)
+
+    def test_cuboid_adapter_exposes_volume_without_modifying_native_geometry(self):
+        for size, expected_volume in (
+            ([2, 3, 4], 24),
+            ([0, 3, 4], 0),
+            ([0.25, 0.5, 2], 0.25),
+        ):
+            with self.subTest(size=size):
+                native = dm.Cuboid3d(
+                    position=[10, 20, 30], rotation=[0.31, -0.47, 0.83], scale=size
+                )
+                reference_getter = mock.Mock()
+                annotation = adapt_annotation(native, reference_getter=reference_getter)
+
+                self.assertIsInstance(annotation, cdm.Annotation3D)
+                self.assertIsInstance(annotation, cdm.Cuboid)
+                self.assertEqual(annotation.get_volume(), expected_volume)
+                self.assertEqual(native.position, [10, 20, 30])
+                self.assertEqual(native.rotation, [0.31, -0.47, 0.83])
+                self.assertEqual(native.scale, size)
+                reference_getter.assert_not_called()
 
     def test_native_geometry_and_lazy_source_reference_are_preserved(self):
         native = dm.Bbox(

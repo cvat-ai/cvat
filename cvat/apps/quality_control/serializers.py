@@ -25,12 +25,12 @@ from cvat.apps.quality_control.attribute_comparison import (
     attribute_comparison_may_compare,
     normalize_attribute_comparison,
 )
+from cvat.apps.quality_control.backends.capabilities import get_backend_capabilities
 from cvat.apps.quality_control.comparison_report import (
     RequirementCalculationReason,
     RequirementCalculationStatus,
 )
 from cvat.apps.quality_control.filters import RequirementJsonLogicFilter
-from cvat.apps.quality_control.quality_handlers import INHERITED_REQUIREMENT_FIELDS
 from cvat.apps.quality_control.threshold_policy import (
     ADAPTIVE_IOU_TYPES,
     MAX_THRESHOLD_POINTS,
@@ -509,6 +509,7 @@ class QualityRequirementSerializer(serializers.ModelSerializer):
             f"Only used with the '{models.ShapeSimilarityMetricType.IOU}' similarity metric. "
             "A constant threshold or an IoU policy by GT shape area "
             "(rectangle, polygon, mask, ellipse). "
+            "Cuboids use a numeric threshold and volumetric IoU with rotations. "
             "Null inherits the whole threshold from the parent."
         ),
     )
@@ -660,6 +661,21 @@ class QualityRequirementSerializer(serializers.ModelSerializer):
 
         effective_requirement = resolve_effective_requirement(obj)
         return serialize_requirement_parameters(effective_requirement)
+
+    def validate_name(self, value: str) -> str:
+        if self.instance is not None and self.instance.is_base:
+            if value != self.instance.name:
+                raise serializers.ValidationError(
+                    "Base quality requirement names cannot be changed."
+                )
+        elif value in {
+            models.get_base_requirement_name(annotation_type)
+            for annotation_type in models.QualityRequirementAnnotationType
+        }:
+            raise serializers.ValidationError(
+                "This name is reserved for a base quality requirement."
+            )
+        return value
 
     def validate_filter(self, value):
         annotation_type = self.initial_data.get("annotation_type")
@@ -965,6 +981,55 @@ class QualityRequirementSerializer(serializers.ModelSerializer):
                     }
                 )
 
+    def _validate_annotation_dimension(
+        self,
+        attrs: dict[str, Any],
+        annotation_type: str,
+        *,
+        quality_settings: models.QualitySettings,
+    ) -> None:
+        dimension = quality_settings.get_dimension()
+
+        enabled = attrs.get("enabled", getattr(self.instance, "enabled", True))
+        if not enabled or dimension not in ("2d", "3d"):
+            return
+
+        capabilities = get_backend_capabilities(annotation_type)
+        if capabilities.dimension != dimension:
+            raise serializers.ValidationError(
+                {
+                    "annotation_type": (
+                        f"Annotation type '{annotation_type}' requires {capabilities.dimension} data."
+                    )
+                }
+            )
+
+    def _validate_backend_parameters(
+        self,
+        attrs: dict[str, Any],
+        annotation_type: str,
+        *,
+        parent_requirement: models.QualityRequirement | None,
+    ) -> None:
+        capabilities = get_backend_capabilities(annotation_type)
+        for field_name in models.INHERITED_REQUIREMENT_FIELDS:
+            if field_name in capabilities.supported_parameters or field_name not in attrs:
+                continue
+
+            value = attrs[field_name]
+            disabled_value = models.QualityRequirement.get_disabled_parameter_value(field_name)
+            if value is None:
+                if parent_requirement is None:
+                    attrs[field_name] = disabled_value
+            elif value is not disabled_value:
+                raise serializers.ValidationError(
+                    {
+                        self._field_to_public_name(field_name): (
+                            f"This setting is not supported for '{annotation_type}' requirements."
+                        )
+                    }
+                )
+
     def validate(self, attrs):
         attrs = super().validate(attrs)
 
@@ -1045,6 +1110,17 @@ class QualityRequirementSerializer(serializers.ModelSerializer):
 
         self._validate_similarity_metric(attrs, effective_annotation_type)
         self._validate_similarity_threshold(attrs, effective_annotation_type)
+        self._validate_annotation_dimension(
+            attrs, effective_annotation_type, quality_settings=quality_settings
+        )
+        self._validate_backend_parameters(
+            attrs, effective_annotation_type, parent_requirement=parent_requirement
+        )
+        if effective_annotation_type == models.QualityRequirementAnnotationType.CUBOID:
+            RequirementJsonLogicFilter.validate_expression(
+                attrs.get("filter", getattr(self.instance, "filter", "")),
+                annotation_type=effective_annotation_type,
+            )
 
         if self.instance and parent_requirement is not None:
             current_parent = parent_requirement
@@ -1064,8 +1140,11 @@ class QualityRequirementSerializer(serializers.ModelSerializer):
                 current_parent = current_parent.parent
 
         if parent_requirement is None:
-            for field_name in INHERITED_REQUIREMENT_FIELDS:
+            capabilities = get_backend_capabilities(effective_annotation_type)
+            for field_name in models.INHERITED_REQUIREMENT_FIELDS:
                 if field_name == "attribute_comparison":
+                    continue
+                if field_name not in capabilities.supported_parameters:
                     continue
 
                 if field_name in attrs and attrs[field_name] is None:
@@ -1378,7 +1457,9 @@ class QualitySettingsRequirementsSerializer(QualityRequirementListSerializer):
         if not attrs:
             raise serializers.ValidationError("At least one quality requirement must be specified.")
 
-        if len(attrs) > QualityRequirementSerializer._get_requirement_limit():
+        instance = getattr(self.parent, "instance", None)
+        existing_count = instance.requirements.count() if instance is not None else 0
+        if len(attrs) > max(QualityRequirementSerializer._get_requirement_limit(), existing_count):
             raise serializers.ValidationError(
                 QualityRequirementSerializer.get_requirement_limit_error_message()
             )
@@ -1669,15 +1750,10 @@ class QualitySettingsSerializer(WriteOnceMixin, serializers.ModelSerializer):
             seen_requirement_names.add(requirement_name)
             child_serializer.save()
 
-    def to_representation(self, instance):
-        models.ensure_base_quality_requirements(instance)
-        return super().to_representation(instance)
-
     def update(self, instance, validated_data):
         requirements_data = validated_data.pop("requirements", serializers.empty)
 
         with transaction.atomic():
-            models.ensure_base_quality_requirements(instance)
             instance = super().update(instance, validated_data)
 
             if requirements_data is not serializers.empty:

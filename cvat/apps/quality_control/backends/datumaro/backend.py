@@ -29,6 +29,7 @@ from cvat.apps.quality_control.backends.base import (
     FrameComparisonSample,
     QualityBackend,
 )
+from cvat.apps.quality_control.backends.datumaro.capabilities import CAPABILITIES
 from cvat.apps.quality_control.backends.datumaro.matching import (
     Comparator,
     ComparisonParameters,
@@ -58,6 +59,8 @@ if TYPE_CHECKING:
 
 
 class Datumaro2DBackend(QualityBackend):
+    capabilities = CAPABILITIES
+
     def __init__(
         self, ds_provider: DatumaroJobDataProvider, gt_provider: DatumaroJobDataProvider
     ) -> None:

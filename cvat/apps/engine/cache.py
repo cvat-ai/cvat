@@ -941,7 +941,13 @@ class MediaCache:
         writer = ZipCompressedChunkWriter(quality=image_quality, dimension=db_task.dimension)
 
         dummy_frame = io.BytesIO()
-        PIL.Image.new("RGB", (1, 1)).save(dummy_frame, writer.IMAGE_EXT)
+        if db_task.dimension == models.DimensionType.DIM_3D:
+            dummy_frame.write(
+                b"VERSION 0.7\nFIELDS x y z\nSIZE 4 4 4\nTYPE F F F\nCOUNT 1 1 1\n"
+                b"WIDTH 0\nHEIGHT 1\nVIEWPOINT 0 0 0 1 0 0 0\nPOINTS 0\nDATA binary\n"
+            )
+        else:
+            PIL.Image.new("RGB", (1, 1)).save(dummy_frame, writer.IMAGE_EXT)
 
         # Optimize frame access if all the required frames are already cached
         # Otherwise we might need to download files.
@@ -1004,6 +1010,7 @@ class MediaCache:
                     if db_data.stop_frame < abs_frame_idx:
                         break
 
+                    path = None
                     if abs_frame_idx in frame_ids:
                         if use_cached_data:
                             frame_data = task_frame_provider.get_frame(
@@ -1013,7 +1020,7 @@ class MediaCache:
                             )
                             frame = frame_data.data
                         else:
-                            frame, _ = next(frames_iter)
+                            frame, path = next(frames_iter)
 
                         if hasattr(db_data, "video"):
                             # Decoded video frames can have different size, restore the original one
@@ -1030,7 +1037,7 @@ class MediaCache:
                         # this is required for video chunk decoding implementation in UI
                         frame = io.BytesIO(dummy_frame.getvalue())
 
-                    yield (frame, None)
+                    yield (frame, path)
 
         buff = io.BytesIO()
         with closing(get_frames()) as frame_iter:

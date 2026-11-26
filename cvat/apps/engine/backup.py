@@ -254,6 +254,7 @@ class _TaskBackupBase(_BackupBase):
             "custom_segments",
             "job_file_mapping",
             "validation_layout",
+            "disabled_validation_frames",
         }
 
         self._prepare_meta(allowed_fields, data)
@@ -784,6 +785,11 @@ class TaskExporter(_ExporterBase, _TaskBackupBase):
 
             # There are no deleted frames in DataSerializer so we need to pick it
             data["deleted_frames"] = self._db_data.deleted_frames
+            # GT frame exclusions are separate from task-level deleted frames.
+            # Preserve them so restoring a backup does not reactivate excluded validation frames.
+            validation_layout = getattr(self._db_data, "validation_layout", None)
+            if validation_layout and validation_layout.disabled_frames:
+                data["disabled_validation_frames"] = validation_layout.disabled_frames
 
             if self._db_task.segment_size == 0:
                 data["custom_segments"] = True
@@ -1104,6 +1110,13 @@ class TaskImporter(_ImporterBase, _TaskBackupBase):
         self._manifest["project_id"] = self._project_id
 
         self._prepare_data_meta(data)
+        # This backup-only field is handled separately from DataSerializer.
+        # Older backups omit it and restore with no disabled validation frames.
+        disabled_validation_frames = data.pop("disabled_validation_frames", [])
+        if not isinstance(disabled_validation_frames, list) or any(
+            type(frame) is not int or frame < 0 for frame in disabled_validation_frames
+        ):
+            raise ValidationError("Disabled validation frames must be nonnegative frame indices")
 
         excluded_input_files = [os.path.join(self.DATA_DIRNAME, self.MEDIA_MANIFEST_INDEX_FILENAME)]
 
@@ -1251,6 +1264,16 @@ class TaskImporter(_ImporterBase, _TaskBackupBase):
             # In backups created before addition of GT pools there was no validation_layout field
             # Recreate Ground Truth jobs
             self._import_gt_jobs(jobs)
+
+        # Restore exclusions after the validation jobs and their layout have been recreated.
+        if disabled_validation_frames:
+            validation_layout = getattr(db_data, "validation_layout", None)
+            if validation_layout is None or not set(disabled_validation_frames).issubset(
+                validation_layout.frames
+            ):
+                raise ValidationError("Disabled validation frames must belong to the GT job")
+            validation_layout.disabled_frames = disabled_validation_frames
+            validation_layout.save(update_fields=["disabled_frames"])
 
         for db_job, job in zip(self._get_db_jobs(), jobs):
             db_job.status = job["status"]

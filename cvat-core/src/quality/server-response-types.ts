@@ -15,6 +15,7 @@ export enum QualityRequirementAnnotationType {
     MASK = 'mask',
     POLYGON = 'polygon',
     ELLIPSE = 'ellipse',
+    CUBOID = 'cuboid',
 }
 
 export enum QualityMetric {

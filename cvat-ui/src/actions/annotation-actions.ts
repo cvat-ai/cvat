@@ -1429,8 +1429,9 @@ export function getJobAsync({
                 }
             }
 
-            // frame query parameter does not work for GT job
-            const frameNumber = Number.isInteger(initialFrame) && gtJob?.id !== job.id ?
+            // 3D QC links reference the actual selected frame in the GT job.
+            const frameNumber = Number.isInteger(initialFrame) &&
+                (gtJob?.id !== job.id || job.dimension === DimensionType.DIMENSION_3D) ?
                 initialFrame as number :
                 (await job.frames.search(
                     { notDeleted: !showDeletedFrames }, job.startFrame, job.stopFrame,

@@ -10,17 +10,19 @@ from django.conf import settings
 from rest_framework import serializers
 
 from cvat.apps.engine.models import (
-    DimensionType,
     Project,
     RequestTarget,
     Task,
 )
 from cvat.apps.profiler import silk_profile
+from cvat.apps.quality_control.data_providers import QualitySettingsManager
 from cvat.apps.quality_control.quality_calculators import (
     ProjectQualityCalculator,
     TaskQualityCalculator,
 )
+from cvat.apps.quality_control.quality_handlers import resolve_effective_requirements
 from cvat.apps.quality_control.rq import QualityRequestId
+from cvat.apps.quality_control.validation import validate_quality_task
 from cvat.apps.redis_handler.background import AbstractRequestManager
 
 
@@ -52,15 +54,23 @@ class QualityReportQueueManager(AbstractRequestManager):
         super().validate_request()
 
         if isinstance(self.db_instance, Project):
-            return  # nothing prevents project reports
+            # Each contributing task is validated during project report computation.
+            return
         elif isinstance(self.db_instance, Task):
-            if self.db_instance.dimension != DimensionType.DIM_2D:
-                raise serializers.ValidationError("Quality reports are only supported in 2d tasks")
-
             if self.db_instance.gt_job is None:
                 raise serializers.ValidationError(
                     "Quality reports require a Ground Truth job in the task"
                 )
+            quality_settings = QualitySettingsManager().get_task_settings(self.db_instance)
+            try:
+                validate_quality_task(
+                    self.db_instance,
+                    resolve_effective_requirements(
+                        list(quality_settings.requirements.select_related("parent").all())
+                    ),
+                )
+            except ValueError as error:
+                raise serializers.ValidationError(str(error)) from error
         else:
             assert False
 

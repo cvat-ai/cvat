@@ -5,6 +5,7 @@
 from .model import (
     Annotation,
     Annotation2D,
+    Annotation3D,
     AnnotationReference,
     AnnotationReferenceType,
     AnnotationType,
@@ -28,6 +29,7 @@ from .model import (
 __all__ = [
     "Annotation",
     "Annotation2D",
+    "Annotation3D",
     "AnnotationReference",
     "AnnotationReferenceType",
     "AnnotationType",

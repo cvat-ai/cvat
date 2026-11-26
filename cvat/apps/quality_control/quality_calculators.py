@@ -52,6 +52,7 @@ from cvat.apps.quality_control.quality_handlers import (
     resolve_effective_requirements,
     select_requirement_calculation,
 )
+from cvat.apps.quality_control.validation import validate_quality_task
 from cvat.utils import django_database as db_utils
 
 _DEFAULT_FETCH_CHUNK_SIZE = 1000
@@ -97,6 +98,14 @@ class TaskQualityCalculator:
                 return None
 
             quality_settings = QualitySettingsManager().get_task_settings(task)
+            validate_quality_task(
+                task,
+                resolve_effective_requirements(
+                    list(quality_settings.requirements.select_related("parent").all())
+                ),
+            )
+            # Creating the GT job can initialize settings after the task was last saved.
+            target_last_updated = max(task.updated_date, quality_settings.updated_date)
             report_parameters = self.get_report_parameters(task)
 
             all_job_ids: set[int] = set(
@@ -193,7 +202,7 @@ class TaskQualityCalculator:
             task_report = self._save_reports(
                 task_report=dict(
                     task=task,
-                    target_last_updated=task.updated_date,
+                    target_last_updated=target_last_updated,
                     gt_last_updated=gt_job.updated_date,
                     assignee_id=task.assignee_id,
                     assignee_last_updated=task.assignee_updated_date,
@@ -477,6 +486,13 @@ class ProjectQualityCalculator:
 
         task_quality_reports: dict[int, models.QualityReport] = {}
         for task in configured_tasks.values():
+            quality_settings = QualitySettingsManager().get_task_settings(task)
+            validate_quality_task(
+                task,
+                resolve_effective_requirements(
+                    list(quality_settings.requirements.select_related("parent").all())
+                ),
+            )
             latest_task_quality_report_id = getattr(task, "latest_quality_report_id", None)
             latest_task_quality_report = latest_quality_reports.get(latest_task_quality_report_id)
             if not latest_task_quality_report:

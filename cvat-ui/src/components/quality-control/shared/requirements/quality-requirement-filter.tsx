@@ -27,6 +27,7 @@ const FILTERS_HISTORY = 'qualityRequirementFiltersHistory';
 const createDefaultTree = (): ImmutableTree => QbUtils.loadTree({ type: 'group', id: QbUtils.uuid() });
 
 interface Props {
+    annotationType?: string;
     labels: Label[];
     value?: string;
     parentFilters?: string[];
@@ -433,6 +434,7 @@ const loadTreeFromValue = (value: string | undefined, config: Config): Immutable
 export default function QualityRequirementFilter(props: Readonly<Props>): JSX.Element {
     const {
         labels,
+        annotationType,
         value,
         parentFilters = [],
         disabled,
@@ -452,7 +454,8 @@ export default function QualityRequirementFilter(props: Readonly<Props>): JSX.El
     const config = useMemo<Config>(() => {
         const attributeSubfields = getAttributesSubfields(labels);
         const shapeSubfields = getShapeSubfields(labels);
-        return {
+        if (annotationType === 'cuboid') delete shapeSubfields.area;
+        const result = {
             ...AntdConfig,
             fields: {
                 'shape.label': {
@@ -565,7 +568,15 @@ export default function QualityRequirementFilter(props: Readonly<Props>): JSX.El
                 renderField: (_props: any) => <FieldDropdown {..._props} />,
             },
         };
-    }, [labels]);
+        const fields = result.fields as Config['fields'];
+        if (annotationType === 'cuboid') {
+            delete fields['shape.area'];
+            for (const key of Object.keys(fields)) {
+                if (key.startsWith('shape.skeleton')) delete fields[key];
+            }
+        }
+        return result as Config;
+    }, [labels, annotationType]);
     const readonlyConfig = useMemo<Config>(() => ({
         ...config,
         settings: {

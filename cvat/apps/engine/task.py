@@ -1161,9 +1161,9 @@ def _create_validation_jobs(
         )
 
     if db_task.media_type == models.MediaType.POINT_CLOUD and (
-        validation_params and validation_params["mode"]
+        validation_params and validation_params["mode"] not in (None, "", models.ValidationMode.GT)
     ):
-        raise ValidationError(f"Validation is not available in '{db_task.media_type}' tasks.")
+        raise ValidationError("Point cloud tasks support only ordinary ground truth validation.")
 
     if validation_params and validation_params["mode"] == models.ValidationMode.GT:
 
