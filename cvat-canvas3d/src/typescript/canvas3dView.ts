@@ -218,7 +218,7 @@ export class Canvas3dViewImpl implements Canvas3dView, Listener {
             raycaster.near = camera.near;
             raycaster.far = camera.far;
         }
-        return this.issueCuboids.pick(raycaster, view);
+        return this.issueCuboids.pick(raycaster, view, this.activeIssueCuboidID);
     }
 
     public projectIssueCuboid(position: number[], view: ViewType): ([number, number] | null)[] {

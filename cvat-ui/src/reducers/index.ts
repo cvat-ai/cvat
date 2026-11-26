@@ -1162,7 +1162,6 @@ export interface ReviewState {
     newIssue: {
         position: number[] | null;
         source: NewIssueSource | null;
-        objectClientID: number | null;
         view: IssueView | null;
     }
     issuesHidden: boolean;

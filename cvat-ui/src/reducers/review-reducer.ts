@@ -27,7 +27,6 @@ const defaultState: ReviewState = {
     newIssue: {
         position: null,
         source: null,
-        objectClientID: null,
         view: null,
     },
     issuesHidden: false,
@@ -120,7 +119,7 @@ export default function (state: ReviewState = defaultState, action: ReviewAction
         }
         case ReviewActionTypes.START_ISSUE: {
             const {
-                position, source, objectClientID, view,
+                position, source, view,
             } = action.payload;
             return {
                 ...state,
@@ -129,7 +128,6 @@ export default function (state: ReviewState = defaultState, action: ReviewAction
                 newIssue: {
                     position,
                     source,
-                    objectClientID,
                     view,
                 },
             };

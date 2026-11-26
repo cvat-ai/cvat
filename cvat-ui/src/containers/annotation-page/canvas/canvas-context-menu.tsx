@@ -100,13 +100,12 @@ function mapDispatchToProps(dispatch: ThunkDispatch): DispatchToProps {
         dispatch((innerDispatch, getState) => {
             const { annotation } = getState();
             const { dimension } = annotation.job.instance;
-            const { instance, contextMenu } = annotation.canvas;
+            const { instance } = annotation.canvas;
             const is3D = instance instanceof Canvas3d;
             const source = message === undefined ? NewIssueSource.ISSUE_TOOL : NewIssueSource.QUICK_ISSUE;
             innerDispatch(reviewActions.startIssue(
-                is3D ? position.slice(0, 3) : position,
+                position,
                 source,
-                is3D ? contextMenu.clientID : null,
                 is3D ? instance.getReviewView() : null,
                 dimension,
             ));

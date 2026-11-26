@@ -102,9 +102,11 @@ export class IssueCuboids {
         }
     }
 
-    public pick(raycaster: THREE.Raycaster, view: ViewType): number | null {
+    public pick(raycaster: THREE.Raycaster, view: ViewType, preferredID: number | null): number | null {
         const meshes = [...this.cuboids.values()].map((cuboid) => cuboid[view]);
-        const hit = raycaster.intersectObjects(meshes, false)[0];
+        const preferredMesh = this.cuboids.get(preferredID)?.[view];
+        const hits = raycaster.intersectObjects(meshes, false);
+        const hit = hits.find(({ object }) => object === preferredMesh) ?? hits[0];
         return hit ? Number(hit.object.name.replace('cvat-issue-cuboid-', '')) : null;
     }
 

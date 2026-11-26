@@ -42,7 +42,7 @@ export interface IssueView {
 }
 
 type IssueData = Omit<RawIssueData, 'comments' | 'owner'> & { comments: Comment[]; owner?: User | null };
-type IssueWriteData = Omit<RawIssueData, 'owner'> & { owner?: number };
+type IssueWriteData = Omit<RawIssueData, 'owner' | 'object_id' | 'object_type'> & { owner?: number };
 
 export default class Issue {
     public readonly id?: number;
@@ -182,8 +182,6 @@ export default class Issue {
             position: this.position,
             frame: this.frame,
             end_frame: this.endFrame === this.frame ? null : this.endFrame,
-            object_id: this.objectID,
-            object_type: this.objectType,
             view: this.view,
         };
 

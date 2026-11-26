@@ -5,12 +5,10 @@
 
 import { ActionUnion, createAction, ThunkAction } from 'utils/redux';
 import {
-    getCore, Issue, IssueView, ObjectType, ObjectState, DimensionType, User,
+    getCore, Issue, IssueView, DimensionType, User,
 } from 'cvat-core-wrapper';
 import { NewIssueSource, ReviewState } from 'reducers';
 import { ensureError } from 'utils/error-handling';
-import { isReviewableCuboid } from 'utils/review/reviewable-cuboid';
-import { saveAnnotationsAsync } from './annotation-actions';
 
 const cvat = getCore();
 
@@ -48,13 +46,12 @@ export const reviewActions = {
     createIssue: () => createAction(ReviewActionTypes.CREATE_ISSUE, {}),
     startIssue: (
         position: number[], source = NewIssueSource.ISSUE_TOOL,
-        objectClientID: number | null = null, view: IssueView | null = null,
+        view: IssueView | null = null,
         dimension = DimensionType.DIMENSION_2D,
     ) => (
         createAction(ReviewActionTypes.START_ISSUE, {
             position: dimension === DimensionType.DIMENSION_3D ? [...position] : cvat.classes.Issue.hull(position),
             source,
-            objectClientID,
             view,
         })
     ),
@@ -166,33 +163,14 @@ export const finishIssueAsync = (message: string): ThunkAction => async (dispatc
     const { annotation, review: { newIssue: draft } } = getState();
     const { number: frameNumber } = annotation.player.frame;
     const { instance: jobInstance } = annotation.job;
-    const { position, objectClientID, view } = draft;
+    const { position, view } = draft;
     if (!position) return;
 
     try {
-        let object: ObjectState | null = null;
-        if (objectClientID !== null) {
-            const findObject = async (): Promise<ObjectState | undefined> => (
-                await jobInstance.annotations.get(frameNumber, false, [])
-            )
-                .find((candidate) => candidate.clientID === objectClientID && isReviewableCuboid(candidate));
-            object = await findObject();
-            if (!object) throw new Error('The linked annotation is no longer available');
-            if (object.serverID === null) {
-                if (getState().annotation.job.instance !== jobInstance) return;
-                await dispatch(saveAnnotationsAsync());
-                object = await findObject();
-            }
-            if (!Number.isInteger(object?.serverID)) throw new Error('Could not save the linked annotation');
-        }
-        let objectType: ObjectType.SHAPE | ObjectType.TRACK | null = null;
-        if (object) objectType = object.objectType === ObjectType.TRACK ? ObjectType.TRACK : ObjectType.SHAPE;
         const issue = new cvat.classes.Issue({
             job: jobInstance.id,
             frame: frameNumber,
             end_frame: null,
-            object_id: object?.serverID ?? null,
-            object_type: objectType,
             position,
             view,
         });
