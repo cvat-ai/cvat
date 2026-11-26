@@ -628,6 +628,36 @@ class UpdatesApiTestCase(UpdatesApiTestBase):
     @override_settings(
         CVAT_NEWS_ANNOUNCEMENT_PROVIDER="cvat.apps.growth.tests.test_updates.sample_provider"
     )
+    def test_malformed_provider_previews_are_skipped(self) -> None:
+        valid = {
+            **self.announcement,
+            "id": "website-guide",
+            "url": "https://website.example.com/guide/",
+            "publishedAt": "2000-01-03T00:00:00Z",
+        }
+        invalid = [
+            {
+                **valid,
+                "url": "https://website.example.com/media/",
+                "imageURL": "http://cdn.example.com/preview.png",
+            },
+            {**valid, "url": "https://website.example.com/cta/", "cta": " "},
+            {**valid, "url": "https://website.example.com/date/", "publishedAt": "invalid"},
+            {**valid, "url": "https://bad host.example/"},
+        ]
+
+        with patch(__name__ + ".sample_provider", return_value=[*invalid, valid]):
+            response = self.client.get("/api/whats-new/summary")
+
+        self.assertEqual(response.status_code, HTTPStatus.OK)
+        self.assertEqual(response.data["unavailable_sources"], ["external"])
+        self.assertEqual(
+            [item["id"] for item in response.data["announcements"]], ["website-guide", "guide"]
+        )
+
+    @override_settings(
+        CVAT_NEWS_ANNOUNCEMENT_PROVIDER="cvat.apps.growth.tests.test_updates.sample_provider"
+    )
     def test_failed_provider_keeps_hugo_announcements_available(self) -> None:
         with patch(__name__ + ".sample_provider", side_effect=UpdatesUnavailable()):
             response = self.client.get("/api/whats-new/summary")

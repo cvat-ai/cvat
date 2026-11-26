@@ -18,6 +18,8 @@ from urllib.parse import urljoin, urlsplit, urlunsplit
 import requests
 from django.conf import settings
 from django.core.cache import cache
+from django.core.exceptions import ValidationError
+from django.core.validators import URLValidator
 from django.utils.dateparse import parse_datetime
 from django.utils.module_loading import import_string
 from django.utils.timezone import now
@@ -46,6 +48,7 @@ RETRY_DELAY = 30
 FEED_SCHEMA_VERSION = 1
 MAX_CTA_LENGTH = 80
 DocumentT = TypeVar("DocumentT")
+_validate_web_url = URLValidator(schemes=["http", "https"])
 
 
 class UpdatesUnavailable(APIException):
@@ -237,7 +240,20 @@ def _release_fields(raw: dict[str, Any]) -> dict[str, Any]:
     }
 
 
+def _validate_content_metadata(raw: dict[str, Any]) -> None:
+    for field in ("title", "description"):
+        if not isinstance(raw.get(field), str) or (field == "title" and not raw[field].strip()):
+            raise ValueError("Invalid content metadata")
+    if not isinstance(raw.get("announce"), bool):
+        raise ValueError("Invalid notification flag")
+
+
 def _announcement_fields(raw: dict[str, Any]) -> dict[str, str]:
+    identifier = raw["id"]
+    if not isinstance(identifier, str) or not re.fullmatch(
+        r"[a-z0-9][a-z0-9_-]{0,127}", identifier
+    ):
+        raise ValueError("Invalid announcement ID")
     cta = raw.get("cta", "Read announcement")
     image_alt = raw.get("imageAlt", raw["title"])
     if (
@@ -248,7 +264,7 @@ def _announcement_fields(raw: dict[str, Any]) -> dict[str, str]:
     ):
         raise ValueError("Invalid announcement preview")
     return {
-        "id": raw["id"],
+        "id": identifier,
         "imageURL": _preview_media(raw.get("imageURL", "")),
         "videoURL": _preview_media(raw.get("videoURL", "")),
         "imageAlt": image_alt,
@@ -275,22 +291,14 @@ def _index(body: str, kind: ContentKind) -> list[dict[str, Any]]:
                 version_parts(identifier)
                 fields = _release_fields(raw)
             case ContentKind.ANNOUNCEMENTS:
-                identifier = raw["id"]
-                if not isinstance(identifier, str) or not re.fullmatch(
-                    r"[a-z0-9][a-z0-9_-]{0,127}", identifier
-                ):
-                    raise ValueError("Invalid announcement ID")
                 fields = _announcement_fields(raw)
+                identifier = fields["id"]
             case _:
                 raise AssertionError(f"Unexpected content kind: {kind}")
         if identifier in identifiers:
             raise ValueError("Duplicate content ID")
         identifiers.add(identifier)
-        for field in ("title", "description"):
-            if not isinstance(raw.get(field), str) or (field == "title" and not raw[field].strip()):
-                raise ValueError("Invalid content metadata")
-        if not isinstance(raw.get("announce"), bool):
-            raise ValueError("Invalid notification flag")
+        _validate_content_metadata(raw)
         path = _content_path(raw.get("markdownURL"), kind)
         entries.append(
             {
@@ -359,7 +367,40 @@ def external_announcements(*, on_stale: OnStale | None = None) -> list[Announcem
     except (ImportError, AttributeError):
         slogger.glob.error("Could not load the configured announcement provider")
         raise UpdatesUnavailable() from None
-    return load(edition=edition(), limit=ANNOUNCEMENT_LIMIT, on_stale=on_stale)
+    items = load(edition=edition(), limit=ANNOUNCEMENT_LIMIT, on_stale=on_stale)
+    if not isinstance(items, list):
+        slogger.glob.warning("The announcement provider returned an invalid feed")
+        raise UpdatesUnavailable()
+
+    previews = []
+    for item in items:
+        try:
+            if not isinstance(item, dict):
+                raise ValueError("Invalid announcement preview")
+            _validate_content_metadata(item)
+            fields = _announcement_fields(item)
+            publication_date(item["publishedAt"])
+            _editions(item["editions"])
+            if "label" in item and (
+                not isinstance(item["label"], str) or not item["label"].strip()
+            ):
+                raise ValueError("Invalid announcement label")
+
+            urls = [item["url"]]
+            if "markdownURL" in item:
+                urls.append(item["markdownURL"])
+            urls.extend(fields[key] for key in ("imageURL", "videoURL") if fields[key])
+            for url in urls:
+                _validate_web_url(url)
+                if urlsplit(url).username is not None:
+                    raise ValueError("Invalid announcement URL")
+        except (KeyError, ValueError, ValidationError):
+            slogger.glob.warning("Skipping an invalid announcement provider preview")
+            if on_stale:
+                on_stale()
+            continue
+        previews.append({**item, **{key: value for key, value in fields.items() if key in item}})
+    return previews
 
 
 def announcement_feed() -> tuple[list[AnnouncementPreview], list[AnnouncementSource]]:
