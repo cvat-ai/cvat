@@ -125,7 +125,7 @@ class AnnouncementPreviewSerializer(serializers.Serializer):
     announce = serializers.BooleanField()
     editions = serializers.ListField(child=serializers.RegexField(EDITION_PATTERN))
     url = serializers.URLField()
-    source = serializers.ChoiceField(choices=AnnouncementSource)
+    source = serializers.ChoiceField(choices=AnnouncementSource.choices)
     image_url = serializers.URLField(source="imageURL", required=False, allow_blank=True)
     video_url = serializers.URLField(source="videoURL", required=False, allow_blank=True)
     image_alt = serializers.CharField(source="imageAlt", required=False, allow_blank=True)
@@ -144,7 +144,7 @@ class UpdatesSummarySerializer(serializers.Serializer):
     latest_announced_release = ReleaseNoteSerializer(allow_null=True)
     announcements = AnnouncementPreviewSerializer(many=True)
     unavailable_sources = serializers.ListField(
-        child=serializers.ChoiceField(choices=AnnouncementSource),
+        child=serializers.ChoiceField(choices=AnnouncementSource.choices),
         help_text="Sources that could not be refreshed; their content may be missing or stale.",
     )
     release_history_url = serializers.URLField(source="releaseHistoryURL")

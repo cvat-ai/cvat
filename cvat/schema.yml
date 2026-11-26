@@ -8248,8 +8248,8 @@ components:
       - external
       type: string
       description: |-
-        * `hugo` - hugo
-        * `external` - external
+        * `hugo` - Hugo
+        * `external` - External
     AssetRead:
       type: object
       properties:

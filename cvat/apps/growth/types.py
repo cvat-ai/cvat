@@ -6,13 +6,15 @@ from collections.abc import Callable
 from enum import StrEnum
 from typing import NotRequired, Protocol, TypedDict
 
+from django.db.models import TextChoices
+
 
 class ContentKind(StrEnum):
     RELEASE_NOTES = "release-notes"
     ANNOUNCEMENTS = "announcements"
 
 
-class AnnouncementSource(StrEnum):
+class AnnouncementSource(TextChoices):
     HUGO = "hugo"
     EXTERNAL = "external"
 
