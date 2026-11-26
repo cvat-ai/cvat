@@ -1206,7 +1206,9 @@ Cypress.Commands.add(
                 .find('.cvat-modal-import-filename-input')
                 .type(filePath);
         } else {
-            cy.get('input[type="file"]').attachFile(filePath, { subjectType: 'drag-n-drop' });
+            cy.get('input[type="file"]').selectFile(`cypress/fixtures/${filePath}`, {
+                action: 'drag-drop', force: true,
+            });
             cy.get(`[title="${filePath.split('/').pop()}"]`).should('be.visible');
         }
         cy.contains('button', 'OK').click();
