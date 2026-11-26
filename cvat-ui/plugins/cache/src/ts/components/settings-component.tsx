@@ -39,7 +39,7 @@ export default function SettingsComponent({ plugin }: SettingsComponentProps): J
                     <Col span={24}>
                         <Checkbox
                             className='cvat-text-color'
-                            checked={enabled}
+                            checked={window.isSecureContext && enabled}
                             disabled={!window.isSecureContext}
                             onChange={(event: CheckboxChangeEvent): void => {
                                 setEnabled(event.target.checked);
@@ -50,15 +50,6 @@ export default function SettingsComponent({ plugin }: SettingsComponentProps): J
                             Enable cache feature
                         </Checkbox>
                     </Col>
-                    {!window.isSecureContext && (
-                        <Col span={24}>
-                            <Alert
-                                type='warning'
-                                showIcon
-                                message='Caching requires a secure connection. Open CVAT over HTTPS to enable it.'
-                            />
-                        </Col>
-                    )}
                 </Row>
                 { !!quota && (
                     <Row>
@@ -105,6 +96,16 @@ export default function SettingsComponent({ plugin }: SettingsComponentProps): J
                             }
                         </Col>
                     </Row>
+                )}
+                {!window.isSecureContext && (
+                    <Col span={24}>
+                        <Alert
+                            style={{ marginTop: 16 }}
+                            type='warning'
+                            showIcon
+                            message='Caching requires a secure connection. Open CVAT over HTTPS to enable it.'
+                        />
+                    </Col>
                 )}
             </Col>
         </Row>
