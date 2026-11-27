@@ -20,6 +20,19 @@ $social-google-background: #4286f5;
     font-family: $signing-font;
 }
 
+.cvat-signing-footer {
+    position: relative;
+    background: transparent;
+    text-align: center;
+    padding: $grid-unit-size * 2 0;
+
+    .ant-btn-link {
+        color: white;
+        font-size: 12px;
+        text-decoration: underline;
+    }
+}
+
 .cvat-signing-title {
     .ant-typography {
         color: $heading-color;

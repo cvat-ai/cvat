@@ -4,8 +4,6 @@
 
 /// <reference types="cypress" />
 
-import { inspect } from 'util';
-
 export function generateString(countPointsToMove, arrow) {
     let action = '';
     for (let i = 0; i < countPointsToMove; i++) {
@@ -118,17 +116,6 @@ export function format(date) {
         date.getDate(),
     ].map((n) => String(n).padStart(2, '0'));
     return `${dd}/${mm}/${yyyy}`;
-}
-
-/**
- * Format and expand an object for assertion logs.
- * fixes [object object] in logs
- * @param {any} obj
- * @returns {string}
- */
-export function prettify(obj) {
-    // note: JSON.stringify doesn't expand the object
-    return inspect(obj, { depth: 6 });
 }
 
 export function translatePoint(vector, point) {
