@@ -31,7 +31,7 @@ interface CuboidProjectionInteraction {
     objects: SVGObject[];
     onObjectClick(object: SVGObject, event: React.MouseEvent<SVGGElement>): void;
     onObjectMouseEnter(object: SVGObject): void;
-    onObjectDoubleClick(object: SVGObject): void;
+    onObjectDoubleClick(object: SVGObject, event: React.MouseEvent<SVGGElement>): void;
 }
 
 interface CuboidProjectionProps {
@@ -329,7 +329,7 @@ export default function useCuboidProjections({
 
         dispatch(activateObject(object.state.clientID, null, null));
     }, [activatedStateID, dispatch]);
-    const onObjectDoubleClick = useCallback((object: SVGObject): void => {
+    const onObjectDoubleClick = useCallback((object: SVGObject, event: React.MouseEvent<SVGGElement>): void => {
         if (
             object.type !== SVGObjectType.CUBOID_PROJECTION ||
             !object.state ||
@@ -339,6 +339,7 @@ export default function useCuboidProjections({
             return;
         }
 
+        event.stopPropagation();
         focusObject(object.state, canvas);
         dispatch(collapseObjectItems([object.state], false));
     }, [canvas, dispatch]);

@@ -57,8 +57,8 @@ function ContextImage3DOverlay({
     const onObjectMouseEnter = useCallback((object: SVGObject): void => {
         onCuboidProjectionMouseEnter(object);
     }, [onCuboidProjectionMouseEnter]);
-    const onObjectDoubleClick = useCallback((object: SVGObject): void => {
-        onCuboidProjectionDoubleClick(object);
+    const onObjectDoubleClick = useCallback((object: SVGObject, event: React.MouseEvent<SVGGElement>): void => {
+        onCuboidProjectionDoubleClick(object, event);
     }, [onCuboidProjectionDoubleClick]);
 
     return (

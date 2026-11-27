@@ -29,7 +29,7 @@ interface Props {
     onBackgroundClick(point: [number, number], event: React.MouseEvent<SVGSVGElement>): void;
     onObjectClick(object: SVGObject, event: React.MouseEvent<SVGGElement>): void;
     onObjectMouseEnter(object: SVGObject): void;
-    onObjectDoubleClick(object: SVGObject): void;
+    onObjectDoubleClick(object: SVGObject, event: React.MouseEvent<SVGGElement>): void;
 }
 
 function ContextImageSVGOverlay(props: Props): JSX.Element {
@@ -76,8 +76,8 @@ function ContextImageSVGOverlay(props: Props): JSX.Element {
                     onMouseEnter={() => {
                         onObjectMouseEnter(object);
                     }}
-                    onDoubleClick={() => {
-                        onObjectDoubleClick(object);
+                    onDoubleClick={(event) => {
+                        onObjectDoubleClick(object, event);
                     }}
                 >
                     {object.render(scale)}
