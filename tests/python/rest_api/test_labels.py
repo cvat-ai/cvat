@@ -708,6 +708,98 @@ class TestPatchLabels(_TestLabelsPermissionsBase):
             ignore_fields=ignore_fields,
         )
 
+    @pytest.mark.parametrize("source", ["task", "project"])
+    @pytest.mark.parametrize("through_parent", [False, True])
+    def test_attribute_order_after_updates(self, admin_user, source, through_parent):
+        attributes = [
+            {
+                "name": name,
+                "input_type": "text",
+                "mutable": False,
+                "default_value": "original",
+                "values": ["original"],
+            }
+            for name in ["A", "B", "C"]
+        ]
+        response = post_method(
+            admin_user,
+            f"{source}s",
+            {
+                "name": "attribute order",
+                "labels": [
+                    {"name": "ordinary", "attributes": attributes},
+                    {
+                        "name": "skeleton",
+                        "type": "skeleton",
+                        "attributes": attributes,
+                        "sublabels": [
+                            {"name": "point", "type": "points", "attributes": attributes}
+                        ],
+                        "svg": '<circle r="1.5" cx="20" cy="20" data-type="element node" '
+                        'data-element-id="1" data-node-id="1" data-label-name="point"></circle>',
+                    },
+                ],
+            },
+        )
+        assert response.status_code == HTTPStatus.CREATED, response.content
+        source_id = response.json()["id"]
+        response = get_method(admin_user, "labels", **{f"{source}_id": source_id})
+        assert response.status_code == HTTPStatus.OK, response.content
+
+        for label in response.json()["results"]:
+            original_ids = {
+                item["id"]: [attribute["id"] for attribute in item["attributes"]]
+                for item in [label, *label.get("sublabels", [])]
+            }
+            for operation in ["edit", "append", "delete", "empty"]:
+                expected_ids = {}
+                for item in [label, *label.get("sublabels", [])]:
+                    attrs = item["attributes"]
+                    if operation == "edit":
+                        attrs[0]["name"] += "_updated"
+                    elif operation == "append":
+                        attrs.append({**attributes[0], "name": "D"})
+                    elif operation == "delete":
+                        attrs[1]["deleted"] = True
+                    else:
+                        for attribute in attrs:
+                            attribute["deleted"] = True
+                    expected_ids[item["id"]] = [
+                        attr["id"] for attr in attrs if "id" in attr and not attr.get("deleted")
+                    ]
+                    attrs.reverse()
+
+                if through_parent:
+                    response = patch_method(
+                        admin_user, f"{source}s/{source_id}", {"labels": [label]}
+                    )
+                else:
+                    response = patch_method(admin_user, f'labels/{label["id"]}', label)
+                assert response.status_code == HTTPStatus.OK, response.content
+                updated = response.json()
+
+                retrieved = get_method(admin_user, f'labels/{label["id"]}')
+                assert retrieved.status_code == HTTPStatus.OK, retrieved.content
+                listed = get_method(admin_user, "labels", **{f"{source}_id": source_id})
+                assert listed.status_code == HTTPStatus.OK, listed.content
+                listed_label = next(
+                    item for item in listed.json()["results"] if item["id"] == label["id"]
+                )
+                # Parent endpoints return a label summary rather than serialized labels.
+                results = [retrieved.json(), listed_label]
+                if not through_parent:
+                    results.append(updated)
+                for result in results:
+                    for item in [result, *result.get("sublabels", [])]:
+                        ids = [attribute["id"] for attribute in item["attributes"]]
+                        if operation == "append":
+                            assert ids[:-1] == expected_ids[item["id"]]
+                            assert ids[-1] > max(original_ids[item["id"]])
+                        else:
+                            assert ids == expected_ids[item["id"]]
+                        assert ids == sorted(ids)
+                label = retrieved.json()
+
     def _create_label_with_attribute_types(self, admin_user: str):
         response = post_method(
             admin_user,
