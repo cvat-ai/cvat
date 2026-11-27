@@ -24,6 +24,14 @@ export interface CachePlugin {
         core: CVATCore | null;
         enabled: boolean;
         cachedChunksByJob: Record<number, number[]>;
+        storeJobData(entry: {
+            jobId: number;
+            index: number;
+            kind: 'chunk' | 'context-image';
+            buffer: ArrayBuffer;
+            updatedDate: string;
+            protectedJobIds: number[];
+        }): Promise<boolean>;
     };
     cvat: {
         classes: {

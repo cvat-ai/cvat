@@ -191,6 +191,8 @@ async function cachedChunksLeave(this: Job, plugin: CachePlugin, result: number[
     }
 }
 
+const protectedJobIdsByWrite = new Set<number[]>();
+
 const plugin: CachePlugin = {
     name: 'Cache',
     description: 'Enables cache for some static data',
@@ -198,6 +200,22 @@ const plugin: CachePlugin = {
         core: null,
         enabled: window.isSecureContext && ['true', null].includes(window.localStorage.getItem('cvatEnableCacheFeature')),
         cachedChunksByJob: {},
+        storeJobData: async ({
+            jobId, index, kind, buffer, updatedDate, protectedJobIds,
+        }) => {
+            // This write can trigger eviction. Protect the worker's open jobs until it settles.
+            const writeProtectedJobIds = [...protectedJobIds];
+            protectedJobIdsByWrite.add(writeProtectedJobIds);
+            try {
+                return await indexedStorage.setItem(
+                    kind === 'chunk' ? DatabaseStore.COMPRESSED_JOB_CHUNKS : DatabaseStore.CONTEXT_IMAGES,
+                    `${jobId}_${index}`,
+                    { buffer, updatedDate },
+                );
+            } finally {
+                protectedJobIdsByWrite.delete(writeProtectedJobIds);
+            }
+        },
     },
     cvat: {
         classes: {
@@ -292,7 +310,11 @@ const builder: ComponentBuilder = ({ core, actionCreators, store }) => {
     indexedStorage.setProtectedRecordCallback(
         createProtectedJobRecordCallback(() => {
             const job = store.getState().annotation?.job?.instance;
-            return job ? [job.id] : [];
+            const protectedJobIds = Array.from(protectedJobIdsByWrite).flat();
+            if (job) {
+                protectedJobIds.push(job.id);
+            }
+            return protectedJobIds;
         }),
     );
 
