@@ -7,7 +7,6 @@ import { PluginEntryPoint, ComponentBuilder } from 'components/plugins-entrypoin
 import { Job } from 'cvat-core-wrapper';
 import { logError, EventScope } from 'cvat-logger';
 import indexedStorage, { DatabaseStore, LoggingCallbacks } from './indexed-storage';
-import cacheState from './cache-state';
 import {
     CachePlugin, PreviewEnterFactory, PreviewFor, PreviewLeaveFactory, Quality,
 } from './types';
@@ -195,7 +194,11 @@ async function cachedChunksLeave(this: Job, plugin: CachePlugin, result: number[
 const plugin: CachePlugin = {
     name: 'Cache',
     description: 'Enables cache for some static data',
-    data: cacheState,
+    data: {
+        core: null,
+        enabled: window.isSecureContext && ['true', null].includes(window.localStorage.getItem('cvatEnableCacheFeature')),
+        cachedChunksByJob: {},
+    },
     cvat: {
         classes: {
             Project: {
