@@ -1206,7 +1206,9 @@ Cypress.Commands.add(
                 .find('.cvat-modal-import-filename-input')
                 .type(filePath);
         } else {
-            cy.get('input[type="file"]').attachFile(filePath, { subjectType: 'drag-n-drop' });
+            cy.get('input[type="file"]').selectFile(`cypress/fixtures/${filePath}`, {
+                action: 'drag-drop', force: true,
+            });
             cy.get(`[title="${filePath.split('/').pop()}"]`).should('be.visible');
         }
         cy.contains('button', 'OK').click();
@@ -2040,14 +2042,15 @@ Cypress.Commands.add('checkCsvFileContent', (expectedFileName, header, rowsCount
     });
 });
 
-Cypress.Commands.overwrite('visit', (orig, url, options) => {
-    orig(url, options);
-    cy.closeModalUnsupportedPlatform();
-});
+['visit', 'reload'].forEach((command) => {
+    Cypress.Commands.overwrite(command, (orig, ...args) => {
+        const options = args.find((arg) => arg !== null && typeof arg === 'object') || {};
+        const timeout = options.timeout ?? Cypress.config('pageLoadTimeout');
 
-Cypress.Commands.overwrite('reload', (orig, options) => {
-    orig(options);
-    cy.closeModalUnsupportedPlatform();
+        return cy.then({ timeout }, () => orig(...args)).then((win) => (
+            cy.closeModalUnsupportedPlatform().then(() => win)
+        ));
+    });
 });
 
 Cypress.Commands.add('clickDeleteFrameAnnotationView', () => {

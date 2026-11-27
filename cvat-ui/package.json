@@ -1,6 +1,6 @@
 {
   "name": "cvat-ui",
-  "version": "2.83.1",
+  "version": "2.84.1",
   "description": "CVAT single-page application",
   "main": "src/index.tsx",
   "scripts": {
@@ -65,6 +65,7 @@
     "redux-logger": "^4.0.0",
     "redux-thunk": "^2.3.0",
     "rehype-sanitize": "^6.0.0",
+    "vanilla-cookieconsent": "3.1.0",
     "wavesurfer.js": "^7.12.12"
   }
 }

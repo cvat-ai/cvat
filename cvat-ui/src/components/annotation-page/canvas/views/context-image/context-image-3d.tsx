@@ -3,12 +3,16 @@
 // SPDX-License-Identifier: MIT
 
 import React, { useCallback } from 'react';
+import { useDispatch } from 'react-redux';
 
+import { activateObject } from 'actions/annotation-actions';
+import { ThunkDispatch } from 'utils/redux';
 import ContextImage from './context-image';
 import type { ContextImageOverlayProps } from './context-image';
-import ContextImageSVGOverlay from './context-image-svg-overlay';
+import ContextImageSVGOverlay, { SVGObjectType } from './context-image-svg-overlay';
 import type { SVGObject } from './context-image-svg-overlay';
-import useCameraRay from './hooks/use-camera-ray';
+import use3dCameraRay from './hooks/use-3d-camera-ray';
+import use3dCuboidProjections from './hooks/use-3d-cuboid-projections';
 
 interface Props {
     offset: number[];
@@ -19,28 +23,51 @@ function ContextImage3DOverlay({
     contextImageName,
     scale,
 }: ContextImageOverlayProps): JSX.Element {
+    const dispatch = useDispatch<ThunkDispatch>();
     const {
-        objects,
+        objects: cameraRayObjects,
         onImageClick,
-        onMarkerClick,
-    } = useCameraRay({ contextImageName });
+        onObjectClick: onCameraRayClick,
+    } = use3dCameraRay({ contextImageName });
+    const {
+        objects: cuboidProjectionObjects,
+        onObjectClick: onCuboidProjectionClick,
+        onObjectMouseEnter: onCuboidProjectionMouseEnter,
+        onObjectDoubleClick: onCuboidProjectionDoubleClick,
+    } = use3dCuboidProjections({ contextImageName });
 
     const onBackgroundClick = useCallback((point: [number, number]): void => {
+        dispatch(activateObject(null, null, null));
         onImageClick(point);
-    }, [onImageClick]);
-    const onObjectClick = useCallback((object: SVGObject, isShiftKeyDown: boolean): void => {
-        if (object.type === 'camera-ray') {
-            onMarkerClick(object.id, isShiftKeyDown);
+    }, [dispatch, onImageClick]);
+    const onObjectClick = useCallback((object: SVGObject, event: React.MouseEvent<SVGGElement>): void => {
+        switch (object.type) {
+            case SVGObjectType.CAMERA_RAY:
+                onCameraRayClick(object, event);
+                break;
+            case SVGObjectType.CUBOID_PROJECTION:
+                onCuboidProjectionClick(object, event);
+                break;
+            default:
+                break;
         }
-    }, [onMarkerClick]);
+    }, [onCameraRayClick, onCuboidProjectionClick]);
+    const onObjectMouseEnter = useCallback((object: SVGObject): void => {
+        onCuboidProjectionMouseEnter(object);
+    }, [onCuboidProjectionMouseEnter]);
+    const onObjectDoubleClick = useCallback((object: SVGObject): void => {
+        onCuboidProjectionDoubleClick(object);
+    }, [onCuboidProjectionDoubleClick]);
 
     return (
         <ContextImageSVGOverlay
             imageSize={imageSize}
             scale={scale}
-            objects={objects}
+            objects={[...cuboidProjectionObjects, ...cameraRayObjects]}
             onBackgroundClick={onBackgroundClick}
             onObjectClick={onObjectClick}
+            onObjectMouseEnter={onObjectMouseEnter}
+            onObjectDoubleClick={onObjectDoubleClick}
         />
     );
 }

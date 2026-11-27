@@ -10,11 +10,13 @@ import Switch from 'antd/lib/switch';
 
 import { updateGrowthDataAsync } from 'actions/growth-actions';
 import { CombinedState } from 'reducers';
+import { usePlugins } from 'utils/hooks';
 
 function PrivacyConsentCard(): JSX.Element {
     const dispatch = useDispatch();
     const { data, fetching } = useSelector((state: CombinedState) => state.growth);
     const [promotionNotificationsAllowed, setPromotionNotificationsAllowed] = useState(false);
+    const plugins = usePlugins((state: CombinedState) => state.plugins.components.profilePage.privacyConsent.items);
 
     useEffect(() => {
         setPromotionNotificationsAllowed(data?.promotionNotificationsAllowed ?? false);
@@ -38,6 +40,9 @@ function PrivacyConsentCard(): JSX.Element {
                     </div>
                 </div>
             </div>
+            {[...plugins].sort((a, b) => a.weight - b.weight).map(({ component: Component }, index) => (
+                <Component key={index} />
+            ))}
             <div className='cvat-profile-privacy-consent-actions'>
                 <Button
                     type='primary'

@@ -3,6 +3,7 @@
 # SPDX-License-Identifier: MIT
 
 import io
+import tempfile
 import threading
 from logging import Logger
 from pathlib import Path
@@ -277,24 +278,32 @@ class TestTaskDataset:
             media_download_policy=cvatds.MediaDownloadPolicy.FETCH_CHUNKS_ON_DEMAND,
         )
 
+        observed_temp_dirs = []
+        original_temporary_directory = tempfile.TemporaryDirectory
+
+        def recording_temporary_directory(*args, **kwargs):
+            temp_dir = original_temporary_directory(*args, **kwargs)
+            observed_temp_dirs.append(Path(temp_dir.name))
+            return temp_dir
+
+        monkeypatch.setattr(tempfile, "TemporaryDirectory", recording_temporary_directory)
+
         second_chunk_download_started = threading.Event()
         allow_second_chunk_download = threading.Event()
-        observed_temp_chunk_dirs = set()
-        original_ensure_chunk_in_dir = dataset._ensure_chunk_in_dir
+        cache_manager_class = type(dataset._cache_manager)
+        original_ensure_chunk = cache_manager_class.ensure_chunk
 
-        def wrapped_ensure_chunk_in_dir(chunk_dir, chunk_index):
-            if chunk_dir != dataset._chunk_dir:
-                observed_temp_chunk_dirs.add(chunk_dir)
-
-            # Pause the background prefetch of chunk #1. This keeps chunk #0 readable
-            # while proving that chunk #1 is being fetched before callers request it.
-            if chunk_dir != dataset._chunk_dir and chunk_index == 1:
+        def paused_ensure_chunk(cache_manager, *, task, chunk_index):
+            # Pause the background prefetch of chunk #1 into the temporary directory.
+            # This keeps chunk #0 readable while proving that chunk #1 is being fetched
+            # before callers request it.
+            if cache_manager is not dataset._cache_manager and chunk_index == 1:
                 second_chunk_download_started.set()
                 allow_second_chunk_download.wait()
 
-            return original_ensure_chunk_in_dir(chunk_dir, chunk_index)
+            return original_ensure_chunk(cache_manager, task=task, chunk_index=chunk_index)
 
-        monkeypatch.setattr(dataset, "_ensure_chunk_in_dir", wrapped_ensure_chunk_in_dir)
+        monkeypatch.setattr(cache_manager_class, "ensure_chunk", paused_ensure_chunk)
 
         chunk_dir = dataset._cache_manager.chunk_dir(self.task.id)
         assert (chunk_dir / "0.zip").exists()
@@ -310,9 +319,9 @@ class TestTaskDataset:
                 )
 
             second_chunk_download_started.wait()
-            assert len(observed_temp_chunk_dirs) == 1
-            temp_chunk_dir = next(iter(observed_temp_chunk_dirs))
-            assert temp_chunk_dir != chunk_dir
+            assert len(observed_temp_dirs) == 1
+            temp_dir = observed_temp_dirs[0]
+            temp_chunk_dir = next(temp_dir.glob(f"servers/*/tasks/{self.task.id}/chunks"))
             assert (temp_chunk_dir / "0.zip").exists()
             assert not (temp_chunk_dir / "1.zip").exists()
             assert (chunk_dir / "0.zip").exists()
@@ -331,7 +340,7 @@ class TestTaskDataset:
             for _ in samples:
                 pass
 
-        assert not temp_chunk_dir.exists()
+        assert not temp_dir.exists()
 
     def test_iter_samples_works_with_fetch_frames_on_demand(self):
         dataset = cvatds.TaskDataset(
@@ -378,7 +387,7 @@ class TestTaskDataset:
 
         with pytest.raises(
             cvatds.UnsupportedDatasetError,
-            match="tasks whose original chunks are image sets",
+            match="Chunk-based media access is not supported",
         ):
             cvatds.TaskDataset(
                 self.client,

@@ -16,6 +16,7 @@ import { CombinedState } from 'reducers';
 import type { CameraRayPoint } from 'reducers';
 import { shallowEqual, ThunkDispatch } from 'utils/redux';
 import CameraRayMarker from '../camera-ray-marker';
+import { SVGObjectType } from '../context-image-svg-overlay';
 import type { SVGObject } from '../context-image-svg-overlay';
 
 interface Params {
@@ -25,7 +26,7 @@ interface Params {
 interface CameraRayInteraction {
     objects: SVGObject[];
     onImageClick(point: [number, number]): void;
-    onMarkerClick(id: string, removeAll: boolean): void;
+    onObjectClick(object: SVGObject, event: React.MouseEvent<SVGGElement>): void;
 }
 
 const cameraRayMarkerTooltip = (
@@ -47,7 +48,7 @@ export default function useCameraRay({ contextImageName }: Params): CameraRayInt
 
         return cameraRays.filter((cameraRay) => cameraRay.relatedImageName === contextImageName).map((cameraRay) => ({
             id: cameraRay.id,
-            type: 'camera-ray',
+            type: SVGObjectType.CAMERA_RAY,
             className: 'cvat-context-image-camera-ray-marker',
             render: (scale): JSX.Element => (
                 <CVATTooltip title={cameraRayMarkerTooltip} mouseEnterDelay={0.5}>
@@ -76,18 +77,23 @@ export default function useCameraRay({ contextImageName }: Params): CameraRayInt
         }
     }, [contextImageName, dispatch]);
 
-    const onMarkerClick = useCallback((id: string, removeAll: boolean): void => {
-        if (removeAll && contextImageName) {
+    const onObjectClick = useCallback((object: SVGObject, event: React.MouseEvent<SVGGElement>): void => {
+        if (object.type !== SVGObjectType.CAMERA_RAY) {
+            return;
+        }
+
+        event.stopPropagation();
+        if (event.shiftKey && contextImageName) {
             dispatch(clearContextImageCameraRays(contextImageName));
             return;
         }
 
-        dispatch(removeCameraRay(id));
+        dispatch(removeCameraRay(object.id));
     }, [contextImageName, dispatch]);
 
     return {
         objects,
         onImageClick,
-        onMarkerClick,
+        onObjectClick,
     };
 }

@@ -592,8 +592,11 @@ def annotate_task(
     tags = []
     shapes = []
 
-    with pbar.task(total=len(dataset.samples), unit="samples"):
-        for sample in pbar.iter(dataset.samples):
+    with (
+        pbar.task(total=len(dataset.samples), unit="samples"),
+        dataset.iter_samples() as samples,
+    ):
+        for sample in pbar.iter(samples):
             frame_annotations = function.detect(
                 # https://github.com/pylint-dev/pylint/issues/9013
                 # pylint: disable-next=abstract-class-instantiated

@@ -35,7 +35,7 @@ import QualityConfigurationForm, {
     QualityConfiguration,
     ValidationMode,
 } from 'components/create-task-page/quality-configuration-form';
-import { CreateTaskData } from 'components/create-task-page/create-task-content';
+import { CreateTaskData, TaskSelection } from 'components/create-task-page/create-task-content';
 
 type TabName = 'local' | 'share' | 'remote' | 'cloudStorage';
 const core = getCore();
@@ -45,8 +45,8 @@ interface Props {
     projectId: number | null;
 }
 
-type State = CreateTaskData & {
-    uploadFileErrorMessage: string;
+type State = Omit<CreateTaskData, 'cloudStorageId'> & {
+    uploadFileErrorMessages: Record<TabName, string>;
     loading: boolean;
     statusInProgressTask: string;
 };
@@ -72,8 +72,12 @@ const defaultState: State = {
         cloudStorage: [],
     },
     activeFileManagerTab: 'local',
-    cloudStorageId: null,
-    uploadFileErrorMessage: '',
+    uploadFileErrorMessages: {
+        local: '',
+        share: '',
+        remote: '',
+        cloudStorage: '',
+    },
     loading: false,
     statusInProgressTask: '',
 };
@@ -137,19 +141,6 @@ class AudioCreateTaskContent extends React.PureComponent<Props & RouteComponentP
             ...defaultState,
             projectId: state.projectId,
         }));
-    };
-
-    private validateFiles = (): boolean => {
-        const { activeFileManagerTab, files } = this.state;
-
-        if (activeFileManagerTab === 'cloudStorage') {
-            this.setState({
-                cloudStorageId: this.fileManagerComponent.getCloudStorageId(),
-            });
-        }
-        const totalLen = Object.keys(files).reduce((acc, key: string) => acc + files[(key as TabName)].length, 0);
-
-        return !!totalLen;
     };
 
     private startLoading = (): void => {
@@ -254,7 +245,12 @@ class AudioCreateTaskContent extends React.PureComponent<Props & RouteComponentP
         const excludedManifests = uploadedFiles.filter((x: File) => !x.name.endsWith('.jsonl'));
         const uploadFileErrorMessage = localFilesHaveNonAudio(excludedManifests) ? NON_AUDIO_ERROR : '';
 
-        this.setState({ uploadFileErrorMessage });
+        this.setState((state) => ({
+            uploadFileErrorMessages: {
+                ...state.uploadFileErrorMessages,
+                local: uploadFileErrorMessage,
+            },
+        }));
 
         if (!uploadFileErrorMessage) {
             this.setState({
@@ -270,7 +266,12 @@ class AudioCreateTaskContent extends React.PureComponent<Props & RouteComponentP
         const { files } = this.state;
         const uploadFileErrorMessage = pathsHaveNonAudio(urls) ? NON_AUDIO_ERROR : '';
 
-        this.setState({ uploadFileErrorMessage });
+        this.setState((state) => ({
+            uploadFileErrorMessages: {
+                ...state.uploadFileErrorMessages,
+                remote: uploadFileErrorMessage,
+            },
+        }));
 
         if (!uploadFileErrorMessage) {
             this.setState({
@@ -287,7 +288,12 @@ class AudioCreateTaskContent extends React.PureComponent<Props & RouteComponentP
         const keys = shareFiles.map((it) => it.key);
         const uploadFileErrorMessage = pathsHaveNonAudio(keys) ? NON_AUDIO_ERROR : '';
 
-        this.setState({ uploadFileErrorMessage });
+        this.setState((state) => ({
+            uploadFileErrorMessages: {
+                ...state.uploadFileErrorMessages,
+                share: uploadFileErrorMessage,
+            },
+        }));
 
         if (!uploadFileErrorMessage) {
             this.setState({
@@ -304,7 +310,12 @@ class AudioCreateTaskContent extends React.PureComponent<Props & RouteComponentP
         const keys = cloudStorageFiles.map((it) => it.key);
         const uploadFileErrorMessage = pathsHaveNonAudio(keys) ? NON_AUDIO_ERROR : '';
 
-        this.setState({ uploadFileErrorMessage });
+        this.setState((state) => ({
+            uploadFileErrorMessages: {
+                ...state.uploadFileErrorMessages,
+                cloudStorage: uploadFileErrorMessage,
+            },
+        }));
 
         if (!uploadFileErrorMessage) {
             this.setState({
@@ -316,10 +327,11 @@ class AudioCreateTaskContent extends React.PureComponent<Props & RouteComponentP
         }
     };
 
-    private validateBlocks = (): Promise<any> => new Promise((resolve, reject) => {
-        const { projectId } = this.state;
+    private validateBlocks = (): Promise<TaskSelection> => new Promise((resolve, reject) => {
+        const { projectId, activeFileManagerTab, files } = this.state;
+        const selectedFiles = files[activeFileManagerTab];
 
-        if (!this.validateFiles()) {
+        if (!selectedFiles.length) {
             notification.error({
                 message: 'Could not create a task',
                 description: 'A task must contain at least one file',
@@ -334,6 +346,18 @@ class AudioCreateTaskContent extends React.PureComponent<Props & RouteComponentP
             return;
         }
 
+        const selection: TaskSelection = {
+            projectId,
+            activeFileManagerTab,
+            files: {
+                ...defaultState.files,
+                [activeFileManagerTab]: selectedFiles,
+            },
+            cloudStorageId: activeFileManagerTab === 'cloudStorage' ?
+                this.fileManagerComponent.getCloudStorageId() : null,
+        };
+
+        this.startLoading();
         this.basicConfigurationComponent.current
             .submit()
             .then(() => {
@@ -368,7 +392,7 @@ class AudioCreateTaskContent extends React.PureComponent<Props & RouteComponentP
                 }
 
                 return Promise.resolve();
-            }).then(resolve)
+            }).then(() => resolve(selection))
             .catch((error: Error | ValidateErrorEntity): void => {
                 notification.error({
                     message: 'Could not create a task',
@@ -388,7 +412,8 @@ class AudioCreateTaskContent extends React.PureComponent<Props & RouteComponentP
                 const { id } = createdTask;
                 history.push(`/tasks/${id}`);
             })
-            .catch(() => {});
+            .catch(() => {})
+            .finally(this.stopLoading);
     };
 
     private handleSubmitAndContinue = (): void => {
@@ -402,14 +427,13 @@ class AudioCreateTaskContent extends React.PureComponent<Props & RouteComponentP
             })
             .then(this.resetState)
             .then(this.focusToForm)
-            .catch(() => {});
+            .catch(() => {})
+            .finally(this.stopLoading);
     };
 
-    private createOneTask = (): Promise<any> => {
+    private createOneTask = (selection: TaskSelection): Promise<any> => {
         const { onCreate } = this.props;
-        this.startLoading();
-        return onCreate(this.state, this.changeStatusInProgressTask)
-            .finally(this.stopLoading);
+        return onCreate({ ...this.state, ...selection }, this.changeStatusInProgressTask);
     };
 
     private renderBasicBlock(): JSX.Element {
@@ -497,7 +521,8 @@ class AudioCreateTaskContent extends React.PureComponent<Props & RouteComponentP
     }
 
     private renderFilesBlock(): JSX.Element {
-        const { uploadFileErrorMessage } = this.state;
+        const { uploadFileErrorMessages, activeFileManagerTab } = this.state;
+        const uploadFileErrorMessage = uploadFileErrorMessages[activeFileManagerTab];
 
         return (
             <>
@@ -608,10 +633,13 @@ class AudioCreateTaskContent extends React.PureComponent<Props & RouteComponentP
     }
 
     private renderFooterSingleTask(): JSX.Element {
-        const { uploadFileErrorMessage, loading, statusInProgressTask: status } = this.state;
+        const {
+            uploadFileErrorMessages, activeFileManagerTab, loading, statusInProgressTask: status,
+        } = this.state;
+        const uploadFileErrorMessage = uploadFileErrorMessages[activeFileManagerTab];
 
         if (status === 'FAILED' || loading) {
-            return (<Alert message={status} />);
+            return (<Alert message={status || 'Preparing task…'} />);
         }
         return (
             <Row justify='end' gutter={8}>
