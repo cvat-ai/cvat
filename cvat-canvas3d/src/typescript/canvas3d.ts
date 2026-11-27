@@ -33,7 +33,7 @@ interface Canvas3d {
     isAbleToChangeFrame(): boolean;
     mode(): Mode;
     render(): void;
-    keyControls(keys: KeyboardEvent): void;
+    cameraControl(action: CameraAction): void;
     draw(drawData: DrawData): void;
     cancel(): void;
     dragCanvas(enable: boolean): void;
@@ -64,8 +64,8 @@ class Canvas3dImpl implements Canvas3d {
         return this.view.html();
     }
 
-    public keyControls(keys: KeyboardEvent): void {
-        this.view.keyControls(keys);
+    public cameraControl(action: CameraAction): void {
+        this.view.cameraControl(action);
     }
 
     public render(): void {

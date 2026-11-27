@@ -24,21 +24,21 @@ import { disposeObject3D, disposeScene } from './utils';
 export interface Canvas3dView {
     html(): ViewsDOM;
     render(): void;
-    keyControls(keys: KeyboardEvent): void;
+    cameraControl(action: CameraAction): void;
     focusObjectByClientId(clientID: number, animate?: boolean): void;
 }
 
 export enum CameraAction {
-    ZOOM_IN = 'KeyI',
-    MOVE_UP = 'KeyU',
-    MOVE_DOWN = 'KeyO',
-    MOVE_LEFT = 'KeyJ',
-    ZOOM_OUT = 'KeyK',
-    MOVE_RIGHT = 'KeyL',
-    TILT_UP = 'ArrowUp',
-    TILT_DOWN = 'ArrowDown',
-    ROTATE_RIGHT = 'ArrowRight',
-    ROTATE_LEFT = 'ArrowLeft',
+    ROTATE_UP = 'rotate-up',
+    ROTATE_DOWN = 'rotate-down',
+    ROTATE_LEFT = 'rotate-left',
+    ROTATE_RIGHT = 'rotate-right',
+    MOVE_UP = 'move-up',
+    MOVE_DOWN = 'move-down',
+    MOVE_LEFT = 'move-left',
+    MOVE_RIGHT = 'move-right',
+    ZOOM_IN = 'zoom-in',
+    ZOOM_OUT = 'zoom-out',
 }
 
 export type Views = {
@@ -2578,49 +2578,43 @@ export class Canvas3dViewImpl implements Canvas3dView, Listener {
         }
     }
 
-    public keyControls(key: any): void {
+    public cameraControl(action: CameraAction): void {
         const { controls } = this.views.perspective;
         if (!controls) return;
-        if (key.shiftKey) {
-            switch (key.code) {
-                case CameraAction.ROTATE_RIGHT:
-                    controls.rotate(0.1 * THREE.MathUtils.DEG2RAD * this.speed, 0, true);
-                    break;
-                case CameraAction.ROTATE_LEFT:
-                    controls.rotate(-0.1 * THREE.MathUtils.DEG2RAD * this.speed, 0, true);
-                    break;
-                case CameraAction.TILT_UP:
-                    controls.rotate(0, -0.05 * THREE.MathUtils.DEG2RAD * this.speed, true);
-                    break;
-                case CameraAction.TILT_DOWN:
-                    controls.rotate(0, 0.05 * THREE.MathUtils.DEG2RAD * this.speed, true);
-                    break;
-                default:
-                    break;
-            }
-        } else if (key.altKey === true) {
-            switch (key.code) {
-                case CameraAction.ZOOM_IN:
-                    controls.dolly(consts.DOLLY_FACTOR, true);
-                    break;
-                case CameraAction.ZOOM_OUT:
-                    controls.dolly(-consts.DOLLY_FACTOR, true);
-                    break;
-                case CameraAction.MOVE_LEFT:
-                    controls.truck(-0.01 * this.speed, 0, true);
-                    break;
-                case CameraAction.MOVE_RIGHT:
-                    controls.truck(0.01 * this.speed, 0, true);
-                    break;
-                case CameraAction.MOVE_DOWN:
-                    controls.truck(0, -0.01 * this.speed, true);
-                    break;
-                case CameraAction.MOVE_UP:
-                    controls.truck(0, 0.01 * this.speed, true);
-                    break;
-                default:
-                    break;
-            }
+
+        switch (action) {
+            case CameraAction.ROTATE_RIGHT:
+                controls.rotate(0.1 * THREE.MathUtils.DEG2RAD * this.speed, 0, true);
+                break;
+            case CameraAction.ROTATE_LEFT:
+                controls.rotate(-0.1 * THREE.MathUtils.DEG2RAD * this.speed, 0, true);
+                break;
+            case CameraAction.ROTATE_UP:
+                controls.rotate(0, -0.05 * THREE.MathUtils.DEG2RAD * this.speed, true);
+                break;
+            case CameraAction.ROTATE_DOWN:
+                controls.rotate(0, 0.05 * THREE.MathUtils.DEG2RAD * this.speed, true);
+                break;
+            case CameraAction.ZOOM_IN:
+                controls.dolly(consts.DOLLY_FACTOR, true);
+                break;
+            case CameraAction.ZOOM_OUT:
+                controls.dolly(-consts.DOLLY_FACTOR, true);
+                break;
+            case CameraAction.MOVE_LEFT:
+                controls.truck(-0.01 * this.speed, 0, true);
+                break;
+            case CameraAction.MOVE_RIGHT:
+                controls.truck(0.01 * this.speed, 0, true);
+                break;
+            case CameraAction.MOVE_UP:
+                controls.truck(0, -0.01 * this.speed, true);
+                break;
+            case CameraAction.MOVE_DOWN:
+                controls.truck(0, 0.01 * this.speed, true);
+                break;
+            default:
+                throw new Error(`Unexpected camera action: ${action}`);
         }
     }
 

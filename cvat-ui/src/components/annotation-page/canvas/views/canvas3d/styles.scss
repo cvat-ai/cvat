@@ -36,8 +36,25 @@
     margin: $grid-unit-size;
 }
 
-.cvat-canvas3d-perspective-arrow-directions-icons-color {
-    color: black;
+.cvat-canvas3d-rotation-icon {
+    display: inline-block;
+    transform-origin: center;
+}
+
+.cvat-canvas3d-rotation-icon-vertical-up {
+    transform: rotate(-90deg) scaleY(-1);
+}
+
+.cvat-canvas3d-rotation-icon-vertical-down {
+    transform: rotate(90deg);
+}
+
+.cvat-canvas3d-rotation-icon-horizontal-left {
+    transform: scaleX(-1);
+}
+
+.cvat-canvas3d-rotation-icon-horizontal-right {
+    transform: none;
 }
 
 .cvat-canvas3d-perspective-directions {
