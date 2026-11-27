@@ -17,6 +17,9 @@ The **Settings** section has three tabs:
 
 In the **Player** tab, you can:
 
+- **Enable cache feature** stores previews and job data in the browser.
+  It is enabled by default in secure browser contexts, such as HTTPS and localhost.
+  If the setting is unavailable, open CVAT over HTTPS.
 - Control step of `C` and `V` shortcuts.
 - Control the speed of `Space`/`Play` button.
 - Select canvas background color. You can choose a background color or enter manually (in RGB or HEX format).

@@ -15,7 +15,7 @@ module.exports = (env, argv = {}) => {
     const sourceMapsEnabled = isDevMode ||
         (process.env.SOURCE_MAPS_ENABLED || 'false').toLocaleLowerCase() === 'true';
 
-    const defaultPlugins = ['plugins/sam'];
+    const defaultPlugins = ['plugins/sam', 'plugins/cache'];
     const plugins = process.env.CLIENT_PLUGINS ? [...defaultPlugins, ...process.env.CLIENT_PLUGINS.split(':')]
         .map((plugin) => plugin.trim()).filter((plugin) => !!plugin) : defaultPlugins;
 
