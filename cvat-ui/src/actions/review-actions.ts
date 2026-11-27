@@ -56,8 +56,10 @@ export const reviewActions = {
     selectIssue: (issueId: number | null) => createAction(ReviewActionTypes.SELECT_ISSUE, { issueId }),
     highlightIssue: (issueId: number | null) => createAction(ReviewActionTypes.HIGHLIGHT_ISSUE, { issueId }),
     moveDraftIssue: (position: number[]) => createAction(ReviewActionTypes.MOVE_DRAFT_ISSUE, { position }),
-    finishIssueSuccess: (frame: number, issue: Issue, draft: ReviewState['newIssue']) => (
-        createAction(ReviewActionTypes.FINISH_ISSUE_SUCCESS, { frame, issue, draft })
+    finishIssueSuccess: (frame: number, issue: Issue, draft: ReviewState['newIssue'], dimension: DimensionType) => (
+        createAction(ReviewActionTypes.FINISH_ISSUE_SUCCESS, {
+            frame, issue, draft, dimension,
+        })
     ),
     finishIssueFailed: (error: unknown, draft: ReviewState['newIssue']) => (
         createAction(ReviewActionTypes.FINISH_ISSUE_FAILED, { error: ensureError(error), draft })
@@ -174,7 +176,9 @@ export const finishIssueAsync = (message: string): ThunkAction => async (dispatc
 
         const savedIssue = await jobInstance.openIssue(issue, message);
         if (getState().annotation.job.instance === jobInstance) {
-            dispatch(reviewActions.finishIssueSuccess(getState().annotation.player.frame.number, savedIssue, draft));
+            dispatch(reviewActions.finishIssueSuccess(
+                getState().annotation.player.frame.number, savedIssue, draft, jobInstance.dimension,
+            ));
         }
     } catch (error) {
         if (getState().annotation.job.instance === jobInstance) dispatch(reviewActions.finishIssueFailed(error, draft));

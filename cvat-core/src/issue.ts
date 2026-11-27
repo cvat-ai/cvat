@@ -31,9 +31,9 @@ interface RawIssueData {
 }
 
 export interface IssueView {
-    position: number[];
-    target: number[];
-    up: number[];
+    position: [number, number, number];
+    target: [number, number, number];
+    up: [number, number, number];
     zoom: number;
 }
 
@@ -87,7 +87,7 @@ export default class Issue {
                     get: () => data.frame,
                 },
                 view: {
-                    get: () => (data.view ? {
+                    get: (): IssueView | null => (data.view ? {
                         position: [...data.view.position],
                         target: [...data.view.target],
                         up: [...data.view.up],
@@ -262,14 +262,12 @@ Object.defineProperties(Issue.prototype.move, {
         writable: false,
         enumerable: false,
         value: async function implementation(this: Issue, position: number[]) {
-            validatePosition(position);
-            const nextPosition = [...position];
-            if (typeof this.id === 'number') {
-                const response = await serverProxy.issues.update(this.id, { position: nextPosition });
-                this.position = response.position;
-            } else {
-                this.position = nextPosition;
+            if (typeof this.id !== 'number') {
+                throw new ArgumentError('Cannot move an unsaved issue');
             }
+            validatePosition(position);
+            const response = await serverProxy.issues.update(this.id, { position: [...position] });
+            this.position = response.position;
         },
     },
 });

@@ -125,10 +125,14 @@ export default function (state: ReviewState = defaultState, action: ReviewAction
                 newIssue: action.payload,
             };
         case ReviewActionTypes.FINISH_ISSUE_SUCCESS: {
-            const { frame, issue, draft } = action.payload;
+            const {
+                frame, issue, draft, dimension,
+            } = action.payload;
             const issues = [...state.issues, issue];
             const message = issue.comments[0]?.message;
-            const latestComments = message && !isQuickIssuePresetMessage(message) &&
+            const include3DPresets = dimension === DimensionType.DIMENSION_3D &&
+                draft.source === NewIssueSource.QUICK_ISSUE;
+            const latestComments = message && !isQuickIssuePresetMessage(message, include3DPresets) &&
                 !state.latestComments.includes(message) ?
                 [...state.latestComments, message].slice(-config.LATEST_COMMENTS_SHOWN_QUICK_ISSUE) :
                 state.latestComments;

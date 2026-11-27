@@ -1900,5 +1900,13 @@ context('2D review with shared canvas popups', () => {
             expect(response.body.position).to.have.length(10);
             expect(response.body.view).to.equal(null);
         });
+
+        cy.createIssueFromObject(1, 'Open an issue ...', 'Wrong rotation');
+        cy.contains('.cvat-hidden-issue-label', 'Wrong rotation').should('exist');
+        cy.get('#cvat_canvas_shape_1').trigger('mouseover');
+        cy.get('#cvat_canvas_shape_1').trigger('mousemove');
+        cy.get('#cvat_canvas_shape_1').rightclick();
+        cy.contains('.cvat-context-menu-item', 'Quick issue ...').trigger('mouseover');
+        cy.contains('.cvat-quick-issue-from-latest-item:visible', 'Wrong rotation').should('be.visible');
     });
 });

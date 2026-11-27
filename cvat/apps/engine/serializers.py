@@ -4650,7 +4650,7 @@ class IssueWriteSerializer(WriteOnceMixin, serializers.ModelSerializer):
 
     def validate(self, attrs: dict[str, Any]) -> dict[str, Any]:
         instance: models.Issue | None = self.instance
-        if instance and {"position", "view"}.isdisjoint(attrs):
+        if instance and "position" not in attrs:
             return attrs
 
         job = instance.job if instance else attrs["job"]

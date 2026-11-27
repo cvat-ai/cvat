@@ -374,7 +374,7 @@ export class Canvas3dViewImpl implements Canvas3dView, Listener {
             )) || !Number.isFinite(view.zoom) || view.zoom <= 0 ||
             view.position.every((value, index) => value === view.target[index]) ||
             !view.up.some((value) => value)) return;
-        camera.up.set(...view.up as [number, number, number]).normalize();
+        camera.up.set(...view.up).normalize();
         controls.updateCameraUp();
         controls.setFocalOffset(0, 0, 0, false);
         controls.setLookAt(

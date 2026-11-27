@@ -37,6 +37,7 @@ export function getQuickIssuePresets(dimension: DimensionType, object?: ObjectSt
     ];
 }
 
-export function isQuickIssuePresetMessage(message: string): boolean {
-    return commonPresets.some((preset) => preset.message === message) || is3DQuickIssueMessage(message);
+export function isQuickIssuePresetMessage(message: string, include3DPresets: boolean): boolean {
+    return commonPresets.some((preset) => preset.message === message) ||
+        (include3DPresets && is3DQuickIssueMessage(message));
 }

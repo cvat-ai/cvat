@@ -421,7 +421,7 @@ function IssueOverlays({ canvas }: { canvas: Canvas3d }): JSX.Element {
     ]);
 
     useEffect(() => {
-        if (!ready) {
+        if (!ready || (!visibleIssues.length && !newPosition)) {
             setLayout({ placements: [], fallbackPane: null });
             canvas.setupIssueSprites([]);
             return undefined;
