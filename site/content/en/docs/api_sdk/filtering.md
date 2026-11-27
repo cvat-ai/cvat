@@ -1,8 +1,8 @@
 ---
-title: 'High-level API'
-linkTitle: 'High-level API'
-weight: 4
-description: ''
+title: 'Filter lists in the REST API, SDK and UI'
+linkTitle: 'Filtering'
+weight: 11
+description: 'Use JSON Logic filters to find tasks, jobs and projects with the REST API, the Python SDK and the CVAT web interface.'
 ---
 
 CVAT list endpoints can return a lot of objects. A filter tells the server to return only the ones you need.
@@ -24,7 +24,7 @@ Use `filter` for everything else: several conditions, lists of values, compariso
 
 ### JSON Logic in brief
 
-A filter is a [JSON Logic](https://jsonlogic.com/) expression.
+A filter is a [JSON Logic](https://www.jsonlogic.com/) expression.
 You read a field with `{"var": "<field name>"}`, compare it with an operator, and combine conditions with `and` and `or`.
 
 ```json
@@ -49,16 +49,17 @@ A field that is not in the list for an endpoint cannot be used in its filter.
 ## Filter with the REST API
 
 Send the expression in the `filter` query parameter.
+Authenticate with a personal access token, as described on the [Access tokens](/docs/api_sdk/access_tokens/) page.
 The expression must be URL encoded. The `--data-urlencode` option of `curl` does this for you.
 
 ```bash
 curl -G "https://app.cvat.ai/api/tasks" \
   --data-urlencode 'filter={"and":[{"==":[{"var":"status"},"completed"]},{"==":[{"var":"project_id"},1]}]}' \
   -H "Accept: application/vnd.cvat+json" \
-  -H "$CVAT_AUTH_HEADER"
+  -H "Authorization: Bearer $CVAT_ACCESS_TOKEN"
 ```
 
-Set `CVAT_AUTH_HEADER` to the header your authentication method needs.
+Set `CVAT_ACCESS_TOKEN` to the value of your token.
 
 ### Examples
 
@@ -112,17 +113,16 @@ Use `GET /api/tasks?project_id=2`, or write the condition as JSON Logic:
 
 **Forgetting to URL encode.** Braces, quotes and colons in the expression must be encoded in the query string.
 Let your HTTP client do it, as `curl -G --data-urlencode` does above.
+If you build the URL by hand in Python, encode the value with
+[`urllib.parse.quote_plus`](https://docs.python.org/3/library/urllib.parse.html#urllib.parse.quote_plus).
+The SDK encodes the filter for you.
 
 **Using a field the endpoint does not list.** Check the field table above, or the `filter` description of the endpoint you call.
 
 ## Filter with the Python SDK
 
-Install the SDK with `pip install cvat-sdk`. The SDK requires Python 3.11 or later.
-
-### High level API
-
-The `F` object builds filters for you, so you do not write JSON Logic by hand.
-It is available in SDK releases from 2.70.0.
+The SDK builds filters for you, so you do not write JSON Logic by hand.
+The `F` object is available in SDK releases from 2.70.0.
 Combine conditions with `&` (and), `|` (or) and `~` (not).
 
 ```python
@@ -130,12 +130,12 @@ from cvat_sdk import make_client
 from cvat_sdk.core.filters import F
 
 with make_client("https://app.cvat.ai", access_token="<your token>") as client:
-    tasks = client.tasks.list(
-        filter=(F.status == "completed") & F.project_id.one_of([1, 2, 3])
-    )
-    for task in tasks:
+    for task in client.tasks.list(filter=(F.status == "completed") & F.project_id.one_of([1, 2, 3])):
         print(task.id, task.name)
 ```
+
+For the full list of operators and keyword lookups, see
+[High level API](/docs/api_sdk/sdk/highlevel-api/#filter-expressions-the-f-object).
 
 The SDK turns each expression into a JSON Logic filter and sends it in the `filter` parameter.
 This table shows the result, so you can move a filter between the SDK and the REST API.
@@ -151,18 +151,9 @@ This table shows the result, so you can move a filter between the SDK and the RE
 | `F.status != "annotation"` | `{"!": {"==": [{"var": "status"}, "annotation"]}}` |
 | `(F.status == "completed") & F.project_id.one_of([1, 2, 3])` | `{"and": [{"==": [{"var": "status"}, "completed"]}, {"in": [{"var": "project_id"}, [1, 2, 3]]}]}` |
 
-For filters that only use AND, you can skip `F` and use keyword lookups.
-The operator is a suffix on the keyword name, such as `id__gte` for greater than or equal to.
-
-```python
-tasks = client.tasks.list(id__gte=10, name__contains="demo")
-```
-
-The lookup suffixes are `in`, `contains`, `lt`, `lte`, `gt`, `gte`, `ne`, `between` and `isset`.
-
 ### Low level API
 
-The low level API takes the JSON Logic string as it is.
+The low level API takes the JSON Logic string as it is. The SDK encodes it for you.
 
 ```python
 (page, response) = client.tasks.api.list(
@@ -198,5 +189,5 @@ The pages use the same API as your scripts, so a filter you build on a page is a
 |---|---|
 | Check one field for one value | A simple parameter, such as `?project_id=2` |
 | Run a one off query from a terminal | The REST API with `filter` |
-| Filter inside a Python script | The SDK with `F` |
+| Filter inside a Python application | The SDK with `F` |
 | Find the right expression by example | The web interface, then copy the filter |
