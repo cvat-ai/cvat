@@ -14,7 +14,7 @@ import {
 import { ActionWithPayload } from 'utils/redux';
 import type { ReviewActions } from 'actions/review-actions';
 import { isQuickIssuePresetMessage } from 'utils/review/quick-issues';
-import { ReviewState } from '.';
+import { NewIssueSource, ReviewState } from '.';
 
 const defaultState: ReviewState = {
     activeIssueId: null,
@@ -140,6 +140,11 @@ export default function (state: ReviewState = defaultState, action: ReviewAction
                 latestComments,
                 newIssue: state.newIssue === draft ? defaultState.newIssue : state.newIssue,
             };
+        }
+        case ReviewActionTypes.FINISH_ISSUE_FAILED: {
+            const { draft } = action.payload;
+            if (state.newIssue !== draft || draft.source !== NewIssueSource.QUICK_ISSUE) return state;
+            return { ...state, newIssue: defaultState.newIssue };
         }
         case ReviewActionTypes.COMMENT_ISSUE:
         case ReviewActionTypes.MOVE_ISSUE:

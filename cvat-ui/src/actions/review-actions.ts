@@ -59,8 +59,8 @@ export const reviewActions = {
     finishIssueSuccess: (frame: number, issue: Issue, draft: ReviewState['newIssue']) => (
         createAction(ReviewActionTypes.FINISH_ISSUE_SUCCESS, { frame, issue, draft })
     ),
-    finishIssueFailed: (error: unknown) => (
-        createAction(ReviewActionTypes.FINISH_ISSUE_FAILED, { error: ensureError(error) })
+    finishIssueFailed: (error: unknown, draft: ReviewState['newIssue']) => (
+        createAction(ReviewActionTypes.FINISH_ISSUE_FAILED, { error: ensureError(error), draft })
     ),
     cancelIssue: () => createAction(ReviewActionTypes.CANCEL_ISSUE),
     commentIssue: (issueId: number) => createAction(ReviewActionTypes.COMMENT_ISSUE, { issueId }),
@@ -177,7 +177,7 @@ export const finishIssueAsync = (message: string): ThunkAction => async (dispatc
             dispatch(reviewActions.finishIssueSuccess(getState().annotation.player.frame.number, savedIssue, draft));
         }
     } catch (error) {
-        if (getState().annotation.job.instance === jobInstance) dispatch(reviewActions.finishIssueFailed(error));
+        if (getState().annotation.job.instance === jobInstance) dispatch(reviewActions.finishIssueFailed(error, draft));
     }
 };
 

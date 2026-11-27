@@ -1593,7 +1593,6 @@ context('3D spatial review', { browser: '!firefox' }, () => {
             expect($canvas[0].getDrawnObjects()).to.have.length(2);
         });
         cy.get('.cvat-canvas3d-perspective .cvat-spinner-container').should('not.exist');
-        cy.intercept('POST', '/api/issues**').as('propertyIssue');
 
         function openMenu(objectType) {
             const text = `CUBOID ${objectType.toUpperCase()}`;
@@ -1617,6 +1616,18 @@ context('3D spatial review', { browser: '!firefox' }, () => {
             });
         }
 
+        cy.intercept({ method: 'POST', url: '/api/issues**', times: 1 }, {
+            statusCode: 403, body: { detail: 'Test rejected Quick issue' },
+        }).as('rejectedQuickIssue');
+        openMenu('shape');
+        cy.contains('.cvat-context-menu-item', 'Quick issue: incorrect rotation').click();
+        cy.wait('@rejectedQuickIssue').its('response.statusCode').should('equal', 403);
+        cy.contains('Could not open a new issue').should('be.visible');
+        cy.get('.cvat-canvas3d-perspective canvas').should(($canvas) => {
+            expect($canvas[0].scene.getObjectByName('cvat-issue-cuboid-0')).not.to.exist;
+        });
+
+        cy.intercept('POST', '/api/issues**').as('propertyIssue');
         ['rotation', 'dimensions'].forEach((property) => {
             openMenu('shape');
             cy.contains('.cvat-context-menu-item', 'Quick issue: incorrect track identity').should('not.exist');
