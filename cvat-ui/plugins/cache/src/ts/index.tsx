@@ -80,7 +80,10 @@ async function contextImageDataLeave(
     return result;
 }
 
-async function getChunksUpdatedDate(core: NonNullable<CachePlugin['data']['core']>, jobId: number): string | undefined {
+async function getChunksUpdatedDate(
+    core: NonNullable<CachePlugin['data']['core']>,
+    jobId: number,
+): Promise<string | undefined> {
     try {
         const metadata = await core.frames.getMeta('job', jobId);
         return metadata.chunksUpdatedDate;
@@ -103,12 +106,15 @@ async function chunkEnter(
             // make sure cached chunks still valid. Remove them if not valid
             const chunksUpdatedDate = await getChunksUpdatedDate(plugin.data.core!, this.id);
             if (chunksUpdatedDate !== item.updatedDate) {
-                const keys = await indexedStorage.getKeysInStore(DatabaseStore.COMPRESSED_JOB_CHUNKS);
-                const cachedChunks = keys.filter((cachedKey: string) => +cachedKey.split('_')[0] === this.id);
-                for await (const keyToDelete of cachedChunks) {
-                    await indexedStorage.deleteItem(DatabaseStore.COMPRESSED_JOB_CHUNKS, keyToDelete);
+                if (chunksUpdatedDate !== undefined) {
+                    const keys = await indexedStorage.getKeysInStore(DatabaseStore.COMPRESSED_JOB_CHUNKS);
+                    const cachedChunks = keys.filter((cachedKey: string) => +cachedKey.split('_')[0] === this.id);
+                    for await (const keyToDelete of cachedChunks) {
+                        await indexedStorage.deleteItem(DatabaseStore.COMPRESSED_JOB_CHUNKS, keyToDelete);
+                    }
+                    plugin.data.cachedChunksByJob[this.id] = [];
                 }
-                plugin.data.cachedChunksByJob[this.id] = [];
+
                 return undefined;
             }
 
