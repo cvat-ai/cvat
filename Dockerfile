@@ -87,10 +87,6 @@ RUN --mount=type=cache,target=/root/.cache/pip/http-v2 \
     -r /tmp/cvat/requirements/${CVAT_CONFIGURATION}.txt \
     -w /tmp/wheelhouse
 
-FROM golang:1.27.3 AS build-smokescreen
-
-RUN GOBIN=/tmp go install github.com/stripe/smokescreen@5b4b7aabca9bc70a8435358d648edd03294c299e
-
 FROM ${BASE_IMAGE}
 
 ARG http_proxy
@@ -140,7 +136,7 @@ RUN apt-get update && \
     rm -rf /var/lib/apt/lists/*
 
 # Install smokescreen
-COPY --from=build-smokescreen /tmp/smokescreen /usr/local/bin/smokescreen
+COPY --from=ghcr.io/stripe/smokescreen:v1.0.1 /smokescreen /usr/local/bin/smokescreen
 
 # Add a non-root user
 ENV USER=${USER}
