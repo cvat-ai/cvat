@@ -184,10 +184,10 @@ docker compose down -v
 - Also there could be issues with MODEL_CONFIG_PARAMS. Please make sure that you have provided
   correct parameters for the model you are using.
   You can check the model documentation for more details on that.
-- If a detector fails on video tasks, read the error message of the failed request in CVAT:
+- If a detector fails on video tasks, look for the error in the agent log:
   - "Set CVAT_OPENH264_LIBRARY" means `docker-compose-mount-openh264.yaml` is not in `COMPOSE_FILE`.
   - "Could not load the OpenH264 library" means the library is not a Linux build
-    for the image's CPU architecture. The agent log has the loader's own message,
+    for the image's CPU architecture. The traceback below it has the loader's own message,
     for example, "invalid ELF header" or "wrong ELF class".
 - If `docker compose up` fails with "bind source path does not exist",
   check `OPENH264_LIBRARY_ABSOLUTE_PATH`. With Docker Desktop, the file must also be in a folder

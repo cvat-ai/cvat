@@ -30,8 +30,6 @@ def open_shared_library(library_path: str) -> ctypes.CDLL:
     try:
         library = ctypes.CDLL(library_path)
     except OSError as exc:
-        # The messages are shown to users, so the library path and the loader's error text,
-        # which also holds the path, stay in __cause__ only.
         raise VideoDecoderUnavailableError(
             f"Could not load the OpenH264 library that {OPENH264_LIBRARY_ENV_VAR} points to. "
             f"The library must be an OpenH264 {SUPPORTED_MAJOR_VERSION}.x build "

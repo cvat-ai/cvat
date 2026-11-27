@@ -113,7 +113,6 @@ def declare_functions(library: ctypes.CDLL) -> None:
         library.WelsGetCodecVersionEx.argtypes = [ctypes.POINTER(OpenH264Version)]
         library.WelsGetCodecVersionEx.restype = None
     except AttributeError as exc:
-        # The AttributeError text holds the library path, so it stays in __cause__ only.
         raise VideoDecoderUnavailableError(
             f"The library that {OPENH264_LIBRARY_ENV_VAR} points to "
             "is not a compatible OpenH264 library."

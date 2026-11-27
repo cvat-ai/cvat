@@ -5,6 +5,7 @@
 import io
 import itertools
 import math
+import os
 import tempfile
 import threading
 from logging import Logger
@@ -22,6 +23,10 @@ from cvat_sdk.datasets._video_chunks.openh264.schemas import VideoFrame
 from shared.utils.helpers import generate_image_files
 
 from .util import restrict_api_requests
+
+requires_openh264_library = pytest.mark.skipif(
+    not os.getenv("CVAT_OPENH264_LIBRARY"), reason="The OpenH264 library is not configured"
+)
 
 
 @pytest.fixture(autouse=True)
@@ -442,6 +447,7 @@ class TestTaskDataset:
             data_params={"chunk_size": 3},
         )
 
+    @requires_openh264_library
     @pytest.mark.parametrize(
         "media_download_policy",
         [
@@ -476,6 +482,7 @@ class TestTaskDataset:
                 assert sample.frame_index == index
                 assert sample.media.load_image() == expected_images[index]
 
+    @requires_openh264_library
     def test_video_task_media_can_only_be_read_through_iter_samples(self):
         video_task = self._create_video_task()
 

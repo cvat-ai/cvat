@@ -7,6 +7,8 @@
 from __future__ import annotations
 
 import ctypes
+import functools
+import os
 
 from cvat_sdk.datasets._video_chunks.exceptions import UnsupportedVideoError
 from cvat_sdk.datasets._video_chunks.openh264.bindings import (
@@ -29,14 +31,15 @@ from cvat_sdk.datasets._video_chunks.openh264.utils import (
     open_shared_library,
     probe_version,
 )
-from cvat_sdk.settings import OPENH264_LIBRARY_ENV_VAR, get_openh264_library_path
+from cvat_sdk.settings import OPENH264_LIBRARY_ENV_VAR
 
 
+@functools.cache
 def load_library() -> ctypes.CDLL:
     """Find, load and version-validate the OpenH264 library."""
 
-    library_path = get_openh264_library_path()
-    if library_path is None:
+    library_path = os.getenv(OPENH264_LIBRARY_ENV_VAR)
+    if not library_path:
         raise VideoDecoderUnavailableError(
             "Decoding video chunks requires OpenH264. "
             f"Set {OPENH264_LIBRARY_ENV_VAR} to the path of the OpenH264 shared library."
