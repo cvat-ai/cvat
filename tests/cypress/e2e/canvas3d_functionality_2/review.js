@@ -28,13 +28,22 @@ function dragMarker(id, view, dx, dy, cancel = false, label = false) {
 
 function resizeIssueRegion(id, view, dx, dy, cancel = false) {
     const selector = `.cvat-canvas3d-issue-resize-handle[data-issue-id="${id}"][data-view="${view}"]`;
-    return cy.get(selector).first().should('be.visible').then(($handle) => {
-        const rect = $handle[0].getBoundingClientRect();
+    let handle;
+    return cy.get(selector).should(($handles) => {
+        handle = Array.from($handles).find((candidate) => {
+            const rect = candidate.getBoundingClientRect();
+            return candidate.ownerDocument.elementFromPoint(
+                rect.left + rect.width / 2, rect.top + rect.height / 2,
+            ) === candidate;
+        });
+        expect(!!handle, 'an uncovered resize handle').to.equal(true);
+    }).then(() => {
+        const rect = handle.getBoundingClientRect();
         const options = {
             eventConstructor: 'PointerEvent', pointerId: 1, button: 0, isPrimary: true,
         };
         const from = { clientX: rect.left + rect.width / 2, clientY: rect.top + rect.height / 2 };
-        cy.wrap($handle).trigger('pointerdown', { ...options, ...from });
+        cy.wrap(handle).trigger('pointerdown', { ...options, ...from });
         cy.get('body').trigger('pointermove', {
             ...options, clientX: from.clientX + dx, clientY: from.clientY + dy,
         });
@@ -166,6 +175,10 @@ function clickReviewPoint(canvas, point) {
     cy.wrap(canvas).trigger('click', x, y, { ...point, button: 0, detail: 1 });
 }
 
+function uncoveredCanvasPoint(canvas, points) {
+    return points.find(({ clientX, clientY }) => canvas.ownerDocument.elementFromPoint(clientX, clientY) === canvas);
+}
+
 function checkSimpleIssueForm() {
     cy.get('.cvat-create-issue-dialog').should('be.visible');
     cy.get('.cvat-create-issue-dialog input').should('have.length', 1);
@@ -194,9 +207,7 @@ function rightClickCuboid(serverId, view = 'perspective') {
         expect(object, 'context-menu cuboid is loaded').to.exist;
         return viewSnapshot(canvas, object.state.serverID, view).then(({ clickPoints }) => ({
             canvas,
-            point: clickPoints.find((point) => (
-                canvas.ownerDocument.elementFromPoint(point.clientX, point.clientY) === canvas
-            )),
+            point: uncoveredCanvasPoint(canvas, clickPoints),
         }));
     }).then(({ canvas, point }) => {
         expect(point, 'cuboid has an uncovered location to right-click').to.exist;
@@ -347,6 +358,7 @@ context('3D spatial review', { browser: '!firefox' }, () => {
         let issueId;
         let annotations;
         let position;
+        cy.changeWorkspace('Review');
         cy.request(`/api/jobs/${jobId}/annotations`).then(({ body }) => { annotations = body; });
         cy.get('.cvat-issue-point-control').should('be.visible');
         cy.get('.cvat-issue-cuboid-control').should('be.visible').click();
@@ -1070,6 +1082,9 @@ context('3D spatial review', { browser: '!firefox' }, () => {
                 expect(body.shapes).to.have.length(0);
             });
         });
+        // Discard the unsaved cuboid before reloading so the browser does not prompt for confirmation.
+        cy.get('.cvat-annotation-header-undo-button').click();
+        cy.get('.cvat-objects-sidebar-state-item').should('not.exist');
         cy.reload();
         cy.contains('[role="tab"]', 'Issues').click();
         cy.contains('.cvat-objects-sidebar-issue-item', 'Review this newly created cuboid')
@@ -1195,7 +1210,7 @@ context('3D spatial review', { browser: '!firefox' }, () => {
                 cy.get('.cvat-canvas-grid-fullscreen-item .cvat-grid-item-fullscreen-handler').click();
                 cy.get(marker).should('have.length', 4);
             });
-            cy.get('.cvat-context-image-wrapper').closest('.cvat-canvas-grid-item')
+            cy.get('.cvat-context-image-wrapper').first().closest('.cvat-canvas-grid-item')
                 .find('.cvat-grid-item-fullscreen-handler').click();
             cy.get('.cvat-canvas3d-issue-region').should('not.exist');
             cy.get('.cvat-canvas3d-issues .cvat-hidden-issue-label').should('not.exist');
@@ -1214,7 +1229,7 @@ context('3D spatial review', { browser: '!firefox' }, () => {
         cy.get('#issue_description').should('be.visible').and('have.value', 'Keep this issue description');
         checkSimpleIssueForm();
         cy.get('.cvat-canvas-grid-fullscreen-item .cvat-grid-item-fullscreen-handler').click();
-        cy.get('.cvat-context-image-wrapper').closest('.cvat-canvas-grid-item')
+        cy.get('.cvat-context-image-wrapper').first().closest('.cvat-canvas-grid-item')
             .find('.cvat-grid-item-fullscreen-handler').click();
         cy.get('.cvat-create-issue-dialog').should('not.be.visible');
         cy.get('.cvat-canvas-grid-fullscreen-item .cvat-grid-item-fullscreen-handler').click();
@@ -1382,8 +1397,12 @@ context('3D spatial review', { browser: '!firefox' }, () => {
         submitIssue();
         cy.get('.cvat-issue-point-control').click();
         cy.get('.cvat-canvas3d-topview canvas').then(($canvas) => (
-            viewSnapshot($canvas[0], shapeId, 'top').then(({ point }) => ({ canvas: $canvas[0], point }))
-        )).then(({ canvas, point }) => { clickReviewPoint(canvas, point); });
+            viewSnapshot($canvas[0], shapeId, 'top').then(({ clickPoints }) => ({ canvas: $canvas[0], clickPoints }))
+        )).then(({ canvas, clickPoints }) => {
+            const point = uncoveredCanvasPoint(canvas, clickPoints);
+            expect(point, 'cuboid has an uncovered location for point placement').to.exist;
+            clickReviewPoint(canvas, point);
+        });
         submitIssue();
 
         // The right-clicked track wins over the prior shape selection.

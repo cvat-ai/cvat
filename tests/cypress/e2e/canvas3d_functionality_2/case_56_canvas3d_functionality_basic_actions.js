@@ -150,17 +150,16 @@ context('Canvas 3D functionality. Basic actions.', () => {
                 testControlButtonTooltip(button, tooltip);
             });
             cy.get('.cvat-objects-sidebar-tabs').within(() => {
-                cy.contains('[role="tab"]', 'Issues').should('not.exist');
+                cy.contains('[role="tab"]', 'Issues').should('be.visible');
             });
         });
 
         it('Check workspace selector.', () => {
-            // Try to click on the disabled workspace selectors. The value of the selector should not changed.
+            // Disabled workspaces leave Standard 3D selected.
             cy.get('.cvat-workspace-selector').should('contain.text', 'Standard 3D').click();
             for (const dropdownItems of [
                 '[title="Attribute annotation"]',
                 '[title="Tag annotation"]',
-                '[title="Review"]',
             ]) {
                 cy.get('.cvat-workspace-selector-dropdown')
                     .not('.ant-select-dropdown-hidden')
@@ -169,6 +168,12 @@ context('Canvas 3D functionality. Basic actions.', () => {
                     });
                 cy.get('.cvat-workspace-selector').should('contain.text', 'Standard 3D');
             }
+            cy.get('.cvat-workspace-selector-dropdown').not('.ant-select-dropdown-hidden').within(() => {
+                cy.get('[title="Review"]').click();
+            });
+            cy.get('.cvat-workspace-selector').should('contain.text', 'Review');
+            cy.get('.cvat-issue-point-control').should('be.visible');
+            cy.changeWorkspace('Standard 3D');
         });
 
         it('Interaction with the frame change buttons.', () => {
