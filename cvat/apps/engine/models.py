@@ -1754,6 +1754,7 @@ class Profile(models.Model):
 class Issue(TimestampedModel, AssignableModel):
     frame = models.PositiveIntegerField()
     position = FloatArrayField()
+    view = models.JSONField(null=True, blank=True)
     job = models.ForeignKey(
         Job, related_name="issues", related_query_name="issue", on_delete=models.CASCADE
     )

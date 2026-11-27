@@ -5,6 +5,7 @@
 
 from __future__ import annotations
 
+import math
 import mimetypes
 import os
 import re
@@ -4583,10 +4584,34 @@ class CommentWriteSerializer(WriteOnceMixin, serializers.ModelSerializer):
         write_once_fields = ("issue",)
 
 
+class IssueViewSerializer(serializers.Serializer):
+    """Perspective camera state saved when a 3D issue is created."""
+
+    position = serializers.ListField(child=serializers.FloatField(), min_length=3, max_length=3)
+    target = serializers.ListField(child=serializers.FloatField(), min_length=3, max_length=3)
+    up = serializers.ListField(child=serializers.FloatField(), min_length=3, max_length=3)
+    zoom = serializers.FloatField()
+
+    def validate(self, attrs: dict[str, Any]) -> dict[str, Any]:
+        values = [*attrs["position"], *attrs["target"], *attrs["up"], attrs["zoom"]]
+        if not all(map(math.isfinite, values)):
+            raise serializers.ValidationError("Camera values must be finite.")
+        if attrs["position"] == attrs["target"]:
+            raise serializers.ValidationError(
+                {"target": "The target must differ from the camera position."}
+            )
+        if not any(attrs["up"]):
+            raise serializers.ValidationError({"up": "The up direction must be nonzero."})
+        if attrs["zoom"] <= 0:
+            raise serializers.ValidationError({"zoom": "Zoom must be positive."})
+        return attrs
+
+
 class IssueReadSerializer(serializers.ModelSerializer):
     owner = BasicUserSerializer(allow_null=True, required=False)
     assignee = BasicUserSerializer(allow_null=True, required=False)
     position = serializers.ListField(child=serializers.FloatField(), allow_empty=False)
+    view = IssueViewSerializer(read_only=True, allow_null=True)
     comments = CommentsSummarySerializer(models.Comment, url_filter_key="issue_id")
 
     class Meta:
@@ -4595,6 +4620,7 @@ class IssueReadSerializer(serializers.ModelSerializer):
             "id",
             "frame",
             "position",
+            "view",
             "job",
             "owner",
             "assignee",
@@ -4611,11 +4637,52 @@ class IssueReadSerializer(serializers.ModelSerializer):
 
 
 class IssueWriteSerializer(WriteOnceMixin, serializers.ModelSerializer):
+    CUBOID_POSITION_LENGTH = 16
+    CUBOID_DIMENSIONS = slice(6, 9)
+
     position = serializers.ListField(
         child=serializers.FloatField(),
         allow_empty=False,
+        help_text="For 3D issues, use [x, y, z] or the 16 values of a CVAT cuboid.",
     )
     message = serializers.CharField(style={"base_template": "textarea.html"})
+    view = IssueViewSerializer(required=False, allow_null=True)
+
+    def validate(self, attrs: dict[str, Any]) -> dict[str, Any]:
+        instance: models.Issue | None = self.instance
+        if instance and "position" not in attrs:
+            return attrs
+
+        job = instance.job if instance else attrs["job"]
+        segment = job.segment
+        if segment.task.dimension == models.DimensionType.DIM_3D:
+            if "position" in attrs:
+                self._validate_3d_position(attrs["position"])
+            if instance is None:
+                frame_provider = TaskFrameProvider(segment.task)
+                if not segment.contains_frame(frame_provider.get_abs_frame_number(attrs["frame"])):
+                    raise serializers.ValidationError(
+                        {"frame": "The frame must belong to the job."}
+                    )
+        elif attrs.get("view") is not None:
+            raise serializers.ValidationError(
+                {"view": "Camera views are only supported for 3D issues."}
+            )
+        return attrs
+
+    @classmethod
+    def _validate_3d_position(cls, position: list[float]) -> None:
+        if len(position) not in (3, cls.CUBOID_POSITION_LENGTH) or not all(
+            map(math.isfinite, position)
+        ):
+            raise serializers.ValidationError(
+                {"position": "Use finite coordinates for a 3D point or cuboid."}
+            )
+        if (
+            len(position) == cls.CUBOID_POSITION_LENGTH
+            and min(position[cls.CUBOID_DIMENSIONS]) <= 0
+        ):
+            raise serializers.ValidationError({"position": "Cuboid dimensions must be positive."})
 
     def to_representation(self, instance):
         serializer = IssueReadSerializer(instance, context=self.context)
@@ -4629,8 +4696,8 @@ class IssueWriteSerializer(WriteOnceMixin, serializers.ModelSerializer):
 
     class Meta:
         model = models.Issue
-        fields = ("frame", "position", "job", "assignee", "message", "resolved")
-        write_once_fields = ("frame", "job", "message")
+        fields = ("frame", "position", "view", "job", "assignee", "message", "resolved")
+        write_once_fields = ("frame", "job", "message", "view")
 
 
 class ManifestSerializer(serializers.ModelSerializer):

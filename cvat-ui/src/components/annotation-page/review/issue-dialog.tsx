@@ -20,8 +20,10 @@ import CVATTooltip from 'components/common/cvat-tooltip';
 import { Issue, Comment as CommentModel } from 'cvat-core-wrapper';
 import { deleteIssueAsync } from 'actions/review-actions';
 import { useDialogPositioning } from './use-dialog-positioning';
+import RestoreReviewViewButton from './restore-review-view-button';
 
 interface Props {
+    container?: HTMLElement;
     issue: Issue;
     left: number;
     top: number;
@@ -62,6 +64,12 @@ export default function IssueDialog(props: Props): JSX.Element {
     } = props;
 
     const { id, comments } = issue;
+    const submitComment = (): void => {
+        if (currentText) {
+            comment(currentText);
+            setCurrentText('');
+        }
+    };
 
     const position = useDialogPositioning({
         ref,
@@ -150,9 +158,10 @@ export default function IssueDialog(props: Props): JSX.Element {
             ref={ref}
             className='cvat-issue-dialog'
         >
-            <Row className='cvat-issue-dialog-header' justify='space-between'>
-                <Col>
+            <Row className='cvat-issue-dialog-header' justify='space-between' wrap={false}>
+                <Col className='cvat-issue-dialog-title'>
                     <Text strong>{typeof id === 'number' ? `Issue #${id}` : 'Issue'}</Text>
+                    <RestoreReviewViewButton view={issue.view} />
                 </Col>
                 <Col>
                     <CVATTooltip title='Collapse the chat'>
@@ -160,31 +169,17 @@ export default function IssueDialog(props: Props): JSX.Element {
                     </CVATTooltip>
                 </Col>
             </Row>
-            <Row className='cvat-issue-dialog-chat' justify='start'>
-                {
-                    lines.length > 0 ? <Col style={{ display: 'block' }}>{lines}</Col> : (
-                        <Col>No comments found</Col>
-                    )
-                }
-            </Row>
-            <Row className='cvat-issue-dialog-input' justify='start'>
-                <Col span={24}>
-                    <Input
-                        placeholder='Type a comment here..'
-                        value={currentText}
-                        onChange={(event: React.ChangeEvent<HTMLInputElement>) => {
-                            setCurrentText(event.target.value);
-                        }}
-                        onPressEnter={() => {
-                            if (currentText) {
-                                comment(currentText);
-                                setCurrentText('');
-                            }
-                        }}
-                    />
-                </Col>
-            </Row>
-            <Row className='cvat-issue-dialog-footer' justify='space-between'>
+            <div className='cvat-issue-dialog-chat'>{lines.length ? lines : 'No comments found'}</div>
+            <Input
+                className='cvat-issue-dialog-input'
+                placeholder='Type a comment here…'
+                value={currentText}
+                onChange={(event: React.ChangeEvent<HTMLInputElement>) => {
+                    setCurrentText(event.target.value);
+                }}
+                onPressEnter={submitComment}
+            />
+            <Row className='cvat-issue-dialog-footer' justify='space-between' align='middle'>
                 <Col>
                     <Button type='link' className='cvat-issue-dialog-remove-button' danger onClick={onDeleteIssue}>
                         Remove
@@ -196,11 +191,7 @@ export default function IssueDialog(props: Props): JSX.Element {
                             className='cvat-issue-dialog-comment-button'
                             loading={isFetching}
                             type='primary'
-                            disabled={!currentText.length}
-                            onClick={() => {
-                                comment(currentText);
-                                setCurrentText('');
-                            }}
+                            onClick={submitComment}
                         >
                             Comment
                         </Button>
@@ -210,6 +201,6 @@ export default function IssueDialog(props: Props): JSX.Element {
                 </Col>
             </Row>
         </div>,
-        window.document.getElementById('cvat_canvas_attachment_board') as HTMLElement,
+        props.container || window.document.getElementById('cvat_canvas_attachment_board') as HTMLElement,
     );
 }

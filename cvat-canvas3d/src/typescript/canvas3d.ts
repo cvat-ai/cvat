@@ -3,6 +3,7 @@
 //
 // SPDX-License-Identifier: MIT
 
+import type { IssueView } from 'cvat-core/src/issue';
 import { Canvas3dController, Canvas3dControllerImpl } from './canvas3dController';
 import {
     Canvas3dModel,
@@ -18,14 +19,16 @@ import {
     MergeData,
 } from './canvas3dModel';
 import {
-    Canvas3dView, Canvas3dViewImpl, ViewsDOM, CameraAction,
+    Canvas3dView, Canvas3dViewImpl, ViewsDOM, CameraAction, PickResult,
 } from './canvas3dView';
 import {
-    cameraRayFromImagePoint, projectCuboid,
+    cameraRayFromImagePoint, projectCuboid, projectPoint,
 } from './geometry/camera-projection';
 import { CUBOID_EDGES, CUBOID_FACES } from './cuboid';
 import type { CameraCalibration } from './geometry/camera-projection';
 import type { Master } from './master';
+import type { IssueCuboid } from './issueCuboid';
+import type { IssueSprite } from './issueSprite';
 
 interface Canvas3d {
     html(): ViewsDOM;
@@ -42,6 +45,20 @@ interface Canvas3d {
     fitCanvas(): void;
     fit(): void;
     focus(clientID: number): void;
+    setupIssueCuboids(regions: IssueCuboid[], activeID?: number | null): void;
+    setupIssueSprites(sprites: IssueSprite[]): void;
+    pickIssueCuboid(clientX: number, clientY: number, view: ViewType): number | null;
+    projectIssueCuboid(position: number[], view: ViewType): ([number, number] | null)[];
+    resizeIssueCuboid(
+        position: number[], corner: number, view: ViewType, from: [number, number], to: [number, number],
+    ): number[] | null;
+    selectRegion(enabled: boolean): void;
+    pick(clientX: number, clientY: number, view?: ViewType): PickResult | null;
+    projectPosition(position: number[], view: ViewType): [number, number] | null;
+    focusPosition(position: number[]): void;
+    getReviewView(): IssueView | null;
+    restoreReviewView(view: IssueView): void;
+    movePosition(position: number[], view: ViewType, from: [number, number], to: [number, number]): number[] | null;
     group(groupData: GroupData): void;
     merge(mergeData: MergeData): void;
     setCameraRays(cameraRays: CameraRayData[]): void;
@@ -124,6 +141,58 @@ class Canvas3dImpl implements Canvas3d {
         this.view.focusObjectByClientId(clientID, true);
     }
 
+    public setupIssueCuboids(regions: IssueCuboid[], activeID: number | null = null): void {
+        this.view.setupIssueCuboids(regions, activeID);
+    }
+
+    public setupIssueSprites(sprites: IssueSprite[]): void {
+        this.view.setupIssueSprites(sprites);
+    }
+
+    public pickIssueCuboid(clientX: number, clientY: number, view: ViewType): number | null {
+        return this.view.pickIssueCuboid(clientX, clientY, view);
+    }
+
+    public projectIssueCuboid(position: number[], view: ViewType): ([number, number] | null)[] {
+        return this.view.projectIssueCuboid(position, view);
+    }
+
+    public resizeIssueCuboid(
+        position: number[], corner: number, view: ViewType, from: [number, number], to: [number, number],
+    ): number[] | null {
+        return this.view.resizeIssueCuboid(position, corner, view, from, to);
+    }
+
+    public selectRegion(enabled: boolean): void {
+        this.model.mode = enabled ? Mode.SELECT_REGION : Mode.IDLE;
+    }
+
+    public pick(clientX: number, clientY: number, view: ViewType = ViewType.PERSPECTIVE): PickResult | null {
+        return this.view.pick(clientX, clientY, view);
+    }
+
+    public projectPosition(position: number[], view: ViewType): [number, number] | null {
+        return this.view.projectPosition(position, view);
+    }
+
+    public focusPosition(position: number[]): void {
+        this.view.focusPosition(position);
+    }
+
+    public getReviewView(): IssueView | null {
+        return this.view.getReviewView();
+    }
+
+    public restoreReviewView(view: IssueView): void {
+        this.view.restoreReviewView(view);
+    }
+
+    public movePosition(
+        position: number[], view: ViewType, from: [number, number], to: [number, number],
+    ): number[] | null {
+        return this.view.movePosition(position, view, from, to);
+    }
+
     public fit(): void {
         this.model.fit();
     }
@@ -139,10 +208,12 @@ class Canvas3dImpl implements Canvas3d {
 }
 
 export {
-    cameraRayFromImagePoint, CUBOID_EDGES, CUBOID_FACES, projectCuboid, Canvas3dImpl as Canvas3d,
+    cameraRayFromImagePoint, CUBOID_EDGES, CUBOID_FACES, projectCuboid, projectPoint, Canvas3dImpl as Canvas3d,
     ViewType, MouseInteraction, CameraAction, Mode as CanvasMode,
 };
 
 export type {
-    ViewsDOM, CameraCalibration, CameraRayData,
+    ViewsDOM, CameraCalibration, CameraRayData, IssueSprite,
 };
+
+export { isIssueCuboid, isIssuePoint } from './issueCuboid';

@@ -44,7 +44,7 @@ interface Props {
     closeMenu(): void;
     changeColor(value: string): void;
     copy(): void;
-    remove(): void;
+    remove?(): void;
     propagate(): void;
     createURL(): void;
     switchOrientation(): void;
@@ -507,10 +507,12 @@ export default function ItemMenu(props: Props): MenuProps {
         });
     }
 
-    items.push({
-        key: MenuKeys.REMOVE_ITEM,
-        label: <RemoveItem toolProps={props} />,
-    });
+    if (props.remove) {
+        items.push({
+            key: MenuKeys.REMOVE_ITEM,
+            label: <RemoveItem toolProps={props} />,
+        });
+    }
 
     items.push({
         key: MenuKeys.RUN_ANNOTATION_ACTION,

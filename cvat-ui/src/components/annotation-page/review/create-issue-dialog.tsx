@@ -7,7 +7,7 @@ import React, {
     useState, ReactPortal, useRef, useEffect,
 } from 'react';
 import ReactDOM from 'react-dom';
-import { useDispatch } from 'react-redux';
+import { useDispatch, useSelector } from 'react-redux';
 import Form from 'antd/lib/form';
 import Input, { InputRef } from 'antd/lib/input';
 import Button from 'antd/lib/button';
@@ -15,6 +15,8 @@ import { Row, Col } from 'antd/lib/grid';
 import { Store } from 'antd/lib/form/interface';
 
 import { reviewActions, finishIssueAsync } from 'actions/review-actions';
+import { CombinedState } from 'reducers';
+import { DimensionType } from 'cvat-core-wrapper';
 import { useIsMounted } from 'utils/hooks';
 import { useDialogPositioning } from './use-dialog-positioning';
 
@@ -37,6 +39,9 @@ function MessageForm(props: Readonly<FormProps>): JSX.Element {
 
     const dialogRef = useRef<HTMLDivElement>(null);
     const inputRef = useRef<InputRef>(null);
+    const is3D = useSelector((state: CombinedState) => (
+        state.annotation.job.instance.dimension === DimensionType.DIMENSION_3D
+    ));
 
     const position = useDialogPositioning({
         ref: dialogRef,
@@ -49,21 +54,14 @@ function MessageForm(props: Readonly<FormProps>): JSX.Element {
     });
 
     useEffect(() => {
-        if (inputRef.current) {
-            setTimeout(() => {
-                inputRef.current?.focus();
-            }, 0);
-        }
-    }, [position]);
-
-    function handleSubmit(values: Store): void {
-        submit(values.issue_description);
-    }
+        const timeout = setTimeout(() => inputRef.current?.focus(), 0);
+        return () => clearTimeout(timeout);
+    }, []);
 
     return (
         <div
             ref={dialogRef}
-            className='cvat-create-issue-dialog'
+            className={`cvat-create-issue-dialog ${is3D ? 'cvat-create-issue-dialog-3d' : ''}`}
             style={{
                 top: position.top,
                 left: position.left,
@@ -71,7 +69,9 @@ function MessageForm(props: Readonly<FormProps>): JSX.Element {
             }}
         >
             <Form
-                onFinish={(values: Store) => handleSubmit(values)}
+                onFinish={(values: Store) => submit(values.issue_description)}
+                disabled={fetching}
+                layout='vertical'
             >
                 <Form.Item
                     name='issue_description'
@@ -107,13 +107,15 @@ function MessageForm(props: Readonly<FormProps>): JSX.Element {
 }
 
 interface Props {
+    container?: HTMLElement;
     top: number;
     left: number;
     angle: number;
     scale: number;
     clientCoordinates: [number, number];
     canvasRect: DOMRect | null;
-    onCreateIssue: () => void;
+    onCreateIssue?: () => void;
+    onFetchingChange?: (fetching: boolean) => void;
 }
 
 export default function CreateIssueDialog(props: Props): ReactPortal {
@@ -122,7 +124,13 @@ export default function CreateIssueDialog(props: Props): ReactPortal {
     const dispatch = useDispatch();
     const {
         top, left, angle, scale, clientCoordinates, canvasRect, onCreateIssue,
+        container,
     } = props;
+
+    useEffect(() => {
+        props.onFetchingChange?.(fetching);
+        return () => props.onFetchingChange?.(false);
+    }, [fetching]);
 
     return ReactDOM.createPortal(
         <MessageForm
@@ -139,13 +147,13 @@ export default function CreateIssueDialog(props: Props): ReactPortal {
                     if (isMounted()) {
                         setFetching(false);
                     }
-                    onCreateIssue();
+                    onCreateIssue?.();
                 });
             }}
             cancel={() => {
                 dispatch(reviewActions.cancelIssue());
             }}
         />,
-        window.document.getElementById('cvat_canvas_attachment_board') as HTMLElement,
+        container || window.document.getElementById('cvat_canvas_attachment_board') as HTMLElement,
     );
 }

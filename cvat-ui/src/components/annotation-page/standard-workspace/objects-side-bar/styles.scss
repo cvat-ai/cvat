@@ -180,6 +180,10 @@
     box-shadow: 0 1px 2px rgba(0, 0, 0, 8%);
     transition: border-color $box-shadow-transition, box-shadow $box-shadow-transition, background-color $box-shadow-transition;
 
+    &[role="button"] {
+        cursor: pointer;
+    }
+
     &:not(:first-child) {
         margin-top: $grid-unit-size * 0.5;
     }
@@ -198,6 +202,25 @@
     > .ant-row {
         .ant-typography {
             margin-bottom: 0;
+        }
+    }
+
+    .cvat-objects-sidebar-issue-header {
+        flex-wrap: nowrap;
+        column-gap: $grid-unit-size;
+
+        .cvat-objects-sidebar-issue-id {
+            flex: 1;
+            min-width: 0;
+
+            .ant-typography {
+                display: block;
+            }
+        }
+
+        .cvat-objects-sidebar-issue-created {
+            flex: 0 0 auto;
+            white-space: nowrap;
         }
     }
 

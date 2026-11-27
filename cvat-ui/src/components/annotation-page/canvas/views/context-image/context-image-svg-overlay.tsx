@@ -29,6 +29,7 @@ interface Props {
     imageSize: ImageSize;
     scale: number;
     objects: SVGObject[];
+    children?: React.ReactNode;
     className?: string;
     onBackgroundClick(point: [number, number]): void;
     onObjectClick(object: SVGObject, event: React.MouseEvent<SVGGElement>): void;
@@ -41,6 +42,7 @@ function ContextImageSVGOverlay(props: Props): JSX.Element {
         imageSize,
         scale,
         objects,
+        children,
         className,
         onBackgroundClick,
         onObjectClick,
@@ -86,6 +88,7 @@ function ContextImageSVGOverlay(props: Props): JSX.Element {
                     {object.render(scale)}
                 </g>
             ))}
+            {children}
         </svg>
     );
 }

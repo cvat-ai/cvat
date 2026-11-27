@@ -9533,6 +9533,11 @@ components:
           items:
             type: number
             format: double
+        view:
+          allOf:
+          - $ref: '#/components/schemas/IssueView'
+          readOnly: true
+          nullable: true
         job:
           type: integer
           readOnly: true
@@ -9562,6 +9567,72 @@ components:
       required:
       - comments
       - position
+    IssueView:
+      type: object
+      description: Perspective camera state saved when a 3D issue is created.
+      properties:
+        position:
+          type: array
+          items:
+            type: number
+            format: double
+          maxItems: 3
+          minItems: 3
+        target:
+          type: array
+          items:
+            type: number
+            format: double
+          maxItems: 3
+          minItems: 3
+        up:
+          type: array
+          items:
+            type: number
+            format: double
+          maxItems: 3
+          minItems: 3
+        zoom:
+          type: number
+          format: double
+      required:
+      - position
+      - target
+      - up
+      - zoom
+    IssueViewRequest:
+      type: object
+      description: Perspective camera state saved when a 3D issue is created.
+      properties:
+        position:
+          type: array
+          items:
+            type: number
+            format: double
+          maxItems: 3
+          minItems: 3
+        target:
+          type: array
+          items:
+            type: number
+            format: double
+          maxItems: 3
+          minItems: 3
+        up:
+          type: array
+          items:
+            type: number
+            format: double
+          maxItems: 3
+          minItems: 3
+        zoom:
+          type: number
+          format: double
+      required:
+      - position
+      - target
+      - up
+      - zoom
     IssueWriteRequest:
       type: object
       properties:
@@ -9574,6 +9645,11 @@ components:
           items:
             type: number
             format: double
+          description: For 3D issues, use [x, y, z] or the 16 values of a CVAT cuboid.
+        view:
+          allOf:
+          - $ref: '#/components/schemas/IssueViewRequest'
+          nullable: true
         job:
           type: integer
         assignee:
@@ -11084,6 +11160,7 @@ components:
           items:
             type: number
             format: double
+          description: For 3D issues, use [x, y, z] or the 16 values of a CVAT cuboid.
         assignee:
           type: integer
           nullable: true

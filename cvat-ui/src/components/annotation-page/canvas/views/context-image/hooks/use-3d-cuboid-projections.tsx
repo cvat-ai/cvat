@@ -43,7 +43,7 @@ interface CuboidProjectionProps {
     scale: number;
 }
 
-const CuboidProjection = React.memo(({
+export const CuboidProjection = React.memo(({
     calibration,
     cuboidPoints,
     color,

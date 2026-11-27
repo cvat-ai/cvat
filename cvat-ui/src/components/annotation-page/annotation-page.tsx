@@ -159,12 +159,15 @@ export default function AnnotationPageComponent(props: Props): JSX.Element {
                 <AnnotationTopBarContainer />
             </Layout.Header>
             <Layout.Content className='cvat-annotation-layout-content'>
-                {workspace === Workspace.STANDARD3D && <StandardWorkspace3DComponent />}
+                {(workspace === Workspace.STANDARD3D ||
+                    (workspace === Workspace.REVIEW && job.dimension === DimensionType.DIMENSION_3D)) &&
+                    <StandardWorkspace3DComponent />}
                 {workspace === Workspace.STANDARD && <StandardWorkspaceComponent />}
                 {workspace === Workspace.SINGLE_SHAPE && <SingleShapeWorkspace />}
                 {workspace === Workspace.ATTRIBUTES && <AttributeAnnotationWorkspace />}
                 {workspace === Workspace.TAGS && <TagAnnotationWorkspace />}
-                {workspace === Workspace.REVIEW && <ReviewAnnotationsWorkspace />}
+                {workspace === Workspace.REVIEW && job.dimension === DimensionType.DIMENSION_2D &&
+                    <ReviewAnnotationsWorkspace />}
             </Layout.Content>
             {job.dimension === DimensionType.DIMENSION_2D &&
                 [Workspace.STANDARD, Workspace.REVIEW].includes(workspace) &&

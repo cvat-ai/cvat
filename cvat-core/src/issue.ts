@@ -10,58 +10,59 @@ import Comment, { RawCommentData } from './comment';
 import User from './user';
 import { ArgumentError } from './exceptions';
 import serverProxy from './server-proxy';
+import type { SerializedUser } from './server-response-types';
+
+function validatePosition(position: number[]): void {
+    if (!Array.isArray(position) || !position.length || !position.every(Number.isFinite)) {
+        throw new ArgumentError('Issue position must be a non-empty array of finite numbers');
+    }
+}
 
 interface RawIssueData {
     job: number;
     position: number[];
     frame: number;
+    view?: IssueView | null;
     id?: number;
     comments?: RawCommentData[];
-    owner?: any;
+    owner?: SerializedUser | User | null;
     resolved?: boolean;
     created_date?: string;
 }
+
+export interface IssueView {
+    position: [number, number, number];
+    target: [number, number, number];
+    up: [number, number, number];
+    zoom: number;
+}
+
+type IssueData = Omit<RawIssueData, 'comments' | 'owner'> & { comments: Comment[]; owner?: User | null };
+type IssueWriteData = Omit<RawIssueData, 'owner'> & { owner?: number };
 
 export default class Issue {
     public readonly id?: number;
     public readonly job: number;
     public readonly frame: number;
+    public readonly view: IssueView | null;
     public readonly owner?: User;
     public readonly comments: Comment[];
     public readonly resolved?: boolean;
     public readonly createdDate?: string;
     public position?: number[];
-    private readonly __internal: RawIssueData & { comments: Comment[] };
+    private readonly __internal: IssueData;
 
     constructor(initialData: RawIssueData) {
-        const data: RawIssueData & { comments: Comment[] } = {
-            id: undefined,
-            job: undefined,
-            position: undefined,
-            frame: undefined,
-            created_date: undefined,
-            owner: undefined,
-            resolved: undefined,
-            comments: undefined,
+        const { comments, owner, ...fields } = initialData;
+        let issueOwner: User | null = null;
+        if (owner) issueOwner = owner instanceof User ? owner : new User(owner);
+        const data: IssueData = {
+            ...fields,
+            view: fields.view ?? null,
+            created_date: fields.created_date ?? new Date().toISOString(),
+            comments: Array.isArray(comments) ? comments.map((comment) => new Comment(comment)) : [],
+            owner: issueOwner,
         };
-
-        for (const property in data) {
-            if (Object.prototype.hasOwnProperty.call(data, property) && property in initialData) {
-                data[property] = initialData[property];
-            }
-        }
-
-        if (data.owner && !(data.owner instanceof User)) data.owner = new User(data.owner);
-
-        if (typeof data.created_date === 'undefined') {
-            data.created_date = new Date().toISOString();
-        }
-
-        if (Array.isArray(initialData.comments)) {
-            data.comments = initialData.comments.map((comment: RawCommentData): Comment => new Comment(comment));
-        } else {
-            data.comments = [];
-        }
 
         Object.defineProperties(
             this,
@@ -71,11 +72,9 @@ export default class Issue {
                 },
                 position: {
                     get: () => data.position,
-                    set: (value) => {
-                        if (Array.isArray(value) || value.some((coord) => typeof coord !== 'number')) {
-                            throw new ArgumentError(`Array of numbers is expected. Got ${value}`);
-                        }
-                        data.position = value;
+                    set: (value: number[]) => {
+                        validatePosition(value);
+                        data.position = [...value];
                     },
                 },
                 job: {
@@ -86,6 +85,14 @@ export default class Issue {
                 },
                 frame: {
                     get: () => data.frame,
+                },
+                view: {
+                    get: (): IssueView | null => (data.view ? {
+                        position: [...data.view.position],
+                        target: [...data.view.target],
+                        up: [...data.view.up],
+                        zoom: data.view.zoom,
+                    } : null),
                 },
                 createdDate: {
                     get: () => data.created_date,
@@ -139,17 +146,23 @@ export default class Issue {
         return result;
     }
 
+    // Save a new anchor only after the server accepts the move.
+    public async move(position: number[]): Promise<void> {
+        await PluginRegistry.apiWrapper.call(this, Issue.prototype.move, position);
+    }
+
     // The method deletes the issue
     // Deletes local or server-saved issues
     public async delete(): Promise<void> {
         await PluginRegistry.apiWrapper.call(this, Issue.prototype.delete);
     }
 
-    public serialize(): RawIssueData {
-        const data: RawIssueData = {
+    public serialize(): IssueWriteData {
+        const data: IssueWriteData = {
             job: this.job,
             position: this.position,
             frame: this.frame,
+            view: this.view,
         };
 
         if (typeof this.id === 'number') {
@@ -162,7 +175,7 @@ export default class Issue {
             data.resolved = this.resolved;
         }
         if (this.owner instanceof User) {
-            data.owner = this.owner.serialize().id;
+            data.owner = this.owner.id;
         }
 
         return data;
@@ -240,6 +253,21 @@ Object.defineProperties(Issue.prototype.delete, {
             if (id >= 0) {
                 await serverProxy.issues.delete(id);
             }
+        },
+    },
+});
+
+Object.defineProperties(Issue.prototype.move, {
+    implementation: {
+        writable: false,
+        enumerable: false,
+        value: async function implementation(this: Issue, position: number[]) {
+            if (typeof this.id !== 'number') {
+                throw new ArgumentError('Cannot move an unsaved issue');
+            }
+            validatePosition(position);
+            const response = await serverProxy.issues.update(this.id, { position: [...position] });
+            this.position = response.position;
         },
     },
 });

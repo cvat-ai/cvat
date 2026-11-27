@@ -638,6 +638,7 @@ const Canvas3DWrapperComponent = React.memo((props: Props): null => {
         activatedStateID,
         resetZoom,
         activeObjectType,
+        workspace,
         onResetCanvas,
         onSetupCanvas,
         updateActiveControl,
@@ -872,12 +873,12 @@ const Canvas3DWrapperComponent = React.memo((props: Props): null => {
             outlinedBorders: outlined ? outlineColor : false,
             controlPointsSize,
             focusedObjectPadding,
+            cuboidEditingEnabled: workspace !== Workspace.REVIEW,
         });
     }, [
         opacity, outlined, outlineColor,
         selectedOpacity, colorBy, focusedObjectPadding,
-        orientationVisibility, controlPointsSize,
-
+        orientationVisibility, controlPointsSize, workspace,
     ]);
 
     useEffect(() => {

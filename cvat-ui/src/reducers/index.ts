@@ -13,7 +13,7 @@ import {
     QualityConflictRequirement, FramesMetaData, FrameData, RQStatus, Event, Invitation, SerializedAPISchema,
     Request, JobValidationLayout, QualitySettings, TaskValidationLayout, ObjectState,
     ConsensusSettings, AboutData, ShapeType, ObjectType, ApiToken, AudioIntervalState,
-    Membership, AnnotationFormats, CloudStorage, UserGrowthData,
+    Membership, AnnotationFormats, CloudStorage, UserGrowthData, Issue, IssueView,
 } from 'cvat-core-wrapper';
 
 import type { IntelligentScissors, OpenCVTracker } from 'utils/opencv-wrapper/opencv-wrapper';
@@ -742,6 +742,7 @@ export interface NotificationsState {
         };
         review: {
             finishingIssue: null | ErrorState;
+            movingIssue: null | ErrorState;
             resolvingIssue: null | ErrorState;
             reopeningIssue: null | ErrorState;
             commentingIssue: null | ErrorState;
@@ -1163,12 +1164,15 @@ export enum NewIssueSource {
 }
 
 export interface ReviewState {
-    issues: any[];
-    frameIssues: any[];
+    activeIssueId: number | null;
+    highlightedIssueId: number | null;
+    issues: Issue[];
+    frameIssues: Issue[];
     latestComments: string[];
     newIssue: {
         position: number[] | null;
         source: NewIssueSource | null;
+        view: IssueView | null;
     }
     issuesHidden: boolean;
     issuesResolvedHidden: boolean;

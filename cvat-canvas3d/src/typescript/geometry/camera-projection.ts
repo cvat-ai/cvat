@@ -23,6 +23,12 @@ export interface ProjectedCuboid {
 const CAMERA_NEAR_DEPTH = 0.1;
 const CLIPPING_TOLERANCE = 1e-9;
 
+function lidarToCameraMatrix(extrinsicMatrix: number[][]): THREE.Matrix4 {
+    return new THREE.Matrix4().set(
+        ...([...extrinsicMatrix.flat(), 0, 0, 0, 1] as Parameters<THREE.Matrix4['set']>),
+    );
+}
+
 function clipFaceToNearPlane(face: THREE.Vector3[], nearPlane: THREE.Plane): THREE.Vector3[] {
     const clippedFace: THREE.Vector3[] = [];
     let previousPoint = face[face.length - 1];
@@ -132,6 +138,17 @@ function projectCameraPoint(
     return isFiniteVector(projectedPoint) ? projectedPoint : null;
 }
 
+export function projectPoint(calibration: CameraCalibration, position: number[]): ProjectedPoint | null {
+    const { intrinsicMatrix, extrinsicMatrix } = calibration;
+    if (position.length !== 3 || !isFiniteVector(position) ||
+        !isFiniteMatrixOfShape(intrinsicMatrix, 3, 3) || !isFiniteMatrixOfShape(extrinsicMatrix, 3, 4)) {
+        return null;
+    }
+
+    const cameraPoint = new THREE.Vector3().fromArray(position).applyMatrix4(lidarToCameraMatrix(extrinsicMatrix));
+    return cameraPoint.z > CAMERA_NEAR_DEPTH ? projectCameraPoint(intrinsicMatrix, cameraPoint) : null;
+}
+
 function projectCuboidGeometry(
     intrinsicMatrix: number[][],
     cameraFaces: THREE.Vector3[][],
@@ -190,10 +207,7 @@ export function cameraRayFromImagePoint(
         return null;
     }
 
-    const lidarToCamera = new THREE.Matrix4().set(
-        ...([...extrinsicMatrix.flat(), 0, 0, 0, 1] as Parameters<THREE.Matrix4['set']>),
-    );
-    const cameraToLidar = lidarToCamera.invert();
+    const cameraToLidar = lidarToCameraMatrix(extrinsicMatrix).invert();
 
     const origin = new THREE.Vector3().applyMatrix4(cameraToLidar);
     const direction = new THREE.Vector3(pixel[0], pixel[1], 1)
@@ -233,9 +247,7 @@ export function projectCuboid(
     }
 
     const [x, y, z, rotationX, rotationY, rotationZ, width, height, depth] = cuboidPoints;
-    const lidarToCamera = new THREE.Matrix4().set(
-        ...([...extrinsicMatrix.flat(), 0, 0, 0, 1] as Parameters<THREE.Matrix4['set']>),
-    );
+    const lidarToCamera = lidarToCameraMatrix(extrinsicMatrix);
     const rotation = new THREE.Euler(rotationX, rotationY, rotationZ);
     const cameraPoints = makeCornerPointsMatrix(width / 2, height / 2, depth / 2)
         .map(([cornerX, cornerY, cornerZ]) => new THREE.Vector3(

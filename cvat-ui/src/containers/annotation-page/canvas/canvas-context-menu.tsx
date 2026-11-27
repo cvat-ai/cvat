@@ -14,8 +14,12 @@ import CanvasContextMenuComponent from 'components/annotation-page/canvas/views/
 import { copyShape, pasteShapeAsync, updateCanvasContextMenu } from 'actions/annotation-actions';
 import { reviewActions, finishIssueAsync } from 'actions/review-actions';
 import { ThunkDispatch } from 'utils/redux';
+import { getQuickIssuePresets, QuickIssueMenuItem } from 'utils/review/quick-issues';
 import { Canvas } from 'cvat-canvas-wrapper';
-import { ObjectState, ShapeType, QualityConflict } from 'cvat-core-wrapper';
+import { Canvas3d } from 'cvat-canvas3d-wrapper';
+import {
+    ObjectState, ShapeType, QualityConflict,
+} from 'cvat-core-wrapper';
 
 interface StateToProps {
     contextMenuParentID: number | null;
@@ -30,6 +34,7 @@ interface StateToProps {
     collapsed: boolean | undefined;
     workspace: Workspace;
     latestComments: string[];
+    quickIssuePresets: QuickIssueMenuItem[];
     activatedStateID: number | null;
 }
 
@@ -57,6 +62,7 @@ function mapStateToProps(state: CombinedState): StateToProps {
                 ready,
             },
             workspace,
+            job: { instance: job },
         },
         review: { latestComments, frameConflicts },
     } = state;
@@ -84,11 +90,30 @@ function mapStateToProps(state: CombinedState): StateToProps {
         type,
         workspace,
         latestComments,
+        quickIssuePresets: getQuickIssuePresets(job?.dimension, objectState),
         frameConflicts,
     };
 }
 
 function mapDispatchToProps(dispatch: ThunkDispatch): DispatchToProps {
+    function startContextIssue(position: number[], message?: string): void {
+        dispatch((innerDispatch, getState) => {
+            const { annotation } = getState();
+            const { dimension } = annotation.job.instance;
+            const { instance } = annotation.canvas;
+            const is3D = instance instanceof Canvas3d;
+            const source = message === undefined ? NewIssueSource.ISSUE_TOOL : NewIssueSource.QUICK_ISSUE;
+            innerDispatch(reviewActions.startIssue(
+                position,
+                source,
+                is3D ? instance.getReviewView() : null,
+                dimension,
+            ));
+            if (message !== undefined) innerDispatch(finishIssueAsync(message));
+            innerDispatch(updateCanvasContextMenu(false, 0, 0));
+        });
+    }
+
     return {
         onUpdateContextMenu(
             visible: boolean, left: number, top: number,
@@ -96,15 +121,8 @@ function mapDispatchToProps(dispatch: ThunkDispatch): DispatchToProps {
         ): void {
             dispatch(updateCanvasContextMenu(visible, left, top, pointID, type));
         },
-        onStartIssue(position: number[]): void {
-            dispatch(reviewActions.startIssue(position));
-            dispatch(updateCanvasContextMenu(false, 0, 0));
-        },
-        openIssue(position: number[], message: string): void {
-            dispatch(reviewActions.startIssue(position, NewIssueSource.QUICK_ISSUE));
-            dispatch(finishIssueAsync(message));
-            dispatch(updateCanvasContextMenu(false, 0, 0));
-        },
+        onStartIssue: startContextIssue,
+        openIssue: startContextIssue,
         onCopyObject(objectState: ObjectState): void {
             dispatch(copyShape(objectState));
             dispatch(pasteShapeAsync());
@@ -322,6 +340,7 @@ class CanvasContextMenuContainer extends React.PureComponent<Props, State> {
             type,
             workspace,
             latestComments,
+            quickIssuePresets,
             onStartIssue,
             openIssue,
             onCopyObject,
@@ -340,6 +359,7 @@ class CanvasContextMenuContainer extends React.PureComponent<Props, State> {
                     frameConflicts={frameConflicts}
                     workspace={workspace}
                     latestComments={latestComments}
+                    quickIssuePresets={quickIssuePresets}
                     onStartIssue={onStartIssue}
                     openIssue={openIssue}
                     onCopyObject={onCopyObject}

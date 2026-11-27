@@ -30,23 +30,14 @@ const rect = [
 ];
 
 context('Create any track, check if track works correctly after deleting some frames', () => {
-    function readShapeCoords(frameNumber) {
-        cy.checkFrameNum(frameNumber);
-        return cy.get('.cvat_canvas_shape').then(($shape) => ({
-            x: +$shape.attr('x'),
-            y: +$shape.attr('y'),
-        }));
-    }
-
-    function validateShapeCoords({ x, y }) {
+    function checkShapePosition(x, y) {
         const precision = 0.01; // db server precision is 2 digits
         cy.get('.cvat_canvas_shape').should(($shape) => {
-            const [xVal, yVal] = [
-                +$shape.attr('x'),
-                +$shape.attr('y'),
-            ];
-            expect(xVal).to.be.closeTo(x, precision);
-            expect(yVal).to.be.closeTo(y, precision);
+            const { ownerDocument, ownerSVGElement: content } = $shape[0];
+            const background = ownerDocument.getElementById('cvat_canvas_background');
+            const offset = (Number.parseFloat(content.style.width) - Number.parseFloat(background.style.width)) / 2;
+            expect(Number($shape.attr('x')) - offset).to.be.closeTo(x, precision);
+            expect(Number($shape.attr('y')) - offset).to.be.closeTo(y, precision);
         });
     }
 
@@ -121,35 +112,34 @@ context('Create any track, check if track works correctly after deleting some fr
 
             // There should be no objects on the deleted frame
             cy.get('.cvat_canvas_shape').should('not.exist');
-            cy.clickSaveAnnotationView();
+            cy.saveJob();
 
             // Reopening a task with bad metadata might throw an exception that we can catch
             cy.goToTaskList();
             cy.openTaskJob(taskName);
         });
 
-        it('Change track positions on frames 2 and 4. Delete frame. Confirm same shape positions', () => {
+        it('Keeps interpolated track positions after deleting a keyframe and reloading', () => {
             cy.goCheckFrameNumber(2);
             cy.clickDeleteFrameAnnotationView();
             cy.checkFrameNum(3);
-            cy.clickSaveAnnotationView();
+            cy.saveJob();
 
-            let pos3 = null;
-            readShapeCoords(3).then((posOnFrame3) => {
-                pos3 = posOnFrame3;
-            });
-
+            // With frame 2 deleted, the track interpolates between frames 0 and 4.
+            const [x, y] = rect;
+            const firstFrameShift = delta / 4;
+            const thirdFrameShift = 3 * firstFrameShift;
+            checkShapePosition(x + thirdFrameShift, y + thirdFrameShift);
             cy.goToPreviousFrame(1);
-            let pos1 = null;
-            readShapeCoords(1).then((posOnFrame1) => {
-                pos1 = posOnFrame1;
-            });
-            cy.reload().then(() => {
-                cy.get('.cvat-canvas-container').should('exist');
-                cy.get('.cvat-spinner').should('not.exist');
-                cy.goToNextFrame(1).then(() => validateShapeCoords(pos1));
-                cy.goToNextFrame(3).then(() => validateShapeCoords(pos3));
-            });
+            checkShapePosition(x + firstFrameShift, y + firstFrameShift);
+
+            cy.reload();
+            cy.get('.cvat-canvas-container').should('exist');
+            cy.get('.cvat-spinner').should('not.exist');
+            cy.goToNextFrame(1);
+            checkShapePosition(x + firstFrameShift, y + firstFrameShift);
+            cy.goToNextFrame(3);
+            checkShapePosition(x + thirdFrameShift, y + thirdFrameShift);
         });
     });
 });

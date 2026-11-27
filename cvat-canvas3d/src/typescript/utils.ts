@@ -4,6 +4,10 @@
 
 import * as THREE from 'three';
 
+export function displayPixelRatio(): number {
+    return Math.min(window.devicePixelRatio || 1, 2);
+}
+
 function disposeMaterial(material: THREE.Material): void {
     Object.keys(material).forEach((prop) => {
         const value = material[prop];

@@ -253,7 +253,8 @@ export default (state = defaultState, action: AnyAction): AnnotationState => {
                 }
                 workspaceSelected = workspaceSelected || (isReview ? Workspace.REVIEW : Workspace.STANDARD);
             } else {
-                workspaceSelected = Workspace.STANDARD3D;
+                workspaceSelected = queryParameters.initialWorkspace === Workspace.REVIEW || isReview ?
+                    Workspace.REVIEW : Workspace.STANDARD3D;
                 activeShapeType = ShapeType.CUBOID;
             }
 
@@ -633,13 +634,13 @@ export default (state = defaultState, action: AnyAction): AnnotationState => {
             };
         }
         case AnnotationActionTypes.UPDATE_ACTIVE_CONTROL: {
-            const { activeControl } = action.payload;
+            const { activeControl, preserveSelection } = action.payload;
 
             return {
                 ...state,
                 annotations: {
                     ...state.annotations,
-                    activatedStateID: null,
+                    activatedStateID: preserveSelection ? state.annotations.activatedStateID : null,
                 },
                 canvas: {
                     ...state.canvas,

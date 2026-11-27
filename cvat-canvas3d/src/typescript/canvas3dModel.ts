@@ -44,6 +44,7 @@ export interface Image {
 
 export interface DrawData {
     enabled: boolean;
+    issueRegion?: boolean;
     initialState?: any;
     redraw?: number;
     shapeType?: string;
@@ -88,6 +89,7 @@ export interface Configuration {
     controlPointsSize: number;
     focusedObjectPadding: number;
     orientationVisibility: OrientationVisibility;
+    cuboidEditingEnabled: boolean;
 }
 
 export enum UpdateReasons {
@@ -115,6 +117,7 @@ export enum Mode {
     GROUP = 'group',
     MERGE = 'merge',
     SPLIT = 'split',
+    SELECT_REGION = 'select_region',
 }
 
 export interface Canvas3dDataModel {
@@ -211,6 +214,7 @@ export class Canvas3dModelImpl extends MasterImpl implements Canvas3dModel {
                 selectedShapeOpacity: 60,
                 focusedObjectPadding: 50,
                 controlPointsSize: consts.BASE_POINT_SIZE,
+                cuboidEditingEnabled: true,
                 orientationVisibility: {
                     x: false,
                     y: false,
@@ -315,6 +319,7 @@ export class Canvas3dModelImpl extends MasterImpl implements Canvas3dModel {
     }
 
     public draw(drawData: DrawData): void {
+        if (!this.data.configuration.cuboidEditingEnabled && typeof drawData.redraw === 'number') return;
         if (drawData.enabled && this.data.drawData.enabled && !drawData.initialState) {
             throw new Error('Drawing has been already started');
         }
@@ -452,6 +457,12 @@ export class Canvas3dModelImpl extends MasterImpl implements Canvas3dModel {
             this.data.configuration.focusedObjectPadding = Math.max(
                 configuration.focusedObjectPadding, 0,
             );
+        }
+
+        if (typeof configuration.cuboidEditingEnabled === 'boolean' &&
+            configuration.cuboidEditingEnabled !== this.data.configuration.cuboidEditingEnabled) {
+            this.data.configuration.cuboidEditingEnabled = configuration.cuboidEditingEnabled;
+            this.notify(UpdateReasons.SHAPE_ACTIVATED);
         }
 
         this.notify(UpdateReasons.CONFIG_UPDATED);

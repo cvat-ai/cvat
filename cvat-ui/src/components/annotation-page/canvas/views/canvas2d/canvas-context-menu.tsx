@@ -13,7 +13,7 @@ import ObjectItemElementComponent from 'components/annotation-page/standard-work
 import ObjectItemContainer from 'containers/annotation-page/standard-workspace/objects-side-bar/object-item';
 import { Workspace } from 'reducers';
 import { rotatePoint } from 'utils/math';
-import config from 'config';
+import { QuickIssueMenuItem } from 'utils/review/quick-issues';
 import {
     AnnotationConflict, ObjectState, ShapeType, QualityConflict,
 } from 'cvat-core-wrapper';
@@ -30,6 +30,7 @@ interface Props {
     left: number;
     top: number;
     latestComments: string[];
+    quickIssuePresets: QuickIssueMenuItem[];
     onStartIssue(position: number[]): void;
     openIssue(position: number[], message: string): void;
     onCopyObject(objectState: ObjectState): void;
@@ -39,6 +40,7 @@ interface ReviewContextMenuProps {
     top: number;
     left: number;
     latestComments: string[];
+    quickIssuePresets: QuickIssueMenuItem[];
     conflict?: QualityConflict;
     copyObject: ObjectState | null;
     onClick: (param: MenuInfo) => void;
@@ -46,15 +48,13 @@ interface ReviewContextMenuProps {
 
 enum ReviewContextMenuKeys {
     OPEN_ISSUE = 'open_issue',
-    QUICK_ISSUE_POSITION = 'quick_issue_position',
-    QUICK_ISSUE_ATTRIBUTE = 'quick_issue_attribute',
     QUICK_ISSUE_FROM_LATEST = 'quick_issue_from_latest',
     QUICK_ISSUE_FROM_CONFLICT = 'quick_issue_from_conflict',
     COPY_OBJECT = 'copy_object',
 }
 
 function ReviewContextMenu({
-    top, left, latestComments, conflict, copyObject, onClick,
+    top, left, latestComments, quickIssuePresets, conflict, copyObject, onClick,
 }: ReviewContextMenuProps): JSX.Element {
     return (
         <Menu onClick={onClick} selectable={false} className='cvat-canvas-context-menu' style={{ top, left }}>
@@ -69,12 +69,19 @@ function ReviewContextMenu({
                     {`Quick issue: ${conflict.description}`}
                 </Menu.Item>
             ) : null}
-            <Menu.Item className='cvat-context-menu-item' key={ReviewContextMenuKeys.QUICK_ISSUE_POSITION}>
-                Quick issue: incorrect position
-            </Menu.Item>
-            <Menu.Item className='cvat-context-menu-item' key={ReviewContextMenuKeys.QUICK_ISSUE_ATTRIBUTE}>
-                Quick issue: incorrect attribute
-            </Menu.Item>
+            {quickIssuePresets.map((preset) => ('items' in preset ? (
+                <Menu.SubMenu className='cvat-context-menu-item' key={preset.key} title={preset.label}>
+                    {preset.items.map((item) => (
+                        <Menu.Item className='cvat-context-menu-item' key={item.key}>
+                            {item.label}
+                        </Menu.Item>
+                    ))}
+                </Menu.SubMenu>
+            ) : (
+                <Menu.Item className='cvat-context-menu-item' key={preset.key}>
+                    {preset.label}
+                </Menu.Item>
+            )))}
             {latestComments.length ? (
                 <Menu.SubMenu
                     title='Quick issue ...'
@@ -117,6 +124,7 @@ export default function CanvasContextMenu(props: Props): JSX.Element | null {
         top,
         workspace,
         latestComments,
+        quickIssuePresets,
         onStartIssue,
         openIssue,
         onCopyObject,
@@ -166,6 +174,7 @@ export default function CanvasContextMenu(props: Props): JSX.Element | null {
                 conflict={conflict}
                 copyObject={copyObject}
                 latestComments={latestComments}
+                quickIssuePresets={quickIssuePresets}
                 onClick={(param: MenuInfo) => {
                     if (state) {
                         let { points } = state;
@@ -198,12 +207,12 @@ export default function CanvasContextMenu(props: Props): JSX.Element | null {
                             ];
                         }
 
+                        const preset = quickIssuePresets.flatMap((item) => ('items' in item ? item.items : [item]))
+                            .find((item) => item.key === param.key);
                         if (param.key === ReviewContextMenuKeys.OPEN_ISSUE) {
                             onStartIssue(points);
-                        } else if (param.key === ReviewContextMenuKeys.QUICK_ISSUE_POSITION) {
-                            openIssue(points, config.QUICK_ISSUE_INCORRECT_POSITION_TEXT);
-                        } else if (param.key === ReviewContextMenuKeys.QUICK_ISSUE_ATTRIBUTE) {
-                            openIssue(points, config.QUICK_ISSUE_INCORRECT_ATTRIBUTE_TEXT);
+                        } else if (preset) {
+                            openIssue(points, preset.message);
                         } else if (param.key === ReviewContextMenuKeys.QUICK_ISSUE_FROM_CONFLICT) {
                             if (conflict) openIssue(points, conflict.description);
                         } else if (param.key === ReviewContextMenuKeys.COPY_OBJECT) {

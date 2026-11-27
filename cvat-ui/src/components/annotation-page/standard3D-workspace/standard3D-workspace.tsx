@@ -15,6 +15,7 @@ import CanvasLayout from 'components/annotation-page/canvas/grid-layout/canvas-l
 import CanvasPointContextMenuComponent from 'components/annotation-page/canvas/views/canvas2d/canvas-point-context-menu';
 import RemoveConfirmComponent from 'components/annotation-page/standard-workspace/remove-confirm';
 import PropagateConfirmComponent from 'components/annotation-page/standard-workspace/propagate-confirm';
+import Review3D from 'components/annotation-page/review/review3d';
 
 export default function StandardWorkspace3DComponent(): JSX.Element {
     return (
@@ -22,6 +23,7 @@ export default function StandardWorkspace3DComponent(): JSX.Element {
             <ControlsSideBarContainer />
             <CanvasLayout type={DimensionType.DIMENSION_3D} />
             <ObjectSideBarComponent objectsList={<ObjectsListContainer />} />
+            <Review3D />
             <PropagateConfirmComponent />
             <CanvasContextMenuContainer />
             <CanvasPointContextMenuComponent />

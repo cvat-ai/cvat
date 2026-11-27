@@ -21,7 +21,10 @@ import { reviewActions } from 'actions/review-actions';
 import CVATTooltip from 'components/common/cvat-tooltip';
 import { ActiveControl, CombinedState, Workspace } from 'reducers';
 import Paragraph from 'antd/lib/typography/Paragraph';
-import { ConflictSeverity, QualityConflict, Issue } from 'cvat-core-wrapper';
+import {
+    ConflictSeverity, QualityConflict, Issue, DimensionType,
+} from 'cvat-core-wrapper';
+import { Canvas3d } from 'cvat-canvas3d-wrapper';
 import { changeShowGroundTruth } from 'actions/settings-actions';
 import { ShowGroundTruthIcon } from 'icons';
 import ConflictRequirements from '../../review/conflict-requirements';
@@ -42,6 +45,9 @@ export default function IssuesListComponent(): JSX.Element {
         workspace,
         ready,
         activeControl,
+        is3D,
+        activeIssueId,
+        canvas,
     } = useSelector((state: CombinedState) => ({
         job: state.annotation.job.instance,
         frame: state.annotation.player.frame.number,
@@ -56,11 +62,19 @@ export default function IssuesListComponent(): JSX.Element {
         workspace: state.annotation.workspace,
         ready: state.annotation.canvas.ready,
         activeControl: state.annotation.canvas.activeControl,
+        is3D: state.annotation.job.instance?.dimension === DimensionType.DIMENSION_3D,
+        activeIssueId: state.review.activeIssueId,
+        canvas: state.annotation.canvas.instance,
     }), shallowEqual);
 
     if (workspace === Workspace.AUDIO) {
         throw new Error('Not supported in audio workspace');
     }
+
+    const selectIssue = (issue: Issue): void => {
+        if (canvas instanceof Canvas3d) canvas.focusPosition(issue.position);
+        dispatch(reviewActions.selectIssue(issue.id));
+    };
 
     let frames = issues
         .filter((issue: Issue) => !issuesResolvedHidden || !issue.resolved)
@@ -154,7 +168,7 @@ export default function IssuesListComponent(): JSX.Element {
                                 </CVATTooltip>
                             </Col>
                             {
-                                workspace === Workspace.REVIEW ? (
+                                workspace === Workspace.REVIEW && !is3D ? (
                                     <Col>
                                         <CVATTooltip title='Show Ground truth annotations and conflicts'>
                                             <Icon
@@ -185,9 +199,24 @@ export default function IssuesListComponent(): JSX.Element {
                                 key={frameIssue.id}
                                 id={`cvat-objects-sidebar-issue-item-${frameIssue.id}`}
                                 className={
-                                    `cvat-objects-sidebar-issue-item ${frameIssue.resolved ? 'cvat-objects-sidebar-issue-resolved' : ''}`
+                                    `cvat-objects-sidebar-issue-item ${frameIssue.resolved ? 'cvat-objects-sidebar-issue-resolved' : ''} ${is3D && activeIssueId === frameIssue.id ? 'cvat-objects-sidebar-item-active' : ''}`
                                 }
+                                {...(is3D ? {
+                                    role: 'button',
+                                    tabIndex: 0,
+                                    onClick: () => selectIssue(frameIssue),
+                                    onKeyDown: (event: React.KeyboardEvent) => {
+                                        if (event.key === 'Enter' || event.key === ' ') {
+                                            event.preventDefault();
+                                            selectIssue(frameIssue);
+                                        }
+                                    },
+                                } : {})}
                                 onMouseEnter={() => {
+                                    if (is3D) {
+                                        dispatch(reviewActions.highlightIssue(frameIssue.id));
+                                        return;
+                                    }
                                     const element = window.document.getElementById(
                                         `cvat_canvas_issue_region_${frameIssue.id}`,
                                     );
@@ -197,6 +226,10 @@ export default function IssuesListComponent(): JSX.Element {
                                     dispatch(activateObject(null, null, null));
                                 }}
                                 onMouseLeave={() => {
+                                    if (is3D) {
+                                        dispatch(reviewActions.highlightIssue(null));
+                                        return;
+                                    }
                                     const element = window.document.getElementById(
                                         `cvat_canvas_issue_region_${frameIssue.id}`,
                                     );
@@ -205,13 +238,13 @@ export default function IssuesListComponent(): JSX.Element {
                                     }
                                 }}
                             >
-                                <Row justify='space-between'>
-                                    <Col>
-                                        <Text strong>
-                                            {`#${frameIssue.id} • Issue`}
+                                <Row className='cvat-objects-sidebar-issue-header' align='middle'>
+                                    <Col className='cvat-objects-sidebar-issue-id'>
+                                        <Text strong ellipsis title={`#${frameIssue.id}`}>
+                                            {`#${frameIssue.id}`}
                                         </Text>
                                     </Col>
-                                    <Col offset={1}>
+                                    <Col className='cvat-objects-sidebar-issue-created'>
                                         <Text type='secondary'>
                                             {`created ${dayjs(frameIssue.createdDate).fromNow()}`}
                                         </Text>

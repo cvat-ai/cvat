@@ -74,13 +74,17 @@ context('Join polygons feature', { scrollBehavior: false }, () => {
         ],
     };
 
-    beforeEach(() => {
+    before(() => {
         cy.prepareUserSession();
         cy.openTaskJob(taskName);
+    });
+
+    beforeEach(() => {
         cy.createPolygon(firstPolygonPoints);
     });
     afterEach(() => {
         cy.removeAnnotations();
+        cy.get('.cvat_canvas_shape').should('not.exist');
     });
 
     it('Join overlapping polygons', () => {

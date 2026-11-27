@@ -182,3 +182,5 @@ export type {
     WebhookEvent,
     CalibratedRelatedImageMetadata,
 };
+
+export type { IssueView } from 'cvat-core/src/issue';

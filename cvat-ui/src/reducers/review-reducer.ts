@@ -7,10 +7,18 @@ import config from 'config';
 import { AnnotationActionTypes } from 'actions/annotation-actions';
 import { ReviewActionTypes } from 'actions/review-actions';
 import { AuthActionTypes } from 'actions/auth-actions';
-import { QualityConflict, DimensionType } from 'cvat-core-wrapper';
-import { ReviewState } from '.';
+import { Action } from 'redux';
+import {
+    QualityConflict, DimensionType, Issue, Job,
+} from 'cvat-core-wrapper';
+import { ActionWithPayload } from 'utils/redux';
+import type { ReviewActions } from 'actions/review-actions';
+import { isQuickIssuePresetMessage } from 'utils/review/quick-issues';
+import { NewIssueSource, ReviewState } from '.';
 
 const defaultState: ReviewState = {
+    activeIssueId: null,
+    highlightedIssueId: null,
     issues: [],
     latestComments: [],
     frameIssues: [],
@@ -19,6 +27,7 @@ const defaultState: ReviewState = {
     newIssue: {
         position: null,
         source: null,
+        view: null,
     },
     issuesHidden: false,
     issuesResolvedHidden: false,
@@ -28,8 +37,34 @@ const defaultState: ReviewState = {
     },
 };
 
-export default function (state: ReviewState = defaultState, action: any): ReviewState {
+type ReviewAction = ReviewActions |
+    ActionWithPayload<AnnotationActionTypes.GET_JOB_SUCCESS, {
+        job: Job;
+        frameNumber: number;
+        issues: Issue[];
+        conflicts: QualityConflict[];
+    }> |
+    ActionWithPayload<AnnotationActionTypes.CHANGE_FRAME_SUCCESS, { number: number }> |
+    Action<AnnotationActionTypes.CHANGE_FRAME | AnnotationActionTypes.DELETE_FRAME_SUCCESS |
+    AnnotationActionTypes.CLOSE_JOB | AuthActionTypes.LOGOUT_SUCCESS>;
+
+function reviewOnFrame(frame: number, issues: Issue[], conflicts: QualityConflict[]): Pick<
+    ReviewState, 'frameIssues' | 'frameConflicts'
+> {
+    return {
+        frameIssues: issues.filter((issue) => issue.frame === frame),
+        frameConflicts: conflicts.filter((conflict) => conflict.frame === frame),
+    };
+}
+
+export default function (state: ReviewState = defaultState, action: ReviewAction): ReviewState {
     switch (action.type) {
+        case ReviewActionTypes.SELECT_ISSUE:
+            return { ...state, activeIssueId: action.payload.issueId };
+        case ReviewActionTypes.HIGHLIGHT_ISSUE:
+            return { ...state, highlightedIssueId: action.payload.issueId };
+        case ReviewActionTypes.MOVE_DRAFT_ISSUE:
+            return { ...state, newIssue: { ...state.newIssue, position: action.payload.position } };
         case AnnotationActionTypes.GET_JOB_SUCCESS: {
             const { job } = action.payload;
             if (job.dimension === DimensionType.DIMENSION_1D) {
@@ -37,21 +72,12 @@ export default function (state: ReviewState = defaultState, action: any): Review
                 return state;
             }
 
-            const {
-                issues,
-                conflicts,
-                frameData: { number: frame },
-            } = action.payload;
-
-            const frameIssues = issues.filter((issue: any): boolean => issue.frame === frame);
-            const frameConflicts = conflicts.filter((conflict: QualityConflict): boolean => conflict.frame === frame);
-
+            const { issues, conflicts, frameNumber } = action.payload;
             return {
                 ...state,
                 issues,
-                frameIssues,
                 conflicts,
-                frameConflicts,
+                ...reviewOnFrame(frameNumber, issues, conflicts),
             };
         }
         case AnnotationActionTypes.CHANGE_FRAME:
@@ -59,10 +85,9 @@ export default function (state: ReviewState = defaultState, action: any): Review
         case AnnotationActionTypes.DELETE_FRAME_SUCCESS: {
             return {
                 ...state,
-                newIssue: {
-                    position: null,
-                    source: null,
-                },
+                activeIssueId: null,
+                highlightedIssueId: null,
+                newIssue: defaultState.newIssue,
             };
         }
         case ReviewActionTypes.SUBMIT_REVIEW: {
@@ -87,55 +112,46 @@ export default function (state: ReviewState = defaultState, action: any): Review
         }
         case AnnotationActionTypes.CHANGE_FRAME_SUCCESS: {
             const { number: frame } = action.payload;
-            let frameConflicts: QualityConflict[] = [];
-            if (state.conflicts.length) {
-                frameConflicts = state.conflicts.filter((conflict) => conflict.frame === frame);
-            }
-
             return {
                 ...state,
-                frameIssues: state.issues.filter((issue: any): boolean => issue.frame === frame),
-                frameConflicts,
+                ...reviewOnFrame(frame, state.issues, state.conflicts),
             };
         }
-        case ReviewActionTypes.START_ISSUE: {
-            const { position, source } = action.payload;
+        case ReviewActionTypes.START_ISSUE:
             return {
                 ...state,
-                newIssue: {
-                    position,
-                    source,
-                },
+                activeIssueId: null,
+                highlightedIssueId: null,
+                newIssue: action.payload,
             };
-        }
         case ReviewActionTypes.FINISH_ISSUE_SUCCESS: {
-            const { frame, issue } = action.payload;
+            const {
+                frame, issue, draft, dimension,
+            } = action.payload;
             const issues = [...state.issues, issue];
-            const frameIssues = issues.filter((_issue: any): boolean => _issue.frame === frame);
+            const message = issue.comments[0]?.message;
+            const include3DPresets = dimension === DimensionType.DIMENSION_3D &&
+                draft.source === NewIssueSource.QUICK_ISSUE;
+            const latestComments = message && !isQuickIssuePresetMessage(message, include3DPresets) &&
+                !state.latestComments.includes(message) ?
+                [...state.latestComments, message].slice(-config.LATEST_COMMENTS_SHOWN_QUICK_ISSUE) :
+                state.latestComments;
 
             return {
                 ...state,
-                latestComments: state.latestComments.includes(issue.comments[0].message) ?
-                    state.latestComments :
-                    Array.from(
-                        new Set(
-                            [...state.latestComments, issue.comments[0].message].filter(
-                                (message: string): boolean => ![
-                                    config.QUICK_ISSUE_INCORRECT_POSITION_TEXT,
-                                    config.QUICK_ISSUE_INCORRECT_ATTRIBUTE_TEXT,
-                                ].includes(message),
-                            ),
-                        ),
-                    ).slice(-config.LATEST_COMMENTS_SHOWN_QUICK_ISSUE),
-                frameIssues,
+                ...reviewOnFrame(frame, issues, state.conflicts),
                 issues,
-                newIssue: {
-                    position: null,
-                    source: null,
-                },
+                latestComments,
+                newIssue: state.newIssue === draft ? defaultState.newIssue : state.newIssue,
             };
+        }
+        case ReviewActionTypes.FINISH_ISSUE_FAILED: {
+            const { draft } = action.payload;
+            if (state.newIssue !== draft || draft.source !== NewIssueSource.QUICK_ISSUE) return state;
+            return { ...state, newIssue: defaultState.newIssue };
         }
         case ReviewActionTypes.COMMENT_ISSUE:
+        case ReviewActionTypes.MOVE_ISSUE:
         case ReviewActionTypes.RESOLVE_ISSUE:
         case ReviewActionTypes.REOPEN_ISSUE: {
             const { issueId } = action.payload;
@@ -148,6 +164,7 @@ export default function (state: ReviewState = defaultState, action: any): Review
             };
         }
         case ReviewActionTypes.COMMENT_ISSUE_FAILED:
+        case ReviewActionTypes.MOVE_ISSUE_FAILED:
         case ReviewActionTypes.RESOLVE_ISSUE_FAILED:
         case ReviewActionTypes.REOPEN_ISSUE_FAILED: {
             return {
@@ -159,6 +176,7 @@ export default function (state: ReviewState = defaultState, action: any): Review
             };
         }
         case ReviewActionTypes.RESOLVE_ISSUE_SUCCESS:
+        case ReviewActionTypes.MOVE_ISSUE_SUCCESS:
         case ReviewActionTypes.REOPEN_ISSUE_SUCCESS:
         case ReviewActionTypes.COMMENT_ISSUE_SUCCESS: {
             const { issues, frameIssues } = state;
@@ -189,12 +207,12 @@ export default function (state: ReviewState = defaultState, action: any): Review
         }
         case ReviewActionTypes.REMOVE_ISSUE_SUCCESS: {
             const { issueId, frame } = action.payload;
-            const issues = state.issues.filter((issue: any) => issue.id !== issueId);
-            const frameIssues = issues.filter((issue: any): boolean => issue.frame === frame);
+            const issues = state.issues.filter((issue) => issue.id !== issueId);
             return {
                 ...state,
+                activeIssueId: state.activeIssueId === issueId ? null : state.activeIssueId,
                 issues,
-                frameIssues,
+                ...reviewOnFrame(frame, issues, state.conflicts),
             };
         }
         case AnnotationActionTypes.CLOSE_JOB:

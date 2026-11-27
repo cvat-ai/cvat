@@ -40,7 +40,7 @@ class TestPostIssues:
 
             assert (
                 DeepDiff(
-                    data,
+                    {"view": None, **data},
                     response_json,
                     exclude_regex_paths=r"root\['created_date|updated_date|comments|id|owner|message'\]",
                 )
@@ -154,15 +154,10 @@ class TestPatchIssues:
     @pytest.fixture(scope="class")
     def request_and_response_data(self, issues, users):
         def get_data(issue_id, *, username: str = None):
-            request_data = deepcopy(issues[issue_id])
-            request_data["resolved"] = not request_data["resolved"]
-
-            response_data = deepcopy(request_data)
-
-            request_data.pop("comments")
-            request_data.pop("updated_date")
-            request_data.pop("id")
-            request_data.pop("owner")
+            response_data = deepcopy(issues[issue_id])
+            response_data["resolved"] = not response_data["resolved"]
+            request_data = {"resolved": response_data["resolved"], "assignee": None}
+            response_data["assignee"] = None
 
             if username:
                 assignee = next(u for u in users if u["username"] == username)
@@ -170,9 +165,6 @@ class TestPatchIssues:
                 response_data["assignee"] = {
                     k: assignee[k] for k in ["id", "username", "url", "first_name", "last_name"]
                 }
-            else:
-                request_data["assignee"] = None
-
             return request_data, response_data
 
         return get_data

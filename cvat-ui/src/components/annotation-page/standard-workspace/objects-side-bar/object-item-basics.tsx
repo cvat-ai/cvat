@@ -6,6 +6,7 @@
 import React, {
     useCallback, useEffect, useRef, useState,
 } from 'react';
+import { useSelector } from 'react-redux';
 import { Row, Col } from 'antd/lib/grid';
 import { CloseOutlined, MoreOutlined } from '@ant-design/icons';
 import Button from 'antd/lib/button';
@@ -14,9 +15,10 @@ import InputNumber from 'antd/lib/input-number';
 import Popover from 'antd/lib/popover';
 import Text from 'antd/lib/typography/Text';
 
-import { ColorBy } from 'reducers';
+import { ColorBy, CombinedState } from 'reducers';
 import CVATTooltip from 'components/common/cvat-tooltip';
 import LabelSelector from 'components/label-selector/label-selector';
+import { canRemoveAnnotations } from 'utils/annotation';
 import type { OrientationAngle } from 'utils/change-object-orientation';
 import { ObjectType, ShapeType } from 'cvat-core-wrapper';
 import ItemMenu from './object-item-menu';
@@ -192,6 +194,7 @@ function ItemTopComponent(props: Props): JSX.Element {
         jobInstance,
     } = props;
 
+    const canRemove = useSelector((state: CombinedState) => canRemoveAnnotations(state.annotation));
     const [colorPickerVisible, setColorPickerVisible] = useState(false);
     const [layerPopoverVisible, setLayerPopoverVisible] = useState(false);
     const [objectMenuVisible, setObjectMenuVisible] = useState(false);
@@ -269,7 +272,7 @@ function ItemTopComponent(props: Props): JSX.Element {
                         changeColor,
                         setLayerPopoverVisible,
                         copy,
-                        remove,
+                        remove: canRemove ? remove : undefined,
                         propagate,
                         createURL,
                         switchOrientation,

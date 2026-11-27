@@ -155,6 +155,7 @@ const defaultState: NotificationsState = {
         review: {
             commentingIssue: null,
             finishingIssue: null,
+            movingIssue: null,
             reopeningIssue: null,
             resolvingIssue: null,
             submittingReview: null,
@@ -1456,6 +1457,22 @@ export default function (state = defaultState, action: AnyAction): Notifications
                         ...state.errors.review,
                         finishingIssue: {
                             message: 'Could not open a new issue',
+                            reason: action.payload.error,
+                            shouldLog: shouldLog(action.payload.error),
+                        },
+                    },
+                },
+            };
+        }
+        case ReviewActionTypes.MOVE_ISSUE_FAILED: {
+            return {
+                ...state,
+                errors: {
+                    ...state.errors,
+                    review: {
+                        ...state.errors.review,
+                        movingIssue: {
+                            message: 'Could not move the issue',
                             reason: action.payload.error,
                             shouldLog: shouldLog(action.payload.error),
                         },

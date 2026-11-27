@@ -33,7 +33,7 @@ import {
 import {
     changeShowGroundTruth as changeShowGroundTruthAction,
 } from 'actions/settings-actions';
-import { isAbleToChangeFrame } from 'utils/annotation';
+import { canRemoveAnnotations, isAbleToChangeFrame } from 'utils/annotation';
 import getHiddenZLayers from 'utils/get-hidden-z-layers';
 import {
     CombinedState, StatesOrdering, ColorBy, Workspace, isMultiSelectionSupported,
@@ -75,6 +75,7 @@ interface StateToProps {
     activatedStateID: number | null;
     activatedElementID: number | null;
     selectedStatesID: number[];
+    canRemove: boolean;
     minZLayer: number;
     maxZLayer: number;
     currentZLayer: number;
@@ -332,6 +333,7 @@ function mapStateToProps(state: CombinedState): StateToProps {
         activatedStateID,
         activatedElementID,
         selectedStatesID,
+        canRemove: canRemoveAnnotations(state.annotation),
         minZLayer,
         maxZLayer,
         currentZLayer,
@@ -654,6 +656,7 @@ class ObjectsListContainer extends React.PureComponent<Props, State> {
             copyShape,
             copySelection,
             selectedStatesID,
+            canRemove,
             switchPropagateVisibility,
             switchSimplifyVisibility,
             changeFrame,
@@ -786,6 +789,8 @@ class ObjectsListContainer extends React.PureComponent<Props, State> {
             },
             DELETE_OBJECT_STANDARD_WORKSPACE: (event?: KeyboardEvent) => {
                 preventDefault(event);
+                if (!canRemove) return;
+
                 // with an active multi-selection the whole selection is removed
                 if (selectedStatesID.length) {
                     removeSelection(event ? event.shiftKey : false);
