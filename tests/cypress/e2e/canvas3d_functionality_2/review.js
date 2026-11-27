@@ -222,9 +222,12 @@ function rotateScene(canvas, origin, returnToOrigin = false) {
     const pointer = {
         eventConstructor: 'PointerEvent', pointerId: 1, pointerType: 'mouse', button: 0, isPrimary: true,
     };
+    const bounds = canvas.getBoundingClientRect();
+    const x = origin.clientX - bounds.left;
+    const y = origin.clientY - bounds.top;
     const destination = { clientX: origin.clientX + 60, clientY: origin.clientY + 30 };
-    cy.wrap(canvas).trigger('pointerdown', { ...pointer, ...origin, buttons: 1 });
-    cy.wrap(canvas).trigger('mousedown', { ...origin, button: 0, buttons: 1 });
+    cy.wrap(canvas).trigger('pointerdown', x, y, { ...pointer, ...origin, buttons: 1 });
+    cy.wrap(canvas).trigger('mousedown', x, y, { ...origin, button: 0, buttons: 1 });
     [destination, ...(returnToOrigin ? [origin] : [])].forEach((position) => {
         cy.get('body').trigger('pointermove', { ...pointer, ...position, buttons: 1 });
         cy.get('body').trigger('mousemove', { ...position, buttons: 1 });
@@ -236,7 +239,10 @@ function rotateScene(canvas, origin, returnToOrigin = false) {
         // Moving the camera can bring an issue label under the release position.
         // A browser only sends the resulting click to the canvas when it is still the target.
         if (canvas.ownerDocument.elementFromPoint(end.clientX, end.clientY) === canvas) {
-            cy.wrap(canvas).trigger('click', { ...end, button: 0, detail: 1 });
+            const rect = canvas.getBoundingClientRect();
+            cy.wrap(canvas).trigger('click', end.clientX - rect.left, end.clientY - rect.top, {
+                ...end, button: 0, detail: 1,
+            });
         }
     });
 }
@@ -1522,7 +1528,11 @@ context('3D spatial review', { browser: '!firefox' }, () => {
             issueId = response.body.id;
             savedPosition = response.body.position;
         });
-        snapshot().then(({ canvas, point }) => { rotateScene(canvas, point); });
+        snapshot().then(({ canvas, clickPoints }) => {
+            const point = uncoveredCanvasPoint(canvas, clickPoints);
+            expect(point, 'cuboid has an uncovered location to start rotating').to.exist;
+            rotateScene(canvas, point);
+        });
         snapshot().then(({ rotation }) => { expect(rotation).not.to.deep.equal(expected.rotation); });
         cy.reload();
         cy.contains('[role="tab"]', 'Issues').click();
