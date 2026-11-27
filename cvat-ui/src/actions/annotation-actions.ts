@@ -7,7 +7,7 @@ import { AnyAction, Store } from 'redux';
 import {
     ActionWithPayload, createAction, ThunkAction, ThunkDispatch,
 } from 'utils/redux';
-import { isAbleToChangeFrame } from 'utils/annotation';
+import { canRemoveAnnotations, isAbleToChangeFrame } from 'utils/annotation';
 import getHiddenZLayers from 'utils/get-hidden-z-layers';
 import { getRelatedImageMetadata } from 'utils/related-image-calibrations';
 import { cameraRayFromImagePoint, CanvasMode as Canvas3DMode } from 'cvat-canvas3d-wrapper';
@@ -600,10 +600,13 @@ export function propagateObjectAsync(from: number, to: number): ThunkAction {
 }
 
 export function removeObjectAsync(objectState: ObjectState, force: boolean): ThunkAction {
-    return async (dispatch: ThunkDispatch): Promise<void> => {
+    return async (dispatch, getState): Promise<void> => {
+        const { annotation } = getState();
+        if (!canRemoveAnnotations(annotation)) return;
+
         try {
             const { frame, jobInstance } = receiveAnnotationsParameters();
-            const { selectedStatesID } = getStore().getState().annotation.annotations;
+            const { selectedStatesID } = annotation.annotations;
             await jobInstance.logger.log(EventScope.deleteObject, { count: 1 });
 
             const objectIsSelected = selectedStatesID.includes(objectState.clientID as number);
@@ -749,11 +752,14 @@ export function copySelection(objectStates: ObjectState[]): AnyAction {
 
 // removes the whole multi-selection as a single undoable change
 export function removeSelectionAsync(force: boolean): ThunkAction {
-    return async (dispatch: ThunkDispatch): Promise<void> => {
+    return async (dispatch, getState): Promise<void> => {
+        const { annotation } = getState();
+        if (!canRemoveAnnotations(annotation)) return;
+
         const {
             job: { instance: jobInstance },
             annotations: { states, selectedStatesID },
-        } = getStore().getState().annotation;
+        } = annotation;
 
         const selectedStates = states
             .filter((state: any) => selectedStatesID.includes(state.clientID));

@@ -6,11 +6,17 @@
 import { Canvas } from 'cvat-canvas-wrapper';
 import { Canvas3d } from 'cvat-canvas3d-wrapper';
 import { getCVATStore } from 'cvat-store';
-import { CombinedState } from 'reducers';
-import { Job, ObjectState, ObjectType } from 'cvat-core-wrapper';
+import { AnnotationState, CombinedState, Workspace } from 'reducers';
+import {
+    DimensionType, Job, ObjectState, ObjectType,
+} from 'cvat-core-wrapper';
 
 export function jobHasUnsavedChanges(jobInstance: Job): boolean {
     return jobInstance.annotations.hasUnsavedChanges() || jobInstance.frames.hasUnsavedChanges();
+}
+
+export function canRemoveAnnotations({ job, workspace }: Pick<AnnotationState, 'job' | 'workspace'>): boolean {
+    return workspace !== Workspace.REVIEW || job.instance?.dimension !== DimensionType.DIMENSION_3D;
 }
 
 export function isAbleToChangeFrame(frame?: number): boolean {

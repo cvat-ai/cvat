@@ -817,11 +817,24 @@ context('3D spatial review', { browser: '!firefox' }, () => {
             cy.removeIssue(`#cvat-hidden-issue-label-${response.body.id}-perspective`);
             cy.get(`#cvat-hidden-issue-label-${response.body.id}-perspective`).should('not.exist');
         });
+        cy.get('#cvat-objects-sidebar-state-item-1').find('.cvat-object-item-menu-button').click();
+        cy.get('.cvat-object-item-menu:visible').should('be.visible').and('not.contain.text', 'Remove');
+        cy.get('#cvat-objects-sidebar-state-item-1').find('.cvat-object-item-menu-button').click();
+        cy.get('#cvat-objects-sidebar-state-item-1').trigger('mouseover');
+        cy.get('#cvat-objects-sidebar-state-item-1').should('have.class', 'cvat-objects-sidebar-state-active-item');
+        cy.get('body').type('{del}');
+        cy.get('body').type('{shift}{del}');
+        cy.get('.cvat-modal-confirm-remove-object').should('not.exist');
+        cy.get('#cvat-objects-sidebar-state-item-1').should('be.visible');
+
         cy.changeWorkspace('Standard 3D');
         cy.get('#cvat-objects-sidebar-state-item-1').trigger('mouseover');
         cy.get('.cvat-canvas3d-topview canvas').should(($canvas) => {
             expect($canvas[0].scene.getObjectByName('2DResizeHelper_0')).to.exist;
         });
+        cy.get('#cvat-objects-sidebar-state-item-1').find('.cvat-object-item-menu-button').click();
+        cy.contains('.cvat-object-item-menu:visible button', 'Remove').should('be.visible');
+        cy.get('#cvat-objects-sidebar-state-item-1').find('.cvat-object-item-menu-button').click();
     });
 
     it('keeps review points and labels below context menus, discussions and modal windows', () => {
