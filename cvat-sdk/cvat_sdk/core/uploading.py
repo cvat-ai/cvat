@@ -161,6 +161,7 @@ class Uploader:
         # "CVAT-TUS" protocol has 2 extra messages
         # query params are used only in the extra messages
         assert meta["filename"]
+        query_params = dict(query_params or {})
 
         if pbar is None:
             pbar = NullProgressReporter()
