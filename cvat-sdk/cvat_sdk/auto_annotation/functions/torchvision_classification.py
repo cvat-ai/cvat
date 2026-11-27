@@ -3,6 +3,7 @@
 # SPDX-License-Identifier: MIT
 
 import PIL.Image
+import torch
 
 import cvat_sdk.auto_annotation as cvataa
 import cvat_sdk.models as models
@@ -13,6 +14,7 @@ from ._torchvision import TorchvisionFunction
 class _TorchvisionClassificationFunction(TorchvisionFunction):
     _label_type = "tag"
 
+    @torch.no_grad()
     def detect(
         self, context: cvataa.DetectionFunctionContext, image: PIL.Image.Image
     ) -> list[models.LabeledImageRequest]:

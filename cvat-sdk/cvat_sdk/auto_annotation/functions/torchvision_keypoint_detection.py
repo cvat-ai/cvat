@@ -5,6 +5,7 @@
 from functools import cached_property
 
 import PIL.Image
+import torch
 
 import cvat_sdk.auto_annotation as cvataa
 import cvat_sdk.models as models
@@ -29,6 +30,7 @@ class _TorchvisionKeypointDetectionFunction(TorchvisionFunction):
             ]
         )
 
+    @torch.no_grad()
     def detect(
         self, context: cvataa.DetectionFunctionContext, image: PIL.Image.Image
     ) -> list[models.LabeledShapeRequest]:
