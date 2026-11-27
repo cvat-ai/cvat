@@ -520,6 +520,10 @@ class _Agent:
                 error_message = "Invalid annotation request: " + str(ex)
             elif isinstance(ex, concurrent.futures.BrokenExecutor):
                 error_message = "Worker process crashed"
+            elif isinstance(ex, cvatds.UnsupportedDatasetError):
+                error_message = "The agent cannot process this task in its current configuration"
+            elif isinstance(ex, cvatds.UnreadableMediaError):
+                error_message = "The agent failed to read the media of the task"
 
             try:
                 self._client.api_client.call_api(

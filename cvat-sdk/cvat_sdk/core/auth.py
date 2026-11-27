@@ -30,8 +30,8 @@ from cvat_sdk.core.client import (
 )
 from cvat_sdk.core.exceptions import AuthStoreError
 from cvat_sdk.core.utils import is_posix
+from cvat_sdk.settings import CVAT_ACCESS_TOKEN_ENV_VAR
 
-CVAT_ACCESS_TOKEN_ENV_VAR = "CVAT_ACCESS_TOKEN"  # nosec - a variable name declaration
 DEFAULT_SERVER = "http://localhost"
 
 _APP_NAME = "cvat-sdk"

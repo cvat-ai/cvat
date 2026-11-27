@@ -10,6 +10,7 @@ import pytest
 from cvat_sdk import Client
 from cvat_sdk.api_client import models
 from cvat_sdk.core.proxies.types import Location
+from cvat_sdk.datasets._video_chunks.openh264.services import load_library
 from PIL import Image
 
 from rest_api.utils import register_new_user
@@ -17,6 +18,13 @@ from shared.utils.config import BASE_URL, IMPORT_EXPORT_BUCKET_ID, USER_PASS, ma
 from shared.utils.helpers import generate_image_file
 
 from .util import OrgResourceHierarchy, generate_coco_json
+
+
+@pytest.fixture(autouse=True)
+def fxt_clear_openh264_library_cache():
+    load_library.cache_clear()
+    yield
+    load_library.cache_clear()
 
 
 @pytest.fixture

@@ -1,0 +1,9 @@
+# Copyright (C) CVAT.ai Corporation
+#
+# SPDX-License-Identifier: MIT
+
+ANNEX_B_START_CODE = b"\x00\x00\x00\x01"
+BOX_HEADER_SIZE = 8
+LARGE_BOX_HEADER_SIZE = 16
+VERSION_AND_FLAGS_SIZE = 4
+NAL_LENGTH_SIZE = 4
