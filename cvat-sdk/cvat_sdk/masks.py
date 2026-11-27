@@ -30,7 +30,8 @@ def encode_mask(bitmap: ArrayLike, /, bbox: Sequence[float] | None = None) -> li
         raise ValueError("bitmap must have boolean items")
 
     if bbox is None:
-        nz_y, nz_x = bitmap.nonzero()
+        nz_y = np.flatnonzero(bitmap.any(axis=1))
+        nz_x = np.flatnonzero(bitmap.any(axis=0))
         if nz_x.size == 0 or nz_y.size == 0:
             x1 = y1 = 0
             x2 = y2 = 1
