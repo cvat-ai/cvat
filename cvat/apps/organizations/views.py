@@ -226,6 +226,7 @@ class MembershipViewSet(
         summary="Decline an invitation",
         responses={
             "204": OpenApiResponse(description="The invitation has been declined"),
+            "400": OpenApiResponse(description="The invitation is already accepted"),
         },
     ),
     resend=extend_schema(
@@ -356,10 +357,18 @@ class InvitationViewSet(
     def decline(self, request, pk):
         try:
             invitation = self.get_object()  # force to call check_object_permissions
-            membership = invitation.membership
-            membership.delete()
-            return Response(status=status.HTTP_204_NO_CONTENT)
         except Invitation.DoesNotExist:
             return Response(
                 status=status.HTTP_404_NOT_FOUND, data="This invitation does not exist."
             )
+
+        deleted_count, _ = Membership.objects.filter(
+            pk=invitation.membership_id,
+            is_active=False,
+        ).delete()
+        if not deleted_count:
+            return Response(
+                status=status.HTTP_400_BAD_REQUEST, data="This invitation is already accepted."
+            )
+
+        return Response(status=status.HTTP_204_NO_CONTENT)

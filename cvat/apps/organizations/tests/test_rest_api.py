@@ -11,6 +11,7 @@ from rest_framework import status
 from cvat.apps.engine.tests.test_rest_api import create_db_users
 from cvat.apps.engine.tests.utils import ApiTestBase, ForceLogin
 from cvat.apps.iam.models import User, UserCreationMethod
+from cvat.apps.organizations.models import Invitation, Membership
 
 
 class OrganizationCreateAPITestCase(ApiTestBase):
@@ -89,6 +90,65 @@ class InvitationCreateAPITestCase(ApiTestBase):
         user = User.objects.get(id=invited_user_id)
         self.assertEqual(user.email, "invited@test.com")
         self.assertEqual(user.created_via, UserCreationMethod.REGISTRATION)
+
+
+class InvitationDeclineAPITestCase(ApiTestBase):
+    org_slug = "testorg"
+
+    @classmethod
+    def setUpTestData(cls):
+        create_db_users(cls)
+        cls.invitee = User.objects.create_user(
+            username="invitee", email="invitee@test.com", password="invitee"
+        )
+
+    def setUp(self):
+        super().setUp()
+        response = self._post_request(
+            "/api/organizations", self.admin, data={"slug": self.org_slug}
+        )
+        self.assertEqual(response.status_code, status.HTTP_201_CREATED, response.content)
+
+    @override_settings(ORG_INVITATION_CONFIRM="Yes")
+    def test_invitee_can_decline_pending_invitation(self):
+        response = self._post_request(
+            "/api/invitations",
+            self.admin,
+            data={"role": "worker", "email": "invitee@test.com"},
+            query_params={"org": self.org_slug},
+        )
+        self.assertEqual(response.status_code, status.HTTP_201_CREATED, response.content)
+        self.assertFalse(response.json()["accepted"])
+        key = response.json()["key"]
+
+        response = self._post_request(f"/api/invitations/{key}/decline", self.invitee)
+
+        self.assertEqual(response.status_code, status.HTTP_204_NO_CONTENT, response.content)
+        self.assertFalse(Invitation.objects.filter(key=key).exists())
+        self.assertFalse(
+            Membership.objects.filter(user=self.invitee, organization__slug=self.org_slug).exists()
+        )
+
+    @override_settings(ORG_INVITATION_CONFIRM="Yes")
+    def test_invitee_cannot_decline_accepted_invitation(self):
+        response = self._post_request(
+            "/api/invitations",
+            self.admin,
+            data={"role": "worker", "email": "invitee@test.com"},
+            query_params={"org": self.org_slug},
+        )
+        self.assertEqual(response.status_code, status.HTTP_201_CREATED, response.content)
+        key = response.json()["key"]
+        response = self._post_request(f"/api/invitations/{key}/accept", self.invitee)
+        self.assertEqual(response.status_code, status.HTTP_200_OK, response.content)
+
+        response = self._post_request(f"/api/invitations/{key}/decline", self.invitee)
+
+        self.assertEqual(response.status_code, status.HTTP_400_BAD_REQUEST, response.content)
+        self.assertTrue(Invitation.objects.filter(key=key).exists())
+        self.assertTrue(
+            Membership.objects.get(user=self.invitee, organization__slug=self.org_slug).is_active
+        )
 
 
 class InvitationEmailValidationAPITestCase(ApiTestBase):
