@@ -106,7 +106,7 @@ def _get_name(prefix, **kwargs):
         if isinstance(v, dict):
             name += _get_name("", **v)
         else:
-            name += f"_{str(v).upper()}"
+            name += f"_{str(v).upper().replace(':', '_')}"
 
     return name
 

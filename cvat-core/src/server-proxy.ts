@@ -25,7 +25,7 @@ import {
     SerializedQualitySettingsData, SerializedQualitySettingsSaveData,
 } from './quality/server-response-types';
 import {
-    APIApiTokenModifiableFields, APIUserGrowthDataModifiableFields,
+    APIApiTokenModifiableFields, APIUserGrowthDataModifiableFields, APIOrganizationModifiableFields,
     ProjectsFilter, TasksFilter, JobsFilter,
     APIQualitySettingsFilter, APIQualityConflictsFilter, APIQualityReportsFilter,
     APIAnalyticsEventsFilter, APIConsensusSettingsFilter, APIApiTokensFilter, APIQualityRequirementsFilter,
@@ -2244,7 +2244,7 @@ async function createOrganization(data: SerializedOrganization): Promise<Seriali
 }
 
 async function updateOrganization(
-    id: number, data: Partial<SerializedOrganization>,
+    id: number, data: APIOrganizationModifiableFields,
 ): Promise<SerializedOrganization> {
     const { backendAPI } = config;
 

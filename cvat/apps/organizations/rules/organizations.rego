@@ -5,7 +5,7 @@ import rego.v1
 import data.utils
 
 # input: {
-#     "scope": <"create"|"list"|"update"|"view"|"delete"> or null,
+#     "scope": <"create"|"list"|"update"|"update:owner"|"view"|"delete"> or null,
 #     "auth": {
 #         "user": {
 #             "id": <num>,
@@ -124,6 +124,12 @@ allow if {
 
 allow if {
     input.scope == utils.DELETE
+    utils.has_perm(utils.WORKER)
+    utils.is_resource_owner
+}
+
+allow if {
+    input.scope == utils.UPDATE_OWNER
     utils.has_perm(utils.WORKER)
     utils.is_resource_owner
 }

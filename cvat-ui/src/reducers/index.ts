@@ -495,6 +495,11 @@ export interface PluginsState {
                 };
             };
         };
+        organizationPage: {
+            transferOwnershipModal: {
+                extras: PluginComponent[];
+            };
+        };
         modelsPage: {
             topBar: {
                 items: PluginComponent[];
@@ -775,6 +780,7 @@ export interface NotificationsState {
             updatingMembership: null | ErrorState;
             removingMembership: null | ErrorState;
             deletingInvitation: null | ErrorState;
+            transferringOwnership: null | ErrorState;
         };
         webhooks: {
             fetching: null | ErrorState;

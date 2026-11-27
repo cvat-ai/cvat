@@ -40,6 +40,7 @@ import {
 } from 'components/resource-sorting-filtering';
 
 import InvitationModal from './invitation-modal';
+import TransferOwnershipModal from './transfer-ownership-modal';
 
 import {
     localStorageRecentKeyword, localStorageRecentCapacity, predefinedFilterValues, config,
@@ -59,6 +60,7 @@ export interface Props {
 
 export enum MenuActions {
     SET_WEBHOOKS = 'SET_WEBHOOKS',
+    TRANSFER_OWNERSHIP = 'TRANSFER_OWNERSHIP',
     REMOVE_ORGANIZATION = 'REMOVE_ORGANIZATION',
 }
 
@@ -79,6 +81,7 @@ function OrganizationTopBar(props: Readonly<Props>): JSX.Element {
     const editingRef = useRef({ name, contact });
     const [editingDescription, setEditingDescription] = useState(false);
     const [visibleInviteModal, setVisibleInviteModal] = useState(false);
+    const [visibleTransferOwnershipModal, setVisibleTransferOwnershipModal] = useState(false);
     const [visibility, setVisibility] = useState(defaultVisibility);
     const dispatch = useDispatch();
 
@@ -90,6 +93,9 @@ function OrganizationTopBar(props: Readonly<Props>): JSX.Element {
     }, [organizationInstance, fetchMembers]);
     const onCancelInvite = useCallback(() => {
         setVisibleInviteModal(false);
+    }, []);
+    const onCloseTransferOwnership = useCallback(() => {
+        setVisibleTransferOwnershipModal(false);
     }, []);
 
     useEffect(() => {
@@ -183,6 +189,10 @@ function OrganizationTopBar(props: Readonly<Props>): JSX.Element {
                                             },
                                             ...(owner && userID === owner.id ? [{
                                                 type: 'divider' as const,
+                                            }, {
+                                                key: MenuActions.TRANSFER_OWNERSHIP,
+                                                onClick: () => setVisibleTransferOwnershipModal(true),
+                                                label: 'Transfer ownership',
                                             }, {
                                                 key: MenuActions.REMOVE_ORGANIZATION,
                                                 onClick: onRemove,
@@ -407,6 +417,14 @@ function OrganizationTopBar(props: Readonly<Props>): JSX.Element {
                     <InvitationModal
                         onInvite={onInvite}
                         onCancelInvite={onCancelInvite}
+                    />
+                )
+            }
+            {
+                visibleTransferOwnershipModal && (
+                    <TransferOwnershipModal
+                        organization={organizationInstance}
+                        onClose={onCloseTransferOwnership}
                     />
                 )
             }

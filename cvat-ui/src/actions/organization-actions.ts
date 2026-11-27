@@ -22,6 +22,7 @@ export enum OrganizationActionsTypes {
     UPDATE_ORGANIZATION = 'UPDATE_ORGANIZATION',
     UPDATE_ORGANIZATION_SUCCESS = 'UPDATE_ORGANIZATION_SUCCESS',
     UPDATE_ORGANIZATION_FAILED = 'UPDATE_ORGANIZATION_FAILED',
+    TRANSFER_ORGANIZATION_OWNERSHIP_FAILED = 'TRANSFER_ORGANIZATION_OWNERSHIP_FAILED',
     REMOVE_ORGANIZATION = 'REMOVE_ORGANIZATION',
     REMOVE_ORGANIZATION_SUCCESS = 'REMOVE_ORGANIZATION_SUCCESS',
     REMOVE_ORGANIZATION_FAILED = 'REMOVE_ORGANIZATION_FAILED',
@@ -72,6 +73,9 @@ export const organizationActions = {
     ),
     updateOrganizationFailed: (slug: string, error: any) => createAction(
         OrganizationActionsTypes.UPDATE_ORGANIZATION_FAILED, { slug, error },
+    ),
+    transferOrganizationOwnershipFailed: (slug: string, error: unknown) => createAction(
+        OrganizationActionsTypes.TRANSFER_ORGANIZATION_OWNERSHIP_FAILED, { slug, error },
     ),
     removeOrganization: () => createAction(OrganizationActionsTypes.REMOVE_ORGANIZATION),
     removeOrganizationSuccess: (slug: string) => createAction(
@@ -328,6 +332,26 @@ export function getOrganizationMembersAsync(
             dispatch(organizationActions.getOrganizationMembersSuccess(members));
         } catch (error) {
             dispatch(organizationActions.getOrganizationMembersFailed(error));
+        }
+    };
+}
+
+export function transferOrganizationOwnershipAsync(
+    organization: Organization,
+    ownerID: number,
+): ThunkAction {
+    return async function (dispatch, getState) {
+        try {
+            await organization.save({ ownerId: ownerID });
+        } catch (error) {
+            dispatch(organizationActions.transferOrganizationOwnershipFailed(organization.slug, error));
+            return;
+        }
+
+        await dispatch(activateOrganizationAsync());
+        const { current, membersQuery } = getState().organizations;
+        if (current) {
+            await dispatch(getOrganizationMembersAsync(current, membersQuery));
         }
     };
 }

@@ -3,7 +3,7 @@
 // SPDX-License-Identifier: MIT
 
 import {
-    SerializedApiToken, SerializedUser, SerializedUserGrowthData,
+    SerializedApiToken, SerializedOrganization, SerializedUser, SerializedUserGrowthData,
 } from './server-response-types';
 import { QualityRequirementAnnotationType } from './quality/server-response-types';
 import { JobType } from './enums';
@@ -97,6 +97,11 @@ export type OrganizationMembersFilter = Camelized<APIOrganizationMembersFilter>;
 
 export type APIApiTokenModifiableFields = Partial<Pick<SerializedApiToken, 'name' | 'expiry_date' | 'read_only'>>;
 export type ApiTokenModifiableFields = CamelizedV2<APIApiTokenModifiableFields>;
+
+export type APIOrganizationModifiableFields = Partial<
+    Pick<SerializedOrganization, 'name' | 'description' | 'contact'>
+> & { owner_id?: number };
+export type OrganizationModifiableFields = CamelizedV2<APIOrganizationModifiableFields>;
 
 export type APIUserModifiableFields = Partial<Pick<SerializedUser,
     | 'username'

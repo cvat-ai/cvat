@@ -10433,6 +10433,9 @@ components:
         description:
           type: string
         contact: {}
+        owner_id:
+          type: integer
+          writeOnly: true
       required:
       - slug
     PaginatedAccessTokenReadList:
@@ -11221,6 +11224,9 @@ components:
         description:
           type: string
         contact: {}
+        owner_id:
+          type: integer
+          writeOnly: true
     PatchedProjectWriteRequest:
       type: object
       properties:
