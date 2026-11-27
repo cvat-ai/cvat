@@ -80,6 +80,17 @@ async function contextImageDataLeave(
     return result;
 }
 
+async function getChunksUpdatedDate(core: NonNullable<CachePlugin['data']['core']>, jobId: number): string | undefined {
+    try {
+        const metadata = await core.frames.getMeta('job', jobId);
+        return metadata.chunksUpdatedDate;
+    } catch (_: unknown) {
+        // if metadata receive fails, we cannot guarantee cached chunk is relevant
+        // in this case cache logic is ignored (both read from cache and write to cache)
+        return undefined;
+    }
+}
+
 async function chunkEnter(
     this: Job, plugin: CachePlugin, chunkIndex: number, quality: Quality,
 ): Promise<undefined | { preventMethodCallWithReturn: ArrayBuffer }> {
@@ -90,7 +101,7 @@ async function chunkEnter(
 
         if (item) {
             // make sure cached chunks still valid. Remove them if not valid
-            const { chunksUpdatedDate } = await plugin.data.core.frames.getMeta('job', this.id);
+            const chunksUpdatedDate = await getChunksUpdatedDate(plugin.data.core!, this.id);
             if (chunksUpdatedDate !== item.updatedDate) {
                 const keys = await indexedStorage.getKeysInStore(DatabaseStore.COMPRESSED_JOB_CHUNKS);
                 const cachedChunks = keys.filter((cachedKey: string) => +cachedKey.split('_')[0] === this.id);
@@ -115,7 +126,11 @@ async function chunkLeave(
         const { id } = this;
         const key = `${id}_${chunkIndex}`;
         if (!await indexedStorage.hasItem(DatabaseStore.COMPRESSED_JOB_CHUNKS, key)) {
-            const { chunksUpdatedDate } = await plugin.data.core.frames.getMeta('job', this.id);
+            const chunksUpdatedDate = await getChunksUpdatedDate(plugin.data.core!, this.id);
+            if (!chunksUpdatedDate) {
+                return result;
+            }
+
             const appended = await indexedStorage
                 .setItem<{ buffer: ArrayBuffer, updatedDate: string }>(DatabaseStore.COMPRESSED_JOB_CHUNKS, key, {
                     buffer: result,
