@@ -16,19 +16,24 @@ context('Canvas 3D functionality. "Move the image" button interaction.', () => {
         x: 480,
         y: 160,
     };
+    const movedCuboidPosition = {
+        x: 240,
+        y: 400,
+    };
 
     before(() => {
         cy.prepareUserSession();
         cy.openTask(taskName);
         cy.openJob();
-        // eslint-disable-next-line cypress/no-unnecessary-waiting
         cy.wait(1000); // Waiting for the point cloud to display
         cy.create3DCuboid(cuboidCreationParams);
     });
 
     describe(`Testing case "${caseId}"`, () => {
         it('Click to "Move the image" button. The cuboid on the top/side/front view should be hidden.', () => {
-            cy.get('.cvat-canvas3d-perspective canvas').trigger('mousemove', 340, 310);
+            cy.get('.cvat-canvas3d-perspective canvas').trigger(
+                'mousemove', cuboidCreationParams.x, cuboidCreationParams.y,
+            );
             cy.customScreenshot('.cvat-canvas3d-perspective', 'canvas3d_perspective_after_add_cuboid');
             ['topview', 'sideview', 'frontview'].forEach((view) => {
                 cy.customScreenshot(`.cvat-canvas3d-${view}`, `canvas3d_${view}_after_add_cuboid`);
@@ -63,7 +68,9 @@ context('Canvas 3D functionality. "Move the image" button interaction.', () => {
         it('Cancel "Move the image" activity. "Cursor" button should be active.', () => {
             cy.get('body').type('{Esc}');
             cy.get('.cvat-active-canvas-control').should('exist');
-            cy.get('.cvat-canvas3d-perspective canvas').trigger('mousemove', 346, 372); // Interacting with the canvas before interacting with the cuboid.
+            cy.get('.cvat-canvas3d-perspective canvas').trigger(
+                'mousemove', movedCuboidPosition.x, movedCuboidPosition.y,
+            );
             cy.get('#cvat-objects-sidebar-state-item-1').should('have.class', 'cvat-objects-sidebar-state-active-item');
         });
     });

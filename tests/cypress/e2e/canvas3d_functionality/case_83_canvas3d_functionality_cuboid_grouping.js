@@ -19,20 +19,20 @@ context('Canvas 3D functionality. Grouping.', () => {
     const secondCuboidCreationParams = {
         objectType: 'Shape',
         labelName,
-        x: 355,
-        y: 150,
+        x: 360,
+        y: 160,
     };
     const thirdCuboidCreationParams = {
         objectType: 'Shape',
         labelName,
-        x: 235,
+        x: 240,
         y: 400,
     };
     const fourthCuboidCreationParams = {
         objectType: 'Shape',
         labelName,
-        x: 495,
-        y: 416,
+        x: 500,
+        y: 420,
     };
     const yellowHex = 'fcbe03';
     const yellowRgb = '252, 190, 3';
@@ -49,7 +49,6 @@ context('Canvas 3D functionality. Grouping.', () => {
         cy.prepareUserSession();
         cy.openTask(taskName);
         cy.openJob();
-        // eslint-disable-next-line cypress/no-unnecessary-waiting
         cy.wait(1000); // Waiting for the point cloud to display
         cy.create3DCuboid(firstCuboidCreationParams);
         cy.create3DCuboid(secondCuboidCreationParams);
@@ -63,7 +62,6 @@ context('Canvas 3D functionality. Grouping.', () => {
             cy.get('.cvat-group-control').click();
             for (const shape of [secondCuboidCreationParams, thirdCuboidCreationParams]) {
                 cy.get('.cvat-canvas3d-perspective').trigger('mousemove', shape.x, shape.y);
-                // eslint-disable-next-line cypress/no-unnecessary-waiting
                 cy.wait(500); // Waiting for mousemove have effect
                 cy.get('.cvat-canvas3d-perspective').click(shape.x, shape.y);
             }
@@ -106,7 +104,6 @@ context('Canvas 3D functionality. Grouping.', () => {
             cy.get('.cvat-group-control').click();
             for (const shape of [secondCuboidCreationParams, thirdCuboidCreationParams]) {
                 cy.get('.cvat-canvas3d-perspective').trigger('mousemove', shape.x, shape.y);
-                // eslint-disable-next-line cypress/no-unnecessary-waiting
                 cy.wait(500); // Waiting for mousemove have effect
                 cy.get('.cvat-canvas3d-perspective').click(shape.x, shape.y);
             }
