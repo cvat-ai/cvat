@@ -558,10 +558,10 @@ with the CVAT Enterprise or CVAT Cloud.
 
   ```
   cvat-cli function create-native "SAM2" \
-      --function-file=<CVAT_DIR>/ai-models/tracker/sam2/func.py \
+      --function-file=<CVAT_MODELS_DIR>/tracker/sam2/func.py \
       -p model_id=str:facebook/sam2.1-hiera-tiny
   cvat-cli function run-agent <ID printed by previous command> \
-      --function-file=<CVAT_DIR>/ai-models/tracker/sam2/func.py \
+      --function-file=<CVAT_MODELS_DIR>/tracker/sam2/func.py \
       -p model_id=str:facebook/sam2.1-hiera-tiny
   ```
 

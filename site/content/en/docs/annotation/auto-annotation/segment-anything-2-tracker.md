@@ -87,10 +87,10 @@ Deploy SAM2 using Docker Compose with pre-built images for a quick and straightf
 
 The easiest way to deploy SAM2 with pre-built images from Docker Hub.
 
-1. Clone the CVAT repository and navigate to the SAM2 agent directory:
+1. Clone the standalone `cvat-models` repository and navigate to the SAM2 agent directory:
    ```sh
-   git clone https://github.com/cvat-ai/cvat.git
-   cd cvat/ai-models/agents_deployment/sam2
+   git clone https://github.com/cvat-ai/cvat-models.git
+   cd cvat-models/tracker/sam2/agent
    ```
 
 1. Create or update the `.env` file with your configuration.

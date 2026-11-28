@@ -588,5 +588,5 @@ The following libraries and models are currently covered:
 - Segment Anything Model 2 (SAM2).
 - Ultralytics: all numbered YOLO models (YOLOv3, YOLOv5, and so on).
 
-See the [`ai-models` directory](https://github.com/cvat-ai/cvat/tree/develop/ai-models)
+See the [`cvat-models` repository](https://github.com/cvat-ai/cvat-models)
 for usage information.

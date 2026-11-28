@@ -47,20 +47,43 @@ where you want to deploy your agent, and you should have an API key for authenti
 
 ## How to configure Docker Compose to run your CVAT agent
 
-First of all you need to clone the CVAT repository to get access to Docker Compose files and templates:
+Clone the standalone [`cvat-models`](https://github.com/cvat-ai/cvat-models) repository to get the
+agent Dockerfiles, Compose files, and environment templates:
 
 ```bash
-git clone git@github.com:cvat-ai/cvat.git
+git clone https://github.com/cvat-ai/cvat-models.git
+cd cvat-models
 ```
 
-Then you need to navigate to the `cvat/ai-models/agents_deployment/sam2`
+Choose an agent bundle:
+
+| Model | Agent directory |
+| ----- | --------------- |
+| YOLO | `detector/yolo/agent` |
+| RF-DETR | `detector/detr/agent` |
+| Hugging Face Transformers | `detector/transformers/agent` |
+| SAM2 tracker | `tracker/sam2/agent` |
+| RT-DETRv2-OBB | `detector/rtdetrv2_obb/agent` |
+
+Each directory contains the files needed to build an image or run an available pre-built image.
+Check its `.env` comments and model README for image availability and model-specific parameters.
+
+To build an image, run the build from the `cvat-models` repository root because the Dockerfiles use
+that directory as their build context. Set `<agent-directory>` to a path from the table and use a
+CVAT SDK/CLI version compatible with your CVAT instance:
 
 ```bash
-cd cvat/ai-models/agents_deployment/sam2
+docker build --build-arg CVAT_VERSION=<CVAT_VERSION> --build-arg USE_GPU=false \
+  --file <agent-directory>/Dockerfile --tag <image-name>:latest .
 ```
 
-In this folder you will find all necessary files to either build your own images based on the provided Dockerfile or
-to use already build images that are available on our [Dockerhub](https://hub.docker.com/r/cvat/sam2_agent/tags).
+For a CUDA-capable image, set `USE_GPU=true` and use a different tag. Then set `IMAGE_URL` in the
+agent's `.env` file to the image you built and change to that agent directory before running
+Compose:
+
+```bash
+cd <agent-directory>
+```
 
 
 ### Environment configuration
@@ -74,7 +97,8 @@ CVAT_ACCESS_TOKEN - Access token to use with cvat-cli to connect to CVAT instanc
 FUNCTION_NAME - Name of the function to register in CVAT. For example it could be SAM2 or MY_GREAT_MODEL.
 
 IMAGE_URL - URL of the image to use for your agent. You can either build your own image or just
-use the one from our repo: <https://hub.docker.com/r/cvat/>
+use an available image from our repository: <https://hub.docker.com/r/cvat/>. Check the selected
+agent's `.env` file to determine whether a pre-built image is available.
 
 AGENTS_COUNT - Number of agent replicas to run. Depends on the model.
 
@@ -83,10 +107,12 @@ ORG_SLUG - Your org slug. This is important if you want to share your function a
 COMPOSE_PROFILES - whether to use cpu or gpu to run your agent. To use GPU, set this to "gpu".
 Requires Linux + NVIDIA GPU + NVIDIA driver + NVIDIA Container Toolkit + GPU docker image
 
+FUNCTION_VISIBILITY - `private` limits the function to you and, when `ORG_SLUG` is set, members of
+that organization. `public` makes it available to every user of the CVAT instance.
+
 MODEL_CONFIG_PARAMS - Parameters to pass to the adapter function. Differs for each model.
-Refer to the model documentation.
-Also, some explanatory example could be found in
- `cvat/ai-models/agents_deployment/transformers/.env`
+Refer to the selected model documentation and the comments in its `.env` file. For example, see
+`detector/transformers/agent/.env` for Transformers parameters.
 
 ## How to run CVAT agent with Docker Compose
 
@@ -149,14 +175,8 @@ So most of the issues with Docker Compose deployment are related to the followin
 
 - Incorrect configuration in the `.env` file. Please make sure that you have provided
 correct CVAT_BASE_URL, CVAT_ACCESS_TOKEN, FUNCTION_NAME, IMAGE_URL and MODEL_CONFIG_PARAMS.
-- In rare cases, there could be some issues with data on shared volume. You can check
-that by running the following command in the terminal:
-
-```bash
-docker run --rm -v sam2_shared-data:/mnt alpine cat /mnt/FUNCTION_ID
-```
-
-Or you just can delete everything and start from scratch by running:
+- In rare cases, there could be an issue with data in the agent's named volumes. You can delete the
+Compose project and its volumes and start from scratch by running:
 
 ```bash
 docker compose down -v
