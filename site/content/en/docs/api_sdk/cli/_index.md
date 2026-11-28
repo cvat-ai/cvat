@@ -38,6 +38,15 @@ The following subcommands are supported:
   - `delete` - delete a function
   - `run-agent` - process requests for a native function
 
+- Profiles:
+  - `create` - save an access token and its server as a local profile
+  - `default` - print, set, or unset the default profile
+  - `delete` - remove a saved profile
+  - `list` - list saved profiles
+
+- Configuration:
+  - `default-server` - print, set, or unset the default server
+
 ## Installation
 
 To install an [official release of CVAT CLI](https://pypi.org/project/cvat-cli/), use this command:
