@@ -1,4 +1,6 @@
 {{ $links := .Site.Params.links -}}
+{{ $gaTrackingId := getenv "GOOGLE_TAG_ID" | default site.Config.Services.GoogleAnalytics.ID -}}
+{{ $cookieConsentEnabled := and hugo.IsProduction $gaTrackingId -}}
 <footer class="bg-dark py-5 row d-print-none" style="min-height: 0">
   <div class="container-fluid">
     <div class="row align-items-center">
@@ -11,6 +13,9 @@
           <li class="list-inline-item me-4"><a class="text-white" href="https://www.cvat.ai/refund-policy">Refund Policy</a></li>
           <li class="list-inline-item me-4"><a class="text-white" href="https://www.cvat.ai/fair-usage-policy">Fair Usage Policy</a></li>
           <li class="list-inline-item me-4"><a class="text-white" href="https://status.cvat.ai">Status</a></li>
+          {{ if $cookieConsentEnabled -}}
+          <li class="list-inline-item me-4"><a class="text-white" href="#" data-cookie-settings aria-haspopup="dialog">Cookie settings</a></li>
+          {{ end -}}
         </ul>
       </div>
 
@@ -24,8 +29,10 @@
       </div>
     </div>
   </div>
-  {{ partial "cookie-consent.html" . }}
 </footer>
+{{ if $cookieConsentEnabled -}}
+  {{ partial "cookie-consent.html" $gaTrackingId }}
+{{ end -}}
 
 {{ define "footer-links-block" }}
 <ul class="list-inline mb-0">
