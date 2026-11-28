@@ -852,6 +852,7 @@ export enum ActiveControl {
     DRAW_ELLIPSE = 'draw_ellipse',
     DRAW_MASK = 'draw_mask',
     DRAW_CUBOID = 'draw_cuboid',
+    PICK_CAMERA_RAY = 'pick_camera_ray',
     DRAW_SKELETON = 'draw_skeleton',
     PASTE_SELECTION = 'paste_selection',
     GROUP = 'group',

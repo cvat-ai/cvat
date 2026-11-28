@@ -12,7 +12,7 @@ export interface CameraCalibration {
     extrinsicMatrix: number[][];
 }
 
-type ProjectedPoint = [number, number];
+export type ProjectedPoint = [number, number];
 
 export interface ProjectedCuboid {
     faces: ProjectedPoint[][];

@@ -19,10 +19,10 @@ export default function CameraRayMarker({ point, scale, color }: Props): JSX.Ele
         >
             <circle r={12} fill='transparent' />
             <path
-                d='M -10 0 L -2.5 0 M 10 0 L 2.5 0 M 0 -10 L 0 -2.5 M 0 10 L 0 2.5'
+                d='M -10 0 L -5.5 0 M 10 0 L 5.5 0 M 0 -10 L 0 -5.5 M 0 10 L 0 5.5'
                 fill='none'
                 stroke={color}
-                strokeLinecap='round'
+                strokeLinecap='butt'
                 strokeWidth={2}
             />
             <path

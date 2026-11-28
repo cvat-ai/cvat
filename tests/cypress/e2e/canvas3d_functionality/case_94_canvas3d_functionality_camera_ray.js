@@ -14,6 +14,7 @@ context('Canvas 3D functionality. Camera ray.', () => {
     const contextImageTitle = '.cvat-context-image-title';
     const cameraRayMarker = '.cvat-context-image-camera-ray-marker';
     const clearCameraRaysButton = '.cvat-canvas3d-perspective-tools-group button';
+    const cameraRayControl = '.cvat-camera-ray-control';
 
     function getContextImage(index) {
         return cy.get(contextImage).eq(index);
@@ -40,6 +41,8 @@ context('Canvas 3D functionality. Camera ray.', () => {
         cy.get(contextImageTitle).eq(0).invoke('text').then((firstContextImageName) => {
             cy.get(contextImageTitle).eq(1).invoke('text').should('not.equal', firstContextImageName);
         });
+        cy.get(cameraRayControl).click();
+        cy.get(cameraRayControl).should('have.class', 'cvat-active-canvas-control');
         cy.customScreenshot('.cvat-canvas3d-perspective', 'canvas3d_perspective_without_camera_rays');
     });
 

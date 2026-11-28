@@ -6,6 +6,7 @@ import React, { useCallback } from 'react';
 import classNames from 'classnames';
 
 import type { ObjectState } from 'cvat-core-wrapper';
+import type { Size } from 'utils/geometry';
 
 export enum SVGObjectType {
     CAMERA_RAY = 'camera-ray',
@@ -20,20 +21,15 @@ export type SVGObject = {
     render(scale: number): React.ReactNode;
 };
 
-interface ImageSize {
-    width: number;
-    height: number;
-}
-
 interface Props {
-    imageSize: ImageSize;
+    imageSize: Size;
     scale: number;
     objects: SVGObject[];
     className?: string;
-    onBackgroundClick(point: [number, number]): void;
+    onBackgroundClick(point: [number, number], event: React.MouseEvent<SVGSVGElement>): void;
     onObjectClick(object: SVGObject, event: React.MouseEvent<SVGGElement>): void;
     onObjectMouseEnter(object: SVGObject): void;
-    onObjectDoubleClick(object: SVGObject): void;
+    onObjectDoubleClick(object: SVGObject, event: React.MouseEvent<SVGGElement>): void;
 }
 
 function ContextImageSVGOverlay(props: Props): JSX.Element {
@@ -47,13 +43,14 @@ function ContextImageSVGOverlay(props: Props): JSX.Element {
         onObjectMouseEnter,
         onObjectDoubleClick,
     } = props;
+
     const onOverlayClick = useCallback((event: React.MouseEvent<SVGSVGElement>): void => {
         const { currentTarget, clientX, clientY } = event;
         const rect = currentTarget.getBoundingClientRect();
         onBackgroundClick([
             (clientX - rect.left) / scale,
             (clientY - rect.top) / scale,
-        ]);
+        ], event);
     }, [onBackgroundClick, scale]);
 
     const { width: imageWidth, height: imageHeight } = imageSize;
@@ -79,8 +76,8 @@ function ContextImageSVGOverlay(props: Props): JSX.Element {
                     onMouseEnter={() => {
                         onObjectMouseEnter(object);
                     }}
-                    onDoubleClick={() => {
-                        onObjectDoubleClick(object);
+                    onDoubleClick={(event) => {
+                        onObjectDoubleClick(object, event);
                     }}
                 >
                     {object.render(scale)}

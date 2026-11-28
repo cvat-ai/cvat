@@ -17,16 +17,14 @@ import Text from 'antd/lib/typography/Text';
 import { SettingOutlined } from '@ant-design/icons';
 
 import { shallowEqual } from 'utils/redux';
+import type { Size } from 'utils/geometry';
 import CVATTooltop from 'components/common/cvat-tooltip';
 import { CombinedState } from 'reducers';
 import ContextImageSelector from './context-image-selector';
 import useContextImageViewport from './hooks/use-context-image-viewport';
 
 export interface ContextImageOverlayProps {
-    imageSize: {
-        width: number;
-        height: number;
-    };
+    imageSize: Size;
     contextImageName: string;
     scale: number;
 }
@@ -34,10 +32,11 @@ export interface ContextImageOverlayProps {
 interface Props {
     offset: number[];
     Overlay?: React.ComponentType<ContextImageOverlayProps>;
+    onClick?(): void;
 }
 
 function ContextImage(props: Props): JSX.Element {
-    const { offset, Overlay } = props;
+    const { offset, Overlay, onClick } = props;
     const defaultFrameOffset = (offset[0] || 0);
     const defaultContextImageOffset = (offset[1] || 0);
 
@@ -111,8 +110,14 @@ function ContextImage(props: Props): JSX.Element {
     const contextImage = contextImageData[contextImageName];
 
     // feature hooks
-    const imageViewport = useContextImageViewport({
-        image: contextImage,
+    const {
+        viewport: imageViewport,
+        onPointerDown,
+        onPointerMove,
+        onClickCapture,
+        onDoubleClick,
+    } = useContextImageViewport({
+        imageSize: contextImage,
         viewportElement,
     });
 
@@ -144,7 +149,16 @@ function ContextImage(props: Props): JSX.Element {
             { fetching && <Spin size='small' /> }
             {
                 contextImageOffset < Object.keys(contextImageData).length &&
-                <div ref={setViewportElement} className='cvat-context-image-viewport'>
+                /* eslint-disable jsx-a11y/click-events-have-key-events, jsx-a11y/no-static-element-interactions */
+                <div
+                    ref={setViewportElement}
+                    className='cvat-context-image-viewport'
+                    onPointerDown={onPointerDown}
+                    onPointerMove={onPointerMove}
+                    onClickCapture={onClickCapture}
+                    onDoubleClick={onDoubleClick}
+                    onClick={onClick}
+                >
                     <div
                         className='cvat-context-image-image-plane'
                         style={{
@@ -164,6 +178,7 @@ function ContextImage(props: Props): JSX.Element {
                         ) : null}
                     </div>
                 </div>
+                /* eslint-enable jsx-a11y/click-events-have-key-events, jsx-a11y/no-static-element-interactions */
             }
             { showSelector && (
                 <ContextImageSelector

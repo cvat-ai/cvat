@@ -88,6 +88,10 @@
                 height: 100%;
                 user-select: none;
 
+                &.cvat-context-image-camera-ray-picking {
+                    cursor: crosshair;
+                }
+
                 > .cvat-context-image-svg-overlay-hit-area {
                     fill: transparent;
                 }

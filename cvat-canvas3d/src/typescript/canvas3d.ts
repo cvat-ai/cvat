@@ -24,7 +24,7 @@ import {
     cameraRayFromImagePoint, projectCuboid,
 } from './geometry/camera-projection';
 import { CUBOID_EDGES, CUBOID_FACES } from './cuboid';
-import type { CameraCalibration } from './geometry/camera-projection';
+import type { CameraCalibration, ProjectedPoint } from './geometry/camera-projection';
 import type { Master } from './master';
 
 interface Canvas3d {
@@ -144,5 +144,5 @@ export {
 };
 
 export type {
-    ViewsDOM, CameraCalibration, CameraRayData,
+    ViewsDOM, CameraCalibration, CameraRayData, ProjectedPoint,
 };
