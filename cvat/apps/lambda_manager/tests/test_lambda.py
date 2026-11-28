@@ -8,6 +8,8 @@ import io
 import json
 import os
 from collections import Counter
+from contextlib import contextmanager
+from datetime import timedelta
 from itertools import groupby
 from unittest import mock, skip
 
@@ -16,7 +18,10 @@ from django.core.signing import TimestampSigner
 from django.http import HttpResponseNotFound, HttpResponseServerError
 from PIL import Image
 from rest_framework import status
+from rq.job import JobStatus
+from rq.worker import Worker as RQWorker
 
+from cvat.apps.engine.rq import RQJobMetaField
 from cvat.apps.engine.tests.utils import (
     ApiTestBase,
     ForceLogin,
@@ -26,6 +31,8 @@ from cvat.apps.engine.tests.utils import (
     get_paginated_collection,
 )
 from cvat.apps.iam.models import User
+from cvat.apps.lambda_manager.views import LambdaQueue
+from cvat.apps.redis_handler.utils import CVAT_CAN_STOP_STARTED_JOBS_KEY
 
 LAMBDA_ROOT_PATH = "/api/lambda"
 LAMBDA_FUNCTIONS_PATH = f"{LAMBDA_ROOT_PATH}/functions"
@@ -254,6 +261,53 @@ class _LambdaTestCaseBase(ApiTestBase):
         image_data = base64.b64decode(payload["image"])
         with Image.open(io.BytesIO(image_data)) as image:
             return image.size
+
+    @contextmanager
+    def _lambda_request_enqueued_as_started(self, *, worker_name: str = "test-worker"):
+        # cvat.settings.testing forces every RQ queue to run inline (ASYNC=False),
+        # so a plain request would finish before a second request or a DELETE could
+        # race it. This makes the enclosed request creation save its RQ job as
+        # STARTED and never actually run it, simulating a job whose work horse
+        # is still executing on a worker.
+        queue_class = type(LambdaQueue()._get_queue())
+
+        def enqueue_as_started(queue, job, *args, **kwargs):
+            job.origin = queue.name
+            job.worker_name = worker_name
+            job.set_status(JobStatus.STARTED)
+            job.save()
+            return job
+
+        with mock.patch.object(queue_class, "enqueue_job", new=enqueue_as_started):
+            yield
+
+    @contextmanager
+    def _stop_job_command_stopping_the_job(self):
+        """
+        Replaces send_stop_job_command with a worker that immediately reacts to it,
+        i.e. kills the work horse and moves the job to the stopped state.
+        """
+
+        def stop_job(connection, job_id, *args, **kwargs):
+            self._set_lambda_request_status(job_id, JobStatus.STOPPED)
+
+        with mock.patch(
+            "cvat.apps.lambda_manager.views.send_stop_job_command", side_effect=stop_job
+        ) as send_stop_command:
+            yield send_stop_command
+
+    def _set_lambda_request_status(self, request_id: str, new_status: JobStatus) -> None:
+        rq_job = LambdaQueue()._get_queue().fetch_job(request_id)
+        rq_job.set_status(new_status)
+        rq_job.save()
+
+    def _mark_worker_unable_to_stop_started_jobs(self, worker_name: str) -> None:
+        connection = LambdaQueue()._get_queue().connection
+        connection.hset(
+            f"{RQWorker.redis_worker_namespace_prefix}{worker_name}",
+            CVAT_CAN_STOP_STARTED_JOBS_KEY,
+            0,
+        )
 
 
 class LambdaTestCases(_LambdaTestCaseBase):
@@ -529,9 +583,147 @@ class LambdaTestCases(_LambdaTestCaseBase):
                 response = self._delete_request(f"{LAMBDA_REQUESTS_PATH}/{id_request}", user)
                 self.assertEqual(response.status_code, expected_status)
 
-    @skip("Fail: add mock")
+    def test_api_v2_lambda_requests_delete_checks_permissions_under_job_lock(self):
+        data = {
+            "function": id_function_detector,
+            "task": self.assigneed_to_user_task["id"],
+            "cleanup": True,
+            "mapping": {"car": {"name": "car"}},
+        }
+        response = self._post_request(LAMBDA_REQUESTS_PATH, self.user, data=data)
+        self.assertEqual(response.status_code, status.HTTP_200_OK)
+        request_id = response.data["id"]
+
+        @contextmanager
+        def replace_request_owner_before_lock_body():
+            rq_job = LambdaQueue()._get_queue().fetch_job(request_id)
+            rq_job.meta[RQJobMetaField.USER] = {
+                RQJobMetaField.UserField.ID: self.owner.id,
+                RQJobMetaField.UserField.USERNAME: self.owner.username,
+                RQJobMetaField.UserField.EMAIL: self.owner.email,
+            }
+            rq_job.save_meta()
+            yield
+
+        # Simulate another request reusing the deterministic RQ ID between an
+        # out-of-lock permission check and the protected fetch.
+        with mock.patch(
+            "cvat.apps.lambda_manager.views.get_rq_lock_for_job",
+            return_value=replace_request_owner_before_lock_body(),
+        ):
+            response = self._delete_request(f"{LAMBDA_REQUESTS_PATH}/{request_id}", self.user)
+
+        self.assertEqual(response.status_code, status.HTTP_403_FORBIDDEN)
+
+        # The replacement request belongs to another user and must survive.
+        response = self._get_request(f"{LAMBDA_REQUESTS_PATH}/{request_id}", self.admin)
+        self.assertEqual(response.status_code, status.HTTP_200_OK)
+        self._delete_lambda_request(request_id)
+
+    def _create_started_lambda_request(self, **kwargs) -> str:
+        data = {
+            "function": id_function_detector,
+            "task": self.main_task["id"],
+            "cleanup": True,
+            "mapping": {
+                "car": {"name": "car"},
+            },
+        }
+
+        with self._lambda_request_enqueued_as_started(**kwargs):
+            response = self._post_request(LAMBDA_REQUESTS_PATH, self.admin, data=data)
+
+        self.assertEqual(response.status_code, status.HTTP_200_OK)
+        self.assertEqual(response.data["status"], "started")
+
+        return response.data["id"]
+
     def test_api_v2_lambda_requests_delete_not_finished_request(self):
-        pass
+        request_id_a = self._create_started_lambda_request()
+
+        # Deleting the job hash alone would leave the work horse running while
+        # freeing its RQ id, so the request must be stopped first.
+        with self._stop_job_command_stopping_the_job() as send_stop_command:
+            response = self._delete_request(f"{LAMBDA_REQUESTS_PATH}/{request_id_a}", self.admin)
+
+        self.assertEqual(response.status_code, status.HTTP_204_NO_CONTENT)
+        send_stop_command.assert_called_once()
+        self.assertEqual(send_stop_command.call_args.args[1], request_id_a)
+
+        response = self._get_request(f"{LAMBDA_REQUESTS_PATH}/{request_id_a}", self.admin)
+        self.assertEqual(response.status_code, status.HTTP_404_NOT_FOUND)
+
+        # The task slot is free again, and the new request gets the same RQ id
+        # without inheriting anything from the stopped one.
+        response = self._post_request(
+            LAMBDA_REQUESTS_PATH,
+            self.admin,
+            data={
+                "function": id_function_detector,
+                "task": self.main_task["id"],
+                "cleanup": True,
+                "mapping": {"car": {"name": "car"}},
+            },
+        )
+        self.assertEqual(response.status_code, status.HTTP_200_OK)
+        request_id_b = response.data["id"]
+        self.assertEqual(request_id_b, request_id_a)
+        self.assertEqual(response.data["status"], "finished")
+
+        self._delete_lambda_request(request_id_b)
+
+    def test_api_v2_lambda_requests_delete_not_finished_request_on_unstoppable_worker(self):
+        worker_name = "simple-worker"
+        request_id = self._create_started_lambda_request(worker_name=worker_name)
+        self._mark_worker_unable_to_stop_started_jobs(worker_name)
+
+        with self._stop_job_command_stopping_the_job() as send_stop_command:
+            response = self._delete_request(f"{LAMBDA_REQUESTS_PATH}/{request_id}", self.admin)
+
+        self.assertEqual(response.status_code, status.HTTP_409_CONFLICT)
+        send_stop_command.assert_not_called()
+
+        # The job must still be there and still started - the hash was not deleted.
+        response = self._get_request(f"{LAMBDA_REQUESTS_PATH}/{request_id}", self.admin)
+        self.assertEqual(response.status_code, status.HTTP_200_OK)
+        self.assertEqual(response.data["status"], "started")
+
+        # A second request for the same task must still be rejected: the RQ id of a
+        # running job may not be handed over to a new run.
+        response = self._post_request(
+            LAMBDA_REQUESTS_PATH,
+            self.admin,
+            data={
+                "function": id_function_detector,
+                "task": self.main_task["id"],
+                "cleanup": True,
+                "mapping": {"car": {"name": "car"}},
+            },
+        )
+        self.assertEqual(response.status_code, status.HTTP_409_CONFLICT)
+
+        self._set_lambda_request_status(request_id, JobStatus.FINISHED)
+        self._delete_lambda_request(request_id)
+
+    def test_api_v2_lambda_requests_delete_not_finished_request_that_does_not_stop(self):
+        request_id = self._create_started_lambda_request()
+
+        # The worker never reacts to the stop command, so the work horse may still
+        # be alive and the hash must be kept.
+        with (
+            mock.patch.object(LambdaQueue, "STOP_TIMEOUT", timedelta(milliseconds=200)),
+            mock.patch("cvat.apps.lambda_manager.views.send_stop_job_command"),
+        ):
+            response = self._delete_request(f"{LAMBDA_REQUESTS_PATH}/{request_id}", self.admin)
+
+        self.assertEqual(response.status_code, status.HTTP_409_CONFLICT)
+
+        response = self._get_request(f"{LAMBDA_REQUESTS_PATH}/{request_id}", self.admin)
+        self.assertEqual(response.status_code, status.HTTP_200_OK)
+        self.assertEqual(response.data["status"], "started")
+
+        self._set_lambda_request_status(request_id, JobStatus.FINISHED)
+        self._delete_lambda_request(request_id)
 
     def test_api_v2_lambda_requests_create(self):
         ids_functions = [
@@ -636,7 +828,6 @@ class LambdaTestCases(_LambdaTestCaseBase):
         response = self._post_request(LAMBDA_REQUESTS_PATH, self.admin, data=data)
         self.assertEqual(response.status_code, status.HTTP_404_NOT_FOUND)
 
-    @skip("Fail: add mock")
     def test_api_v2_lambda_requests_create_two_requests(self):
         data = {
             "function": id_function_detector,
@@ -646,10 +837,12 @@ class LambdaTestCases(_LambdaTestCaseBase):
                 "car": {"name": "car"},
             },
         }
-        request_id = self._post_request(LAMBDA_REQUESTS_PATH, self.admin, data=data).data["id"]
+        with self._lambda_request_enqueued_as_started():
+            request_id = self._post_request(LAMBDA_REQUESTS_PATH, self.admin, data=data).data["id"]
         response = self._post_request(LAMBDA_REQUESTS_PATH, self.admin, data=data)
         self.assertEqual(response.status_code, status.HTTP_409_CONFLICT)
 
+        self._set_lambda_request_status(request_id, JobStatus.FINISHED)
         self._delete_lambda_request(request_id)
 
     def test_api_v2_lambda_requests_create_empty_mapping(self):
