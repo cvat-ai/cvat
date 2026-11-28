@@ -658,7 +658,8 @@ class CanvasWrapperComponent extends React.PureComponent<Props> {
             canvasInstance.bitmap(showBitmap);
         }
 
-        if (prevProps.frameAngle !== frameAngle) {
+        // Deleted frames reset the canvas angle, so synchronize it after frame changes too.
+        if (prevProps.frameAngle !== frameAngle || prevProps.frameData !== frameData) {
             canvasInstance.rotate(frameAngle);
             if (prevProps.frameData === frameData) {
                 // explicitly rotated, not a new frame
