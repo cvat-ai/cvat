@@ -69,7 +69,7 @@ an extension of `cvat-cli`.
 | `--profile` | fallback | Named saved profile; falls back to the default profile if no host/auth |
 | `--insecure`, `--organization`, `--server-port` | no | Reused from `cvat-cli`'s shared arg set |
 
-Also honors `CVAT_ACCESS_TOKEN` / `CVAT_PASSWORD` environment variables the same
+Also honors `CVAT_ACCESS_TOKEN` / `PASS` environment variables the same
 way `cvat-cli` does.
 
 ```bash
